@@ -1,0 +1,8 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cotton_woven",
+ "preset": "linen",
+ "tex_tint": false,
+ "note": "plain-woven cotton: undyed, the linen scan's own colour",
+ "licence": "textures: Poly Haven (polyhaven.com) 'rough_linen', CC0"
+}

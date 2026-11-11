@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.robot_visuals/1",
+ "pack": "emb_e4_fr3_bimanual",
+ "same_as": "emb_e1_fr3",
+ "prefixes": [
+  "left_",
+  "right_"
+ ]
+}

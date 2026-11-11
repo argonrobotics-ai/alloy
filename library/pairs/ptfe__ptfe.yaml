@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: ptfe
+b: ptfe
+mu_static:
+  value: 0.04
+  source: catalog
+  unc: [0.03, 0.06]
+  note: Teflon on Teflon 0.04/0.04, Serway & Jewett 9e Table 5.1
+mu_dynamic:
+  value: 0.04
+  source: catalog
+  unc: [0.03, 0.06]
+  note: Teflon on Teflon 0.04/0.04, Serway & Jewett 9e Table 5.1

@@ -1,0 +1,50 @@
+schema: alloy.material/1
+name: steel_carbon
+density:
+  value: 7870.0
+  source: catalog
+  unc: [7830.0, 7880.0]
+  note: AISI 1020 7.85 g/cm3, Callister & Rethwisch 9e (2014) App. B B.1
+surface:
+  mu_static:
+    value: 0.74
+    source: catalog
+    unc: [0.5, 0.8]
+    note: dry clean steel on steel, Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.57
+    source: catalog
+    unc: [0.4, 0.6]
+    note: dry clean steel on steel, Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.5, 0.9]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 205000000000.0
+    source: catalog
+    unc: [200000000000.0, 210000000000.0]
+    note: plain carbon steel, Callister & Rethwisch 9e (2014) App. B B.2/B.3 (207 GPa, 0.30)
+  poisson:
+    value: 0.29
+    source: catalog
+    unc: [0.27, 0.3]
+    note: plain carbon steel, Callister & Rethwisch 9e (2014) App. B B.2/B.3 (207 GPa, 0.30)
+plastic:
+  yield_stress:
+    value: 235000000.0
+    source: catalog
+    unc: [235000000.0, 360000000.0]
+    note: 'DOC: S235JR (EN 10025-2, the structural equivalent of AISI 1020 hot rolled; no typical 1020 values reachable) minimum
+      yield, Ovako "formats < 16 235* 360-510 26" https://steelnavigator.ovako.com/steel-grades/s235/pdf ; unc: a measured
+      S235JR rod "I 360±5 479±1" https://www.czasopisma.pan.pl//Content/89364/PDF/10172%20Volume%2059%20Issue%204-71%20paper.pdf.pdf'
+  model: j2
+  hardening_modulus:
+    value: 1057000000.0
+    source: model
+    unc: [1057000000.0, 1370000000.0]
+    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 360 MPa (EN 10025-2
+      minimum, same sheet), eu 0.2083 (Yun & Gardner 2017 J. Constr. Steel Res. 133, Eq. 8 eu = 0.6(1 − fy/fu), Table 7 "S235
+      210000 235 360 0.11 1.50 20.83"); unc: the measured rod 360 / 479 MPa gives 1370 MPa'

@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal050a",
+ "family": "metal",
+ "preset": "steel_polished",
+ "texture": "ambientcg:Metal050A",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal050A",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.938,
+ "note": "clean aluminium: ambientCG 'Metal 050 A', 0.4 m tile, 1k maps"
+}

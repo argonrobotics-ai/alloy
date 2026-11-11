@@ -1,0 +1,23 @@
+schema: alloy.object/1
+name: paper_kraft_scored_sheet
+shape:
+  mesh:
+    path: meshes/paper_kraft_scored.obj
+    sha256: 18c27e3db7587a678bcc8e08e4af498524c2fcb57a4e87fef5d5fb33bf47ba78
+material: paper_kraft
+features:
+  thickness:
+    value: 0.000135
+    source: catalog
+    note: 'DOC: Nordic Paper GS520 MG Plain Kraft Paper, unbleached, 100 g/m2 "Thickness (um) 135" https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf
+      ; the sheet is scored once across its middle (the mesh''s OBJ line): it folds there first and keeps the fold'
+  min_wall:
+    value: 0.000135
+    source: catalog
+    note: 'DOC: the same sheet "Thickness (um) 135" (contact uses the film route particle radius)'
+budget:
+  particles: 441
+route:
+  route: cloth_film
+  reason: 'paper with a score line: strain-capped membrane, hinge bending with fold memory, a weaker crease hinge on the score
+    line'

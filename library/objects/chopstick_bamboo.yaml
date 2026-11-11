@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: chopstick_bamboo
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.003, 0.115]
+material: bamboo
+loads:
+  bend_force:
+    value: 0.2
+    source: model
+    note: 'pinch of a 20 g morsel at the tip: ~0.2 N'
+  tolerance:
+    value: 0.001
+    source: model
+    note: food pick, 1 mm

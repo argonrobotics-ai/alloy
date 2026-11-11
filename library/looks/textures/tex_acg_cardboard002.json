@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_cardboard002",
+ "family": "paper",
+ "preset": "cardboard_kraft",
+ "texture": "ambientcg:Cardboard002",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0002,
+ "source": "https://ambientcg.com/a/Cardboard002",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.308,
+ "note": "brown cardboard: ambientCG 'Cardboard 002', 0.4 m tile, 1k maps"
+}

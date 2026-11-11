@@ -1,0 +1,101 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+index 27b432412..1f546f4ba 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+@@ -1154,6 +1154,20 @@ def make_solve_strain_rows(
+     return solve_strain_rows
+ 
+ 
++@wp.func
++def _world_of(offsets: wp.array[int], i: int):  # Alloy (GAPS-NOW #5a, mpm-skip-converged)
++    """The world whose strain-node range holds ``i`` (offsets ascending, ``offsets[-1]`` the end)."""
++    lo = int(0)
++    hi = offsets.shape[0] - 1
++    while hi - lo > 1:
++        mid = (lo + hi) // 2
++        if offsets[mid] <= i:
++            lo = mid
++        else:
++            hi = mid
++    return lo
++
++
+ def make_gs_solve_kernel(
+     has_viscosity: bool,
+     has_dilatancy: bool,
+@@ -1224,6 +1238,8 @@ def make_gs_solve_kernel(
+         local_stress: wp.array[vec6],
+         delta_correction: wp.array[vec6],
+         contacts: ColoredContacts,
++        world_offsets: wp.array[int],  # Alloy (GAPS-NOW #5a, mpm-skip-converged): per-world strain-node ranges
++        world_done: wp.array[wp.int32],  # worlds already converged (Alloy's per-world stop); empty: none skipped
+     ):
+         first_color = color
+         last_color = color + 1
+@@ -1242,6 +1258,13 @@ def make_gs_solve_kernel(
+                 beg, end = int(rows.block_offsets[block]), int(rows.block_offsets[block + 1])
+             else:
+                 beg, end = int(color_blocks[0, block]), int(color_blocks[1, block])
++            if wp.static(not batched and not soa):  # Alloy (GAPS-NOW #5a, mpm-skip-converged): a converged world's
++                # rows are frozen until the loop restores its converged state, so sweeping them changes nothing.
++                if world_done.shape[0] > 0 and end > beg:
++                    w = _world_of(world_offsets, beg)
++                    # Only a block inside one world (WP8's review: nothing pins Newton's blocking to worlds).
++                    if world_done[w] != 0 and _world_of(world_offsets, end - 1) == w:
++                        continue
+             wp.static(solve_rows)(
+                 beg,
+                 end,
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+index 5374bfe89..a5311ff27 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+@@ -655,6 +655,11 @@ class _RheologySolver:
+         self.device = self.momentum.velocity.device
+ 
+         self.delta_stress = fem.borrow_temporary_like(self.rheology.stress, temporary_store)
++        # Alloy (GAPS-NOW #5a, mpm-skip-converged): the per-world skip's tables (an empty done array: no world is skipped)
++        self._no_skip = wp.empty(0, dtype=wp.int32, device=self.device)
++        self._world_offsets = self.rheology.strain_environment_offsets
++        if self._world_offsets is None:
++            self._world_offsets = wp.empty(1, dtype=int, device=self.device)
+         # Colored solvers only write active strain nodes; the residual reads every entry.
+         self.delta_stress.zero_()
+         self.strain_residual = fem.borrow_temporary(
+@@ -865,6 +870,8 @@ class _RheologySolver:
+                 self.rheology.stress,
+                 self.delta_stress,
+                 contacts if contacts is not None else ColoredContacts(),
++                self._world_offsets,  # Alloy (GAPS-NOW #5a, mpm-skip-converged)
++                self._no_skip,
+             ],
+             block_dim=block_dim,
+             max_blocks=block_count,
+@@ -948,6 +955,18 @@ class _GaussSeidelSolver(_RheologySolver):
+     def name(self):
+         return "Gauss-Seidel"
+ 
++    skips_converged = True  # Alloy (GAPS-NOW #5a, mpm-skip-converged)
++
++    def skip_converged(self, world_done: wp.array | None) -> bool:
++        """Skip the rows of the worlds flagged in ``world_done`` (int32 per world, read on the device each sweep), or
++        none with None. For a caller that freezes each world at its own convergence and restores it after the loop
++        (Alloy's per-world stop): the result is bit for bit the same, and converged worlds cost no strain sweeps.
++        False when this solver cannot skip (one world, or the reordered / batched sweeps)."""
++        if not self.skips_converged or self.rheology.strain_environment_offsets is None:
++            return False
++        self.solve_local_launch.set_param_by_name("world_done", self._no_skip if world_done is None else world_done)
++        return True
++
+     @property
+     def solve_granularity(self):
+         return 25
+@@ -971,6 +990,8 @@ class _GaussSeidelSolver(_RheologySolver):
+ class _ReorderedGaussSeidelSolver(_GaussSeidelSolver):
+     """Use entry-major SoA strain rows with the same colored GS/contact sweep."""
+ 
++    skips_converged = False  # Alloy (GAPS-NOW #5a, mpm-skip-converged): its rows are reordered, not by world
++
+     def _make_solve_launch(self, temporary_store, launch_dim, block_dim, block_count):
+         svnc = self.rheology.strain_velocity_node_count
+         max_entries = svnc if svnc > 0 else self.color_count

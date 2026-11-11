@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: mx150_plug
+shape:
+  primitive:
+    kind: box
+    size: [0.02775, 0.0085, 0.009]
+material: pa66_gf30

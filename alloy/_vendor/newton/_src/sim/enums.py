@@ -1,0 +1,337 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+from enum import IntEnum
+
+
+class ModelFlags(IntEnum):
+    """Flags indicating which parts of the model have been updated.
+
+    These flags are used with :meth:`~newton.solvers.SolverBase.notify_model_changed`
+    to specify which properties have changed, allowing the solver to efficiently
+    update only the necessary components.
+
+    Categories overlap semantically, but each flag has its own bit. The broad
+    :attr:`JOINT_DOF_PROPERTIES` includes force, inertial, and reference-pose
+    updates. Testing the broad bit alone does not detect a narrower notification.
+    """
+
+    JOINT_PROPERTIES = 1 << 0
+    """Indicates joint property updates: joint_q, joint_X_p, joint_X_c, joint_axis."""
+
+    JOINT_DOF_PROPERTIES = 1 << 1
+    """Indicates all joint DOF updates, including force, armature, and reference-pose properties: joint_target_ke, joint_target_kd, joint_stiffness, joint_rest_q, joint_damping, joint_effort_limit, joint_armature, joint_friction, joint_limit_ke, joint_limit_kd, joint_limit_lower, joint_limit_upper."""
+
+    BODY_PROPERTIES = 1 << 2
+    """Indicates body property updates: body_q, body_qd, body_flags."""
+
+    BODY_INERTIAL_PROPERTIES = 1 << 3
+    """Indicates body inertial property updates: body_com, body_inertia, body_inv_inertia, body_mass, body_inv_mass."""
+
+    SHAPE_PROPERTIES = 1 << 4
+    """Indicates shape property updates: shape_transform, shape_scale, shape_collision_radius, shape_material_mu, shape_material_restitution, shape_material_ke, shape_material_kd, rigid_contact_mu_torsional, rigid_contact_mu_rolling."""
+
+    MODEL_PROPERTIES = 1 << 5
+    """Indicates model property updates: gravity and other global parameters."""
+
+    CONSTRAINT_PROPERTIES = 1 << 6
+    """Indicates constraint property updates: equality constraints (mujoco.equality_constraint_anchor, mujoco.equality_constraint_relpose, mujoco.equality_constraint_polycoef, mujoco.equality_constraint_torquescale, mujoco.equality_constraint_enabled, mujoco.eq_solref, mujoco.eq_solimp), mimic relationships (joint_mimic_coeffs and the deprecated constraint_mimic_coef0, constraint_mimic_coef1, constraint_mimic_enabled arrays), and particle-body attachments (attachment_particle_body_stiffness, attachment_particle_body_damping, attachment_particle_body_enabled)."""
+
+    TENDON_PROPERTIES = 1 << 7
+    """Indicates tendon properties: eg tendon_stiffness."""
+
+    ACTUATOR_PROPERTIES = 1 << 8
+    """Indicates actuator property updates: gains, biases, limits, etc."""
+
+    JOINT_DOF_FORCE_PROPERTIES = 1 << 9
+    """Indicates joint force updates: friction, damping, target gains/modes, effort limits, passive stiffness, and limit coefficients/bounds. Excludes armature and reference poses."""
+
+    JOINT_DOF_INERTIAL_PROPERTIES = 1 << 10
+    """Indicates joint_armature updates. MuJoCo recomputes constants; use at reset or for domain randomization rather than every step."""
+
+    JOINT_REFERENCE_POSE_PROPERTIES = 1 << 11
+    """Indicates joint reference-pose and spring-reference updates, including joint_rest_q for passive springs and Rod rest configurations. Excludes joint transforms, force parameters, and armature. MuJoCo recomputes constants; use at reset or for domain randomization rather than every step."""
+
+    SHAPE_TYPE_AND_SOURCE = 1 << 12
+    """Indicates that shapes changed type or source (shape_type, shape_source_ptr) together with the collision data derived from them, or were emptied: variant rows took other variant shapes in :meth:`~newton.Model.select_body_variants`. Viewers and solvers that cache shape geometry must refresh it. Edits of shape_transform or shape_scale alone are :attr:`SHAPE_PROPERTIES`. Use at reset rather than every step.
+
+    .. experimental::
+
+        Body variants, including this flag, may change without a deprecation period.
+    """
+
+    ALL = (
+        JOINT_PROPERTIES
+        | JOINT_DOF_PROPERTIES
+        | BODY_PROPERTIES
+        | BODY_INERTIAL_PROPERTIES
+        | SHAPE_PROPERTIES
+        | MODEL_PROPERTIES
+        | CONSTRAINT_PROPERTIES
+        | TENDON_PROPERTIES
+        | ACTUATOR_PROPERTIES
+        | JOINT_DOF_FORCE_PROPERTIES
+        | JOINT_DOF_INERTIAL_PROPERTIES
+        | JOINT_REFERENCE_POSE_PROPERTIES
+        | SHAPE_TYPE_AND_SOURCE
+    )
+    """Indicates all property updates."""
+
+
+class StateFlags(IntEnum):
+    """Flags indicating which state attributes were updated or should be reset.
+
+    These flags are used with :meth:`~newton.solvers.SolverBase.reset` to
+    control which parts of the simulation state are reset, and with
+    :meth:`~newton.solvers.experimental.coupled.CouplingInterface.coupling_notify_input_state_update`
+    to describe which public state inputs a coupler updated.
+
+    .. experimental::
+
+        The interpretation of these flags by
+        :class:`~newton.solvers.experimental.coupled.CouplingInterface` may
+        change without prior notice.
+    """
+
+    NONE = 0
+    """Indicates no state attributes were updated."""
+
+    JOINT_Q = 1 << 0
+    """Indicates reduced joint position coordinates: ``State.joint_q``."""
+
+    JOINT_QD = 1 << 1
+    """Indicates reduced joint velocity coordinates: ``State.joint_qd``."""
+
+    BODY_Q = 1 << 2
+    """Indicates maximal body position coordinates: ``State.body_q``."""
+
+    BODY_QD = 1 << 3
+    """Indicates maximal body velocity coordinates: ``State.body_qd``."""
+
+    PARTICLE_Q = 1 << 4
+    """Indicates particle positions: ``State.particle_q``."""
+
+    PARTICLE_QD = 1 << 5
+    """Indicates particle velocities: ``State.particle_qd``."""
+
+    BODY_F = 1 << 6
+    """Indicates rigid-body force inputs: ``State.body_f``."""
+
+    PARTICLE_F = 1 << 7
+    """Indicates particle force inputs: ``State.particle_f``."""
+
+    JOINT_F = 1 << 8
+    """Indicates joint force inputs: ``Control.joint_f`` or solver-local equivalents."""
+
+    BODY = BODY_Q | BODY_QD
+    """Indicates rigid-body pose and velocity inputs."""
+
+    PARTICLE = PARTICLE_Q | PARTICLE_QD
+    """Indicates particle position and velocity inputs."""
+
+    JOINT = JOINT_Q | JOINT_QD
+    """Indicates joint position and velocity inputs."""
+
+    FORCE = BODY_F | PARTICLE_F | JOINT_F
+    """Indicates force-input arrays."""
+
+    ALL = BODY | PARTICLE | JOINT | FORCE
+    """Indicates all public state and force-input attributes."""
+
+
+# Body flags
+class BodyFlags(IntEnum):
+    """
+    Per-body dynamic state flags.
+
+    Each finalized model body must store exactly one runtime state flag:
+    :attr:`DYNAMIC` or :attr:`KINEMATIC`. Coupled solver views may OR in
+    :attr:`PROXY` on view-local ``body_flags`` overrides. :attr:`ALL` is a
+    convenience filter mask for APIs such as :func:`newton.eval_fk` and is not
+    a valid stored body state.
+
+    .. experimental::
+
+        :attr:`PROXY` and its inclusion in :attr:`ALL` are part of the
+        experimental coupled-solver contract and may change without prior
+        notice.
+    """
+
+    DYNAMIC = 1 << 0
+    """Dynamic body that participates in simulation dynamics."""
+
+    KINEMATIC = 1 << 1
+    """User-prescribed body that does not respond to applied forces."""
+
+    PROXY = 1 << 2
+    """View-local proxy body marker for coupled simulations."""
+
+    ALL = DYNAMIC | KINEMATIC | PROXY
+    """Filter bitmask selecting all body types."""
+
+
+# Types of joints linking rigid bodies
+class JointType(IntEnum):
+    """
+    Enumeration of joint types supported in Newton.
+    """
+
+    PRISMATIC = 0
+    """Prismatic joint: allows translation along a single axis (1 DoF)."""
+
+    REVOLUTE = 1
+    """Revolute joint: allows rotation about a single axis (1 DoF)."""
+
+    BALL = 2
+    """Ball joint: allows rotation about all three axes (3 DoF, quaternion parameterization)."""
+
+    FIXED = 3
+    """Fixed joint: locks all relative motion (0 DoF)."""
+
+    FREE = 4
+    """Free joint: allows full 6-DoF motion (translation and rotation, 7 coordinates)."""
+
+    DISTANCE = 5
+    """Distance joint: keeps two bodies at a distance within its joint limits (6 DoF, 7 coordinates)."""
+
+    D6 = 6
+    """6-DoF joint: Generic joint with up to 3 translational and 3 rotational degrees of freedom."""
+
+    ROD = 7
+    """Rod joint: 7-coordinate relative pose and 6-DoF relative
+    twist with stretch, shear, bend, and twist response."""
+
+    def dof_count(self, num_axes: int) -> tuple[int, int]:
+        """
+        Returns the number of degrees of freedom (DoF) in velocity and the number of coordinates
+        in position for this joint type.
+
+        Args:
+            num_axes: The number of axes for the joint.
+
+        Returns:
+            tuple[int, int]: A tuple (dof_count, coord_count) where:
+                - dof_count: Number of velocity degrees of freedom for the joint.
+                - coord_count: Number of position coordinates for the joint.
+
+        Notes:
+            - For PRISMATIC and REVOLUTE joints, both values are 1 (single axis).
+            - For BALL joints, dof_count is 3 (angular velocity), coord_count is 4 (quaternion).
+            - For FREE, DISTANCE, and ROD joints, dof_count is 6 (3 translation + 3 rotation), coord_count is 7 (3 position + 4 quaternion).
+            - For FIXED joints, both values are 0.
+        """
+        dof_count = num_axes
+        coord_count = num_axes
+        if self == JointType.BALL:
+            dof_count = 3
+            coord_count = 4
+        elif self == JointType.FREE or self == JointType.DISTANCE or self == JointType.ROD:
+            dof_count = 6
+            coord_count = 7
+        elif self == JointType.FIXED:
+            dof_count = 0
+            coord_count = 0
+        return dof_count, coord_count
+
+    def constraint_count(self, num_axes: int) -> int:
+        """
+        Returns the number of velocity-level bilateral kinematic constraints for this joint type.
+
+        Args:
+            num_axes: The number of DoF axes for the joint.
+
+        Returns:
+            int: The number of bilateral kinematic constraints for the joint.
+
+        Notes:
+            - For PRISMATIC and REVOLUTE joints, this equals 5 (single DoF axis).
+            - For FREE, DISTANCE, and ROD joints, `cts_count = 0` since they yield no constraints.
+            - For FIXED joints, `cts_count = 6` since it fully constrains the associated bodies.
+        """
+        cts_count = 6 - num_axes
+        if self == JointType.BALL:
+            cts_count = 3
+        elif self == JointType.FREE or self == JointType.DISTANCE or self == JointType.ROD:
+            cts_count = 0
+        elif self == JointType.FIXED:
+            cts_count = 6
+        return cts_count
+
+
+class JointTargetMode(IntEnum):
+    """
+    Enumeration of actuator modes for joint degrees of freedom.
+
+    This enum manages UsdPhysics compliance by specifying whether joint_target_q/qd
+    inputs are active for a given DOF. It determines which actuators are installed when
+    using solvers that require explicit actuator definitions (e.g., MuJoCo solver).
+
+    Note:
+        MuJoCo general actuators (motor, general, etc.) are handled separately via
+        custom attributes with "mujoco:actuator" frequency and control.mujoco.ctrl,
+        not through this enum.
+    """
+
+    NONE = 0
+    """No actuators are installed for this DOF. The joint is passive/unactuated."""
+
+    POSITION = 1
+    """Only a position actuator is installed for this DOF. Tracks joint_target_q."""
+
+    VELOCITY = 2
+    """Only a velocity actuator is installed for this DOF. Tracks joint_target_qd."""
+
+    POSITION_VELOCITY = 3
+    """Both position and velocity actuators are installed. Tracks both joint_target_q and joint_target_qd."""
+
+    EFFORT = 4
+    """A drive is applied but no gains are configured. No MuJoCo actuator is created for this DOF.
+    The user is expected to supply force via joint_f."""
+
+    @staticmethod
+    def from_gains(
+        target_ke: float,
+        target_kd: float,
+        force_position_velocity: bool = False,
+        has_drive: bool = False,
+    ) -> "JointTargetMode":
+        """Infer actuator mode from position and velocity gains.
+
+        Args:
+            target_ke: Position gain (stiffness).
+            target_kd: Velocity gain (damping).
+            force_position_velocity: If True and both gains are non-zero,
+                forces POSITION_VELOCITY mode instead of just POSITION.
+            has_drive: If True, a drive/actuator is applied to the joint.
+                When True but both gains are 0, returns EFFORT mode.
+                When False, returns NONE regardless of gains.
+
+        Returns:
+            The inferred JointTargetMode based on which gains are non-zero:
+            - NONE: No drive applied
+            - EFFORT: Drive applied but both gains are 0 (direct torque control)
+            - POSITION: Only position gain is non-zero
+            - VELOCITY: Only velocity gain is non-zero
+            - POSITION_VELOCITY: Both gains non-zero (or forced)
+        """
+        if not has_drive:
+            return JointTargetMode.NONE
+
+        if force_position_velocity and (target_ke != 0.0 and target_kd != 0.0):
+            return JointTargetMode.POSITION_VELOCITY
+        elif target_ke != 0.0:
+            return JointTargetMode.POSITION
+        elif target_kd != 0.0:
+            return JointTargetMode.VELOCITY
+        else:
+            return JointTargetMode.EFFORT
+
+
+__all__ = [
+    "BodyFlags",
+    "JointTargetMode",
+    "JointType",
+    "ModelFlags",
+    "StateFlags",
+]

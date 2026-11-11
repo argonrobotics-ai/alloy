@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: brass_c360
+b: steel_carbon
+mu_static:
+  value: 0.51
+  source: catalog
+  unc: [0.45, 0.56]
+  note: brass on steel (dry), Engineering ToolBox friction-coefficients-d_778
+mu_dynamic:
+  value: 0.44
+  source: catalog
+  unc: [0.4, 0.48]
+  note: brass on steel (dry), Engineering ToolBox friction-coefficients-d_778

@@ -1,0 +1,33 @@
+schema: alloy.material/1
+name: cardboard_corrugated
+density:
+  value: 150.0
+  source: model
+  unc: [100.0, 200.0]
+  note: single-wall corrugated board ~ 500 g/m^2 at 3.5 mm (effective)
+surface:
+  mu_static:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: board on board/wood 0.3-0.6 (packaging literature)
+  mu_dynamic:
+    value: 0.4
+    source: model
+    unc: [0.25, 0.6]
+    note: board on board/wood 0.3-0.6 (packaging literature)
+  restitution:
+    value: 0.0
+    source: model
+    note: fabric impacts are fully damped (model)
+elastic:
+  youngs:
+    value: 400000000.0
+    source: model
+    unc: [100000000.0, 1000000000.0]
+    note: effective panel modulus giving board bending stiffness ~1-3 N·m (ECT/flexural data); model
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.4]
+    note: effective panel modulus giving board bending stiffness ~1-3 N·m (ECT/flexural data); model

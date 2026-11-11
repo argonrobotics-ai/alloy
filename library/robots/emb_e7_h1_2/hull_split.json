@@ -1,0 +1,680 @@
+{
+ "bodies": ".",
+ "config": {
+  "max_verts": 64,
+  "tol_m": 0.0002,
+  "max_pieces": 64
+ },
+ "max_bound_m": 0.00019998346872364718,
+ "max_piece_verts": 64,
+ "meshes": [
+  {
+   "mesh": "pelvis",
+   "hull_verts": 1020,
+   "piece_verts": [
+    44,
+    37,
+    51,
+    40,
+    53,
+    38,
+    58,
+    35,
+    56,
+    34,
+    54,
+    48,
+    40,
+    55,
+    62,
+    42,
+    34,
+    43,
+    52,
+    51,
+    35,
+    63,
+    51,
+    44
+   ],
+   "bound_m": 0.00019998346872364718
+  },
+  {
+   "mesh": "left_hip_pitch_link",
+   "hull_verts": 600,
+   "piece_verts": [
+    44,
+    58,
+    49,
+    59,
+    59,
+    59,
+    49,
+    47,
+    55,
+    51,
+    56
+   ],
+   "bound_m": 0.00019747779716372684
+  },
+  {
+   "mesh": "left_hip_roll_link",
+   "hull_verts": 656,
+   "piece_verts": [
+    62,
+    53,
+    53,
+    52,
+    59,
+    46,
+    42,
+    37,
+    45,
+    56,
+    34,
+    51,
+    52,
+    56,
+    41,
+    50,
+    59,
+    59,
+    54,
+    41,
+    47,
+    38,
+    44
+   ],
+   "bound_m": 0.00019997854220219573
+  },
+  {
+   "mesh": "left_ankle_roll_link",
+   "hull_verts": 593,
+   "piece_verts": [
+    52,
+    45,
+    45,
+    64,
+    63,
+    51,
+    56,
+    47,
+    42,
+    57
+   ],
+   "bound_m": 0.0001993928726038017
+  },
+  {
+   "mesh": "right_hip_pitch_link",
+   "hull_verts": 602,
+   "piece_verts": [
+    48,
+    63,
+    62,
+    33,
+    54,
+    54,
+    49,
+    50,
+    51,
+    52,
+    58
+   ],
+   "bound_m": 0.00019991777845402287
+  },
+  {
+   "mesh": "right_hip_roll_link",
+   "hull_verts": 657,
+   "piece_verts": [
+    62,
+    55,
+    46,
+    57,
+    61,
+    46,
+    44,
+    36,
+    44,
+    64,
+    49,
+    56,
+    56,
+    40,
+    49,
+    58,
+    60,
+    54,
+    43,
+    43,
+    38,
+    42
+   ],
+   "bound_m": 0.00019886544505748834
+  },
+  {
+   "mesh": "right_ankle_roll_link",
+   "hull_verts": 593,
+   "piece_verts": [
+    52,
+    45,
+    45,
+    64,
+    63,
+    51,
+    56,
+    47,
+    42,
+    57
+   ],
+   "bound_m": 0.0001993928726038017
+  },
+  {
+   "mesh": "torso_link",
+   "hull_verts": 578,
+   "piece_verts": [
+    42,
+    42,
+    44,
+    39,
+    35,
+    35,
+    50,
+    51,
+    42,
+    46,
+    54,
+    51,
+    50,
+    45,
+    38,
+    61,
+    45,
+    43,
+    43,
+    59,
+    52,
+    48,
+    50
+   ],
+   "bound_m": 0.00019937486756822645
+  },
+  {
+   "mesh": "left_shoulder_pitch_link",
+   "hull_verts": 1008,
+   "piece_verts": [
+    59,
+    45,
+    31,
+    42,
+    42,
+    46,
+    46,
+    57,
+    35,
+    45,
+    44,
+    51
+   ],
+   "bound_m": 0.00019892692026958017
+  },
+  {
+   "mesh": "left_shoulder_roll_link",
+   "hull_verts": 744,
+   "piece_verts": [
+    46,
+    55,
+    43,
+    49,
+    45,
+    51,
+    53,
+    53,
+    46,
+    54,
+    55,
+    56,
+    52
+   ],
+   "bound_m": 0.00019901345776271898
+  },
+  {
+   "mesh": "left_shoulder_yaw_link",
+   "hull_verts": 661,
+   "piece_verts": [
+    41,
+    41,
+    43,
+    45,
+    39,
+    43,
+    38,
+    40,
+    40,
+    39,
+    57,
+    54,
+    56,
+    53,
+    56,
+    54
+   ],
+   "bound_m": 0.00019939187213077237
+  },
+  {
+   "mesh": "left_elbow_link",
+   "hull_verts": 655,
+   "piece_verts": [
+    42,
+    49,
+    62,
+    41,
+    45,
+    48,
+    58,
+    44,
+    43,
+    53,
+    41,
+    41,
+    55,
+    37,
+    35
+   ],
+   "bound_m": 0.00019993548756410114
+  },
+  {
+   "mesh": "left_wrist_roll_link",
+   "hull_verts": 506,
+   "piece_verts": [
+    61,
+    40,
+    60
+   ],
+   "bound_m": 0.00019963026828526278
+  },
+  {
+   "mesh": "left_wrist_pitch_link",
+   "hull_verts": 565,
+   "piece_verts": [
+    52,
+    38,
+    54,
+    41,
+    53,
+    39
+   ],
+   "bound_m": 0.00019980104782488166
+  },
+  {
+   "mesh": "L_hand_base_link",
+   "hull_verts": 665,
+   "piece_verts": [
+    36,
+    59,
+    60,
+    39,
+    57,
+    58,
+    59,
+    52,
+    49
+   ],
+   "bound_m": 0.00019977765717447057
+  },
+  {
+   "mesh": "link11_L",
+   "hull_verts": 107,
+   "piece_verts": [
+    39
+   ],
+   "bound_m": 0.00013629646819662947
+  },
+  {
+   "mesh": "link12_L",
+   "hull_verts": 1089,
+   "piece_verts": [
+    55,
+    55,
+    53,
+    61
+   ],
+   "bound_m": 0.00019950988882728505
+  },
+  {
+   "mesh": "link13_L",
+   "hull_verts": 835,
+   "piece_verts": [
+    51,
+    60
+   ],
+   "bound_m": 0.00019957500589991365
+  },
+  {
+   "mesh": "link14_L",
+   "hull_verts": 1078,
+   "piece_verts": [
+    41,
+    41,
+    52,
+    40
+   ],
+   "bound_m": 0.00019888168237451476
+  },
+  {
+   "mesh": "link15_L",
+   "hull_verts": 701,
+   "piece_verts": [
+    63,
+    44,
+    60
+   ],
+   "bound_m": 0.0001937893251263304
+  },
+  {
+   "mesh": "link16_L",
+   "hull_verts": 1153,
+   "piece_verts": [
+    41,
+    52,
+    64
+   ],
+   "bound_m": 0.00019411557566711488
+  },
+  {
+   "mesh": "link17_L",
+   "hull_verts": 701,
+   "piece_verts": [
+    63,
+    44,
+    60
+   ],
+   "bound_m": 0.0001937914314620352
+  },
+  {
+   "mesh": "link18_L",
+   "hull_verts": 747,
+   "piece_verts": [
+    58,
+    40,
+    58
+   ],
+   "bound_m": 0.0001992401467418601
+  },
+  {
+   "mesh": "link19_L",
+   "hull_verts": 701,
+   "piece_verts": [
+    63,
+    44,
+    60
+   ],
+   "bound_m": 0.0001937914314620318
+  },
+  {
+   "mesh": "link20_L",
+   "hull_verts": 1165,
+   "piece_verts": [
+    43,
+    54,
+    64
+   ],
+   "bound_m": 0.0001953406728604052
+  },
+  {
+   "mesh": "link21_L",
+   "hull_verts": 701,
+   "piece_verts": [
+    63,
+    44,
+    60
+   ],
+   "bound_m": 0.00019379143144601248
+  },
+  {
+   "mesh": "link22_L",
+   "hull_verts": 1193,
+   "piece_verts": [
+    56,
+    41,
+    58
+   ],
+   "bound_m": 0.00019683584020121586
+  },
+  {
+   "mesh": "right_shoulder_pitch_link",
+   "hull_verts": 1010,
+   "piece_verts": [
+    56,
+    48,
+    36,
+    58,
+    54,
+    60,
+    45,
+    40,
+    40,
+    45,
+    54
+   ],
+   "bound_m": 0.0001993748409869564
+  },
+  {
+   "mesh": "right_shoulder_roll_link",
+   "hull_verts": 763,
+   "piece_verts": [
+    48,
+    55,
+    62,
+    48,
+    54,
+    53,
+    56,
+    54,
+    52,
+    57,
+    51,
+    47
+   ],
+   "bound_m": 0.00019988722450674392
+  },
+  {
+   "mesh": "right_shoulder_yaw_link",
+   "hull_verts": 661,
+   "piece_verts": [
+    45,
+    40,
+    41,
+    36,
+    56,
+    43,
+    41,
+    58,
+    55,
+    51,
+    57,
+    58,
+    49
+   ],
+   "bound_m": 0.00019854713011030283
+  },
+  {
+   "mesh": "right_elbow_link",
+   "hull_verts": 653,
+   "piece_verts": [
+    49,
+    47,
+    42,
+    55,
+    63,
+    43,
+    44,
+    49,
+    44,
+    55,
+    41,
+    43,
+    56,
+    64
+   ],
+   "bound_m": 0.00019976139864978916
+  },
+  {
+   "mesh": "right_wrist_roll_link",
+   "hull_verts": 509,
+   "piece_verts": [
+    64,
+    59,
+    45
+   ],
+   "bound_m": 0.00019761244645434965
+  },
+  {
+   "mesh": "right_wrist_pitch_link",
+   "hull_verts": 565,
+   "piece_verts": [
+    52,
+    39,
+    54,
+    43,
+    39,
+    54
+   ],
+   "bound_m": 0.00019776225275469137
+  },
+  {
+   "mesh": "R_hand_base_link",
+   "hull_verts": 671,
+   "piece_verts": [
+    58,
+    40,
+    58,
+    38,
+    55,
+    58,
+    59,
+    38,
+    61
+   ],
+   "bound_m": 0.00019984616544604597
+  },
+  {
+   "mesh": "link11_R",
+   "hull_verts": 105,
+   "piece_verts": [
+    39
+   ],
+   "bound_m": 0.00013629687172321626
+  },
+  {
+   "mesh": "link12_R",
+   "hull_verts": 1090,
+   "piece_verts": [
+    59,
+    55,
+    54,
+    61
+   ],
+   "bound_m": 0.00019942129342853966
+  },
+  {
+   "mesh": "link13_R",
+   "hull_verts": 842,
+   "piece_verts": [
+    52,
+    58
+   ],
+   "bound_m": 0.00019836347834558456
+  },
+  {
+   "mesh": "link14_R",
+   "hull_verts": 1077,
+   "piece_verts": [
+    45,
+    41,
+    53,
+    43
+   ],
+   "bound_m": 0.00019750290668848867
+  },
+  {
+   "mesh": "link15_R",
+   "hull_verts": 700,
+   "piece_verts": [
+    44,
+    60,
+    60
+   ],
+   "bound_m": 0.00019911690415512213
+  },
+  {
+   "mesh": "link16_R",
+   "hull_verts": 1180,
+   "piece_verts": [
+    43,
+    55,
+    63
+   ],
+   "bound_m": 0.00019795291201235885
+  },
+  {
+   "mesh": "link17_R",
+   "hull_verts": 700,
+   "piece_verts": [
+    44,
+    60,
+    60
+   ],
+   "bound_m": 0.00019911698450274863
+  },
+  {
+   "mesh": "link18_R",
+   "hull_verts": 745,
+   "piece_verts": [
+    57,
+    57,
+    43
+   ],
+   "bound_m": 0.00019242786954429467
+  },
+  {
+   "mesh": "link19_R",
+   "hull_verts": 700,
+   "piece_verts": [
+    44,
+    60,
+    60
+   ],
+   "bound_m": 0.00019911698450274863
+  },
+  {
+   "mesh": "link20_R",
+   "hull_verts": 1186,
+   "piece_verts": [
+    43,
+    55,
+    62
+   ],
+   "bound_m": 0.00019553344839447987
+  },
+  {
+   "mesh": "link21_R",
+   "hull_verts": 700,
+   "piece_verts": [
+    44,
+    60,
+    60
+   ],
+   "bound_m": 0.00019911698450274863
+  },
+  {
+   "mesh": "link22_R",
+   "hull_verts": 1208,
+   "piece_verts": [
+    54,
+    38,
+    58
+   ],
+   "bound_m": 0.00019610238850474682
+  }
+ ]
+}

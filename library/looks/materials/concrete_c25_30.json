@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "concrete_c25_30",
+ "preset": "plaster_paint",
+ "texture": "ambientcg:Concrete030",
+ "scale_m": 0.8,
+ "note": "cast concrete: smooth grey (ambientCG 'Concrete 030' scan)",
+ "licence": "textures: ambientCG (ambientcg.com) 'Concrete 030' by Lennart Demes, CC0-1.0"
+}

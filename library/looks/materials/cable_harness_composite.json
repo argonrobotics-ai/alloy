@@ -1,0 +1,6 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cable_harness_composite",
+ "preset": "pvc_cable_black",
+ "note": "harness cable: black PVC jacket"
+}

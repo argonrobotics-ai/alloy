@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: fr4
+density:
+  value: 1850.0
+  source: catalog
+  unc: [1800.0, 1900.0]
+  note: FR4 laminate; uses 1850
+surface:
+  mu_static:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.55]
+    note: epoxy-glass laminate on plastic 0.3-0.5; mid value
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.45]
+    note: epoxy-glass laminate on plastic 0.3-0.5; mid value
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: rigid polymers e 0.4-0.7 at < 1 m/s; mid value
+elastic:
+  youngs:
+    value: 22000000000.0
+    source: catalog
+    unc: [18000000000.0, 25000000000.0]
+    note: FR4 in-plane 20-24 GPa, nu_xy 0.12-0.15 (laminate data sheets)
+  poisson:
+    value: 0.14
+    source: catalog
+    unc: [0.11, 0.16]
+    note: FR4 in-plane 20-24 GPa, nu_xy 0.12-0.15 (laminate data sheets)

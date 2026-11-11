@@ -1,0 +1,14 @@
+schema: alloy.object/1
+name: honey_jar_fill
+shape:
+  particles:
+    region:
+    - [-0.03, -0.03, 0.0]
+    - [0.03, 0.03, 0.06]
+    spacing: 0.004
+material: honey
+features:
+  passage_width:
+    value: 0.063
+    source: model
+    note: jar inner diameter 63 mm

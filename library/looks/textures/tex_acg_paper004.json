@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_paper004",
+ "family": "paper",
+ "preset": "paper",
+ "texture": "ambientcg:Paper004",
+ "res": "1k",
+ "scale_m": 0.3,
+ "bump_m": 0.0002,
+ "detail": null,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Paper004",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.321,
+ "note": "brown packing paper: ambientCG 'Paper 004', 0.3 m tile, 1k maps"
+}

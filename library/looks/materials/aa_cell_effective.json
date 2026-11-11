@@ -1,0 +1,12 @@
+{
+ "schema": "alloy.look/1",
+ "material": "aa_cell_effective",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.06,
+  0.06,
+  0.07
+ ],
+ "metallic": 0.3,
+ "note": "alkaline AA cell: printed dark shrink wrap over a steel can"
+}

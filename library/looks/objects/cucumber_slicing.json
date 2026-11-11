@@ -1,0 +1,21 @@
+{
+ "schema": "alloy.look/1",
+ "object": "cucumber_slicing",
+ "materials": {
+  "body": {
+   "preset": "dough",
+   "base_color": [
+    0.279,
+    0.323,
+    0.217
+   ],
+   "roughness": 0.32,
+   "subsurface": 0.15,
+   "micro_bump_m": 0.0004,
+   "tint_var": 0.08
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "whole cucumber: dark green peel (measured peel colour, cucumber_skin of alloy-assets looks/jobs/job1/look.json); the card material cucumber_flesh is the cut-face look"
+}

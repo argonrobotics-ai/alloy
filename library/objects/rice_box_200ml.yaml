@@ -1,0 +1,17 @@
+schema: alloy.object/1
+name: rice_box_200ml
+shape:
+  particles:
+    region:
+    - [-0.028, -0.028, 0.004]
+    - [0.028, 0.028, 0.0678]
+    spacing: 0.004
+material: rice_grain
+features:
+  passage_width:
+    value: 0.056
+    source: model
+    note: '200 ml filling the open box card liquid_box_56 (56 x 56 mm inside, 80 mm deep, 4 mm floor) placed at the same pos;
+      MPM grains as a continuum (no grain_diameter: 3 mm grains are smaller than 3 MPM voxels of 5 mm, and the ~8,500 grains
+      of 200 ml exceed the 2,000-grain rigid budget); the 56 mm inner width sets the SPH particle size, min(2 mm, width /
+      16)'

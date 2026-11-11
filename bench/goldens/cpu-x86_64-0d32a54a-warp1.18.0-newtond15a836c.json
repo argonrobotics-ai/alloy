@@ -1,0 +1,20 @@
+{
+  "cases": {
+    "box_drop5cm_xpbd": {
+      "periods": 4,
+      "sha256": "123edb7f80d75dee18591f60f8eaea1c73d94d40d6084b60fab6b9fbb81b38f3",
+      "worlds": 4,
+      "worlds_equal_at_end": true
+    },
+    "pendulum_featherstone": {
+      "periods": 4,
+      "sha256": "8fbc8bcab34da7a36b941f34abc36d6519272d900ea7b4c4851d92169b93293b",
+      "worlds": 4,
+      "worlds_equal_at_end": true
+    }
+  },
+  "cpu_model": "AMD EPYC 7B13",
+  "key": "cpu-x86_64-0d32a54a-warp1.18.0-newtond15a836c",
+  "reason": "Newton pin 4f3b41ef -> d15a836c (pin11: coupled proxy DAG, WP11)",
+  "schema": "alloy.precision.golden/1"
+}

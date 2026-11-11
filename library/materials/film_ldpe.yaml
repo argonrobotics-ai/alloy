@@ -1,0 +1,44 @@
+schema: alloy.material/1
+name: film_ldpe
+density:
+  value: 931.0
+  source: catalog
+  unc: [918.0, 931.0]
+  note: 'DOC: ExxonMobil LD 06031.CW blown LDPE film "Density | 0.931 g/cm³ | ASTM D1505" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000102911/0/en
+    ; LLDPE C4LL 1018 0.918'
+surface:
+  mu_static:
+    value: 0.75
+    source: model
+    unc: [0.6, 0.9]
+    note: 'ESTIMATE: no datasheet splits static and kinetic; at or above the kinetic value below'
+  mu_dynamic:
+    value: 0.7
+    source: catalog
+    unc: [0.1, 0.8]
+    note: 'DOC: LDPE film without slip additive, Dow 410F "Coefficient of Friction (vs. Itself - Dynamic) 0.60 - 0.80 ASTM
+      D1894", "Slip Additive: none" https://sushengpolymer.com/media/pdf/oISg3F_DOW-LDPE-410F.pdf ; slip-additive grades 0.10-0.20'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.1]
+    note: 'ESTIMATE: a thin film does not bounce; air drag and the sheet itself absorb the impact'
+elastic:
+  youngs:
+    value: 340000000.0
+    source: catalog
+    unc: [172000000.0, 390000000.0]
+    note: 'DOC: LD 06031.CW "Secant Modulus MD - 1% Secant | 50000 psi | 340 MPa | ASTM D882" (TD 390 MPa), 50 um film https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000102911/0/en
+      ; low end an LDPE table "Modulus of elasticity E (MPa) 172" https://pmc.ncbi.nlm.nih.gov/articles/PMC7155928/table/tb1'
+  poisson:
+    value: 0.439
+    source: catalog
+    unc: [0.4, 0.46]
+    note: 'DOC: low-density polyethylene "Poisson''s ratio μ 0.439" https://pmc.ncbi.nlm.nih.gov/articles/PMC7155928/table/tb1'
+plastic:
+  yield_stress:
+    value: 16000000.0
+    source: catalog
+    unc: [9600000.0, 18000000.0]
+    note: 'DOC: LD 06031.CW "Tensile Strength at Yield TD | 2300 psi | 16 MPa" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000102911/0/en
+      ; low end LLDPE C4LL 1018 9.6 MPa. The film route caps in-plane strain at yield / E'

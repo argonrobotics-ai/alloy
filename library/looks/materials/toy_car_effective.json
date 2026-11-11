@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "toy_car_effective",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.72,
+  0.08,
+  0.06
+ ],
+ "metallic": 0.4,
+ "coat": 1.0,
+ "note": "die-cast toy car: glossy painted red"
+}

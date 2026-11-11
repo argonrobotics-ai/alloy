@@ -1,0 +1,42 @@
+schema: alloy.material/1
+name: foam_pu_flexible
+density:
+  value: 25.0
+  source: catalog
+  unc: [20.0, 32.0]
+  note: 'DOC: polyether PU foam datasheets, ''Densidade/ Density 23 – 26 [kg/m3] PQL001 ISO 845'', https://espumaamedida.com/media/pdf/D25kg-m3.pdf,
+    and ''Nominal density range BS EN ISO 845:2009 22.8 – 25.2 kg/m³'', https://www.efoam.co.uk/docs/SF25.pdf'
+surface:
+  mu_static:
+    value: 1.0
+    source: model
+    unc: [0.5, 1.3]
+    note: 'ESTIMATE: no PU-foam value found; proxy open-cell cellular rubber (250 kg/m3) ''Coefficient of static friction
+      against PE foil 0.98 against wood 1.30 against sheet glass 1.26 against cardboard 1.07 against aluminium 1.30 against
+      steel sheet 1.11'', https://coating-finder.forbo.com/Home/Datasheet/16?id_lang=0'
+  mu_dynamic:
+    value: 0.8
+    source: model
+    unc: [0.4, 1.1]
+    note: 'ESTIMATE: below the static proxy; no measured value found'
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.45, 0.75]
+    note: 'ESTIMATE derived from ball-rebound specs (rebound height ratio h/h0, so e = sqrt(h/h0)): high-resilience foam ''Resiliência/
+      Resilience [ball rebound] > 55 [%] PQL005 ASTM D 3574'', https://espumaamedida.com/media/pdf/D25kg-m3.pdf (e > 0.74);
+      standard grades rebound about 40 % (e 0.63, search summary only)'
+elastic:
+  youngs:
+    value: 35000.0
+    source: measured
+    unc: [15000.0, 50000.0]
+    note: 'DOC: ''Young''s moduli of the 25.4 mm, 60 ppi cube (Figure 2) were 47, 34 and 37 kPa for the three orthogonal directions''
+      and ''A 50.8 mm cube of the same foam had Young''s moduli of 15, 15, and 37.5 kPa'' (initial slope in compression, 30
+      kg/m3 open-cell reticulated PU foam), Moore, Jaglinski, Stone and Lakes, Cell. Polym. 26(1) 2007, https://lakeslab.ep.wisc.edu/BulkModFoam07.pdf'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'ESTIMATE: a general statement, not a measurement on this foam: ''If the foam does not deviate too much from isotropy,
+      the Poisson''s ratio is close to 0.3.'', https://lakeslab.ep.wisc.edu/BulkModFoam07.pdf'

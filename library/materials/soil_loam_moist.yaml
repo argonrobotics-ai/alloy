@@ -1,0 +1,54 @@
+schema: alloy.material/1
+name: soil_loam_moist
+density:
+  value: 2650.0
+  source: catalog
+  unc: [2600.0, 2750.0]
+  note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Bulk: typical
+    top soil 15 kN/m3 = 1530 kg/m3, range 11-18 kN/m3 (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf)'
+surface:
+  mu_static:
+    value: 0.554309051452769
+    source: catalog
+    unc: [0.554309051452769, 0.8390996311772799]
+    note: loam on steel delta 29 deg at 12 % moisture, 29-40 deg over 2-25 %; adhesion 0-2.3 kPa (https://www.redalyc.org/pdf/573/57320301.pdf,
+      Cuadro 2)
+  mu_dynamic:
+    value: 0.4988781463074921
+    source: model
+    note: loam on steel delta 29 deg at 12 % moisture, 29-40 deg over 2-25 %; adhesion 0-2.3 kPa (https://www.redalyc.org/pdf/573/57320301.pdf,
+      Cuadro 2); dynamic 0.9 x static (model)
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: soil impacts are almost fully plastic (model)
+elastic:
+  youngs:
+    value: 10000000.0
+    source: model
+    unc: [5000000.0, 50000000.0]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+plastic:
+  friction_angle:
+    value: 0.47123889803846897
+    source: measured
+    unc: [0.3839724354387525, 0.47123889803846897]
+    note: 'loam (39 % sand, 40 % silt, 21 % clay) at 12 % moisture, direct shear: phi 27 deg; 22-27 deg over 2-25 % (https://www.redalyc.org/pdf/573/57320301.pdf,
+      Cuadro 2)'
+  cohesion:
+    value: 24000.0
+    source: measured
+    unc: [15000.0, 24000.0]
+    note: 'same loam at 12 % moisture: c 24 kPa (peak); 15 kPa at 8 %, 0.5 kPa at 15 %, 0 when wet (https://www.redalyc.org/pdf/573/57320301.pdf,
+      Cuadro 2). Direct-shear intercept, not low-stress cohesion: a free column of this card stands to H_c = 5.2 m, so a shallow
+      bed is rigid under gravity and a tool must exceed ~24 kPa to cut it'

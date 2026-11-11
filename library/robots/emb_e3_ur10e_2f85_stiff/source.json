@@ -1,0 +1,40 @@
+{
+ "embodiment": "e3_ur10e_2f85_stiff",
+ "title": "Universal Robots UR10e + Robotiq 2F-85, contact variant solref 0.005 s",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "files": {
+   "universal_robots_ur10e/ur10e.xml": "50775329294a1ad999c663600ac57979bc23ee64f3f09e541ea3298341625658",
+   "robotiq_2f85/2f85.xml": "d48aca5f9151798ffd38111ce4e8b2081f3ec2d4f525161b33643451580010de",
+   "universal_robots_ur10e/LICENSE": "5ec71ccf66c8d03261448f2441a586765b97f2248c860a1ae19689fb1c45cee6",
+   "robotiq_2f85/LICENSE": "3d5edd18d1e22a17666e9bb84270171ed5ac90b192d24e0177fd171708ea2316"
+  }
+ },
+ "licence": "BSD-3-Clause (mujoco_menagerie universal_robots_ur10e, robotiq_2f85)",
+ "world": "table 1.2 x 1.2 m, top z = 0 (robot base on it), floor z = -0.75; box 50 mm 0.1 kg, cylinder r 30 x 100 mm 0.15 kg, T14's recorded mug (library/robots/task_t14, convex pieces, 0.404 kg)",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
+  "the verdict scene here is emb_e3_ur10e_2f85 without TRAIN-FIX 1b's firm contacts: this variant keeps the source's solimp and solmix (alloy.tasks.emb_firm applies to the verdict scene only)",
+  "contact variant of emb_e3_ur10e_2f85: every geom's solref set to [0.005, 1.0] (time constant, damping ratio); a solimp softer than MuJoCo's default (dmin < 0.9; Go2's feet) set to the default; friction, margins, stiffer solimp and everything else as the verdict scene"
+ ],
+ "mug": {
+  "scene": "library/robots/task_t14/scene.xml",
+  "sha256": "52996d90aa41bf24a15a87b1352f77c179e7f5292a33942d8ac1e39fd2a9628d"
+ },
+ "hull_split": 0.00019840716942879277,
+ "init": {
+  "nq": 35,
+  "nv": 32,
+  "nu": 7,
+  "nbody": 26,
+  "ngeom": 98,
+  "init_contacts": 4,
+  "init_deepest_mm": 0.0,
+  "ok": true
+ }
+}

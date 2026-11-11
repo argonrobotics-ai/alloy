@@ -1,0 +1,25 @@
+schema: alloy.object/1
+name: gift_wrapped_present
+shape:
+  mesh:
+    path: meshes/paper_gift_wrapped.obj
+    sha256: 45b2944cf38aebb4a12a087b170f05e2d76c889d4d8b20c19f07a8cacaf3cd05
+material: paper_kraft
+features:
+  thickness:
+    value: 8.2e-05
+    source: catalog
+    note: 'DOC: Nordic Paper GS520 MG Plain Kraft Paper, unbleached, 60 g/m2 "Density kg/m3 534 730 Thickness (um) 82" https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%2060%20GSM.pdf
+      ; wrapping paper round a 187 x 132 x 55 mm box (alloy/tasks/gift_wrap_mesh.py): girth wrap with a 44 mm seam under the
+      box, ends folded (side flaps, tucks, top flap, bottom flap over it); fold lines are the mesh''s OBJ lines, the flat
+      sheet its vt lines'
+  min_wall:
+    value: 8.2e-05
+    source: catalog
+    note: 'DOC: the same sheet "Thickness (um) 82" (contact uses the film route particle radius)'
+budget:
+  particles: 1014
+route:
+  route: cloth_film
+  reason: 'wrapping paper folded round a box: strain-capped membrane, hinge bending with fold memory, crease hinges on its
+    folds; no tear lines (with them it does not rest: docs/known_gaps/paper-unwrap-gift.md)'

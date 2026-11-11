@@ -1,0 +1,42 @@
+schema: alloy.material/1
+name: steel_zinc_plated
+density:
+  value: 7850.0
+  source: catalog
+  unc: [7830.0, 7870.0]
+  note: fastener steel (ISO 898-1 class 8.8); uses 7850
+surface:
+  mu_static:
+    value: 0.16
+    source: catalog
+    unc: [0.1, 0.2]
+    note: zinc-plated thread friction; thread mu 0.14; VDI 2230-1 (2015) class B 0.08-0.16
+  mu_dynamic:
+    value: 0.14
+    source: catalog
+    unc: [0.08, 0.16]
+    note: zinc-plated thread friction; thread mu 0.14; VDI 2230-1 (2015) class B 0.08-0.16
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.5, 0.9]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 205000000000.0
+    source: catalog
+    unc: [200000000000.0, 210000000000.0]
+    note: carbon steel, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+  poisson:
+    value: 0.29
+    source: catalog
+    unc: [0.27, 0.3]
+    note: carbon steel, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+plastic:
+  yield_stress:
+    value: 640000000.0
+    source: catalog
+    note: 'DOC: ISO 898-1 property class 8.8, d ≤ 16 mm (M6, M10), nominal "0.2% elongation limit nominal value 640" (Rm nominal
+      800) https://www.trfastenings.com/knowledge-base/metric-screws/screws-and-bolts-mechanical-properties ; no uniform elongation
+      sourced, so no hardening_modulus (perfectly plastic)'
+  model: j2

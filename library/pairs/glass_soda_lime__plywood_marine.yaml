@@ -1,0 +1,18 @@
+schema: alloy.pair/1
+a: glass_soda_lime
+b: plywood_marine
+mu_static:
+  value: 0.4
+  source: catalog
+  unc: [0.3, 0.5]
+  note: USDA FPL-GTR-190 ch. 4, smooth dry wood on hard smooth surfaces 0.3-0.5
+mu_dynamic:
+  value: 0.4
+  source: catalog
+  unc: [0.3, 0.5]
+  note: USDA FPL-GTR-190 ch. 4, smooth dry wood on hard smooth surfaces 0.3-0.5
+restitution:
+  value: 0.658
+  source: catalog
+  unc: [0.4, 0.7]
+  note: glass marble on concrete, 5 bounces (Bennett & Meepagala 2005); upper bound for plywood

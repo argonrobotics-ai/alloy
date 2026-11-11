@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "material": "soil_sand_dry",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.78,
+  0.7,
+  0.55
+ ],
+ "roughness": 1.0,
+ "texture": "polyhaven:dense_sand",
+ "scale_m": 0.3,
+ "note": "dry sand (soil card): pale tan, matte grains, as sand_silica_dry",
+ "licence": "textures: Poly Haven (polyhaven.com) 'dense_sand', CC0"
+}

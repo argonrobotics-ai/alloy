@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: hinged_box_plywood
+shape:
+  mjcf:
+    path: mjcf/hinged_box.xml
+    body: box
+material: plywood_marine

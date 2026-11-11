@@ -1,0 +1,9 @@
+# P3-2b embodiment e6_g1_stiff: Unitree G1 with Dex3 hands (43 actuators), contact variant solref 0.005 s. Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (BSD-3-Clause (mujoco_menagerie unitree_g1, Unitree Robotics)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e6_g1_stiff/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e6_g1_stiff
+objects: []
+control_dt: 0.002

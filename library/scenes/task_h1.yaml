@@ -1,0 +1,9 @@
+# H1 gear mesh (reference-task, POM module-1 gears 40T/20T on steel shafts, 12,970 explicit contact pairs), converted from r4_h1/model.mjb; trace h1. Replay tier: the whole recorded model as one MJCF robot (alloy.tasks.scenes).
+schema: alloy.scene/1
+robots:
+- path: robots/task_h1/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: task_h1
+objects: []
+control_dt: 0.0001

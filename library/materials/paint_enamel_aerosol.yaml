@@ -1,0 +1,39 @@
+schema: alloy.material/1
+name: paint_enamel_aerosol
+density:
+  value: 1100.0
+  source: model
+  unc: [950.0, 1300.0]
+  note: 'ESTIMATE: the wet film as it lands, after the propellant and the fastest solvent have flashed in flight. The can''s
+    contents are lighter, ''Specific Gravity 0.755'', because they include ''Propane 10-30'' and ''n-Butane 5.0-10'' and ''Acetone
+    15-40'' wt% (Rust-Oleum Painter''s Touch Ultra Cover 2X Spray, safety data sheet 253714, sections 3 and 9, https://www.rustoleum.com/MSDS/ENGLISH/253714.pdf).
+    What lands is acrylic-modified alkyd resin, pigment, barium sulfate and the slower solvents (naphtha, xylene, n-butyl
+    acetate). Gym-Anything''s enamel uses 1100.'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: inelastic'
+fluid:
+  viscosity:
+    value: 0.03
+    source: model
+    unc: [0.02, 0.1]
+    note: 'ESTIMATE: the safety data sheet gives ''Viscosity N.D.'' (253714, section 9). A sprayed solvent enamel levels like
+      a thin oil. Gym-Anything uses a Newtonian 0.03-0.05 Pa s. No yield stress: the can''s data sheet says to apply ''2 or
+      more light coats a few minutes apart to avoid drips and runs'' (Rust-Oleum PT2X-01 technical data, form GDH-1268).'
+  surface_tension:
+    value: 0.028
+    source: model
+    unc: [0.024, 0.032]
+    note: 'ESTIMATE: no measured value found for an alkyd enamel. A paint-drying model uses resin 3.0e-2 N/m and solvent 2.5e-2
+      N/m (Mathematics in Industry 2012, table 6, https://mathematicsinindustry.springeropen.com/articles/10.1186/2190-5983-2-1/tables/6).
+      Acetone is 0.0237 N/m. Gym-Anything uses 0.028.'

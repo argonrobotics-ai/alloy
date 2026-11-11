@@ -1,0 +1,61 @@
+schema: alloy.material/1
+name: paper_board
+density:
+  value: 686.0
+  source: catalog
+  unc: [673.0, 732.0]
+  note: 'DOC: Smurfit Kappa Hansaboard (white lined chipboard) "350 510 48,0 15,5 24,0 8,0" (substance g/m2, caliper um, L&W
+    5 deg stiffness MD / CD mNm, Taber 15 deg MD / CD mNm): 350 g/m2 / 510 um = 686 kg/m3 (the 300 g/m2 row: 732) https://smurfitkappa.com/ch/-/m/files/product-downloads/white-lined-chipboard-documents/hansaboard_-datenblaetter_skhoya_2021.pdf?rev=-1'
+surface:
+  mu_static:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.6]
+    note: 'ESTIMATE: no board sheet lists friction; coated board on paper, lower than brown sack kraft (Billerud QuickFill
+      Brown SE static 0.60, ISO 15359)'
+  mu_dynamic:
+    value: 0.35
+    source: model
+    unc: [0.25, 0.5]
+    note: 'ESTIMATE: below the static value, as for paper on paper'
+  restitution:
+    value: 0.05
+    source: model
+    unc: [0.0, 0.2]
+    note: 'ESTIMATE: board panels barely bounce'
+elastic:
+  youngs:
+    value: 2340000000.0
+    source: model
+    unc: [1330000000.0, 4110000000.0]
+    note: 'ESTIMATE: the plate modulus that gives Hansaboard 350 g/m2 its bending stiffness, E = 12 D (1 - nu^2) / h^3 with
+      D the geometric mean of "48,0 15,5" mNm (L&W 5 deg, MD / CD) at "510" um (MD alone 4.11, CD alone 1.33 GPa) https://smurfitkappa.com/ch/-/m/files/product-downloads/white-lined-chipboard-documents/hansaboard_-datenblaetter_skhoya_2021.pdf?rev=-1
+      ; a layered board is stiffer in bending than in tension for its plate modulus, so in-plane stretch is approximate'
+  poisson:
+    value: 0.23
+    source: model
+    unc: [0.15, 0.35]
+    note: 'ESTIMATE: a measured paper "nu12 0.23" (Nayakanti et al. 2018, SI Table 1) https://arxiv.org/pdf/1707.03673'
+plastic:
+  yield_stress:
+    value: 16800000.0
+    source: model
+    unc: [12000000.0, 42700000.0]
+    note: 'ESTIMATE: a 0.30 mm white-coated paperboard "Ultimate Tensile Strength ... MPa 41.1 (40.2~42.7)" at "Young''s modulus
+      E GPa 5.72" MD (Nagasawa, Kaneko & Adachi 2019, JAMDSM 13(1)) https://www.jstage.jst.go.jp/article/jamdsm/13/1/13_2019jamdsm0004/_pdf
+      : strength / E = 0.72 %; the chipboard taken at the same ratio, 0.0072 x 2.34 GPa = 16.8 MPa'
+film:
+  dead_fold_yield:
+    value: 0.77
+    source: model
+    unc: [0.6, 1.0]
+    note: 'ESTIMATE: creased 0.30 mm board folded to "89.9" deg and released: release angle "theta2,1=46.0 deg" when the fold
+      force reaches zero, "42.7" deg 0.42 s later (Nagasawa et al. 2019, Fig. 9) https://www.jstage.jst.go.jp/article/jamdsm/13/1/13_2019jamdsm0004/_pdf
+      ; the elastic range is 44-46 deg however the release angle is read (springback or remaining fold): 0.77 rad'
+  crease_ratio:
+    value: 200.0
+    source: model
+    unc: [50.0, 800.0]
+    note: 'ESTIMATE: a fold line bends like L* = 200 h of plate, kappa = B / L*; measured on Mylar creases "kappa, scales
+      as B/h ... L*~200h" (Lechenault, Thiria & Adda-Bedia 2014, PRL 112, 244301) https://arxiv.org/pdf/1404.1243 ; no paper
+      crease stiffness found: 0.27 N·m/rad per m at 510 um'

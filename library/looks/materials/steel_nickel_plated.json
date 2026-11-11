@@ -1,0 +1,11 @@
+{
+ "schema": "alloy.look/1",
+ "material": "steel_nickel_plated",
+ "preset": "steel_polished",
+ "base_color": [
+  0.8,
+  0.78,
+  0.73
+ ],
+ "note": "nickel plating: bright, slightly warm silver"
+}

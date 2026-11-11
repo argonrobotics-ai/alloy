@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_wood_floor",
+ "family": "floor",
+ "preset": "wood_oak",
+ "texture": "polyhaven:wood_floor",
+ "res": "2k",
+ "scale_m": 1.7,
+ "bump_m": 0.0005,
+ "source": "https://polyhaven.com/a/wood_floor",
+ "author": "Dimitrios Savva",
+ "licence": "CC0-1.0",
+ "albedo": 0.135,
+ "note": "wood floor: Poly Haven 'Wood Floor', 1.7 m tile, 2k maps"
+}

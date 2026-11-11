@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_terracotta_floor_tiles",
+ "family": "floor",
+ "preset": "plaster_paint",
+ "texture": "polyhaven:terracotta_floor_tiles",
+ "res": "2k",
+ "scale_m": 2.08,
+ "bump_m": 0.0005,
+ "source": "https://polyhaven.com/a/terracotta_floor_tiles",
+ "author": "Dimitrios Savva",
+ "licence": "CC0-1.0",
+ "albedo": 0.031,
+ "note": "terracotta floor tiles: Poly Haven 'Terracotta Floor Tiles', 2.08 m tile, 2k maps"
+}

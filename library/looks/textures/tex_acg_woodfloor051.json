@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_woodfloor051",
+ "family": "floor",
+ "preset": "wood_oak",
+ "texture": "ambientcg:WoodFloor051",
+ "res": "2k",
+ "scale_m": 1.8,
+ "bump_m": 0.0005,
+ "source": "https://ambientcg.com/a/WoodFloor051",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.221,
+ "note": "clean wood floor: ambientCG 'Wood Floor 051', 1.8 m tile, 2k maps"
+}

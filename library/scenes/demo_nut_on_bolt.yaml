@@ -1,0 +1,11 @@
+# Nut-on-bolt demo: M10 thread pair with iso_thread analytic features, washer on the shank.
+schema: alloy.scene/1
+robots: []
+objects:
+  - {object: table_top_plywood, pose: [0, 0, -0.009, 0, 0, 0, 1]}
+  - {object: bolt_m10x60, pose: [0, 0, 0.0664, 0, 0, 0, 1]}
+  - {object: washer_m10, pose: [0.05, 0, 0.001, 0, 0, 0, 1]}
+  - {object: nut_m10, pose: [0.08, 0, 0.004, 0, 0, 0, 1]}
+attachments:
+  - {a: table_top_plywood, b: bolt_m10x60, kind: weld}
+worlds: 8

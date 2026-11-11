@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "fruit_tomato_whole",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.72,
+  0.07,
+  0.04
+ ],
+ "roughness": 0.2,
+ "subsurface": 0.3,
+ "note": "ripe tomato: glossy red skin"
+}

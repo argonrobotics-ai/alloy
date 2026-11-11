@@ -1,0 +1,21 @@
+schema: alloy.object/1
+name: spatula_grill_blade
+shape:
+  primitive:
+    kind: box
+    size: [0.035, 0.0255, 0.000375]
+material: steel_carbon
+loads:
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'tool_fetch: push a toy car into a bin, 1 mm is ample'
+features:
+  thickness:
+    value: 0.00075
+    source: catalog
+    note: blade 0.75 mm
+  min_wall:
+    value: 0.00075
+    source: catalog
+    note: blade 0.75 mm

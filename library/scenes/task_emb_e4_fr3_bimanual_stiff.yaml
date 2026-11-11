@@ -1,0 +1,9 @@
+# P3-2b embodiment e4_fr3_bimanual_stiff: Two Franka FR3 + Franka Hand (bimanual), contact variant solref 0.005 s. Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (Apache-2.0 (mujoco_menagerie franka_fr3, franka_emika_panda hand)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e4_fr3_bimanual_stiff/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e4_fr3_bimanual_stiff
+objects: []
+control_dt: 0.002

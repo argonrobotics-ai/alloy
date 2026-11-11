@@ -1,0 +1,16 @@
+<mujoco model="MuJoCo Model">
+  <compiler angle="radian"/>
+
+  <option ls_tolerance="0.01" ccd_tolerance="1e-06" sleep_tolerance="0.001" gravity="0 0 -9.81" integrator="implicitfast">
+    <flag multiccd="disable"/>
+  </option>
+
+  <worldbody>
+    <geom name="shape_0_0" size="5 5 5" type="plane" friction="0.01 0.005 0.0001" solmix="1e-06" solref="0.02" solimp="0.9 0.95 0.001" gap="0.005" rgba="0 0.3 0.6 1"/>
+    <body name="ball" pos="0 0 0.12" simple="false">
+      <inertial pos="0 0 0" mass="0.0335103" diaginertia="5.36165e-06 5.36165e-06 5.36165e-06"/>
+      <joint name="ball_free_joint" type="free"/>
+      <geom name="shape_1_1" size="0.02" friction="0.01 0.005 0.0001" solref="0.005" solimp="0.9 0.95 0.001" gap="0.005"/>
+    </body>
+  </worldbody>
+</mujoco>

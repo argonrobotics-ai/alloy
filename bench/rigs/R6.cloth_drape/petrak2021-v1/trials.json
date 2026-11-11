@@ -1,0 +1,20 @@
+[
+ {
+  "condition_id": "petrak2021_F1",
+  "file": "trials/petrak2021_F1__0.npz",
+  "index": 0,
+  "split": "valid"
+ },
+ {
+  "condition_id": "petrak2021_F4",
+  "file": "trials/petrak2021_F4__0.npz",
+  "index": 0,
+  "split": "valid"
+ },
+ {
+  "condition_id": "petrak2021_F9",
+  "file": "trials/petrak2021_F9__0.npz",
+  "index": 0,
+  "split": "valid"
+ }
+]

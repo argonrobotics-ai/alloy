@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: gear_pom_20t
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.011, 0.005]
+material: pom_acetal

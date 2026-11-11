@@ -1,0 +1,41 @@
+schema: alloy.material/1
+name: rice_grain
+density:
+  value: 1460.0
+  source: catalog
+  unc: [1400.0, 1500.0]
+  note: 'rice kernel true density: brown rice 1263-1465 kg/m^3 over 8 cultivars at 11.5-13.1 % moisture (https://pmc.ncbi.nlm.nih.gov/articles/PMC5223260/),
+    1460 at the upper end; bulk fill = packing ~0.53 x this'
+surface:
+  mu_static:
+    value: 0.45
+    source: model
+    unc: [0.3, 0.55]
+    note: rice on steel/plastic 0.35-0.5; paddy rice on mild steel 0.36-0.46 (https://funaab.edu.ng/effect-of-variety-and-moisture-content-on-some-engineering-properties-of-paddy-rice/)
+  mu_dynamic:
+    value: 0.4
+    source: model
+    unc: [0.25, 0.5]
+    note: rice on steel/plastic 0.35-0.5 (grain handling literature)
+  restitution:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.5]
+    note: grain-on-grain impacts 0.2-0.5
+elastic:
+  youngs:
+    value: 2000000000.0
+    source: model
+    unc: [500000000.0, 5000000000.0]
+    note: rice kernel compression modulus 0.5-5 GPa (no single source located); model
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.4]
+    note: rice kernel compression modulus 0.5-5 GPa (no single source located); model
+plastic:
+  friction_angle:
+    value: 0.5585053606381855
+    source: catalog
+    unc: [0.4886921905584123, 0.6283185307179586]
+    note: brown rice angle of repose 28.53-36.20 deg over 8 cultivars (https://pmc.ncbi.nlm.nih.gov/articles/PMC5223260/)

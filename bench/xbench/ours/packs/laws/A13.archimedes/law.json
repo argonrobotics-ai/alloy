@@ -1,0 +1,31 @@
+{
+ "law": "A13.archimedes",
+ "dt": 0.000625,
+ "duration_s": 5.0,
+ "quick": false,
+ "stat": {
+  "draft": "mean"
+ },
+ "metrics": {
+  "draft": {
+   "abs": 0.05,
+   "rel": 0.0,
+   "source": "SPEC \u00a75.3 A13 / \u00a75.2 LIQ-4: draft within 5 % (relative), draft/(2r) >= 10"
+  }
+ },
+ "conditions": [
+  {
+   "id": "box16_draft10_r1mm",
+   "params": {
+    "nx": 32,
+    "ny": 32,
+    "nz": 20,
+    "bx": 16,
+    "bz": 12.5,
+    "rho_b": 800.0,
+    "r": 0.001
+   },
+   "particles": 17920
+  }
+ ]
+}

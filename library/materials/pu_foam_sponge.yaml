@@ -1,0 +1,36 @@
+schema: alloy.material/1
+name: pu_foam_sponge
+density:
+  value: 30.0
+  source: catalog
+  unc: [20.0, 45.0]
+  note: flexible polyurethane foam 20-40 kg/m^3 (Ashby foam charts, open-cell sponges)
+surface:
+  mu_static:
+    value: 0.8
+    source: model
+    unc: [0.5, 1.1]
+    note: open-cell foam on hard surfaces 0.6-1.0 (model)
+  mu_dynamic:
+    value: 0.6
+    source: model
+    unc: [0.4, 0.9]
+    note: open-cell foam on hard surfaces 0.6-1.0 (model)
+  restitution:
+    value: 0.2
+    source: model
+    unc: [0.1, 0.4]
+    note: foams are highly dissipative; rebound 0.1-0.4
+elastic:
+  youngs:
+    value: 50000.0
+    source: model
+    unc: [10000.0, 100000.0]
+    note: flexible PU foam 10-100 kPa at 30 kg/m^3, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A foam
+      data; open-cell foams nu ~0.3
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.35]
+    note: flexible PU foam 10-100 kPa at 30 kg/m^3, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A foam
+      data; open-cell foams nu ~0.3

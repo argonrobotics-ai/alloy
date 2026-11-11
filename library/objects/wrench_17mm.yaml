@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: wrench_17mm
+shape:
+  primitive:
+    kind: box
+    size: [0.095, 0.012, 0.0029]
+material: steel_crv

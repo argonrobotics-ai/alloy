@@ -1,0 +1,10 @@
+schema: alloy.material/1
+name: silicone_100kpa
+density: {value: 1100.0, source: measured, note: "request sentence: density 1,100 kg/m3"}
+surface:
+  mu_static: {value: 0.8, source: model, note: "silicone on a smooth plate 0.6-1.2"}
+  mu_dynamic: {value: 0.7, source: model, note: "silicone on a smooth plate 0.5-1.0"}
+  restitution: {value: 0.2, source: model, note: "soft silicone, low rebound"}
+elastic:
+  youngs: {value: 100000.0, source: measured, note: "request sentence: Young's modulus about 100 kPa"}
+  poisson: {value: 0.45, source: model, note: "soft silicone 0.45-0.49; 0.49 is near-incompressible and hard on a tet mesh"}

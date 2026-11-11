@@ -1,0 +1,1093 @@
+{
+ "licence": "Apache-2.0 AND MIT",
+ "provenance": "T12 task scene converted from an Argon reference-task recording (WP13); the arm, gripper and D405 mount meshes are I2RT's, the blocks and ledge Argon's",
+ "source": {
+  "url": "https://github.com/i2rt-robotics/i2rt",
+  "licence": "MIT",
+  "licence_file": "LICENSE.0",
+  "copyright": "Copyright (c) I2RT Robotics",
+  "commits": {
+   "arm links (robot_models/yam/assets, in v1.1)": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3",
+   "gripper, fingertips and D405 mount (v1.4.0)": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "provenance_list": "OSS-1's per-file match (SCR-OSS1-13, 2026-11-07): sha256, then geometry"
+ },
+ "files": {
+  "library/robots/meshes/block_1_vis0-fd99e12ab62f.msh": {
+   "sha256": "fd99e12ab62f10676bee1048d34dd15e4460a63d012623b1be6c5979fcfbaf95",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_1_vis1-d3acc0122709.msh": {
+   "sha256": "d3acc0122709d1b15297fbf5610c002f54cc6f019b5bb103301935ea0678d77a",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_1_vis2-7fcaecb20a83.msh": {
+   "sha256": "7fcaecb20a83cd441789014576caf10c61efb4c05ca78b3ffb1f5bc8a677876e",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_2_vis0-7e5ce78d677c.msh": {
+   "sha256": "7e5ce78d677ce4fb65958d49e822e71a03373fca55161469b9e669b5a0fe49d1",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_2_vis1-111c82b4c6bd.msh": {
+   "sha256": "111c82b4c6bd8015f4da944caede8c187394432b354972e0e83d208b480e5e96",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_2_vis2-45f6de86f58b.msh": {
+   "sha256": "45f6de86f58b6e5f7718e003466b82c2c17e6d1e615509d9d9b4049b19d2cc4a",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_3_vis0-9b8d52fee255.msh": {
+   "sha256": "9b8d52fee255035bd42d105c46cd836960fc356361410f89d420390f6d85a710",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_3_vis1-d47e92f74ba3.msh": {
+   "sha256": "d47e92f74ba34062be93f1cecd5fac870b925436eb6b0ca4ff1870c53dc60a03",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_3_vis2-1af96fb3e483.msh": {
+   "sha256": "1af96fb3e483b73448a155ec455b4c15d4427e8ac8766b804a7209ada0759211",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_4_vis0-0d39280c40a3.msh": {
+   "sha256": "0d39280c40a3f1b7953e97e12b14586bee5bb93b3170a49cfffca610a7c8f863",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_4_vis1-a7fe8ed6d9c2.msh": {
+   "sha256": "a7fe8ed6d9c269345b8a9ec6ed2e45fd638ebd878d6e49c8bb94d74354b02f0f",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_4_vis2-f637a7683f92.msh": {
+   "sha256": "f637a7683f9225d1491ee8d9a2b7ec583c19fccf2bce094d6f37d04af001da71",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_5_vis0-72baecb30cf9.msh": {
+   "sha256": "72baecb30cf938b7487f24665f271f24dcc9df856aa6aac37ad98997cf63c749",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_5_vis1-e76447cd1a26.msh": {
+   "sha256": "e76447cd1a266af5be6172bce3428f3500821b3aee510e20c698db9f572110d5",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_5_vis2-6eb30982aa55.msh": {
+   "sha256": "6eb30982aa55378f94a32598ed106df317cc87b8465f3e982902f34c47ba3fb5",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_6_vis0-fa4629427146.msh": {
+   "sha256": "fa462942714634bb028e43fead5dc66ece5078c57c0e99be61b437be1316cff3",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_6_vis1-639a6771480f.msh": {
+   "sha256": "639a6771480f3aeb79f8524fb99105f8d8db0cffb3f08e26fc0334ad58921052",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_6_vis2-299fb47743c8.msh": {
+   "sha256": "299fb47743c829bc64ed750adb6b212192d7c296026ca49dbec6c7a826bb02e5",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_7_vis0-ccc8d142bfeb.msh": {
+   "sha256": "ccc8d142bfeb132a012aaf657908be1d8b418826ca8fb5b7077d1d17d0db90d6",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_7_vis1-f08c7281e0b2.msh": {
+   "sha256": "f08c7281e0b2970f32a1c1b5087f4892f73d42029f1a307ec6d3ac8d0d69a3d3",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_7_vis2-ee95a8508d94.msh": {
+   "sha256": "ee95a8508d94184f79a2351e2efce28a38dbd1e7ef6a93844474458a6ff8ccea",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_8_vis0-185fd04f2244.msh": {
+   "sha256": "185fd04f2244a8d589a55a5f67df776a7cc6a3ffe6311ee6cc3463109f443c33",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_8_vis1-8a75f00aa773.msh": {
+   "sha256": "8a75f00aa77385862846d260999d1593f74320a9dfaa8397033a356b95d816c2",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/block_8_vis2-8d81a5b560ba.msh": {
+   "sha256": "8d81a5b560ba355cfd5a735ccddcbaa0be73fffc272b2946f0daee0bf99476ca",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/d405_wrist_mount-66434ccab0d4.msh": {
+   "sha256": "66434ccab0d455ed7ba73d6272c5d61a97cde3fc05de108278da6a0f2a4fead0",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_d405_wrist_mount_0_p0-74235f1995c7.msh": {
+   "sha256": "74235f1995c7577e948d839cceb12b2a1e5bc43910574ca201bf8045ba2642fd",
+   "licence": "MIT",
+   "kind": "convex hull of d405_wrist_mount",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_d405_wrist_mount_1_p0-a2ef7b80598e.msh": {
+   "sha256": "a2ef7b80598efcaf7f201880faf8d29541ed0724a3f0651660d54d8fdf71ea5e",
+   "licence": "MIT",
+   "kind": "convex hull of d405_wrist_mount",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_d405_wrist_mount_2_p0-4dfe98adc122.msh": {
+   "sha256": "4dfe98adc1225196089a28ec744d27456babc44b577342711fcb2a168ca804b2",
+   "licence": "MIT",
+   "kind": "convex hull of d405_wrist_mount",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_d405_wrist_mount_3_p0-d0cff13558c4.msh": {
+   "sha256": "d0cff13558c4494be6c4f6bdf64ab4f50b4538aa2c7437d3975e9f36ac2f5401",
+   "licence": "MIT",
+   "kind": "convex hull of d405_wrist_mount",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_0_p0-cda9c759ea4c.msh": {
+   "sha256": "cda9c759ea4c7d0e537f43e1739995a2b51aed004bdbcc1c26abdeffcd32e44b",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_0_p1-072744cd3fa5.msh": {
+   "sha256": "072744cd3fa5e04db6887ff55feb728cbc702e660e57452b638f89907d62fc0d",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_1_p0-9e04ebd4dc06.msh": {
+   "sha256": "9e04ebd4dc06eb5fe8daf2b462665224c9a7047c73caa68230c22bf5167d5d41",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_2_p0-796c9e9a9071.msh": {
+   "sha256": "796c9e9a907173ae62870f7455e675816deb885e7de5aee6aaabf58355589f7a",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_3_p0-bf9ed125b4cf.msh": {
+   "sha256": "bf9ed125b4cfbccafb12c1854b2679e50ff96a6ff4f1e56ec5d650ff5196f4d8",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_3_p1-8e74b81bcba9.msh": {
+   "sha256": "8e74b81bcba975707bcc4f881f9017b06594dc461203cce8712ac2de70594f9c",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_gripper_4_p0-f8d83b897852.msh": {
+   "sha256": "f8d83b8978527c9328281396c524dd3993e9bf3d8179b35b20e32de61f5e0db4",
+   "licence": "MIT",
+   "kind": "convex hull of linear_gripper",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_0_p0-152d1488aa0a.msh": {
+   "sha256": "152d1488aa0a1f38e89065a004651d7574e284170305089045c5a17d6359882f",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_1_p0-1852ff305717.msh": {
+   "sha256": "1852ff305717c498f461d84cf1a9bb8a163edc600c81bfd706d1d53058e70f19",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_2-b9696bbeca73.msh": {
+   "sha256": "b9696bbeca732c49d88e776ec4d1d3684b5395b94ae9cfe04061253d04a0a567",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_3_p0-5229ad32355b.msh": {
+   "sha256": "5229ad32355b43867f6c43783f188ef91271af3e9d802e83918f0a0b68395db6",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_4_p0-44b8f0b9c1d5.msh": {
+   "sha256": "44b8f0b9c1d5bdd616577799e20114d3d000c4a642aa3013aa965cdfafc8ad9c",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_5-fd02a1a600a5.msh": {
+   "sha256": "fd02a1a600a59e2f23897423c2f8d9ee207e75d79f7b67cbf6114ec1f33ee6ba",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_6-2057d335dff3.msh": {
+   "sha256": "2057d335dff3dd872cdecdefc2f06b3b6239dcbc75499534828440d042dec475",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_7-558924d6f59e.msh": {
+   "sha256": "558924d6f59e734484b90edefb8ccf7c3519179502e7bbaa31d8b58948b82208",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_8-3d3b6db8c840.msh": {
+   "sha256": "3d3b6db8c84060e3b50850cd92ffdf9ad6d2ae0e784863f34d4a4ca73092f8bb",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_left_9_p0-5211a0129468.msh": {
+   "sha256": "5211a0129468ab7217273e16d77adcc23aa5ac2dbae13cde8137e8ddb06fce02",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_left",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_0-7d5926e21844.msh": {
+   "sha256": "7d5926e21844e1d1f9e78dd8400d55211e0ed1ef43a6a7bc8da345c815c35169",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_1_p0-856cf5540b0f.msh": {
+   "sha256": "856cf5540b0f1a97e96030dc30a487e65de98048fc2cbcaef1ffa607848c4d2a",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_2_p0-cadda8dce73a.msh": {
+   "sha256": "cadda8dce73ae4287e81cbc4fe37af6896eb5a356df73a08949415353d0b1fd6",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_3_p0-f0221eebecf4.msh": {
+   "sha256": "f0221eebecf4f560d70057488f99c6ed1b605cf975919309393c16fc7e623b0c",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_4_p0-82e3a526c01e.msh": {
+   "sha256": "82e3a526c01eef0dfd4573122ed5b8ebc4d860aafae5f87ddd25cf2a9c7190ac",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_5_p0-7d178dd4c9ef.msh": {
+   "sha256": "7d178dd4c9ef4cdd776632ed613da2193630c35d76ac86aff9c841f03b266253",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_6_p0-964a1f55b0ec.msh": {
+   "sha256": "964a1f55b0eca9d37143590ddaec1ba0cefba3a54e80756e8aa970523db6a245",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_7_p0-daab6ad5923a.msh": {
+   "sha256": "daab6ad5923afc6cf7f12f3586a581950a43ce8472fc66b3b45910e80bbeb03c",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_8_p0-9ecc7d9d1adc.msh": {
+   "sha256": "9ecc7d9d1adc57d4682375fc18d4de964da5308a76edb4cc05042418a32b6e8b",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_linear_tip_right_9_p0-5e2c52c54a0f.msh": {
+   "sha256": "5e2c52c54a0fe2c51ad15256bd11b24612f7d7dd8ab3cd3c11f0426363d2f4bd",
+   "licence": "MIT",
+   "kind": "convex hull of linear_tip_right",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/hull_model2_0_p0-caca0e8ab803.msh": {
+   "sha256": "caca0e8ab803e04338933519973bd9cf0a00ea5026c8847fd6a5e88fe2576dd0",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_1_p0-cab82852e5f0.msh": {
+   "sha256": "cab82852e5f0cb2a73bcbdcbb7f9614f965b4ef6bb63e3af5f8a25a770435975",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_2_p0-bf8a9a5b74a4.msh": {
+   "sha256": "bf8a9a5b74a4bb2e1047784d5e38333dd0e8053d63e4b10235447dcbf4ad3693",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_2_p1-5c7329c123bd.msh": {
+   "sha256": "5c7329c123bddce0006c6d1feeb249ae858658387f0469c5a862ffc45f618073",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_2_p2-167269697214.msh": {
+   "sha256": "1672696972146adfe4635b951bd53e043c22d0973acde4247e2b7c955f316daf",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_2_p3-668e73f8ef75.msh": {
+   "sha256": "668e73f8ef75323b059dddd0ad5afdc78585e0b2a6fe0cc46b9a3afbe0736d8d",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_3_p0-7c6d7e9c61d3.msh": {
+   "sha256": "7c6d7e9c61d335838e70773e93f79fbc9edf0e4b481d1da6008ecf1298f4111f",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2_4_p0-fb536f5466c1.msh": {
+   "sha256": "fb536f5466c152313150823f47fd13cb194ee4d332006421be7a142c6ddda54b",
+   "licence": "MIT",
+   "kind": "convex hull of model2",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__10_0_p0-7364b7fdea47.msh": {
+   "sha256": "7364b7fdea475fc8c827bb21fee28d1480bb54b8165d9670576507d1308934bb",
+   "licence": "MIT",
+   "kind": "convex hull of model2__10",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__10_1_p0-dae54a772c08.msh": {
+   "sha256": "dae54a772c08a832755ed9b08868b99c7aa5541590a8c0f71f6fc418b3b7a2e1",
+   "licence": "MIT",
+   "kind": "convex hull of model2__10",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__10_2_p0-5291f89e8472.msh": {
+   "sha256": "5291f89e8472d3b0d3d349872104790faaf904bedb06c71f398b1f4b34540c7a",
+   "licence": "MIT",
+   "kind": "convex hull of model2__10",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__10_3_p0-d4fc72a0acec.msh": {
+   "sha256": "d4fc72a0acec69ed1151b337d0699f22ac1361ecd533da782df837c82555f380",
+   "licence": "MIT",
+   "kind": "convex hull of model2__10",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__10_4_p0-836a370f3816.msh": {
+   "sha256": "836a370f3816bd39909d489493d3a2ad24eb1ecb15ec649177b1f18610616f1d",
+   "licence": "MIT",
+   "kind": "convex hull of model2__10",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_0_p0-3765cb1afc2a.msh": {
+   "sha256": "3765cb1afc2ad42432aec9043e432ecfec900e7231b9fe5cd4fe77790858b803",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_1_p0-453de747d2be.msh": {
+   "sha256": "453de747d2be00821a5888ce24ee03e903d2ba4b8c883797a584f49bd4f6ae2f",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_2_p0-d12408f3a316.msh": {
+   "sha256": "d12408f3a3169cec1bffa116c4da3653dba842ebf4ed8681ec45752c22d99a68",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_3_p0-ba1b44f8dbcc.msh": {
+   "sha256": "ba1b44f8dbcc3aaac19945d59dbfaa9762649cc2e637028d2ac96e8c409195b3",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_3_p1-535eac9a142d.msh": {
+   "sha256": "535eac9a142dfd6c6839b8f5470b7047ac3974ff0d94143f9dbde87f838b829d",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_3_p2-2c7e3bbdcf78.msh": {
+   "sha256": "2c7e3bbdcf78b6fa43b40fe242d4dd92aec512ea58a1bb1481bd9518c3fc322c",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__11_4_p0-75c47aa6a498.msh": {
+   "sha256": "75c47aa6a4987193d9ee1a0e3f89a8be13a20672bcdb9602efa4e5bae049b34f",
+   "licence": "MIT",
+   "kind": "convex hull of model2__11",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__2_0_p0-d19ae910f9c0.msh": {
+   "sha256": "d19ae910f9c0e3b3e397a1c7ddc73fa1feb253fbc2fc620108b5d83502744d46",
+   "licence": "MIT",
+   "kind": "convex hull of model2__2",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__2_1_p0-56d546cc6bee.msh": {
+   "sha256": "56d546cc6beec92455c21ba1d177c992c87a4b4254567a921a9caaf973742ed2",
+   "licence": "MIT",
+   "kind": "convex hull of model2__2",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__2_2_p0-fd3bc4f73b98.msh": {
+   "sha256": "fd3bc4f73b98d4228b73d876ee1adbb7f21d5e687585d978dc249b88b6ffbcf9",
+   "licence": "MIT",
+   "kind": "convex hull of model2__2",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__2_3_p0-1d68c027a387.msh": {
+   "sha256": "1d68c027a38785356ba94e7782d59d5928129a0c909f21bafed223fb3483aa50",
+   "licence": "MIT",
+   "kind": "convex hull of model2__2",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__2_4_p0-d66911622a6e.msh": {
+   "sha256": "d66911622a6eb036a4ebc68b9f523f143ae444959f29603b282aedfe556f8d61",
+   "licence": "MIT",
+   "kind": "convex hull of model2__2",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_0_p0-5e9e48c439d0.msh": {
+   "sha256": "5e9e48c439d0b7ed347a2cb12187771b1b64dc25058c12a179fde9f8b50f73ad",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_0_p1-778feb3c0d6e.msh": {
+   "sha256": "778feb3c0d6efd017c29fa61c62fce69bac2c831efb66d3dbb12965e78aa1a72",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_1_p0-e2bba5aa72ca.msh": {
+   "sha256": "e2bba5aa72cade980f0c3108340526b588b9dce03517ef1417841d6063015d6d",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_1_p1-ea30344bf1da.msh": {
+   "sha256": "ea30344bf1da4292a2ebc2181580d5a015356f84785ed53fab4db51e5fb84109",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_2_p0-62c6afa40cdb.msh": {
+   "sha256": "62c6afa40cdb929723a2b17a06a9b803a9c03660f0e49be90739dce51024a7b8",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_3_p0-dad4890808a1.msh": {
+   "sha256": "dad4890808a1f5247b920fab2ab8c14794dc48bbf328ac155b9ba519bcf62347",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__3_4_p0-7cbf556716b9.msh": {
+   "sha256": "7cbf556716b93858ff2563250fa4cc9f019c8c8cb209add96b45ad9f4d92211c",
+   "licence": "MIT",
+   "kind": "convex hull of model2__3",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_0_p0-07f3b98915da.msh": {
+   "sha256": "07f3b98915da8a854c7aba9f9ded6ee6dd5b8dc8fec9c8b0718496285b7196a8",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_0_p1-0cbd37893c7d.msh": {
+   "sha256": "0cbd37893c7da325d8f0e7edaccd6754e999c5df79fee1b50402d7d82594761a",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_1_p0-45abf61a1fe2.msh": {
+   "sha256": "45abf61a1fe234dedf9f014d0e8f80643be082b2b596372fdf1f9e6fb24ac083",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_1_p1-9745a5867c44.msh": {
+   "sha256": "9745a5867c44ee2679c16b8d60e679a297d34ecb4198a09a815e7cac5c2fb755",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_2_p0-8fbbda9fa1b7.msh": {
+   "sha256": "8fbbda9fa1b72a23eeace90848b018c2c0b09641ffb9db617636b80d0a59360b",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_3_p0-8af70a5dc74c.msh": {
+   "sha256": "8af70a5dc74c811cce8d29e014a4fc0b5c69e5125108d60be584e8e85fe3330b",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__4_4_p0-845ce2aa7932.msh": {
+   "sha256": "845ce2aa79327c9cf66f9350d452d2d51aeb97244d4ece9123335049650025cb",
+   "licence": "MIT",
+   "kind": "convex hull of model2__4",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_0_p0-1b80c11b322e.msh": {
+   "sha256": "1b80c11b322e1e9ec495e5d9361df88458e2dc70198506a0ee0874c4ba221741",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_0_p1-eda18f003cf1.msh": {
+   "sha256": "eda18f003cf1dea827c788d5994ebc191bda2d0f57e4366107837c73490b7503",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_1_p0-ea1480a8a958.msh": {
+   "sha256": "ea1480a8a9580e122c40ac3a3d9034900793f946d22f9d8107c234a9382f6c75",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_2_p0-e815015967f8.msh": {
+   "sha256": "e815015967f8ec7688f190ba8c2bbcded41f7943e6f91163489e44c1e164f063",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_3_p0-ce50fd35d4fb.msh": {
+   "sha256": "ce50fd35d4fbe86752a23a77fa257f1d86a4c368a29025ac73e9de94887d2618",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__5_3_p1-adcb8dfe729f.msh": {
+   "sha256": "adcb8dfe729f88a0430e9a7c536df03b1c12790a02e4c83a896cd46039df4921",
+   "licence": "MIT",
+   "kind": "convex hull of model2__5",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_0_p0-df027ef8caf5.msh": {
+   "sha256": "df027ef8caf546dbba736a4ea36afd7878f46a3dce503d180842000d05bba876",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_0_p1-536cbcc7fb62.msh": {
+   "sha256": "536cbcc7fb623fefb449a0f4d1db9c5762c62121b742f6a4dd4f750fd78a7975",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_1_p0-da6009e3903b.msh": {
+   "sha256": "da6009e3903b9914a4d16960a0d7b86cd6fecc74b83de8172bad310416306add",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_1_p1-9571c5584907.msh": {
+   "sha256": "9571c55849070dfd26a23988f68c2a1a6525cd77871521f1dc824d5d6273c2b2",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_2_p0-c6d746772b6f.msh": {
+   "sha256": "c6d746772b6f4d0940b064e2610ff25df8746d6a58130804a9bd2e2ec7a3c7f6",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_3_p0-79ae434adad6.msh": {
+   "sha256": "79ae434adad69c670bd341abb56c025575f264e30109b351f1a6fbdae47f61b7",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__6_4_p0-db7ea61efb40.msh": {
+   "sha256": "db7ea61efb40ee1ec595add0f85345ab18bffb7a893a946a1397921563be903c",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__7_0_p0-99c97ba8b284.msh": {
+   "sha256": "99c97ba8b284de99609a7f353e8be1cede9cfed57e00f4c678bfcac0966a9c29",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__7_1_p0-32982da785f0.msh": {
+   "sha256": "32982da785f0e74b37ccbd989e7657f947a5c61640922cdf36d0c7e871df9656",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__7_2_p0-876c8ccf9b34.msh": {
+   "sha256": "876c8ccf9b348afe5e05718321627d55d6ec15250463ecf88879a8e948b2e4b8",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__7_3_p0-b8270ecb0f4f.msh": {
+   "sha256": "b8270ecb0f4fb83610f1418bdc4a4dbc2a367d56d42a6cd9ed15fb9340af9617",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__7_3_p1-10179a275029.msh": {
+   "sha256": "10179a275029c3e74f16e2d66d9eceab9c298ec0d18decb2e788d37444ef0029",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_0_p0-7c56f9cb7bae.msh": {
+   "sha256": "7c56f9cb7bae58af966e9849d76f5543bfaeb319adb9be05a5a596ac3de5215c",
+   "licence": "MIT",
+   "kind": "convex hull of model2__8",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_1_p0-7ca2c80c14b6.msh": {
+   "sha256": "7ca2c80c14b6beebc90901b8401eb97058b0d92cfc2b8aa5b3e92f2d9e15d7c4",
+   "licence": "MIT",
+   "kind": "convex hull of model2__7",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_2_p0-a971a1b666e8.msh": {
+   "sha256": "a971a1b666e8eab761fdc3e58f95edb4b42602bca7cc9599e13439a06f735bd3",
+   "licence": "MIT",
+   "kind": "convex hull of model2__8",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_2_p1-a3254724e947.msh": {
+   "sha256": "a3254724e947390bdbef938df1de718ca41ebc5fbe7be80202cba6e3e4702d8f",
+   "licence": "MIT",
+   "kind": "convex hull of model2__8",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_3_p0-3a9c05d7ac98.msh": {
+   "sha256": "3a9c05d7ac9829a4af2c7f8f621b05774148996bb96e69aad8372bc71e2c09f0",
+   "licence": "MIT",
+   "kind": "convex hull of model2__8",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_3_p1-b377a112cc76.msh": {
+   "sha256": "b377a112cc7690f3cd31145e55e69c92077c74b76ed10d0f28375ce4328827f1",
+   "licence": "MIT",
+   "kind": "convex hull of model2__8",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__8_4_p0-081be9ac43f2.msh": {
+   "sha256": "081be9ac43f23275d6c8b2ac232e7483063860e5761011ec452f1c9543f872b1",
+   "licence": "MIT",
+   "kind": "convex hull of model2__6",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__9_0_p0-1bf4fc2870f9.msh": {
+   "sha256": "1bf4fc2870f9c44448ca3f2f38c3df25c302fdd84ead92b6747026973f04a83e",
+   "licence": "MIT",
+   "kind": "convex hull of model2__9",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__9_0_p1-faa6a4c3be48.msh": {
+   "sha256": "faa6a4c3be4831b57cf93436f23727a0aad132150f89b9f07665b1eaab78d8bc",
+   "licence": "MIT",
+   "kind": "convex hull of model2__9",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__9_1_p0-a57ec139a083.msh": {
+   "sha256": "a57ec139a083964b5876db53610b411e5084f40df74faa4a678c9b1e69679865",
+   "licence": "MIT",
+   "kind": "convex hull of model2__9",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__9_2-a0fbc70f55e8.msh": {
+   "sha256": "a0fbc70f55e83ca941d4615c49b1c1cf5495e7f81e29b97d01e823970d12b340",
+   "licence": "MIT",
+   "kind": "convex hull of model2__9",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/hull_model2__9_3_p0-20665831afcd.msh": {
+   "sha256": "20665831afcde7a6684a85ae396765359a93f72a8d0d28348984a51a907f3a30",
+   "licence": "MIT",
+   "kind": "convex hull of model2__9",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/ledge_vis0-25b901d33364.msh": {
+   "sha256": "25b901d333645648e9f222e1b42ded32fc009f2dafca4cf20ca059ea827b42f7",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/ledge_vis1-6ac0ba1cc395.msh": {
+   "sha256": "6ac0ba1cc395c44f4eed1e2a07728f7d2c58ffb0e292c0238551cf6253ef44e4",
+   "licence": "Apache-2.0",
+   "kind": "source mesh",
+   "match": "Argon's own reference-task geometry"
+  },
+  "library/robots/meshes/linear_gripper-acd3610a25b9.msh": {
+   "sha256": "acd3610a25b93d18a9828b26c7ec2f5df8c88a6a801eabb6b6eb7b25299fc14e",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/linear_tip_left-a1a2e14394d0.msh": {
+   "sha256": "a1a2e14394d05dd5d6d80c35d7eef3b6cd1beaeee36c944d4c7bad802fb8746a",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/linear_tip_right-6310491ba59c.msh": {
+   "sha256": "6310491ba59ce0b9e390a436107a8372c1c56215da45f62beae0992f18cf3ff1",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "library/robots/meshes/model2-627588375aba.msh": {
+   "sha256": "627588375aba1150ee078928d411802d8b8c1da7c05a8017994b9261971c96be",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__10-b8de3e6a87f2.msh": {
+   "sha256": "b8de3e6a87f20d4fcf5f17d4476a19d293a0b2f11e446bf1c480608c33fd0150",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__11-88f6dc55cf6a.msh": {
+   "sha256": "88f6dc55cf6ab674d0cd61f1c4e8b5063596f060c8b6c63f5e858027038e79cd",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__2-47dada9b84fa.msh": {
+   "sha256": "47dada9b84fac6a0405977700dae8c3abb1a24ed79684927219155321b4a1bc3",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__3-eb1c59d287c2.msh": {
+   "sha256": "eb1c59d287c2aed0acfd0894b3ef9e163721350c7b5f4d172f1106766318d819",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__4-315c74f6a01b.msh": {
+   "sha256": "315c74f6a01b9ecbc6cafae14c96f0a28e71d4e871a4f44a69763330dabdb5d5",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__5-d93586571749.msh": {
+   "sha256": "d93586571749018bf52b8b32c8add997c5c265381d25261a7e794065c2bd0df6",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__6-4684f7b4cee2.msh": {
+   "sha256": "4684f7b4cee2b25258f4fb3596d90f8e5faee766960186b1a462617cd463536a",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__7-4131f0a20c8e.msh": {
+   "sha256": "4131f0a20c8efa9cb96779ec5272b460a43d8d607f9f1fa65ec4b7ff8ff70dd6",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__8-512ea32587a2.msh": {
+   "sha256": "512ea32587a2c3ef25f0eefa5c742a010ff8a813a55e1914ffe635c623e539c6",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "library/robots/meshes/model2__9-bb5c36ca226f.msh": {
+   "sha256": "bb5c36ca226febb2d18d2e27ba7aad6cfa7dc1a420acfa6091c249740c79d722",
+   "licence": "MIT",
+   "kind": "source mesh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  }
+ }
+}

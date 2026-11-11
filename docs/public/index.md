@@ -1,0 +1,41 @@
+# Alloy
+
+A physics engine for robot learning: robots, cloth, liquids and cables in one scene, in many worlds on one GPU.
+
+```bash
+pip install alloy-engine
+```
+
+```python
+import alloy
+
+scene = alloy.Scene(dt=0.01)
+scene.add_ground()
+scene.add_box("table", size=(0.6, 0.6, 0.4), pos=(0, 0, 0.2), static=True)
+scene.add_box("block", size=(0.05, 0.05, 0.05), pos=(0, 0, 0.6), mass=0.2)
+sim = alloy.build(scene)
+sim.run(1.0)
+print(sim.state(world=0)["block.pos"].round(3), sim.check()["ok"])
+sim.render(width=640, height=480, path="block.png")
+```
+
+```text
+[0.    0.    0.425] True
+```
+
+![A small block resting on a table](img/block.png)
+
+The block falls 17.5 cm, lands on the table and rests with its centre at 0.425 m. `True` means every world passed
+its health checks.
+
+## Where next
+
+- [Quickstart](quickstart.md): your first simulation and image, step by step.
+- [Use Alloy with your coding agent](agents.md): one prompt to paste, and what to ask for.
+- Guides: [Robots](guides/robots.md), [Train with RL](guides/rl.md),
+  [Imitation learning](guides/imitation.md), [Camera](guides/camera.md), [Liquids](guides/liquids.md),
+  [Cloth](guides/cloth.md), [Cables](guides/cables.md), [World health](guides/health.md).
+- [Errors and fixes](errors.md): what each error means and what to change.
+- [Known limits](limits.md): what does not work yet, one line each.
+
+Alloy is built on Newton, MuJoCo Warp and Warp. It runs on an NVIDIA GPU, or on the CPU when there is none.

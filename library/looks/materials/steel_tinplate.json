@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "steel_tinplate",
+ "preset": "steel_polished",
+ "roughness": 0.18,
+ "note": "tinplate: bright, lightly hazy"
+}

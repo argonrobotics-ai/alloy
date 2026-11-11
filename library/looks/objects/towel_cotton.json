@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "object": "towel_cotton",
+ "materials": {
+  "body": {
+   "preset": "cotton_terry",
+   "tex_tint": false,
+   "scale_m": 0.365
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "terry towel: the blue terry scan in its own colour, scale of the towel material of alloy-assets looks/clips/sc4/c7_look.json",
+ "licence": "textures: Poly Haven (polyhaven.com) 'terry_cloth', CC0"
+}

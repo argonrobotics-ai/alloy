@@ -1,0 +1,13 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py b/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
+index 1a86f6fa8..c6c8067f3 100644
+--- a/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
++++ b/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
+@@ -222,6 +222,8 @@ def _required_specifier(package: str, requirements: Iterable[str]) -> str | None
+ 
+ 
+ def _warn_if_mujoco_versions_mismatch(mujoco: Any, mujoco_warp: Any) -> None:
++    if __name__.startswith("alloy._vendor."):  # Alloy (vendored-version-check): "newton" is a user's own copy, if any
++        return
+     try:
+         metadata_text = importlib_metadata.distribution("newton").read_text("METADATA")
+     except importlib_metadata.PackageNotFoundError:

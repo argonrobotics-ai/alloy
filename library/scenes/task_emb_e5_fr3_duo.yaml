@@ -1,0 +1,9 @@
+# P3-2b embodiment e5_fr3_duo: Franka Mobile FR3 Duo (TMR base, spine, two FR3 + hands). Built by alloy.tasks.emb_scene from https://github.com/frankarobotics/franka_description@7aeeddc449ed (Apache-2.0 (frankarobotics/franka_description; gains and pose: gym-anything/robotics mobile-fr3-duo, MIT)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e5_fr3_duo/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e5_fr3_duo
+objects: []
+control_dt: 0.002

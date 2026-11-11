@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_terry_cloth",
+ "family": "fabric",
+ "preset": "cotton_terry",
+ "texture": "polyhaven:terry_cloth",
+ "res": "1k",
+ "scale_m": 0.37,
+ "bump_m": 0.0012,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/terry_cloth",
+ "author": "colormass, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.07,
+ "note": "blue terry cloth (towel): Poly Haven 'Terry Cloth', 0.37 m tile, 1k maps"
+}

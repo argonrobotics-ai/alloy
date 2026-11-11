@@ -1,0 +1,283 @@
+<mujoco model="MuJoCo Model">
+  <compiler angle="radian"/>
+
+  <option ls_tolerance="0.01" ccd_tolerance="1e-06" sleep_tolerance="0.001" gravity="0 0 0" integrator="implicitfast">
+    <flag multiccd="disable"/>
+  </option>
+
+  <worldbody>
+    <geom name="shape_0_0" size="0.2 0.05" quat="0.707107 0.707107 0 0" type="capsule" conaffinity="-2" friction="0.2 0 0" solref="0.02" solimp="0.9 0.95 0.001" gap="0.005"/>
+    <body name="law0_0" pos="-0.201367 0 -0.0508083" quat="0.707107 0 -0.707107 0" simple="false">
+      <inertial pos="0 0 0" mass="0.000278446" diaginertia="1.39223e-10 3.02765e-09 3.02765e-09"/>
+      <joint name="joint_1" type="free"/>
+      <geom name="shape_1_1" size="0.001 0.00464536" quat="0.707107 0 0.707107 0" type="capsule" contype="2" conaffinity="-3" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+      <body name="law0_1" pos="0.0169361 0 0" simple="false">
+        <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+        <joint name="joint_2_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+        <joint name="joint_2_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+        <joint name="joint_2_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+        <geom name="shape_2_2" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="2" conaffinity="-3" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+        <body name="law0_2" pos="0.0225815 0 0" simple="false">
+          <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+          <joint name="joint_3_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+          <joint name="joint_3_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+          <joint name="joint_3_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+          <geom name="shape_3_3" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="4" conaffinity="-5" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+          <body name="law0_3" pos="0.0225637 0 -0.000633076" quat="0.999607 0 0.0280463 0" simple="false">
+            <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+            <joint name="joint_4_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+            <joint name="joint_4_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+            <joint name="joint_4_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+            <geom name="shape_4_4" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="4" conaffinity="-5" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+            <body name="law0_4" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+              <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+              <joint name="joint_5_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+              <joint name="joint_5_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+              <joint name="joint_5_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+              <geom name="shape_5_5" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="8" conaffinity="-9" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+              <body name="law0_5" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                <joint name="joint_6_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                <joint name="joint_6_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                <joint name="joint_6_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                <geom name="shape_6_6" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="8" conaffinity="-9" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                <body name="law0_6" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                  <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                  <joint name="joint_7_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                  <joint name="joint_7_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                  <joint name="joint_7_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                  <geom name="shape_7_7" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="16" conaffinity="-17" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                  <body name="law0_7" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                    <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                    <joint name="joint_8_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                    <joint name="joint_8_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                    <joint name="joint_8_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                    <geom name="shape_8_8" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="16" conaffinity="-17" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                    <body name="law0_8" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                      <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                      <joint name="joint_9_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                      <joint name="joint_9_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                      <joint name="joint_9_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                      <geom name="shape_9_9" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="32" conaffinity="-33" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                      <body name="law0_9" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                        <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                        <joint name="joint_10_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                        <joint name="joint_10_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                        <joint name="joint_10_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                        <geom name="shape_10_10" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="32" conaffinity="-33" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                        <body name="law0_10" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                          <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                          <joint name="joint_11_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                          <joint name="joint_11_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                          <joint name="joint_11_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                          <geom name="shape_11_11" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="64" conaffinity="-65" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                          <body name="law0_11" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                            <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                            <joint name="joint_12_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                            <joint name="joint_12_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                            <joint name="joint_12_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                            <geom name="shape_12_12" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="64" conaffinity="-65" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                            <body name="law0_12" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                              <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                              <joint name="joint_13_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                              <joint name="joint_13_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                              <joint name="joint_13_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                              <geom name="shape_13_13" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="128" conaffinity="-129" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                              <body name="law0_13" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                <joint name="joint_14_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                <joint name="joint_14_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                <joint name="joint_14_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                <geom name="shape_14_14" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="128" conaffinity="-129" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                <body name="law0_14" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                  <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                  <joint name="joint_15_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                  <joint name="joint_15_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                  <joint name="joint_15_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                  <geom name="shape_15_15" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="256" conaffinity="-257" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                  <body name="law0_15" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                    <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                    <joint name="joint_16_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                    <joint name="joint_16_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                    <joint name="joint_16_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                    <geom name="shape_16_16" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="256" conaffinity="-257" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                    <body name="law0_16" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                      <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                      <joint name="joint_17_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                      <joint name="joint_17_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                      <joint name="joint_17_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                      <geom name="shape_17_17" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="512" conaffinity="-513" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                      <body name="law0_17" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                        <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                        <joint name="joint_18_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                        <joint name="joint_18_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                        <joint name="joint_18_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                        <geom name="shape_18_18" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="512" conaffinity="-513" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                        <body name="law0_18" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                          <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                          <joint name="joint_19_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                          <joint name="joint_19_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                          <joint name="joint_19_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                          <geom name="shape_19_19" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="1024" conaffinity="-1025" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                          <body name="law0_19" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                            <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                            <joint name="joint_20_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                            <joint name="joint_20_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                            <joint name="joint_20_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                            <geom name="shape_20_20" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="1024" conaffinity="-1025" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                            <body name="law0_20" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                              <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                              <joint name="joint_21_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                              <joint name="joint_21_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                              <joint name="joint_21_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                              <geom name="shape_21_21" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="2048" conaffinity="-2049" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                              <body name="law0_21" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                <joint name="joint_22_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                <joint name="joint_22_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                <joint name="joint_22_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                <geom name="shape_22_22" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="2048" conaffinity="-2049" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                <body name="law0_22" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                  <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                  <joint name="joint_23_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                  <joint name="joint_23_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                  <joint name="joint_23_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                  <geom name="shape_23_23" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="4096" conaffinity="-4097" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                  <body name="law0_23" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                    <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                    <joint name="joint_24_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                    <joint name="joint_24_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                    <joint name="joint_24_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                    <geom name="shape_24_24" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="4096" conaffinity="-4097" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                    <body name="law0_24" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                      <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                      <joint name="joint_25_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                      <joint name="joint_25_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                      <joint name="joint_25_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                      <geom name="shape_25_25" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="8192" conaffinity="-8193" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                      <body name="law0_25" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                        <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                        <joint name="joint_26_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                        <joint name="joint_26_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                        <joint name="joint_26_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                        <geom name="shape_26_26" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="8192" conaffinity="-8193" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                        <body name="law0_26" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                          <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                          <joint name="joint_27_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                          <joint name="joint_27_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                          <joint name="joint_27_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                          <geom name="shape_27_27" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="16384" conaffinity="-16385" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                          <body name="law0_27" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                            <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                            <joint name="joint_28_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                            <joint name="joint_28_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                            <joint name="joint_28_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                            <geom name="shape_28_28" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="16384" conaffinity="-16385" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                            <body name="law0_28" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                              <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                              <joint name="joint_29_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                              <joint name="joint_29_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                              <joint name="joint_29_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                              <geom name="shape_29_29" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="32768" conaffinity="-32769" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                              <body name="law0_29" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                                <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                                <joint name="joint_30_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                                <joint name="joint_30_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                <joint name="joint_30_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                <geom name="shape_30_30" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="32768" conaffinity="-32769" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                                <body name="law0_30" pos="0.0225105 0 -0.00126416" quat="0.998427 0 0.0560704 0" simple="false">
+                                                                  <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                                  <joint name="joint_31_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                                  <joint name="joint_31_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                  <joint name="joint_31_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                  <geom name="shape_31_31" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="65536" conaffinity="-65537" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                                  <body name="law0_31" pos="0.0225637 0 -0.000633076" quat="0.999607 0 0.0280463 0" simple="false">
+                                                                    <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                                    <joint name="joint_32_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                                    <joint name="joint_32_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                    <joint name="joint_32_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                    <geom name="shape_32_32" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="65536" conaffinity="-65537" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                                    <body name="law0_32" pos="0.0225815 0 0" simple="false">
+                                                                      <inertial pos="0 0 0" mass="0.000556893" diaginertia="2.78446e-10 2.38035e-08 2.38035e-08"/>
+                                                                      <joint name="joint_33_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                                      <joint name="joint_33_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.0112907 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                      <joint name="joint_33_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.0112907 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                      <geom name="shape_33_33" size="0.001 0.0102907" quat="0.707107 0 0.707107 0" type="capsule" contype="131072" conaffinity="-131073" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                                      <body name="law0_33" pos="0.0169361 0 0" simple="false">
+                                                                        <inertial pos="0 0 0" mass="0.000278446" diaginertia="1.39223e-10 3.02765e-09 3.02765e-09"/>
+                                                                        <joint name="joint_34_ang0" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.00564536 0 0" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+                                                                        <joint name="joint_34_ang1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000132852" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="3.32131e-08" pos="-0.00564536 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                        <joint name="joint_34_ang2" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" stiffness="0.000102194" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" armature="1e-06" damping="2.55485e-08" pos="-0.00564536 0 0" axis="1 0 0" limited="false" actuatorfrclimited="true"/>
+                                                                        <geom name="shape_34_34" size="0.001 0.00464536" quat="0.707107 0 0.707107 0" type="capsule" contype="131072" conaffinity="-131073" friction="0.2 0 0" solref="0.00105536" solimp="0.9 0.95 0.001" gap="0.005"/>
+                                                                      </body>
+                                                                    </body>
+                                                                  </body>
+                                                                </body>
+                                                              </body>
+                                                            </body>
+                                                          </body>
+                                                        </body>
+                                                      </body>
+                                                    </body>
+                                                  </body>
+                                                </body>
+                                              </body>
+                                            </body>
+                                          </body>
+                                        </body>
+                                      </body>
+                                    </body>
+                                  </body>
+                                </body>
+                              </body>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="law0_0" body2="law0_1"/>
+    <exclude body1="law0_1" body2="law0_2"/>
+    <exclude body1="law0_2" body2="law0_3"/>
+    <exclude body1="law0_3" body2="law0_4"/>
+    <exclude body1="law0_4" body2="law0_5"/>
+    <exclude body1="law0_5" body2="law0_6"/>
+    <exclude body1="law0_6" body2="law0_7"/>
+    <exclude body1="law0_7" body2="law0_8"/>
+    <exclude body1="law0_8" body2="law0_9"/>
+    <exclude body1="law0_9" body2="law0_10"/>
+    <exclude body1="law0_10" body2="law0_11"/>
+    <exclude body1="law0_11" body2="law0_12"/>
+    <exclude body1="law0_12" body2="law0_13"/>
+    <exclude body1="law0_13" body2="law0_14"/>
+    <exclude body1="law0_14" body2="law0_15"/>
+    <exclude body1="law0_15" body2="law0_16"/>
+    <exclude body1="law0_16" body2="law0_17"/>
+    <exclude body1="law0_17" body2="law0_18"/>
+    <exclude body1="law0_18" body2="law0_19"/>
+    <exclude body1="law0_19" body2="law0_20"/>
+    <exclude body1="law0_20" body2="law0_21"/>
+    <exclude body1="law0_21" body2="law0_22"/>
+    <exclude body1="law0_22" body2="law0_23"/>
+    <exclude body1="law0_23" body2="law0_24"/>
+    <exclude body1="law0_24" body2="law0_25"/>
+    <exclude body1="law0_25" body2="law0_26"/>
+    <exclude body1="law0_26" body2="law0_27"/>
+    <exclude body1="law0_27" body2="law0_28"/>
+    <exclude body1="law0_28" body2="law0_29"/>
+    <exclude body1="law0_29" body2="law0_30"/>
+    <exclude body1="law0_30" body2="law0_31"/>
+    <exclude body1="law0_31" body2="law0_32"/>
+    <exclude body1="law0_32" body2="law0_33"/>
+  </contact>
+</mujoco>

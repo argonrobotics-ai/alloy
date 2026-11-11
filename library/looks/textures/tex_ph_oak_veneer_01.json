@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_oak_veneer_01",
+ "family": "wood",
+ "preset": "wood_oak",
+ "texture": "polyhaven:oak_veneer_01",
+ "res": "1k",
+ "scale_m": 1.83,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/oak_veneer_01",
+ "author": "Jenelle van Heerden",
+ "licence": "CC0-1.0",
+ "albedo": 0.235,
+ "note": "oak veneer: Poly Haven 'Oak Veneer 01', 1.83 m tile, 1k maps"
+}

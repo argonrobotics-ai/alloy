@@ -1,0 +1,20 @@
+{
+ "num_envs": 16,
+ "rest_s": 2.0,
+ "episode_s": 5.0,
+ "id": "E06",
+ "group": "articulated",
+ "checker": "cartpole",
+ "request": "A cart-pole: a 1 kg cart on a frictionless horizontal rail limited to +-2 m carries a 0.5 m, 0.1 kg uniform pole on a free hinge, starting within 0.05 rad of upright; the 1-D action is a force on the cart of up to 10 N, the reward is for staying upright, and the episode ends when the pole passes 0.4 rad or the cart reaches the rail's end.",
+ "probe": {
+  "cart_x": [],
+  "pole_angle": [],
+  "cart_v": [],
+  "pole_rate": []
+ },
+ "checks": [
+  "rest: zero action, pole falls past 0.4 rad in 0.4-3 s and done fires",
+  "act: harness state feedback (force = 10 x action, gains from the linearized model) holds |angle| < 0.2 rad for 5 s in >= 14 of 16 worlds",
+  "angle growth rate near upright matches sqrt(3 g / (2 L)) x (1 + m/M correction) within 25 %"
+ ]
+}

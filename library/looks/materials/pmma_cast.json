@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pmma_cast",
+ "preset": "plastic_clear",
+ "ior": 1.49,
+ "note": "clear cast acrylic"
+}

@@ -1,0 +1,41 @@
+[
+ {
+  "id": "petrak2021_F1",
+  "params": {
+   "areal_mass_kg_m2": 0.1352,
+   "bending_warp_N_m": 1.9500000000000004e-06,
+   "bending_weft_N_m": 6.100000000000002e-07,
+   "shear_G_N_m": 23.49126960036375,
+   "tensile_load_N_m": 490.35,
+   "tensile_strain_warp": 0.0275,
+   "tensile_strain_weft": 0.0692,
+   "thickness_T0_m": 0.00040500000000000003
+  }
+ },
+ {
+  "id": "petrak2021_F4",
+  "params": {
+   "areal_mass_kg_m2": 0.16180000000000003,
+   "bending_warp_N_m": 3.2400000000000003e-06,
+   "bending_weft_N_m": 1.6100000000000003e-06,
+   "shear_G_N_m": 41.8259190445501,
+   "tensile_load_N_m": 490.35,
+   "tensile_strain_warp": 0.0302,
+   "tensile_strain_weft": 0.0958,
+   "thickness_T0_m": 0.000439
+  }
+ },
+ {
+  "id": "petrak2021_F9",
+  "params": {
+   "areal_mass_kg_m2": 0.3668,
+   "bending_warp_N_m": 3.354e-05,
+   "bending_weft_N_m": 9.890000000000002e-06,
+   "shear_G_N_m": 65.89014644004466,
+   "tensile_load_N_m": 490.35,
+   "tensile_strain_warp": 0.0397,
+   "tensile_strain_weft": 0.06269999999999999,
+   "thickness_T0_m": 0.00242
+  }
+ }
+]

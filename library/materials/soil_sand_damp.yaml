@@ -1,0 +1,56 @@
+schema: alloy.material/1
+name: soil_sand_damp
+density:
+  value: 2650.0
+  source: catalog
+  unc: [2600.0, 2750.0]
+  note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Measured
+    bulk: rho = rho_d (1 + w) = 1460 x 1.0633 ~ 1552 kg/m3 at 6.33 % moisture (https://phd.mater.uni-mate.hu/671/1/Alaa_El_Hariri_Dissertation_doi.pdf,
+    Sec 5); loose bulked moist sand ~1240-1370 (GeoStJohns 2019 paper 535, Table 1)'
+surface:
+  mu_static:
+    value: 0.4040262258351568
+    source: catalog
+    unc: [0.36397023426620234, 0.4040262258351568]
+    note: sandy soil on steel delta 20-22 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf,
+      soil-metal friction)
+  mu_dynamic:
+    value: 0.3636236032516411
+    source: model
+    note: sandy soil on steel delta 20-22 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf,
+      soil-metal friction); dynamic 0.9 x static (model)
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: soil impacts are almost fully plastic (model)
+elastic:
+  youngs:
+    value: 10000000.0
+    source: model
+    unc: [5000000.0, 50000000.0]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+plastic:
+  friction_angle:
+    value: 0.5450663253978292
+    source: measured
+    unc: [0.5309291584566751, 0.5695009349257498]
+    note: 'sand (95.7 % sand) at 6.33 % moisture, direct shear: phi 31.23 deg; the range is 30.42-32.63 deg over 3.11-12.53
+      % moisture (https://phd.mater.uni-mate.hu/671/1/Alaa_El_Hariri_Dissertation_doi.pdf, Table 5.2)'
+  cohesion:
+    value: 4850.0
+    source: measured
+    unc: [3210.0, 8750.0]
+    note: 'apparent (suction) cohesion of the same sand at 6.33 % moisture: 4.85 kPa; 3.21 / 6.03 / 8.75 kPa at 3.11 / 9.72
+      / 12.53 % (https://phd.mater.uni-mate.hu/671/1/Alaa_El_Hariri_Dissertation_doi.pdf, Table 5.2). Straight-line intercept
+      at 12.5-400 kPa normal stress, an upper bound near the surface: a free column of this card stands to H_c = 2c tan(45
+      + phi/2) / (rho g) = 1.1 m'

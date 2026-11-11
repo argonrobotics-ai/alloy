@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: pbt
+density:
+  value: 1310.0
+  source: catalog
+  unc: [1300.0, 1320.0]
+  note: PBT 1.30-1.32 g/cm3 (data sheets)
+surface:
+  mu_static:
+    value: 0.35
+    source: model
+    unc: [0.25, 0.45]
+    note: PBT on steel 0.3-0.4 (data sheets); mid value
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.4]
+    note: PBT on steel 0.3-0.4 (data sheets); mid value
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: rigid polymers e 0.4-0.7 at < 1 m/s; mid value
+elastic:
+  youngs:
+    value: 2500000000.0
+    source: catalog
+    unc: [2200000000.0, 2800000000.0]
+    note: PBT unfilled 2.3-2.7 GPa (data sheets)
+  poisson:
+    value: 0.39
+    source: catalog
+    unc: [0.37, 0.41]
+    note: PBT unfilled 2.3-2.7 GPa (data sheets)

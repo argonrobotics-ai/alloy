@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: stainless_303
+b: stainless_303
+mu_static:
+  value: 0.25
+  source: measured
+  unc: [0.2375, 0.2625]
+  note: measured push dataset Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. III; static static not reported; set
+    equal to the kinetic value
+mu_dynamic:
+  value: 0.25
+  source: measured
+  unc: [0.2375, 0.2625]
+  note: measured push dataset Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. III; static static not reported; set
+    equal to the kinetic value

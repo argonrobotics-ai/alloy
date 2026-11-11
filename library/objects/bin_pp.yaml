@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: bin_pp
+shape:
+  mesh:
+    path: meshes/bin_pp_small.obj
+    sha256: 8cbb8c50addd60e0a67ae68dfaa1026504590cc4f6425e97dfcaeacb98f37f03
+    collision: sdf
+material: pp_homopolymer
+loads:
+  bend_force:
+    value: 0.5
+    source: model
+    note: 'a 36 g car dropped from <= 10 cm: m (g + v^2/2s) ~ 0.4 N'
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'tool_fetch: car inside the bin, 1 mm'
+features:
+  thickness:
+    value: 0.0015
+    source: model
+    note: 1.5 mm wall (Uline S-12413 class bins)

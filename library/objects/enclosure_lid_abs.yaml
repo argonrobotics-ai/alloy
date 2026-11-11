@@ -1,0 +1,12 @@
+schema: alloy.object/1
+name: enclosure_lid_abs
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.035, 0.001]
+material: abs
+loads:
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'snapfit_enclosure: lid placed then snapped'

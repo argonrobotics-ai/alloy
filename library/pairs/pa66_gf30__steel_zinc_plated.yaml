@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pa66_gf30
+b: steel_zinc_plated
+mu_static:
+  value: 0.4
+  source: catalog
+  unc: [0.35, 0.45]
+  note: Ertalon 66GF-30 on steel 0.40 (azom ArticleID 4094); Engineering ToolBox friction-coefficients-d_778 nylon/steel 0.4
+mu_dynamic:
+  value: 0.4
+  source: catalog
+  unc: [0.35, 0.45]
+  note: Ertalon 66GF-30 on steel 0.40 (azom ArticleID 4094); Engineering ToolBox friction-coefficients-d_778 nylon/steel 0.4

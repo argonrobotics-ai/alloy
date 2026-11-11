@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: napkin_cotton_aniso
+shape:
+  primitive:
+    kind: box
+    size: [0.2, 0.2, 0.00015]
+material: cotton_woven_aniso
+features:
+  thickness:
+    value: 0.0003
+    source: model
+    note: napkin 0.3 mm (textile data)
+  min_wall:
+    value: 0.0003
+    source: model
+    note: napkin 0.3 mm (textile data)

@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: pvc_cable_jacket
+density:
+  value: 1300.0
+  source: catalog
+  unc: [1200.0, 1400.0]
+  note: flexible PVC jacket compound 1.2-1.4 g/cm3
+surface:
+  mu_static:
+    value: 0.5
+    source: model
+    unc: [0.35, 0.7]
+    note: PVC jacket on steel/plastic 0.4-0.6 (cable handling literature); mid value
+  mu_dynamic:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.6]
+    note: PVC jacket on steel/plastic 0.4-0.6 (cable handling literature); mid value
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: filled rubber compounds rebound 0.3-0.7 (Lupke rebound, ISO 4662 ranges); mid value
+elastic:
+  youngs:
+    value: 20000000.0
+    source: model
+    unc: [10000000.0, 50000000.0]
+    note: flexible PVC 80-90 Shore A, 10-50 MPa
+  poisson:
+    value: 0.45
+    source: model
+    unc: [0.42, 0.48]
+    note: flexible PVC 80-90 Shore A, 10-50 MPa

@@ -1,0 +1,21 @@
+schema: alloy.object/1
+name: towel_cotton
+shape:
+  primitive:
+    kind: box
+    size: [0.15, 0.1, 0.0003]
+material: towel_cotton_terry
+features:
+  thickness:
+    value: 0.0006
+    source: model
+    unc: [0.0004, 0.001]
+    note: 'ESTIMATE (model thickness): a 30 x 20 cm cotton terry cloth; the pile is 3.6-6.8 mm thick ("Thickness at 0.1 kPa,
+      mm 5.01 5.53 3.60 ..." https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663) but the cloth
+      route sets bending from E·h³ and stretch from E·h with one E, so h is the thickness that gives the measured bending
+      without a rubbery stretch; contact sits 0.3 mm off the mid-plane'
+  min_wall:
+    value: 0.0006
+    source: model
+    unc: [0.0004, 0.001]
+    note: 'ESTIMATE: the model thickness above'

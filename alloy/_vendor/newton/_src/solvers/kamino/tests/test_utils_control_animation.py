@@ -1,0 +1,555 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""Unit tests for the AnimationJointReference class."""
+
+import logging
+import unittest
+
+import numpy as np
+import warp as wp
+
+from alloy._vendor import newton
+from alloy._vendor.newton._src.solvers.kamino._src import ModelKamino
+from alloy._vendor.newton._src.solvers.kamino._src.utils.control import AnimationJointReference
+from alloy._vendor.newton._src.solvers.kamino._src.utils.logger import reset_log_level, set_log_level
+from alloy._vendor.newton._src.solvers.kamino.tests import setup_tests, test_context
+
+logger = logging.getLogger(__name__)
+
+###
+# Tests
+###
+
+
+class TestAnimationJointReference(unittest.TestCase):
+    def setUp(self):
+        # Configs
+        if not test_context.setup_done:
+            setup_tests(clear_cache=False)
+        self.seed = 42
+        self.default_device = wp.get_device(test_context.device)
+        self.verbose = test_context.verbose  # Set to True for verbose output
+
+        # Set debug-level logging to print verbose test output to console
+        if self.verbose:
+            set_log_level(logging.DEBUG)
+            logger.debug("\n")  # Add newline before test output for better readability
+        else:
+            reset_log_level()
+
+    def tearDown(self):
+        self.default_device = None
+        if self.verbose:
+            reset_log_level()
+
+    def test_00_make_default(self):
+        animation = AnimationJointReference()
+        self.assertIsNotNone(animation)
+        self.assertEqual(animation.device, None)
+        self.assertEqual(animation._data, None)
+
+    def test_01_make_with_numpy_data(self):
+        # Load the DR Legs model and animation data from the
+        # `newton-assets` repository using the utility function
+        asset_path = newton.utils.download_asset("disneyresearch")
+        model_asset_file = str(asset_path / "dr_legs" / "usd" / "dr_legs_with_boxes.usda")
+        animation_asset_file = str(asset_path / "dr_legs" / "animation" / "dr_legs_animation_100fps.npy")
+
+        # Import USD model of DR Legs
+        builder = newton.ModelBuilder()
+        builder.add_usd(source=model_asset_file)
+        model = ModelKamino.from_newton(builder.finalize(device=self.default_device))
+        data = model.data(device=self.default_device)
+
+        # Retrieve the number of actuated coordinates and DoFs
+        njaq = model.size.sum_of_num_actuated_joint_coords
+        njad = model.size.sum_of_num_actuated_joint_dofs
+        logger.debug("number of actuated joint coordinates: %s", njaq)
+        logger.debug("number of actuated joint DoFs: %s", njad)
+        self.assertEqual(njaq, njad)  # Ensure only 1-DoF joints
+
+        # Load numpy animation data
+        animation_np = np.load(animation_asset_file, allow_pickle=True)
+        logger.debug("animation_np (shape=%s):\n%s\n", animation_np.shape, animation_np)
+        self.assertEqual(animation_np.shape[1], njaq)  # Ensure data matches number of joints
+
+        # Set animation parameters
+        animation_dt = 0.01  # 100 Hz/FPS
+        sim_dt = animation_dt  # 100 Hz/FPS
+        decimation: int = 1  # No decimation, step through every frame
+        rate: int = 1  # No rate (i.e. skip), step through every frame
+        loop: bool = True
+        use_fd: bool = False
+
+        # Create a joint-space animation reference generator
+        animation = AnimationJointReference(
+            model=model,
+            data=animation_np,
+            data_dt=animation_dt,
+            target_dt=sim_dt,
+            decimation=decimation,
+            rate=rate,
+            loop=loop,
+            use_fd=use_fd,
+        )
+        self.assertIsNotNone(animation)
+        self.assertIsNotNone(animation.data)
+        self.assertEqual(animation.device, self.default_device)
+        self.assertEqual(animation.sequence_length, animation_np.shape[0])
+        self.assertEqual(animation.data.q_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.dq_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.loop.shape, (1,))
+        self.assertEqual(animation.data.loop.numpy()[0], 1 if loop else 0)
+        self.assertEqual(animation.data.rate.shape, (1,))
+        self.assertEqual(animation.data.rate.numpy()[0], rate)
+        self.assertEqual(animation.data.frame.shape, (1,))
+        self.assertEqual(animation.data.frame.numpy()[0], 0)
+
+        # Check that the internal numpy arrays match the input data
+        np.testing.assert_array_almost_equal(animation.data.q_j_ref.numpy(), animation_np, decimal=6)
+        np.testing.assert_array_almost_equal(animation.data.dq_j_ref.numpy(), np.zeros_like(animation_np), decimal=6)
+
+        # Allocate output arrays for joint references
+        q_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+        dq_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+
+        # Retrieve the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through the animation and verify outputs
+        num_steps = 10
+        for step in range(1, num_steps + 1):
+            data.time.steps.fill_(step)
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+            expected_step = (rate * step) % animation.sequence_length  # Loop around if exceeding number of frames
+            np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([expected_step], dtype=np.int32))
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected_step, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Reset the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through again but exceeding the number of frames to test looping
+        num_steps = animation.sequence_length + 5
+        for step in range(1, num_steps + 1):
+            data.time.steps.fill_(step)
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+            expected_step = (rate * step) % animation.sequence_length  # Loop around if exceeding number of frames
+            np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([expected_step], dtype=np.int32))
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected_step, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+    def test_02_make_with_numpy_data_and_decimation(self):
+        # Load the DR Legs model and animation data from the
+        # `newton-assets` repository using the utility function
+        asset_path = newton.utils.download_asset("disneyresearch")
+        model_asset_file = str(asset_path / "dr_legs" / "usd" / "dr_legs_with_boxes.usda")
+        animation_asset_file = str(asset_path / "dr_legs" / "animation" / "dr_legs_animation_100fps.npy")
+
+        # Import USD model of DR Legs
+        builder = newton.ModelBuilder()
+        builder.add_usd(source=model_asset_file)
+        model = ModelKamino.from_newton(builder.finalize(device=self.default_device))
+        data = model.data(device=self.default_device)
+
+        # Retrieve the number of actuated coordinates and DoFs
+        njaq = model.size.sum_of_num_actuated_joint_coords
+        njad = model.size.sum_of_num_actuated_joint_dofs
+        logger.debug("number of actuated joint coordinates: %s", njaq)
+        logger.debug("number of actuated joint DoFs: %s", njad)
+        self.assertEqual(njaq, njad)  # Ensure only 1-DoF joints
+
+        # Load numpy animation data
+        animation_np = np.load(animation_asset_file, allow_pickle=True)
+        logger.debug("animation_np (shape=%s):\n%s\n", animation_np.shape, animation_np)
+        self.assertEqual(animation_np.shape[1], njaq)  # Ensure data matches number of joints
+
+        # Set animation parameters
+        animation_dt = 0.01  # 100 Hz/FPS
+        sim_dt = animation_dt  # 100 Hz/FPS
+        decimation: int = 15  # Advance frame index every 15th step
+        rate: int = 1  # No rate (i.e. skip), step through every frame
+        loop: bool = True
+        use_fd: bool = False
+
+        # Create a joint-space animation reference generator
+        animation = AnimationJointReference(
+            model=model,
+            data=animation_np,
+            data_dt=animation_dt,
+            target_dt=sim_dt,
+            decimation=decimation,
+            rate=rate,
+            loop=loop,
+            use_fd=use_fd,
+        )
+        self.assertIsNotNone(animation)
+        self.assertIsNotNone(animation.data)
+        self.assertEqual(animation.device, self.default_device)
+        self.assertEqual(animation.sequence_length, animation_np.shape[0])
+        self.assertEqual(animation.data.q_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.dq_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.length.shape, (1,))
+        self.assertEqual(animation.data.length.numpy()[0], animation_np.shape[0])
+        self.assertEqual(animation.data.decimation.shape, (1,))
+        self.assertEqual(animation.data.decimation.numpy()[0], decimation)
+        self.assertEqual(animation.data.rate.shape, (1,))
+        self.assertEqual(animation.data.rate.numpy()[0], rate)
+        self.assertEqual(animation.data.loop.shape, (1,))
+        self.assertEqual(animation.data.loop.numpy()[0], 1 if loop else 0)
+        self.assertEqual(animation.data.frame.shape, (1,))
+        self.assertEqual(animation.data.frame.numpy()[0], 0)
+
+        # Check that the internal numpy arrays match the input data
+        np.testing.assert_array_almost_equal(animation.data.q_j_ref.numpy(), animation_np, decimal=6)
+        np.testing.assert_array_almost_equal(animation.data.dq_j_ref.numpy(), np.zeros_like(animation_np), decimal=6)
+
+        # Allocate output arrays for joint references
+        q_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+        dq_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+
+        # Retrieve the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through the animation and verify outputs
+        num_steps = 3 * decimation + 2  # Step through multiple decimation cycles
+        for s in range(1, num_steps + 1):
+            # Increment the global simulation step array
+            data.time.steps.fill_(s)
+            step = data.time.steps.numpy()[0]
+            logger.debug("[s=%s]: step index: %s", s, step)
+            self.assertEqual(step, s)
+
+            # Step the animation
+            # NOTE: In actual uses-cases this will be called on every sim step
+            # and we only want to update the frame index every `decimation` steps
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+
+            # Retrieve the actual frame index
+            frame = animation.data.frame.numpy()[0]
+            logger.debug("[s=%s]: frame index: %s", s, frame)
+            # Compute the expected frame index based on decimation
+            expected = (step // decimation) % animation.sequence_length
+            logger.debug("[s=%s]: expected index: %s", s, expected)
+            # Check expected vs actual frame index and outputs
+            self.assertEqual(frame, expected)
+
+            # Check output references match expected frame
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Reset the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through again but exceeding the number of frames to test looping
+        num_steps = animation.sequence_length + 5
+        for s in range(1, num_steps + 1):
+            # Increment the global simulation step array
+            data.time.steps.fill_(s)
+            step = data.time.steps.numpy()[0]
+            logger.debug("[s=%s]: step index: %s", s, step)
+            self.assertEqual(step, s)
+
+            # Step the animation
+            # NOTE: In actual uses-cases this will be called on every sim step
+            # and we only want to update the frame index every `decimation` steps
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+
+            # Retrieve the actual frame index
+            frame = animation.data.frame.numpy()[0]
+            logger.debug("[s=%s]: frame index: %s", s, frame)
+            # Compute the expected frame index based on decimation
+            expected = (step // decimation) % animation.sequence_length
+            logger.debug("[s=%s]: expected index: %s", s, expected)
+            # Check expected vs actual frame index and outputs
+            self.assertEqual(frame, expected)
+
+            # Check output references match expected frame
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+    def test_03_make_with_numpy_data_and_decimation_plus_rate(self):
+        # Load the DR Legs model and animation data from the
+        # `newton-assets` repository using the utility function
+        asset_path = newton.utils.download_asset("disneyresearch")
+        model_asset_file = str(asset_path / "dr_legs" / "usd" / "dr_legs_with_boxes.usda")
+        animation_asset_file = str(asset_path / "dr_legs" / "animation" / "dr_legs_animation_100fps.npy")
+
+        # Import USD model of DR Legs
+        builder = newton.ModelBuilder()
+        builder.add_usd(source=model_asset_file)
+        model = ModelKamino.from_newton(builder.finalize(device=self.default_device))
+        data = model.data(device=self.default_device)
+
+        # Retrieve the number of actuated coordinates and DoFs
+        njaq = model.size.sum_of_num_actuated_joint_coords
+        njad = model.size.sum_of_num_actuated_joint_dofs
+        logger.debug("number of actuated joint coordinates: %s", njaq)
+        logger.debug("number of actuated joint DoFs: %s", njad)
+        self.assertEqual(njaq, njad)  # Ensure only 1-DoF joints
+
+        # Load numpy animation data
+        animation_np = np.load(animation_asset_file, allow_pickle=True)
+        logger.debug("animation_np (shape=%s):\n%s\n", animation_np.shape, animation_np)
+        self.assertEqual(animation_np.shape[1], njaq)  # Ensure data matches number of joints
+
+        # Set animation parameters
+        animation_dt = 0.01  # 100 Hz/FPS
+        sim_dt = animation_dt  # 100 Hz/FPS
+        decimation: int = 15  # Advance frame index every 15th step
+        rate: int = 10  # No rate (i.e. skip), step through every frame
+        loop: bool = True
+        use_fd: bool = False
+
+        # Create a joint-space animation reference generator
+        animation = AnimationJointReference(
+            model=model,
+            data=animation_np,
+            data_dt=animation_dt,
+            target_dt=sim_dt,
+            decimation=decimation,
+            rate=rate,
+            loop=loop,
+            use_fd=use_fd,
+        )
+        self.assertIsNotNone(animation)
+        self.assertIsNotNone(animation.data)
+        self.assertEqual(animation.device, self.default_device)
+        self.assertEqual(animation.sequence_length, animation_np.shape[0])
+        self.assertEqual(animation.data.q_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.dq_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.length.shape, (1,))
+        self.assertEqual(animation.data.length.numpy()[0], animation_np.shape[0])
+        self.assertEqual(animation.data.decimation.shape, (1,))
+        self.assertEqual(animation.data.decimation.numpy()[0], decimation)
+        self.assertEqual(animation.data.rate.shape, (1,))
+        self.assertEqual(animation.data.rate.numpy()[0], rate)
+        self.assertEqual(animation.data.loop.shape, (1,))
+        self.assertEqual(animation.data.loop.numpy()[0], 1 if loop else 0)
+        self.assertEqual(animation.data.frame.shape, (1,))
+        self.assertEqual(animation.data.frame.numpy()[0], 0)
+
+        # Check that the internal numpy arrays match the input data
+        np.testing.assert_array_almost_equal(animation.data.q_j_ref.numpy(), animation_np, decimal=6)
+        np.testing.assert_array_almost_equal(animation.data.dq_j_ref.numpy(), np.zeros_like(animation_np), decimal=6)
+
+        # Allocate output arrays for joint references
+        q_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+        dq_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+
+        # Retrieve the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through the animation and verify outputs
+        num_steps = 3 * decimation + 2  # Step through multiple decimation cycles
+        for s in range(1, num_steps + 1):
+            # Increment the global simulation step array
+            data.time.steps.fill_(s)
+            step = data.time.steps.numpy()[0]
+            logger.debug("[s=%s]: step index: %s", s, step)
+            self.assertEqual(step, s)
+
+            # Step the animation
+            # NOTE: In actual uses-cases this will be called on every sim step
+            # and we only want to update the frame index every `decimation` steps
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+
+            # Retrieve the actual frame index
+            frame = animation.data.frame.numpy()[0]
+            logger.debug("[s=%s]: frame index: %s", s, frame)
+            # Compute the expected frame index based on decimation
+            expected = ((step // decimation) * rate) % animation.sequence_length
+            logger.debug("[s=%s]: expected index: %s", s, expected)
+            # Check expected vs actual frame index and outputs
+            self.assertEqual(frame, expected)
+
+            # Check output references match expected frame
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Reset the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through again but exceeding the number of frames to test looping
+        num_steps = animation.sequence_length + 5
+        for s in range(1, num_steps + 1):
+            # Increment the global simulation step array
+            data.time.steps.fill_(s)
+            step = data.time.steps.numpy()[0]
+            logger.debug("[s=%s]: step index: %s", s, step)
+            self.assertEqual(step, s)
+
+            # Step the animation
+            # NOTE: In actual uses-cases this will be called on every sim step
+            # and we only want to update the frame index every `decimation` steps
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+
+            # Retrieve the actual frame index
+            frame = animation.data.frame.numpy()[0]
+            logger.debug("[s=%s]: frame index: %s", s, frame)
+            # Compute the expected frame index based on decimation
+            expected = ((step // decimation) * rate) % animation.sequence_length
+            logger.debug("[s=%s]: expected index: %s", s, expected)
+            # Check expected vs actual frame index and outputs
+            self.assertEqual(frame, expected)
+
+            # Check output references match expected frame
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+    def test_04_make_with_numpy_data_and_decimation_plus_rate_no_looping(self):
+        # Load the DR Legs model and animation data from the
+        # `newton-assets` repository using the utility function
+        asset_path = newton.utils.download_asset("disneyresearch")
+        model_asset_file = str(asset_path / "dr_legs" / "usd" / "dr_legs_with_boxes.usda")
+        animation_asset_file = str(asset_path / "dr_legs" / "animation" / "dr_legs_animation_100fps.npy")
+
+        # Import USD model of DR Legs
+        builder = newton.ModelBuilder()
+        builder.add_usd(source=model_asset_file)
+        model = ModelKamino.from_newton(builder.finalize(device=self.default_device))
+        data = model.data(device=self.default_device)
+
+        # Retrieve the number of actuated coordinates and DoFs
+        njaq = model.size.sum_of_num_actuated_joint_coords
+        njad = model.size.sum_of_num_actuated_joint_dofs
+        logger.debug("number of actuated joint coordinates: %s", njaq)
+        logger.debug("number of actuated joint DoFs: %s", njad)
+        self.assertEqual(njaq, njad)  # Ensure only 1-DoF joints
+
+        # Load numpy animation data
+        animation_np = np.load(animation_asset_file, allow_pickle=True)
+        logger.debug("animation_np (shape=%s):\n%s\n", animation_np.shape, animation_np)
+        self.assertEqual(animation_np.shape[1], njaq)  # Ensure data matches number of joints
+
+        # Set animation parameters
+        animation_dt = 0.01  # 100 Hz/FPS
+        sim_dt = animation_dt  # 100 Hz/FPS
+        decimation: int = 15  # Advance frame index every 15th step
+        rate: int = 10  # No rate (i.e. skip), step through every frame
+        loop: bool = False
+        use_fd: bool = False
+
+        # Create a joint-space animation reference generator
+        animation = AnimationJointReference(
+            model=model,
+            data=animation_np,
+            data_dt=animation_dt,
+            target_dt=sim_dt,
+            decimation=decimation,
+            rate=rate,
+            loop=loop,
+            use_fd=use_fd,
+        )
+        self.assertIsNotNone(animation)
+        self.assertIsNotNone(animation.data)
+        self.assertEqual(animation.device, self.default_device)
+        self.assertEqual(animation.sequence_length, animation_np.shape[0])
+        self.assertEqual(animation.data.q_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.dq_j_ref.shape, animation_np.shape)
+        self.assertEqual(animation.data.length.shape, (1,))
+        self.assertEqual(animation.data.length.numpy()[0], animation_np.shape[0])
+        self.assertEqual(animation.data.decimation.shape, (1,))
+        self.assertEqual(animation.data.decimation.numpy()[0], decimation)
+        self.assertEqual(animation.data.rate.shape, (1,))
+        self.assertEqual(animation.data.rate.numpy()[0], rate)
+        self.assertEqual(animation.data.loop.shape, (1,))
+        self.assertEqual(animation.data.loop.numpy()[0], 1 if loop else 0)
+        self.assertEqual(animation.data.frame.shape, (1,))
+        self.assertEqual(animation.data.frame.numpy()[0], 0)
+
+        # Check that the internal numpy arrays match the input data
+        np.testing.assert_array_almost_equal(animation.data.q_j_ref.numpy(), animation_np, decimal=6)
+        np.testing.assert_array_almost_equal(animation.data.dq_j_ref.numpy(), np.zeros_like(animation_np), decimal=6)
+
+        # Allocate output arrays for joint references
+        q_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+        dq_j_ref_out = wp.zeros(njad, dtype=wp.float32, device=self.default_device)
+
+        # Reset the reference at the initial step (0)
+        animation.reset(q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+        np.testing.assert_array_equal(animation.data.frame.numpy(), np.array([0], dtype=np.int32))
+        np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[0, :], decimal=6)
+        np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+        # Initialize simulation time steps
+        data.time.steps.fill_(0)
+
+        # Step through again but exceeding the number of frames to test looping
+        num_steps = animation.sequence_length + 5
+        for s in range(1, num_steps + 1):
+            # Increment the global simulation step array
+            data.time.steps.fill_(s)
+            step = data.time.steps.numpy()[0]
+            logger.debug("[s=%s]: step index: %s", s, step)
+            self.assertEqual(step, s)
+
+            # Step the animation
+            # NOTE: In actual uses-cases this will be called on every sim step
+            # and we only want to update the frame index every `decimation` steps
+            animation.step(time=data.time, q_j_ref_out=q_j_ref_out, dq_j_ref_out=dq_j_ref_out)
+
+            # Retrieve the actual frame index
+            frame = animation.data.frame.numpy()[0]
+            logger.debug("[s=%s]: frame index: %s", s, frame)
+            # Compute the expected frame index based on decimation
+            expected = (step // decimation) * rate
+            logger.debug("[s=%s]: expected index: %s", s, expected)
+            # Check expected vs actual frame index and outputs
+            if expected >= animation.sequence_length:
+                expected = animation.sequence_length - 1  # Clamp to last frame if exceeding length
+            self.assertEqual(frame, expected)
+
+            # Check output references match expected frame
+            np.testing.assert_array_almost_equal(q_j_ref_out.numpy(), animation_np[expected, :], decimal=6)
+            np.testing.assert_array_almost_equal(dq_j_ref_out.numpy(), np.zeros(njad, dtype=np.float32), decimal=6)
+
+
+###
+# Test execution
+###
+
+if __name__ == "__main__":
+    # Test setup
+    setup_tests()
+
+    # Run all tests
+    unittest.main(verbosity=2)

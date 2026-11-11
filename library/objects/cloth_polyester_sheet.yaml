@@ -1,0 +1,18 @@
+schema: alloy.object/1
+name: cloth_polyester_sheet
+shape:
+  primitive:
+    kind: box
+    size: [0.25, 0.25, 0.00018]
+material: cloth_polyester_woven
+features:
+  thickness:
+    value: 0.00036
+    source: catalog
+    note: 'DOC: woven polyester "~0.36 mm" at ~20 gf/cm (compression curve) https://pmc.ncbi.nlm.nih.gov/articles/PMC6316920/'
+  min_wall:
+    value: 0.00036
+    source: catalog
+    note: 'DOC: woven polyester "~0.36 mm" at ~20 gf/cm (compression curve) https://pmc.ncbi.nlm.nih.gov/articles/PMC6316920/'
+budget:
+  particles: 441

@@ -1,0 +1,46 @@
+{
+  "_doc": "Per-engine egress allowlists (host or parent domain); same schema as the cold-agent kit's sandbox/allowlist.json. common = the package index; hosts per engine are its docs, lazy asset hosts and source repository.",
+  "common": [
+    "pypi.org",
+    "files.pythonhosted.org"
+  ],
+  "ports": {
+    "3201": {
+      "engine": "alloy",
+      "allow": [
+        "pypi.nvidia.com",
+        "newton-physics.github.io",
+        "nvidia.github.io"
+      ]
+    },
+    "3204": {
+      "engine": "genesis",
+      "allow": [
+        "genesis-world.readthedocs.io",
+        "download.pytorch.org"
+      ]
+    },
+    "3212": {
+      "engine": "maniskill",
+      "allow": [
+        "maniskill.readthedocs.io",
+        "download.pytorch.org",
+        "huggingface.co",
+        "storage1.ucsd.edu",
+        "github.com",
+        "codeload.github.com"
+      ]
+    },
+    "3213": {
+      "engine": "playground",
+      "allow": [
+        "reaf-sim.readthedocs.io",
+        "download.pytorch.org",
+        "pypi.nvidia.com",
+        "github.com",
+        "raw.githubusercontent.com",
+        "huggingface.co"
+      ]
+    }
+  }
+}

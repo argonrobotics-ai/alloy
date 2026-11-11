@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: steel_tinplate
+b: wood_beech
+mu_static:
+  value: 0.4
+  source: catalog
+  unc: [0.2, 0.6]
+  note: Engineering ToolBox friction-coefficients-d_778 wood/clean metal 0.2-0.6
+mu_dynamic:
+  value: 0.4
+  source: catalog
+  unc: [0.2, 0.6]
+  note: Engineering ToolBox friction-coefficients-d_778 wood/clean metal 0.2-0.6

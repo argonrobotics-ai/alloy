@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "glycerol_80",
+ "preset": "water",
+ "ior": 1.45,
+ "note": "80 % glycerol: clear colourless liquid (glycerol IOR)"
+}

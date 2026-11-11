@@ -1,0 +1,20 @@
+# Liquid demo: water emitted into a PP tumbler, a sink below the table edge.
+schema: alloy.scene/1
+robots: []
+objects:
+  - {object: table_top_plywood, pose: [0, 0, -0.009, 0, 0, 0, 1]}
+  - {object: tumbler_pp, pose: [0, 0, 0, 0, 0, 0, 1]}
+emitters:
+  - kind: emitter
+    material: water
+    pose: [0, 0, 0.15, 0, 0, 0, 1]
+    half_extents: [5 mm, 5 mm, 1 mm]
+    rate: 2.0e-5
+    velocity: [0, 0, -0.5 m/s]
+    start_s: 0
+    stop_s: 2 s
+  - kind: sink
+    material: water
+    pose: [0.7, 0, -0.1, 0, 0, 0, 1]
+    half_extents: [0.1, 0.5, 0.05]
+worlds: 2

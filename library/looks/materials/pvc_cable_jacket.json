@@ -1,0 +1,6 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pvc_cable_jacket",
+ "preset": "pvc_jacket_matte",
+ "note": "PVC cable jacket"
+}

@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: abs
+density:
+  value: 1040.0
+  source: catalog
+  unc: [1030.0, 1070.0]
+  note: ABS 1.04 g/cm3; uses 1040, snapfit 1050
+surface:
+  mu_static:
+    value: 0.5
+    source: model
+    unc: [0.35, 0.6]
+    note: ABS on ABS/steel 0.4-0.6 (polymer friction surveys); mid value
+  mu_dynamic:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.5]
+    note: ABS on ABS/steel 0.4-0.6 (polymer friction surveys); mid value
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: rigid polymers e 0.4-0.7 at < 1 m/s; mid value
+elastic:
+  youngs:
+    value: 2300000000.0
+    source: catalog
+    unc: [2000000000.0, 2600000000.0]
+    note: ABS, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A (1.1-2.9 GPa; moulding grades 2.0-2.6)
+  poisson:
+    value: 0.35
+    source: catalog
+    unc: [0.33, 0.38]
+    note: ABS, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A (1.1-2.9 GPa; moulding grades 2.0-2.6)

@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "tissue_fat_silicone",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.95,
+  0.86,
+  0.58
+ ],
+ "roughness": 0.5,
+ "subsurface": 0.5,
+ "note": "silicone fat phantom: pale yellow, translucent"
+}

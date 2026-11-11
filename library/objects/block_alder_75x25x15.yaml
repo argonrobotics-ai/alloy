@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: block_alder_75x25x15
+shape:
+  primitive:
+    kind: box
+    size: [0.0375, 0.0125, 0.0075]
+material: wood_alder

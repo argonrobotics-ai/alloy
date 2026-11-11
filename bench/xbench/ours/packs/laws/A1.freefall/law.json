@@ -1,0 +1,64 @@
+{
+ "law": "A1.freefall",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "metrics": {
+  "pos_err_ratio": {
+   "abs": 1.0,
+   "rel": 0.0,
+   "source": "newton@ac7f7830:newton/tests/test_physics_verification.py:120-122 (2\u00b7\u00bd\u00b7g\u00b7h\u00b7t, g\u00b7h)"
+  },
+  "vel_err_ratio": {
+   "abs": 1.0,
+   "rel": 0.0,
+   "source": "newton@ac7f7830:newton/tests/test_physics_verification.py:120-122 (2\u00b7\u00bd\u00b7g\u00b7h\u00b7t, g\u00b7h)"
+  }
+ },
+ "stat": {
+  "pos_err_ratio": "mean",
+  "vel_err_ratio": "mean"
+ },
+ "conditions": [
+  {
+   "id": "v0",
+   "params": {
+    "vx": 0.0,
+    "vy": 0.0,
+    "vz": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "v1",
+   "params": {
+    "vx": 1.0,
+    "vy": 0.0,
+    "vz": 3.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "v2",
+   "params": {
+    "vx": -2.0,
+    "vy": 1.5,
+    "vz": 5.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "v3",
+   "params": {
+    "vx": 0.5,
+    "vy": -2.0,
+    "vz": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

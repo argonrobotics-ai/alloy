@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cloth_polyester_woven",
+ "preset": "linen",
+ "texture": null,
+ "tex_tint": false,
+ "base_color": [
+  0.86,
+  0.87,
+  0.89
+ ],
+ "roughness": 0.6,
+ "sheen": 0.5,
+ "note": "woven polyester: smooth white fabric with a soft sheen"
+}

@@ -1,0 +1,42 @@
+{
+ "law": "A6.restitution",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "metrics": {
+  "rebound_err_ratio": {
+   "abs": 1.0,
+   "rel": 0.0,
+   "source": "SPEC \u00a75.3 A6: |h1 - e^2 h0| <= 0.02 h1 + 5 dt sqrt(2 g h1)"
+  }
+ },
+ "stat": {
+  "rebound_err_ratio": "mean"
+ },
+ "conditions": [
+  {
+   "id": "e0",
+   "params": {
+    "e": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "e0.5",
+   "params": {
+    "e": 0.5
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "e0.8",
+   "params": {
+    "e": 0.8
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

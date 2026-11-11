@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: steel_zinc_plated
+b: steel_zinc_plated
+mu_static:
+  value: 0.14
+  source: catalog
+  unc: [0.133, 0.147]
+  note: thread friction nut on bolt 0.14 +-5 %; VDI 2230-1 class B 0.08-0.16; static static not reported; set equal to the
+    kinetic value
+mu_dynamic:
+  value: 0.14
+  source: catalog
+  unc: [0.133, 0.147]
+  note: thread friction nut on bolt 0.14 +-5 %; VDI 2230-1 class B 0.08-0.16; static static not reported; set equal to the
+    kinetic value

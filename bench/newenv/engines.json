@@ -1,0 +1,70 @@
+{
+  "_doc": "Per-engine text for the preamble, egress port, source clone under /refs, lane and time caps. Same schema as the cold-agent kit's sandbox/engines.json plus: lane (gpu|cpu), agent_s / rerun_s (override _defaults), minutes (expected agent minutes, for balancing VMs), ref_repo / ref_tag_fmt / ref_pypi (read-only clone made by vm/prepare.sh). Any value containing TODO blocks a launch for that engine. declines: groups (or request ids) where the engine's public docs say it cannot do the job: a decline there is a correct decline and the request is not 'supported' for that engine. image = the sandbox image tag built by images/build.sh (engine pre-installed, caches warm). notice (optional): the arm's results may not be published; every output with its rows starts with the notice and --public leaves them out. More arms or fields can come from $NEWENV_EXTRA_CONFIG/engines.json.",
+  "_defaults": {
+    "agent_s": 2700,
+    "rerun_s": 900,
+    "minutes": 20.0
+  },
+  "alloy": {
+    "name": "Alloy",
+    "port": 3201,
+    "module": "alloy",
+    "lane": "gpu",
+    "install": "Alloy is a physics engine built on NVIDIA Newton and Warp (the import name is `alloy`; PyTorch is installed beside it). It is already installed (with its caches warm) in the Python environment of `~/alloy/.venv`, first on PATH: `python` imports it; do not reinstall it, and add other packages with pip only if you need them. Its source repository is checked out at `~/alloy` (a clone of the public repository).",
+    "docs": "the repository at `~/alloy` (README.md, docs/, examples/, the code and tests), plus Newton's docs at https://newton-physics.github.io/newton/ and Warp's at https://nvidia.github.io/warp/",
+    "minutes": 20.0,
+    "declines": [],
+    "image": "newenv-alloy"
+  },
+  "maniskill": {
+    "name": "ManiSkill",
+    "port": 3212,
+    "module": "mani_skill",
+    "lane": "gpu",
+    "refs": "maniskill",
+    "ref_repo": "https://github.com/haosulab/ManiSkill",
+    "ref_tag_fmt": "v%s",
+    "ref_pypi": "mani-skill",
+    "install": "ManiSkill 3.0.1 is the PyPI package `mani_skill` (`import mani_skill`), installed with PyTorch. It is already installed (with its caches warm) in the Python environment first on PATH: `python` imports it; do not reinstall it, and add other packages with pip only if you need them.",
+    "docs": "https://maniskill.readthedocs.io (see the custom tasks tutorial), and its source repository cloned read-only at `/refs/maniskill`",
+    "declines": [
+      "soft",
+      "liquid",
+      "E23",
+      "E24"
+    ],
+    "image": "newenv-maniskill"
+  },
+  "playground": {
+    "name": "MuJoCo Playground",
+    "port": 3213,
+    "module": "mujoco_playground",
+    "lane": "gpu",
+    "refs": "playground",
+    "ref_repo": "https://github.com/google-deepmind/mujoco_playground",
+    "ref_tag_fmt": "v%s",
+    "ref_pypi": "playground",
+    "install": "MuJoCo Playground 1.0.1 is the PyPI package `playground` (`import mujoco_playground`; it is built on reaf-sim and MuJoCo Warp, PyTorch based), installed with its `rl` extra. It is already installed (with its caches warm) in the Python environment first on PATH: `python` imports it; do not reinstall it, and add other packages with pip only if you need them.",
+    "docs": "https://reaf-sim.readthedocs.io/en/latest/playground/index.html and the reaf-sim repository https://github.com/google-deepmind/reaf-sim (docs/user_guide), and the Playground source repository cloned read-only at `/refs/playground`",
+    "declines": [
+      "liquid",
+      "E23"
+    ],
+    "image": "newenv-playground"
+  },
+  "genesis": {
+    "name": "Genesis",
+    "port": 3204,
+    "module": "genesis",
+    "lane": "gpu",
+    "refs": "genesis",
+    "ref_repo": "https://github.com/Genesis-Embodied-AI/Genesis",
+    "ref_tag_fmt": "v%s",
+    "ref_pypi": "genesis-world",
+    "install": "Genesis is the PyPI package `genesis-world` 1.4.6 (`import genesis`), installed with PyTorch. It is already installed (with its caches warm) in the Python environment first on PATH: `python` imports it; do not reinstall it, and add other packages with pip only if you need them.",
+    "docs": "https://genesis-world.readthedocs.io, and its source repository cloned read-only at `/refs/genesis`",
+    "minutes": 20.0,
+    "declines": [],
+    "image": "newenv-genesis"
+  }
+}

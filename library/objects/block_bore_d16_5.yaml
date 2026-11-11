@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: block_bore_d16_5
+shape:
+  mesh:
+    path: meshes/block_bore_d16_5.obj
+    sha256: aa75427c346e2c4e7b4d3cb71561a64e62b655e172d744c1eb0938b06f805aa3
+    collision: sdf
+material: pmma_cast
+motion: static
+features:
+  precision_anchor: [0.0, 0.0, 0.0]
+precision_partners:
+- peg_d16:shaft
+precision_features:
+- name: bore
+  crop:
+  - [-0.01, -0.01, -0.005]
+  - [0.01, 0.01, 0.005]
+  clearance:
+    value: 0.0005
+    source: catalog
+    note: D16 peg in a 16.5 mm hole, 0.5 mm diametral clearance

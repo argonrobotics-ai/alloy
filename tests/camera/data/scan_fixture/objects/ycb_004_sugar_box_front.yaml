@@ -1,0 +1,11 @@
+# the scan-texture law's fixture: the front panel of the YCB 004 sugar box scan (see ATTRIBUTION.md);
+# rebuilt by make_scan_fixture.py, do not edit
+schema: alloy.object/1
+name: ycb_004_sugar_box_front
+shape:
+  mesh:
+    path: meshes/ycb_004_sugar_box_front/physics.obj
+    sha256: 6a9774797fbf260f2bd3d73a892a1242d91be5185e3a06c8ded660222791b421
+    collision: decompose
+    max_parts: 1
+material: ycb_004_sugar_box_front_eff

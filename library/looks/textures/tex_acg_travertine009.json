@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_travertine009",
+ "family": "stone",
+ "preset": "marble_white",
+ "texture": "ambientcg:Travertine009",
+ "res": "1k",
+ "scale_m": 1.2,
+ "bump_m": 0.0001,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Travertine009",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.617,
+ "note": "light travertine: ambientCG 'Travertine 009', 1.2 m tile, 1k maps"
+}

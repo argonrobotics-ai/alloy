@@ -1,0 +1,659 @@
+{
+ "bodies": ".",
+ "config": {
+  "max_verts": 64,
+  "tol_m": 0.0002,
+  "max_pieces": 64
+ },
+ "max_bound_m": 0.00019908112182591235,
+ "max_piece_verts": 64,
+ "meshes": [
+  {
+   "mesh": "link0_coll",
+   "hull_verts": 102,
+   "piece_verts": [
+    46,
+    37,
+    63,
+    46,
+    59
+   ],
+   "bound_m": 0.00019883329419639957
+  },
+  {
+   "mesh": "link1_coll",
+   "hull_verts": 152,
+   "piece_verts": [
+    60,
+    58,
+    58,
+    60,
+    59,
+    58,
+    54,
+    48,
+    50,
+    62,
+    60,
+    42,
+    53
+   ],
+   "bound_m": 0.00018584794661342106
+  },
+  {
+   "mesh": "link2_coll",
+   "hull_verts": 152,
+   "piece_verts": [
+    44,
+    56,
+    45,
+    59,
+    63,
+    63,
+    58,
+    56,
+    61,
+    63,
+    56,
+    56
+   ],
+   "bound_m": 0.00018672522197436993
+  },
+  {
+   "mesh": "link3_coll",
+   "hull_verts": 152,
+   "piece_verts": [
+    64,
+    63,
+    60,
+    63,
+    59,
+    58,
+    56,
+    49,
+    48,
+    53,
+    51
+   ],
+   "bound_m": 0.0001904871495133046
+  },
+  {
+   "mesh": "link4_coll",
+   "hull_verts": 152,
+   "piece_verts": [
+    57,
+    53,
+    47,
+    64,
+    56,
+    46,
+    58,
+    59,
+    55,
+    52,
+    51,
+    53
+   ],
+   "bound_m": 0.00019672587195490335
+  },
+  {
+   "mesh": "link5_coll",
+   "hull_verts": 152,
+   "piece_verts": [
+    50,
+    57,
+    64,
+    47,
+    59,
+    47,
+    64,
+    56,
+    63,
+    48,
+    58,
+    53,
+    62
+   ],
+   "bound_m": 0.00019669590561280817
+  },
+  {
+   "mesh": "link6_coll",
+   "hull_verts": 102,
+   "piece_verts": [
+    60,
+    55,
+    55,
+    63
+   ],
+   "bound_m": 0.00016934480640665308
+  },
+  {
+   "mesh": "link7_coll",
+   "hull_verts": 102,
+   "piece_verts": [
+    45,
+    63,
+    57,
+    58
+   ],
+   "bound_m": 0.00019908112182591235
+  },
+  {
+   "mesh": "hand_c",
+   "hull_verts": 102,
+   "piece_verts": [
+    54,
+    59,
+    47,
+    53,
+    51,
+    56
+   ],
+   "bound_m": 0.0001962586688237863
+  },
+  {
+   "mesh": "finger_0",
+   "hull_verts": 49,
+   "piece_verts": [
+    49
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_base_mesh",
+   "hull_verts": 48,
+   "piece_verts": [
+    48
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_00_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_01_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_02_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_03_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_04_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_05_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_06_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_07_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_08_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_09_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_10_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_11_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_12_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_13_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_14_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_15_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_16_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_17_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_18_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_19_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_20_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_21_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_22_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_23_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_00_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_01_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_02_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_03_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_04_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_05_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_06_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_07_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_08_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_09_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_10_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_11_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_12_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_13_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_14_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_15_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_16_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_17_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_18_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_19_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_20_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_21_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_22_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_23_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_00_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_01_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_02_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_03_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_04_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_05_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_06_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_07_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_08_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_09_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_10_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_11_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_12_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: honey_box_150ml
+shape:
+  particles:
+    region:
+    - [-0.028, -0.028, 0.004]
+    - [0.028, 0.028, 0.0518]
+    spacing: 0.004
+material: honey
+features:
+  passage_width:
+    value: 0.056
+    source: model
+    note: 150 ml filling the open box card liquid_box_56 (56 x 56 mm inside, 80 mm deep, 4 mm floor) placed at the same pos;
+      MPM paste (viscosity above the 1 Pa s SPH limit); the 56 mm inner width sets the SPH particle size, min(2 mm, width
+      / 16)

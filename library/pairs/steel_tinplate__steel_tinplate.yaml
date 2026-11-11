@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: steel_tinplate
+b: steel_tinplate
+mu_static:
+  value: 0.6
+  source: model
+  unc: [0.5, 0.7]
+  note: Engineering ToolBox friction-coefficients-d_778 glass/metal clean dry 0.5-0.7 used for tinplate
+mu_dynamic:
+  value: 0.6
+  source: model
+  unc: [0.5, 0.7]
+  note: Engineering ToolBox friction-coefficients-d_778 glass/metal clean dry 0.5-0.7 used for tinplate

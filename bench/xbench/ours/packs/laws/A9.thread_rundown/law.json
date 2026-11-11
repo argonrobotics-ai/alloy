@@ -1,0 +1,58 @@
+{
+ "law": "A9.thread_rundown",
+ "schema": "alloy.xbench.ours.sdf/1",
+ "dt": 0.000625,
+ "substeps": 1,
+ "duration_s": 2.3,
+ "steps": 3680,
+ "metrics": {
+  "advance_per_rev": {
+   "abs": 0.0,
+   "rel": 0.005,
+   "source": "bench \u00a74 A9: advance = p within 0.5 %"
+  },
+  "rundown_torque": {
+   "abs": 0.0,
+   "rel": 0.05,
+   "source": "bench \u00a74 A9: power-screw torque within 5 %"
+  }
+ },
+ "stat": {
+  "advance_per_rev": "mean",
+  "rundown_torque": "mean"
+ },
+ "conditions": [
+  {
+   "id": "mu0.14",
+   "params": {
+    "mu": 0.14,
+    "F": 5.0,
+    "omega": 3.141592653589793
+   },
+   "worlds": 1
+  },
+  {
+   "id": "mu0.1",
+   "params": {
+    "mu": 0.1,
+    "F": 5.0,
+    "omega": 3.141592653589793
+   },
+   "worlds": 1
+  }
+ ],
+ "export": {
+  "body_names": [
+   "nut"
+  ],
+  "frames": "a frame every physics step (record_every 1), frame 0 the initial state; W axis = cond.json worlds",
+  "channels": {
+   "body_q": "[T, W, B, 7] float32: body origin + quaternion x y z w, world frame (contract)",
+   "body_qd": "[T, W, B, 6] float32: COM linear + angular velocity, world frame (contract)",
+   "joint_q": "[T, W, 2] float64, optional: the nut's axial position z (m) and spin angle theta (rad) about the bolt axis +z, continuous (unwrapped; theta grows as the nut runs down). Without it, z and theta come from body_q (Newton eval_ik, theta unwrapped over frames)",
+   "drive_tau": "[T, W] float64, required: the torque (N m) the spin velocity drive applied to the nut about +z over the step that ends at the frame (frame 0: 0), i.e. the engine's applied joint drive torque. Alloy: kd (target - omega) with omega after the step (its implicit velocity actuator)"
+  },
+  "scored_by": "Alloy's ThreadA9Twin: record (z, theta), the torque channel from drive_tau, scalars (thread_metrics: advance per rev and mean drive torque over the run-down after 0.25 s)"
+ },
+ "score": "python bench/xbench/ours/sdf_pack.py score RUN_DIR --laws A9.thread_rundown --device cuda:0 reads RUN_DIR/A9.thread_rundown/<condition>.npz -> RUN_DIR/A9.thread_rundown.scored.json"
+}

@@ -1,0 +1,21 @@
+{
+ "dataset_id": "petrak2021-v1",
+ "environment": {},
+ "holder": {},
+ "instruments": {
+  "drape_coefficient": {
+   "note": "contrary: Matsudaira & Yang 1997, doi:10.4188/transjtmsj.50.9_T242 (FRL-type tester, not Cusick): remounting one specimen moved DC 0.034-0.136 on stiff fabrics as the fold count changed",
+   "source": "Toshikj & Mladenovikj 2025, Textiles 5(4):63, doi:10.3390/textiles5040063 (CC BY), Table 9: Cusick drape meter, 18 cm disc, BS 5058:1974, 5 replicate specimens, DC SD 0.50-0.98 %; u95 of a 5-specimen mean = t95(4) x 0.0098 / sqrt(5). Table read from web.archive.org snapshot 20251205035025",
+   "u95": 0.012166356422857254,
+   "what": "Cusick drape meter: Drape (section 2.3, p. 6): Cusick drape meter, 30 cm samples, horizontal disk radius 90 mm, 5 samples per fabric, Kd = (A - pi R1^2) / (pi (R2^2 - R1^2)). Node counts not reported."
+  }
+ },
+ "law_id": "R6.cloth_drape",
+ "objects": {
+  "specimen": {
+   "radius_m": 0.15,
+   "support_radius_m": 0.09
+  }
+ },
+ "protocol_version": "petrak2021/1"
+}

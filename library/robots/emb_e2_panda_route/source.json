@@ -1,0 +1,56 @@
+{
+ "embodiment": "e2_panda_route",
+ "title": "Franka Panda + Franka Hand, route contact variant solref 0.00125 s (Alloy's route step only)",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "files": {
+   "franka_emika_panda/panda.xml": "c047a49f3c770ff2393e2a74f7e0fbd9d99080a305407254f8ff53ac053cde3b",
+   "franka_emika_panda/LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+  }
+ },
+ "licence": "Apache-2.0 (mujoco_menagerie franka_emika_panda)",
+ "world": "table 1.2 x 1.2 m, top z = 0 (robot base on it), floor z = -0.75; box 50 mm 0.1 kg, cylinder r 30 x 100 mm 0.15 kg, T14's recorded mug (library/robots/task_t14, convex pieces, 0.404 kg)",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
+  "Franka Hand: tendon 'split' + tendon actuator -> joint position actuator 'hand_finger' on finger_joint1 (kp 100 N/m, kv 10 N s/m, force \u00b1100 N, ctrl 0-0.04 m; the j1 = j2 equality kept)",
+  "the verdict scene here is emb_e2_panda without TRAIN-FIX 1b's firm contacts: this variant keeps the source's solimp and solmix (alloy.tasks.emb_firm applies to the verdict scene only)",
+  "route contact variant of emb_e2_panda: every geom's solref set to [0.00125, 1.0] (time constant = 2 x Alloy's route step 0.000625 s, MuJoCo's floor; damping ratio); a solimp softer than MuJoCo's default (dmin < 0.9; Go2's feet) set to the default, as in _stiff; friction, margins, stiffer solimp and everything else as the verdict scene"
+ ],
+ "contact": {
+  "source_solref": [
+   {
+    "solref": [
+     0.0025,
+     1.0
+    ],
+    "geoms": 148
+   }
+  ],
+  "variant_solref": [
+   0.00125,
+   1.0
+  ],
+  "route_dt_s": 0.000625,
+  "valid": "valid at Alloy's route step (0.000625 s) only: an engine at the sources' 2 ms step clamps the time constant to 4 ms (MuJoCo's 2 dt floor)"
+ },
+ "mug": {
+  "scene": "library/robots/task_t14/scene.xml",
+  "sha256": "52996d90aa41bf24a15a87b1352f77c179e7f5292a33942d8ac1e39fd2a9628d"
+ },
+ "hull_split": 0.00019908112182591235,
+ "init": {
+  "nq": 30,
+  "nv": 27,
+  "nu": 8,
+  "nbody": 16,
+  "ngeom": 148,
+  "init_contacts": 4,
+  "init_deepest_mm": 0.0,
+  "ok": true
+ }
+}

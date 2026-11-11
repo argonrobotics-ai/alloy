@@ -1,0 +1,16 @@
+# Cloth + rigid demo: a beech cube dropped on a towel whose edge is sewn to a silicone mat by a spring seam that
+# breaks at 5 N. The spring joins two particle objects (Newton ac7f7830 has no particle-to-body spring).
+schema: alloy.scene/1
+robots: []
+objects:
+  - {object: table_top_plywood, pose: [0, 0, -0.009, 0, 0, 0, 1]}
+  - object: towel_cotton
+    pose: [-0.151, 0, 0.05, 0, 0, 0, 1]
+    randomize:
+      - {field: material.elastic.youngs, lo: 0.5 MPa, hi: 2 MPa}
+      - {field: material.surface.mu_static, lo: 0.5, hi: 0.7}
+  - {object: silicone_mat, pose: [0.151, 0, 0.05, 0, 0, 0, 1]}
+  - {object: cube_beech_30, pose: [-0.151, 0, 0.2, 0, 0, 0, 1]}
+attachments:
+  - {a: towel_cotton, b: silicone_mat, kind: spring, break_force: {value: 5 N, source: model, note: demo seam break load}}
+worlds: 4

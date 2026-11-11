@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_wood_table_001",
+ "family": "wood",
+ "preset": "wood_oak",
+ "texture": "polyhaven:wood_table_001",
+ "res": "1k",
+ "scale_m": 1.5,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/wood_table_001",
+ "author": "Dimitrios Savva, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.019,
+ "note": "table top wood: Poly Haven 'Wood Table 001', 1.5 m tile, 1k maps"
+}

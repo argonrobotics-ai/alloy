@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "gel_gelatin_ballistic",
+ "preset": "plastic_clear",
+ "absorption_color": [
+  0.95,
+  0.85,
+  0.55
+ ],
+ "absorption_m": 0.06,
+ "roughness": 0.1,
+ "note": "ballistic gelatin: clear, faint amber"
+}

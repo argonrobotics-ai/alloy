@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_tiles133a",
+ "family": "tile",
+ "preset": "ceramic_white",
+ "texture": "ambientcg:Tiles133A",
+ "res": "1k",
+ "scale_m": 0.6,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Tiles133A",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.712,
+ "note": "clean kitchen tiles: ambientCG 'Tiles 133 A', 0.6 m tile, 1k maps"
+}

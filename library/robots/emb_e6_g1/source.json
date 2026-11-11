@@ -1,0 +1,32 @@
+{
+ "embodiment": "e6_g1",
+ "title": "Unitree G1 with Dex3 hands (43 actuators)",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "files": {
+   "unitree_g1/g1_with_hands.xml": "a6d88c9efde50e9715c71e590ce1a8d3515a0099df7f36e62add8204dae758ad",
+   "unitree_g1/LICENSE": "98335465f43a20b5850e4651db6e74c4aa1e9fc8e8813d38f345178045c0da50"
+  }
+ },
+ "licence": "BSD-3-Clause (mujoco_menagerie unitree_g1, Unitree Robotics)",
+ "world": "floor z = 0; box obstacle 0.3 x 0.3 x 0.1 m at x = 1 m",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)"
+ ],
+ "hull_split": 0.0001999943029055455,
+ "init": {
+  "nq": 50,
+  "nv": 49,
+  "nu": 43,
+  "nbody": 46,
+  "ngeom": 343,
+  "init_contacts": 16,
+  "init_deepest_mm": -0.2049,
+  "ok": true
+ }
+}

@@ -1,0 +1,50 @@
+schema: alloy.material/1
+name: copper_c110
+density:
+  value: 8890.0
+  source: catalog
+  unc: [8880.0, 8940.0]
+  note: C11000 8.89 g/cm3, Callister & Rethwisch 9e (2014) App. B B.1
+surface:
+  mu_static:
+    value: 0.53
+    source: catalog
+    unc: [0.4, 0.7]
+    note: copper on steel (dry), Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.36
+    source: catalog
+    unc: [0.25, 0.45]
+    note: copper on steel (dry), Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.8]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 115000000000.0
+    source: catalog
+    unc: [110000000000.0, 120000000000.0]
+    note: C11000, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+  poisson:
+    value: 0.34
+    source: catalog
+    unc: [0.31, 0.35]
+    note: C11000, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+plastic:
+  yield_stress:
+    value: 69000000.0
+    source: catalog
+    note: 'DOC: C11000 annealed (OS050, rod 1 in) typical yield at 0.5 % extension under load (the copper-alloy convention;
+      no 0.2 % offset value published): "OS050 1 0 TYP 68 32 10 - - 55", MPa "221 69" https://www.nationalbronze.com/pdfs/C11000.pdf
+      ; temper: annealed, the bent form (wire, tube)'
+  model: j2
+  hardening_modulus:
+    value: 603000000.0
+    source: model
+    unc: [574000000.0, 603000000.0]
+    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 221 MPa (same row),
+      eu = e^n − 1 from Hollomon n 0.474 for annealed copper ("Here the parameter n = 0.474 is called the strain hardening
+      parameter", Roylance, MIT 3.11 https://web.mit.edu/course/3/3.11/www/modules/ss.pdf); unc: n 0.54 (Kalpakjian, via https://en.wikipedia.org/wiki/Strain_hardening_exponent)
+      gives 574 MPa'

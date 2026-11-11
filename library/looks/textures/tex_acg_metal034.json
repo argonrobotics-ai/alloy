@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal034",
+ "family": "metal",
+ "preset": "brass",
+ "texture": "ambientcg:Metal034",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal034",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.477,
+ "note": "yellow metal (brass, gold): ambientCG 'Metal 034', 0.4 m tile, 1k maps"
+}

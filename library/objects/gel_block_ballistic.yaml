@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: gel_block_ballistic
+shape:
+  primitive:
+    kind: box
+    size: [0.04, 0.03, 0.025]
+material: gel_gelatin_ballistic

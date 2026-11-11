@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: foam_pad_pu
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.05, 0.0125]
+material: foam_pu_flexible

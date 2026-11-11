@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_tiles045",
+ "family": "tile",
+ "preset": "ceramic_white",
+ "texture": "ambientcg:Tiles045",
+ "res": "1k",
+ "scale_m": 0.6,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Tiles045",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.016,
+ "note": "dark tiles: ambientCG 'Tiles 045', 0.6 m tile, 1k maps"
+}

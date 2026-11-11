@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_laminate_floor_02",
+ "family": "floor",
+ "preset": "wood_oak",
+ "texture": "polyhaven:laminate_floor_02",
+ "res": "2k",
+ "scale_m": 1.7,
+ "bump_m": 0.0005,
+ "source": "https://polyhaven.com/a/laminate_floor_02",
+ "author": "Dario Barresi, Charlotte Baglioni",
+ "licence": "CC0-1.0",
+ "albedo": 0.237,
+ "note": "laminate floor: Poly Haven 'Laminate Floor 02', 1.7 m tile, 2k maps"
+}

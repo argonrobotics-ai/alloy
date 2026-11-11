@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: abs
+b: pbt
+mu_static:
+  value: 0.375
+  source: model
+  unc: [0.35, 0.5]
+  note: Bayer Table 3 PBT on steel 0.35-0.40 midpoint
+mu_dynamic:
+  value: 0.375
+  source: model
+  unc: [0.35, 0.5]
+  note: Bayer Table 3 PBT on steel 0.35-0.40 midpoint

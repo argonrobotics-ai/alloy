@@ -1,0 +1,6 @@
+{
+ "schema": "alloy.look/1",
+ "material": "aluminium_6061_t6",
+ "preset": "aluminum_bare",
+ "note": "bare machined 6061"
+}

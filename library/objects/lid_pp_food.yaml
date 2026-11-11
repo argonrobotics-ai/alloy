@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: lid_pp_food
+shape:
+  primitive:
+    kind: box
+    size: [0.06, 0.06, 0.0005]
+material: pp_homopolymer
+features:
+  thickness:
+    value: 0.001
+    source: model
+    note: 1 mm PP lid
+  min_wall:
+    value: 0.001
+    source: model
+    note: 1 mm PP lid

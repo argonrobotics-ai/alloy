@@ -1,0 +1,49 @@
+schema: alloy.material/1
+name: soil_sand_dry
+density:
+  value: 2650.0
+  source: catalog
+  unc: [2600.0, 2750.0]
+  note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Measured
+    bulk: dry loose well-graded sand 1644 kg/m3 (dry unit weight 16.13 kN/m3), compacted 1932 (https://members.cgs.ca/conferences/GeoStJohns2019/papers/Geo2019Paper535.pdf,
+    Table 1)'
+surface:
+  mu_static:
+    value: 0.4040262258351568
+    source: catalog
+    unc: [0.36397023426620234, 0.4040262258351568]
+    note: sandy soil on steel delta 20-22 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf,
+      soil-metal friction)
+  mu_dynamic:
+    value: 0.3636236032516411
+    source: model
+    note: sandy soil on steel delta 20-22 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf,
+      soil-metal friction); dynamic 0.9 x static (model)
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: soil impacts are almost fully plastic (model)
+elastic:
+  youngs:
+    value: 10000000.0
+    source: model
+    unc: [5000000.0, 50000000.0]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+plastic:
+  friction_angle:
+    value: 0.6021385919380436
+    source: measured
+    unc: [0.5235987755982988, 0.6876597252857658]
+    note: dry loose sand, direct shear 12.5-400 kPa, peak 34.5 deg, c taken 0 (https://members.cgs.ca/conferences/GeoStJohns2019/papers/Geo2019Paper535.pdf,
+      Table 1, Sec 4.3); 39.4 deg dry sand (https://phd.mater.uni-mate.hu/671/1/Alaa_El_Hariri_Dissertation_doi.pdf, Table
+      5.2); 30 deg is the loose-sand guideline floor (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf)

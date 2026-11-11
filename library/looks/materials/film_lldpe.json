@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "film_lldpe",
+ "preset": "plastic_clear",
+ "roughness": 0.05,
+ "note": "LLDPE stretch film: clear and glossy"
+}

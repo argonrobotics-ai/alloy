@@ -1,0 +1,30 @@
+{
+ "schema": "alloy.look/1",
+ "object": "usb_a_receptacle",
+ "materials": {
+  "housing": {
+   "preset": "abs_black"
+  },
+  "tongue": {
+   "preset": "plastic_matte",
+   "base_color": [
+    0.92,
+    0.92,
+    0.9
+   ],
+   "roughness": 0.4
+  }
+ },
+ "assign": [
+  {
+   "match": "housing",
+   "material": "housing"
+  },
+  {
+   "match": "tongue",
+   "material": "tongue"
+  }
+ ],
+ "default": "housing",
+ "note": "USB-A 2.0 receptacle: black housing, white tongue"
+}

@@ -1,0 +1,36 @@
+{
+ "law": "A11.cantilever",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 5.5,
+ "metrics": {
+  "tip_drop_rel_err": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "bench \u00a74 A11: elastica cantilever tip drop within the discretisation error (vs the exact chain, 1 %)"
+  }
+ },
+ "stat": {
+  "tip_drop_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "gamma0.5",
+   "params": {
+    "gamma": 0.5,
+    "links": 30.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "gamma5",
+   "params": {
+    "gamma": 5.0,
+    "links": 30.0
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

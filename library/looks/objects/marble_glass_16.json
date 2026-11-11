@@ -1,0 +1,18 @@
+{
+ "schema": "alloy.look/1",
+ "object": "marble_glass_16",
+ "materials": {
+  "body": {
+   "preset": "glass_clear",
+   "absorption_color": [
+    0.25,
+    0.55,
+    0.95
+   ],
+   "absorption_m": 0.01
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "glass marble: blue-tinted clear glass"
+}

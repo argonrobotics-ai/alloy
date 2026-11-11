@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal049a",
+ "family": "metal",
+ "preset": "steel_polished",
+ "texture": "ambientcg:Metal049A",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal049A",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.962,
+ "note": "clean polished silver metal: ambientCG 'Metal 049 A', 0.4 m tile, 1k maps"
+}

@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "zamak_3",
+ "preset": "zinc_plated",
+ "roughness": 0.3,
+ "note": "die-cast zinc: grey metallic"
+}

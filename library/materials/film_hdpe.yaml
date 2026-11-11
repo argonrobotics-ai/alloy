@@ -1,0 +1,45 @@
+schema: alloy.material/1
+name: film_hdpe
+density:
+  value: 952.0
+  source: catalog
+  unc: [950.0, 955.0]
+  note: 'DOC: ExxonMobil HD 5201 (grocery-sack grade) "Density | 0.952 g/cm³ | ASTM D1505" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000100750/0/en
+    ; Braskem SGM9450F 0.952, Chemdo HD55110 0.955'
+surface:
+  mu_static:
+    value: 0.35
+    source: model
+    unc: [0.2, 0.8]
+    note: 'ESTIMATE: no HDPE film datasheet lists a coefficient of friction; at or above the kinetic value below'
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.15, 0.7]
+    note: 'ESTIMATE: between a generic PE film sled test (ASTM D1894 "0.21 0.17" static / dynamic, https://www.shimadzu.com/an/industries/film/friction/index.html)
+      and unslipped LDPE film on itself (0.60-0.80, Dow 410F); HDPE is the slicker grade'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.1]
+    note: 'ESTIMATE: a thin film does not bounce; air drag and the sheet itself absorb the impact'
+elastic:
+  youngs:
+    value: 1000000000.0
+    source: catalog
+    unc: [750000000.0, 1100000000.0]
+    note: 'DOC: HD 5201 "Secant Modulus MD - 1% Secant | 150000 psi | 1000 MPa | ASTM D882" (TD 1100 MPa), 12.7 um test film
+      https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000100750/0/en ; low end Braskem SGM9450F
+      "Secant Modulus 1% | D 882 | MPa | 750/870" https://fkur.com/wp-content/uploads/SGM9450F-enUS-ASTM.pdf'
+  poisson:
+    value: 0.4
+    source: model
+    unc: [0.35, 0.46]
+    note: 'ESTIMATE: semi-crystalline PE about 0.4 (generic); LDPE 0.439 in a measured table https://pmc.ncbi.nlm.nih.gov/articles/PMC7155928/table/tb1'
+plastic:
+  yield_stress:
+    value: 37000000.0
+    source: catalog
+    unc: [30000000.0, 40000000.0]
+    note: 'DOC: HD 5201 "Tensile Strength at Yield MD | 5400 psi | 37 MPa | ASTM D882" (TD 32 MPa); Braskem SGM9450F 40/30
+      MPa. The film route caps in-plane strain at yield / E'

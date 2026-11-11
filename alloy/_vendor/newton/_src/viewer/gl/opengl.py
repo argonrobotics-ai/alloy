@@ -1,0 +1,2532 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+import ctypes
+import logging
+import os
+import sys
+import warnings
+
+import numpy as np
+import warp as wp
+
+from alloy._vendor.newton import Mesh
+
+from ...exceptions import NewtonWarning
+from ...utils.mesh import compute_vertex_normals
+from ...utils.texture import normalize_texture
+from ..utils import OPAQUE_OPACITY_THRESHOLD
+from .icon import set_window_icon
+from .shaders import (
+    FrameShader,
+    OITResolveShader,
+    ShaderArrow,
+    ShaderEdge,
+    ShaderLine,
+    ShaderShape,
+    ShaderSky,
+    ShadowShader,
+)
+
+logger = logging.getLogger(__name__)
+
+ENABLE_GL_CHECKS = False
+_CUDA_INTEROP_WARNINGS: set[str] = set()
+
+wp.set_module_options({"enable_backward": False})
+
+
+def _register_cuda_gl_buffer(buffer, device):
+    try:
+        return wp.RegisteredGLBuffer(
+            int(buffer.value),
+            device,
+            flags=wp.RegisteredGLBuffer.WRITE_DISCARD,
+            fallback_to_copy=False,
+        )
+    except RuntimeError:
+        if "unavailable" not in _CUDA_INTEROP_WARNINGS:
+            warnings.warn(
+                "CUDA-OpenGL interoperability is unavailable; using host buffer uploads.",
+                NewtonWarning,
+                stacklevel=3,
+            )
+            _CUDA_INTEROP_WARNINGS.add("unavailable")
+        return None
+
+
+def check_gl_error():
+    if not ENABLE_GL_CHECKS:
+        return
+
+    from pyglet import gl
+
+    error = gl.glGetError()
+    if error != gl.GL_NO_ERROR:
+        error_strings = {
+            gl.GL_INVALID_ENUM: "GL_INVALID_ENUM",
+            gl.GL_INVALID_VALUE: "GL_INVALID_VALUE",
+            gl.GL_INVALID_OPERATION: "GL_INVALID_OPERATION",
+            gl.GL_INVALID_FRAMEBUFFER_OPERATION: "GL_INVALID_FRAMEBUFFER_OPERATION",
+            gl.GL_OUT_OF_MEMORY: "GL_OUT_OF_MEMORY",
+        }
+        error_name = error_strings.get(error, f"Unknown error code: {error}")
+
+        import traceback  # noqa: PLC0415
+
+        stack = traceback.format_stack()
+        logger.error("OpenGL error: %s (%#x)\nCalled from: %s", error_name, error, "".join(stack[-2:-1]))
+
+
+def _upload_texture_from_file(gl, texture_image: np.ndarray) -> int:
+    image = normalize_texture(
+        texture_image,
+        flip_vertical=True,
+        require_channels=True,
+        scale_unit_range=True,
+    )
+    if image is None:
+        return 0
+    channels = image.shape[2]
+    if image.size == 0:
+        return 0
+    max_size = gl.GLint()
+    gl.glGetIntegerv(gl.GL_MAX_TEXTURE_SIZE, max_size)
+    if image.shape[0] > max_size.value or image.shape[1] > max_size.value:
+        return 0
+    texture_id = gl.GLuint()
+    gl.glGenTextures(1, texture_id)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, texture_id)
+
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+    format_enum = gl.GL_RGBA if channels == 4 else gl.GL_RGB
+    row_stride = image.shape[1] * channels
+    prev_alignment = None
+    if row_stride % 4 != 0:
+        prev_alignment = gl.GLint()
+        gl.glGetIntegerv(gl.GL_UNPACK_ALIGNMENT, prev_alignment)
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
+    gl.glTexImage2D(
+        gl.GL_TEXTURE_2D,
+        0,
+        format_enum,
+        image.shape[1],
+        image.shape[0],
+        0,
+        format_enum,
+        gl.GL_UNSIGNED_BYTE,
+        image.ctypes.data_as(ctypes.POINTER(ctypes.c_ubyte)),
+    )
+    if prev_alignment is not None:
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, prev_alignment.value)
+    gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+    return texture_id
+
+
+@wp.struct
+class RenderVertex:
+    pos: wp.vec3
+    normal: wp.vec3
+    uv: wp.vec2
+
+
+@wp.struct
+class LineVertex:
+    pos: wp.vec3
+    color: wp.vec3
+
+
+@wp.kernel
+def fill_vertex_data(
+    points: wp.array[wp.vec3],
+    normals: wp.array[wp.vec3],
+    uvs: wp.array[wp.vec2],
+    vertices: wp.array[RenderVertex],
+):
+    tid = wp.tid()
+
+    vertices[tid].pos = points[tid]
+
+    if normals:
+        vertices[tid].normal = normals[tid]
+
+    if uvs:
+        vertices[tid].uv = uvs[tid]
+
+
+@wp.kernel
+def fill_line_vertex_data(
+    starts: wp.array[wp.vec3],
+    ends: wp.array[wp.vec3],
+    colors: wp.array[wp.vec3],
+    vertices: wp.array[LineVertex],
+):
+    tid = wp.tid()
+
+    # Each line has 2 vertices (begin and end)
+    vertex_idx = tid * 2
+
+    # First vertex (line begin)
+    vertices[vertex_idx].pos = starts[tid]
+    vertices[vertex_idx].color = colors[tid]
+
+    # Second vertex (line end)
+    vertices[vertex_idx + 1].pos = ends[tid]
+    vertices[vertex_idx + 1].color = colors[tid]
+
+
+class MeshGL:
+    """Encapsulates mesh data and OpenGL buffers for a shape."""
+
+    _DEFAULT_COLOR = (0.7, 0.5, 0.3)
+
+    def __init__(
+        self,
+        num_points,
+        num_indices,
+        device,
+        hidden=False,
+        backface_culling=True,
+        dynamic=False,
+        *,
+        enable_cuda_interop=False,
+    ):
+        """Initialize mesh data with vertices and indices."""
+        gl = RendererGL.gl
+
+        self.num_points = num_points
+        self.num_indices = num_indices
+        self.max_points = num_points
+        self.max_indices = num_indices
+
+        # Store references to input buffers and rendering data
+        self.device = device
+        self.hidden = hidden
+        self.backface_culling = backface_culling
+        self.dynamic = dynamic
+
+        self.vertices = wp.zeros(num_points, dtype=RenderVertex, device=self.device)
+        self.indices = None
+        self.normals = None  # scratch buffer used during normal recomputation
+        self.texture_id = None
+        self._texture_source = None
+        self.opacity = 1.0
+        self._capsule_instancing = False
+
+        # Set up vertex attributes in the packed format the shaders expect
+        self.vertex_byte_size = 12 + 12 + 8
+        self.index_byte_size = 4
+
+        self.vbo_size = self.vertex_byte_size * num_points
+        self.ebo_size = self.index_byte_size * num_indices
+
+        ebo_usage = gl.GL_DYNAMIC_DRAW if dynamic else gl.GL_STATIC_DRAW
+
+        # Create OpenGL buffers
+        self.vao = gl.GLuint()
+        gl.glGenVertexArrays(1, self.vao)
+        gl.glBindVertexArray(self.vao)
+
+        self.vbo = gl.GLuint()
+        gl.glGenBuffers(1, self.vbo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vbo_size, None, gl.GL_STATIC_DRAW)
+
+        self.ebo = gl.GLuint()
+        gl.glGenBuffers(1, self.ebo)
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo)
+        gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo_size, None, ebo_usage)
+
+        # positions (location 0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertex_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+
+        # normals (location 1)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertex_byte_size, ctypes.c_void_p(3 * 4))
+        gl.glEnableVertexAttribArray(1)
+
+        # uv coordinates (location 2)
+        gl.glVertexAttribPointer(2, 2, gl.GL_FLOAT, gl.GL_FALSE, self.vertex_byte_size, ctypes.c_void_p(6 * 4))
+        gl.glEnableVertexAttribArray(2)
+
+        # set constant instance transform
+        gl.glDisableVertexAttribArray(3)
+        gl.glDisableVertexAttribArray(4)
+        gl.glDisableVertexAttribArray(5)
+        gl.glDisableVertexAttribArray(6)
+        gl.glDisableVertexAttribArray(7)
+        gl.glDisableVertexAttribArray(8)
+        gl.glDisableVertexAttribArray(9)
+
+        #   column 0  (1,0,0,0)
+        gl.glVertexAttrib4f(3, 1.0, 0.0, 0.0, 0.0)
+        #   column 1  (0,1,0,0)
+        gl.glVertexAttrib4f(4, 0.0, 1.0, 0.0, 0.0)
+        #   column 2  (0,0,1,0)
+        gl.glVertexAttrib4f(5, 0.0, 0.0, 1.0, 0.0)
+        #   column 3  (0,0,0,1)
+        gl.glVertexAttrib4f(6, 0.0, 0.0, 0.0, 1.0)
+
+        gl.glBindVertexArray(0)
+
+        # Per-mesh albedo and material (applied in render()).
+        self.color = self._DEFAULT_COLOR
+        self._color_is_default = True
+        self.material = (0.5, 0.0, 0.0, 0.0)
+
+        self.vertex_cuda_buffer = None
+        self.index_cuda_buffer = None
+        if enable_cuda_interop and self.device.is_cuda and self.vbo_size > 0 and self.ebo_size > 0:
+            vertex_cuda_buffer = _register_cuda_gl_buffer(self.vbo, self.device)
+            index_cuda_buffer = _register_cuda_gl_buffer(self.ebo, self.device)
+            if vertex_cuda_buffer is not None and index_cuda_buffer is not None:
+                self.vertex_cuda_buffer = vertex_cuda_buffer
+                self.index_cuda_buffer = index_cuda_buffer
+        self._points = None
+
+    def destroy(self):
+        """Clean up OpenGL resources."""
+        gl = RendererGL.gl
+        try:
+            # CUDA must release the registration before OpenGL deletes the buffer.
+            self.vertex_cuda_buffer = None
+            self.index_cuda_buffer = None
+            if hasattr(self, "vao"):
+                gl.glDeleteVertexArrays(1, self.vao)
+            if hasattr(self, "vbo"):
+                gl.glDeleteBuffers(1, self.vbo)
+            if hasattr(self, "ebo"):
+                gl.glDeleteBuffers(1, self.ebo)
+            if hasattr(self, "texture_id") and self.texture_id is not None:
+                gl.glDeleteTextures(1, self.texture_id)
+        except Exception:
+            # Ignore any errors if the GL context has already been torn down
+            pass
+
+    def update(self, points, indices, normals, uvs, texture=None, opacity=None, *, reuse_texture=False):
+        """Update vertex positions in the VBO.
+
+        Args:
+            points: New point positions (warp array or numpy array)
+            opacity: Display opacity in [0, 1].
+        """
+        gl = RendererGL.gl
+
+        if len(points) > self.max_points:
+            raise RuntimeError("Number of points exceeds mesh capacity")
+        if len(indices) > self.max_indices:
+            raise RuntimeError("Number of indices exceeds mesh capacity")
+
+        self._points = points
+        self.opacity = float(np.clip(1.0 if opacity is None else opacity, 0.0, 1.0))
+        self.num_points = len(points)
+        self.num_indices = len(indices)
+        use_cuda_interop = self.vertex_cuda_buffer is not None and self.index_cuda_buffer is not None
+
+        if self.indices is None or self.dynamic:
+            if self.dynamic:
+                self.indices = indices.view(dtype=wp.uint32)
+            else:
+                self.indices = wp.clone(indices).view(dtype=wp.uint32)
+            self.num_indices = len(self.indices)
+
+            if use_cuda_interop:
+                ebo_indices = self.index_cuda_buffer.map(dtype=wp.uint32, shape=(self.max_indices,))
+                try:
+                    wp.copy(ebo_indices, self.indices, count=self.num_indices)
+                finally:
+                    self.index_cuda_buffer.unmap()
+            else:
+                ebo_usage = gl.GL_DYNAMIC_DRAW if self.dynamic else gl.GL_STATIC_DRAW
+                host_indices = self.indices.numpy()
+                gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo)
+                if self.dynamic:
+                    gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, host_indices.nbytes, host_indices.ctypes.data)
+                else:
+                    gl.glBufferData(
+                        gl.GL_ELEMENT_ARRAY_BUFFER, host_indices.nbytes, host_indices.ctypes.data, ebo_usage
+                    )
+
+        # If normals are missing, compute them before packing vertex data.
+        if points is not None and normals is None:
+            self.recompute_normals()
+            normals = self.normals[: self.num_points]
+
+        # update gfx vertices
+        wp.launch(
+            fill_vertex_data,
+            dim=self.num_points,
+            inputs=[points, normals, uvs],
+            outputs=[self.vertices],
+            device=self.device,
+        )
+
+        # upload vertices to GL
+        if use_cuda_interop:
+            # upload points via CUDA if possible
+            vbo_vertices = self.vertex_cuda_buffer.map(dtype=RenderVertex, shape=self.vertices.shape)
+            try:
+                wp.copy(vbo_vertices, self.vertices, count=self.num_points)
+            finally:
+                self.vertex_cuda_buffer.unmap()
+
+        else:
+            host_vertices = self.vertices[: self.num_points].numpy()
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+            if self.dynamic:
+                gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, host_vertices.nbytes, host_vertices.ctypes.data)
+            else:
+                gl.glBufferData(gl.GL_ARRAY_BUFFER, host_vertices.nbytes, host_vertices.ctypes.data, gl.GL_STATIC_DRAW)
+
+        self.update_texture(texture, reuse_texture=reuse_texture)
+
+    def recompute_normals(self):
+        if self._points is None or self.indices is None:
+            return
+        if self.normals is None or len(self.normals) < self.max_points:
+            self.normals = wp.empty(self.max_points, dtype=wp.vec3, device=self.device)
+        compute_vertex_normals(
+            self._points,
+            self.indices,
+            normals=self.normals[: self.num_points],
+            device=self.device,
+        )
+
+    def update_texture(self, texture=None, *, reuse_texture=False):
+        # Only immutable model visuals opt in; ordinary log_mesh calls can
+        # mutate an image in place and must upload it again.
+        if reuse_texture and texture is self._texture_source:
+            return
+        gl = RendererGL.gl
+        texture_image = None
+        if texture is not None:
+            from ...utils.texture import load_texture  # noqa: PLC0415
+
+            texture_image = load_texture(texture)
+
+        if texture_image is None:
+            if self.texture_id is not None:
+                try:
+                    gl.glDeleteTextures(1, self.texture_id)
+                except Exception:
+                    pass
+                self.texture_id = None
+            self._texture_source = texture
+            return
+
+        if self.texture_id is not None:
+            try:
+                gl.glDeleteTextures(1, self.texture_id)
+            except Exception:
+                pass
+            self.texture_id = None
+
+        self._texture_source = None
+        texture_id = _upload_texture_from_file(gl, texture_image)
+        if texture_id:
+            self.texture_id = texture_id
+        # Cache deterministic rejection, but leave exceptions retryable.
+        self._texture_source = texture
+
+    def render(self):
+        if not self.hidden:
+            gl = RendererGL.gl
+
+            if self.backface_culling:
+                gl.glEnable(gl.GL_CULL_FACE)
+            else:
+                gl.glDisable(gl.GL_CULL_FACE)
+
+            gl.glActiveTexture(gl.GL_TEXTURE1)
+            if self.texture_id is not None:
+                gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture_id)
+            else:
+                gl.glBindTexture(gl.GL_TEXTURE_2D, RendererGL.get_fallback_texture())
+
+            # Set per-mesh albedo and material (global state, not per-VAO).
+            gl.glVertexAttrib3f(7, *self.color)
+            gl.glVertexAttrib4f(8, *self.material)
+
+            gl.glBindVertexArray(self.vao)
+            gl.glVertexAttrib1f(9, self.opacity)
+            gl.glVertexAttrib1f(10, 0.0)
+            gl.glDrawElements(gl.GL_TRIANGLES, self.num_indices, gl.GL_UNSIGNED_INT, None)
+            gl.glBindVertexArray(0)
+
+    def has_transparency(self) -> bool:
+        """Return True when this mesh needs transparent rendering."""
+        return not self.hidden and self.opacity < OPAQUE_OPACITY_THRESHOLD
+
+
+class LinesGL:
+    """Encapsulates line data and OpenGL buffers for line rendering."""
+
+    def __init__(self, max_lines, device, hidden=False, *, enable_cuda_interop=False):
+        """Initialize line data with the specified maximum number of lines.
+
+        Args:
+            max_lines: Maximum number of lines that can be rendered
+            device: Warp device to use
+            hidden: Whether the lines are initially hidden
+        """
+        gl = RendererGL.gl
+
+        self.max_lines = max_lines
+        self.max_vertices = max_lines * 2  # Each line has 2 vertices
+        self.num_lines = 0  # Current number of active lines to render
+
+        # Store references to input buffers and rendering data
+        self.device = device
+        self.hidden = hidden
+
+        self.vertices = wp.zeros(self.max_vertices, dtype=LineVertex, device=self.device)
+
+        # Set up vertex attributes for lines (position + color)
+        self.vertex_byte_size = 12 + 12  # 3 floats for pos + 3 floats for color
+        self.vbo_size = self.vertex_byte_size * self.max_vertices
+
+        # Create OpenGL buffers
+        self.vao = gl.GLuint()
+        gl.glGenVertexArrays(1, self.vao)
+        gl.glBindVertexArray(self.vao)
+
+        self.vbo = gl.GLuint()
+        gl.glGenBuffers(1, self.vbo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vbo_size, None, gl.GL_DYNAMIC_DRAW)
+
+        # positions (location 0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertex_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+
+        # colors (location 1)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertex_byte_size, ctypes.c_void_p(3 * 4))
+        gl.glEnableVertexAttribArray(1)
+
+        gl.glBindVertexArray(0)
+
+        if enable_cuda_interop and self.device.is_cuda and self.vbo_size > 0:
+            self.vertex_cuda_buffer = _register_cuda_gl_buffer(self.vbo, self.device)
+        else:
+            self.vertex_cuda_buffer = None
+
+    def destroy(self):
+        """Clean up OpenGL resources."""
+        gl = RendererGL.gl
+        try:
+            self.vertex_cuda_buffer = None
+            if hasattr(self, "vao"):
+                gl.glDeleteVertexArrays(1, self.vao)
+            if hasattr(self, "vbo"):
+                gl.glDeleteBuffers(1, self.vbo)
+        except Exception:
+            # Ignore any errors if the GL context has already been torn down
+            pass
+
+    def update(self, starts, ends, colors):
+        """Update line data in the VBO.
+
+        Args:
+            starts: Array of line start positions (warp array of vec3) or None
+            ends: Array of line end positions (warp array of vec3) or None
+            colors: Array of line colors (warp array of vec3) or None
+        """
+        gl = RendererGL.gl
+
+        # Handle None values by setting line count to zero
+        if starts is None or ends is None or colors is None:
+            self.num_lines = 0
+            return
+
+        # Update current line count
+        self.num_lines = len(starts)
+
+        if self.num_lines > self.max_lines:
+            raise RuntimeError(f"Number of lines ({self.num_lines}) exceeds maximum ({self.max_lines})")
+        if len(ends) != self.num_lines:
+            raise RuntimeError("Number of line ends does not match line begins")
+        if len(colors) != self.num_lines:
+            raise RuntimeError("Number of line colors does not match line begins")
+
+        # Only update vertex data if we have lines to render
+        if self.num_lines > 0:
+            # Update line vertex data using the kernel
+            wp.launch(
+                fill_line_vertex_data,
+                dim=self.num_lines,
+                inputs=[starts, ends, colors],
+                outputs=[self.vertices],
+                device=self.device,
+            )
+
+        if self.vertex_cuda_buffer is not None:
+            vbo_vertices = self.vertex_cuda_buffer.map(dtype=LineVertex, shape=self.vertices.shape)
+            try:
+                wp.copy(vbo_vertices, self.vertices)
+            finally:
+                self.vertex_cuda_buffer.unmap()
+        else:
+            host_vertices = self.vertices.numpy()
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_vertices.nbytes, host_vertices.ctypes.data, gl.GL_DYNAMIC_DRAW)
+
+    def render(self):
+        if not self.hidden and self.num_lines > 0:
+            gl = RendererGL.gl
+
+            gl.glDisable(gl.GL_CULL_FACE)  # Lines don't need culling
+
+            gl.glBindVertexArray(self.vao)
+            # Only render vertices for the current number of lines
+            current_vertices = self.num_lines * 2
+            gl.glDrawArrays(gl.GL_LINES, 0, current_vertices)
+            gl.glBindVertexArray(0)
+
+
+class WireframeShapeGL:
+    """Per-shape wireframe edge data rendered via GL_LINES with a geometry shader.
+
+    Stores interleaved (position, color) vertex data in model space.
+    The World matrix is set per-shape by the caller before drawing.
+
+    Multiple instances can share the same VAO/VBO when created via
+    :meth:`create_shared`.  Only the *owner* (``_owns_gl == True``)
+    deletes the GL resources on :meth:`destroy`.
+    """
+
+    def __init__(self, vertex_data: np.ndarray):
+        """Create a wireframe shape that owns its GL resources."""
+        gl = RendererGL.gl
+        self.num_vertices = len(vertex_data)
+        self.hidden = False
+        self.world_matrix = np.eye(4, dtype=np.float32)
+        self._owns_gl = True
+
+        vertex_byte_size = 6 * 4
+
+        self.vao = gl.GLuint()
+        gl.glGenVertexArrays(1, self.vao)
+        gl.glBindVertexArray(self.vao)
+
+        self.vbo = gl.GLuint()
+        gl.glGenBuffers(1, self.vbo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+
+        data = vertex_data.astype(np.float32)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data.ctypes.data, gl.GL_STATIC_DRAW)
+
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, vertex_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, vertex_byte_size, ctypes.c_void_p(3 * 4))
+        gl.glEnableVertexAttribArray(1)
+
+        gl.glBindVertexArray(0)
+
+    @classmethod
+    def create_shared(cls, owner: "WireframeShapeGL") -> "WireframeShapeGL":
+        """Create an instance that shares *owner*'s VAO/VBO."""
+        obj = cls.__new__(cls)
+        obj.vao = owner.vao
+        obj.vbo = owner.vbo
+        obj.num_vertices = owner.num_vertices
+        obj.hidden = False
+        obj.world_matrix = np.eye(4, dtype=np.float32)
+        obj._owns_gl = False
+        return obj
+
+    def destroy(self):
+        """Free GL resources if this instance owns them."""
+        if not getattr(self, "_owns_gl", False):
+            return
+        gl = RendererGL.gl
+        try:
+            if hasattr(self, "vao"):
+                gl.glDeleteVertexArrays(1, self.vao)
+            if hasattr(self, "vbo"):
+                gl.glDeleteBuffers(1, self.vbo)
+        except Exception:
+            pass
+
+    def render(self):
+        if self.hidden or self.num_vertices == 0:
+            return
+        gl = RendererGL.gl
+        gl.glBindVertexArray(self.vao)
+        gl.glDrawArrays(gl.GL_LINES, 0, self.num_vertices)
+        gl.glBindVertexArray(0)
+
+
+@wp.kernel
+def update_vbo_transforms(
+    instance_transforms: wp.array[wp.transform],
+    instance_scalings: wp.array[wp.vec3],
+    vbo_transforms: wp.array[wp.mat44],
+):
+    """Update VBO with simple instance transformation matrices."""
+    tid = wp.tid()
+
+    # Get transform and scaling
+    transform = instance_transforms[tid]
+
+    if instance_scalings:
+        s = instance_scalings[tid]
+    else:
+        s = wp.vec3(1.0, 1.0, 1.0)
+
+    # Extract position and rotation
+    p = wp.transform_get_translation(transform)
+    q = wp.transform_get_rotation(transform)
+
+    # Build rotation matrix
+    R = wp.quat_to_matrix(q)
+
+    # Apply scaling
+    vbo_transforms[tid] = wp.mat44(
+        R[0, 0] * s[0],
+        R[1, 0] * s[0],
+        R[2, 0] * s[0],
+        0.0,
+        R[0, 1] * s[1],
+        R[1, 1] * s[1],
+        R[2, 1] * s[1],
+        0.0,
+        R[0, 2] * s[2],
+        R[1, 2] * s[2],
+        R[2, 2] * s[2],
+        0.0,
+        p[0],
+        p[1],
+        p[2],
+        1.0,
+    )
+
+
+@wp.kernel
+def update_vbo_transforms_from_points(
+    points: wp.array[wp.vec3],
+    widths: wp.array[wp.float32],
+    vbo_transforms: wp.array[wp.mat44],
+):
+    """Update VBO with simple instance transformation matrices."""
+    tid = wp.tid()
+
+    # Get transform and scaling
+    p = points[tid]
+
+    if widths:
+        s = widths[tid]
+    else:
+        s = 1.0
+
+    # Build rotation matrix
+    R = wp.identity(n=3, dtype=wp.float32)
+
+    # Apply scaling
+    vbo_transforms[tid] = wp.mat44(
+        R[0, 0] * s,
+        R[1, 0] * s,
+        R[2, 0] * s,
+        0.0,
+        R[0, 1] * s,
+        R[1, 1] * s,
+        R[2, 1] * s,
+        0.0,
+        R[0, 2] * s,
+        R[1, 2] * s,
+        R[2, 2] * s,
+        0.0,
+        p[0],
+        p[1],
+        p[2],
+        1.0,
+    )
+
+
+class MeshInstancerGL:
+    """
+    Handles instanced rendering for a mesh.
+    Note the vertices must be in the 8-dimensional format:
+        [3D point, 3D normal, UV texture coordinates]
+    """
+
+    def __init__(self, num_instances, mesh, *, enable_cuda_interop=False):
+        self.mesh = mesh
+        self.device = mesh.device
+        self.hidden = False
+        self.instance_transform_buffer = None
+        self.instance_color_buffer = None
+        self.instance_material_buffer = None
+        self.instance_opacity_buffer = None
+        self._enable_cuda_interop = enable_cuda_interop
+        self._instance_transform_cuda_buffer = None
+
+        self._has_transparency = False
+        self._opacity_attribute_enabled = False
+
+        self.allocate(num_instances)
+        self.active_instances = num_instances
+
+    def __del__(self):
+        self.destroy()
+
+    def destroy(self):
+        """Clean up OpenGL resources."""
+        # CUDA must release the registration before OpenGL deletes the buffer.
+        self._instance_transform_cuda_buffer = None
+        try:
+            gl = RendererGL.gl
+            if getattr(self, "vao", None) is not None:
+                gl.glDeleteVertexArrays(1, self.vao)
+                gl.glDeleteBuffers(1, self.instance_transform_buffer)
+                gl.glDeleteBuffers(1, self.instance_color_buffer)
+                gl.glDeleteBuffers(1, self.instance_material_buffer)
+                if self.instance_opacity_buffer is not None:
+                    gl.glDeleteBuffers(1, self.instance_opacity_buffer)
+        except Exception:
+            # Ignore any errors during interpreter shutdown.
+            pass
+        finally:
+            self.vao = None
+            self.instance_transform_buffer = None
+            self.instance_color_buffer = None
+            self.instance_material_buffer = None
+            self.instance_opacity_buffer = None
+
+    def allocate(self, num_instances):
+        gl = RendererGL.gl
+
+        self.world_xforms = wp.zeros(num_instances, dtype=wp.mat44, device=self.device)
+
+        self.vao = gl.GLuint()
+        self.instance_transform_buffer = gl.GLuint()
+        self.instance_color_buffer = gl.GLuint()
+        self.instance_material_buffer = gl.GLuint()
+        self.instance_opacity_buffer = None
+        self.num_instances = num_instances
+
+        gl.glGenVertexArrays(1, self.vao)
+        gl.glBindVertexArray(self.vao)
+
+        self._bind_mesh_buffers()
+        gl.glBindVertexArray(self.vao)
+
+        self.transform_byte_size = 16 * 4  # sizeof(mat44)
+        self.color_byte_size = 3 * 4  # sizeof(vec3)
+        self.material_byte_size = 4 * 4  # sizeof(vec4)
+        self.opacity_byte_size = 4  # sizeof(float)
+
+        self.instance_transform_buffer_size = self.transform_byte_size * self.num_instances
+        self.instance_color_buffer_size = self.color_byte_size * self.num_instances
+        self.instance_material_buffer_size = self.material_byte_size * self.num_instances
+        self.instance_opacity_buffer_size = self.opacity_byte_size * self.num_instances
+
+        # ------------------------
+        # transform buffer
+
+        gl.glGenBuffers(1, self.instance_transform_buffer)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_transform_buffer)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.instance_transform_buffer_size, None, gl.GL_DYNAMIC_DRAW)
+
+        # we can only send vec4s to the shader, so we need to split the instance transforms matrix into its column vectors
+        for i in range(4):
+            gl.glVertexAttribPointer(
+                3 + i, 4, gl.GL_FLOAT, gl.GL_FALSE, self.transform_byte_size, ctypes.c_void_p(i * 16)
+            )
+            gl.glEnableVertexAttribArray(3 + i)
+            gl.glVertexAttribDivisor(3 + i, 1)
+
+        # ------------------------
+        # colors
+
+        gl.glGenBuffers(1, self.instance_color_buffer)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_color_buffer)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.instance_color_buffer_size, None, gl.GL_STATIC_DRAW)
+
+        gl.glVertexAttribPointer(7, 3, gl.GL_FLOAT, gl.GL_FALSE, self.color_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(7)
+        gl.glVertexAttribDivisor(7, 1)
+
+        # ------------------------
+        # materials buffer
+        host_materials = np.zeros(self.num_instances * 4, dtype=np.float32)
+
+        gl.glGenBuffers(1, self.instance_material_buffer)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_material_buffer)
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER, self.instance_material_buffer_size, host_materials.ctypes.data, gl.GL_STATIC_DRAW
+        )
+
+        gl.glVertexAttribPointer(8, 4, gl.GL_FLOAT, gl.GL_FALSE, self.material_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(8)
+        gl.glVertexAttribDivisor(8, 1)
+
+        # Opaque instancers use the constant attribute. Allocate a buffer only
+        # if a later update actually contains transparent instances.
+        gl.glDisableVertexAttribArray(9)
+        gl.glVertexAttrib1f(9, 1.0)
+
+        gl.glBindVertexArray(0)
+
+        if self._enable_cuda_interop and self.device.is_cuda and self.instance_transform_buffer_size > 0:
+            self._instance_transform_cuda_buffer = _register_cuda_gl_buffer(self.instance_transform_buffer, self.device)
+
+    def _bind_mesh_buffers(self):
+        gl = RendererGL.gl
+        gl.glBindVertexArray(self.vao)
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.mesh.ebo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.mesh.vbo)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.mesh.vertex_byte_size, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(
+            1,
+            3,
+            gl.GL_FLOAT,
+            gl.GL_FALSE,
+            self.mesh.vertex_byte_size,
+            ctypes.c_void_p(3 * 4),
+        )
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(
+            2,
+            2,
+            gl.GL_FLOAT,
+            gl.GL_FALSE,
+            self.mesh.vertex_byte_size,
+            ctypes.c_void_p(6 * 4),
+        )
+        gl.glEnableVertexAttribArray(2)
+        gl.glBindVertexArray(0)
+
+    def set_mesh(self, mesh):
+        """Rebind this instancer to replacement prototype buffers."""
+        if mesh.device != self.device:
+            raise ValueError("Replacement mesh must use the instancer device")
+        self.mesh = mesh
+        self._bind_mesh_buffers()
+
+    def update_from_transforms(
+        self,
+        transforms: wp.array = None,
+        scalings: wp.array = None,
+        colors: wp.array = None,
+        materials: wp.array = None,
+        opacities: wp.array = None,
+    ):
+        if transforms is None:
+            active_count = 0
+        else:
+            active_count = len(transforms)
+
+            if active_count > self.num_instances:
+                raise ValueError(
+                    f"Active instance count ({active_count}) exceeds allocated capacity ({self.num_instances})."
+                )
+            if scalings is not None and len(scalings) != active_count:
+                raise ValueError("Number of scalings must match number of transforms")
+
+        if active_count > 0:
+            wp.launch(
+                update_vbo_transforms,
+                dim=active_count,
+                inputs=[
+                    transforms,
+                    scalings,
+                ],
+                outputs=[
+                    self.world_xforms,
+                ],
+                device=self.device,
+                record_tape=False,
+            )
+
+        self.active_instances = active_count
+        # Upload the full buffer; only the first `active_instances` rows are rendered
+        self._update_vbo(self.world_xforms, colors, materials, opacities)
+
+    # helper to update instance transforms from points
+    def update_from_points(self, points, widths, colors):
+        if points is None:
+            active = 0
+        else:
+            active = len(points)
+
+        if active > self.num_instances:
+            raise ValueError("Active point count exceeds allocated capacity. Reallocate before updating.")
+
+        self.active_instances = active
+
+        if self.active_instances > 0 and (points is not None or widths is not None):
+            wp.launch(
+                update_vbo_transforms_from_points,
+                dim=self.active_instances,
+                inputs=[
+                    points,
+                    widths,
+                ],
+                outputs=[
+                    self.world_xforms,
+                ],
+                device=self.device,
+                record_tape=False,
+            )
+
+        self._update_vbo(self.world_xforms, colors, None, None)
+
+    # upload to vbo
+    def _update_vbo(self, xforms, colors, materials, opacities):
+        gl = RendererGL.gl
+        active_count = self.active_instances
+
+        if self._instance_transform_cuda_buffer is not None:
+            vbo_transforms = self._instance_transform_cuda_buffer.map(dtype=wp.mat44, shape=(self.num_instances,))
+            try:
+                wp.copy(vbo_transforms, xforms)
+            finally:
+                self._instance_transform_cuda_buffer.unmap()
+        else:
+            host_transforms = xforms.numpy()
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_transform_buffer)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_transforms.nbytes, host_transforms.ctypes.data, gl.GL_DYNAMIC_DRAW)
+
+        # update other properties through CPU for now
+        if colors is not None:
+            host_colors = np.ascontiguousarray(colors.numpy(), dtype=np.float32)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_color_buffer)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_colors.nbytes, host_colors.ctypes.data, gl.GL_STATIC_DRAW)
+
+        if materials is not None:
+            host_materials = np.ascontiguousarray(materials.numpy(), dtype=np.float32)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_material_buffer)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_materials.nbytes, host_materials.ctypes.data, gl.GL_STATIC_DRAW)
+
+        if active_count > 0:
+            self._update_opacity_buffer(active_count, opacities)
+
+    def update_from_pinned(self, host_transforms_np, count, colors=None, materials=None, opacities=None):
+        """Upload pre-computed mat44 transforms from pinned host memory to GL.
+
+        Args:
+            host_transforms_np: Numpy array slice of mat44 transforms.
+            count: Number of active instances.
+            colors: Optional wp.array of per-instance colors.
+            materials: Optional wp.array of per-instance materials.
+            opacities: Optional wp.array of per-instance display opacities.
+        """
+        gl = RendererGL.gl
+        if count > self.num_instances:
+            raise ValueError(f"Active instance count ({count}) exceeds allocated capacity ({self.num_instances}).")
+        self.active_instances = count
+        if count > 0:
+            nbytes = count * self.transform_byte_size
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_transform_buffer)
+            gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, nbytes, host_transforms_np.ctypes.data)
+        if colors is not None:
+            host_colors = np.ascontiguousarray(colors.numpy(), dtype=np.float32)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_color_buffer)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_colors.nbytes, host_colors.ctypes.data, gl.GL_STATIC_DRAW)
+        if materials is not None:
+            host_materials = np.ascontiguousarray(materials.numpy(), dtype=np.float32)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_material_buffer)
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, host_materials.nbytes, host_materials.ctypes.data, gl.GL_STATIC_DRAW)
+        if count > 0:
+            self._update_opacity_buffer(count, opacities)
+
+    def _update_opacity_buffer(self, count: int, opacities: wp.array | None):
+        gl = RendererGL.gl
+
+        if opacities is None:
+            return
+
+        host_opacities = np.ascontiguousarray(opacities.numpy(), dtype=np.float32).reshape(-1)[:count]
+        host_opacities = np.clip(host_opacities, 0.0, 1.0)
+        self._has_transparency = bool(np.any(host_opacities < OPAQUE_OPACITY_THRESHOLD))
+        if not self._has_transparency:
+            self._set_opacity_attribute_enabled(False)
+            return
+
+        self._ensure_opacity_buffer()
+        self._set_opacity_attribute_enabled(True)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_opacity_buffer)
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, host_opacities.nbytes, host_opacities.ctypes.data)
+
+    def _ensure_opacity_buffer(self):
+        if self.instance_opacity_buffer is not None:
+            return
+
+        gl = RendererGL.gl
+        self.instance_opacity_buffer = gl.GLuint()
+        gl.glGenBuffers(1, self.instance_opacity_buffer)
+        gl.glBindVertexArray(self.vao)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_opacity_buffer)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.instance_opacity_buffer_size, None, gl.GL_DYNAMIC_DRAW)
+        gl.glVertexAttribPointer(9, 1, gl.GL_FLOAT, gl.GL_FALSE, self.opacity_byte_size, ctypes.c_void_p(0))
+        gl.glVertexAttribDivisor(9, 1)
+        gl.glBindVertexArray(0)
+
+    def _set_opacity_attribute_enabled(self, enabled: bool):
+        if self._opacity_attribute_enabled == enabled:
+            return
+
+        gl = RendererGL.gl
+        gl.glBindVertexArray(self.vao)
+        if enabled:
+            gl.glEnableVertexAttribArray(9)
+        else:
+            gl.glDisableVertexAttribArray(9)
+            gl.glVertexAttrib1f(9, 1.0)
+        gl.glBindVertexArray(0)
+        self._opacity_attribute_enabled = enabled
+
+    def has_transparency(self) -> bool:
+        """Return True when any active instance needs transparent rendering."""
+        return not self.hidden and self.active_instances > 0 and self._has_transparency
+
+    def render(self):
+        self._draw()
+
+    def _draw(self):
+        gl = RendererGL.gl
+
+        if self.hidden:
+            return
+
+        if self.mesh.backface_culling:
+            gl.glEnable(gl.GL_CULL_FACE)
+        else:
+            gl.glDisable(gl.GL_CULL_FACE)
+
+        gl.glActiveTexture(gl.GL_TEXTURE1)
+        if self.mesh.texture_id is not None:
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.mesh.texture_id)
+        else:
+            gl.glBindTexture(gl.GL_TEXTURE_2D, RendererGL.get_fallback_texture())
+
+        gl.glBindVertexArray(self.vao)
+        gl.glVertexAttrib1f(10, float(self.mesh._capsule_instancing))
+        gl.glDrawElementsInstanced(
+            gl.GL_TRIANGLES, self.mesh.num_indices, gl.GL_UNSIGNED_INT, None, self.active_instances
+        )
+        gl.glBindVertexArray(0)
+
+
+class RendererGL:
+    gl = None  # Class-level variable to hold the imported module
+    _fallback_texture = None  # 1x1 white texture bound when no albedo is set (suppresses macOS GL warning)
+
+    # Sample count of the multi-sampled framebuffer the scene is rendered into
+    # (see _setup_frame_buffer). The window config asks for the same count so the
+    # two agree, but the scene does not depend on it: it is always resolved into
+    # a texture that is then drawn to the window.
+    MSAA_SAMPLES = 4
+
+    # The shaders target GLSL 330 core.
+    MIN_GL_VERSION = (3, 3)
+
+    @staticmethod
+    def _check_gl_version(context):
+        import pyglet
+
+        info = context.get_info()
+        if not info.have_version(*RendererGL.MIN_GL_VERSION):
+            major, minor = RendererGL.MIN_GL_VERSION
+            raise pyglet.gl.ContextException(
+                f"ViewerGL requires OpenGL {major}.{minor} or newer, but the driver provides "
+                f"OpenGL {info.get_version_string()} ({info.get_renderer()})."
+            )
+
+    @classmethod
+    def initialize_gl(cls):
+        if cls.gl is None:  # Only import if not already imported
+            from pyglet import gl
+
+            cls.gl = gl
+
+    @classmethod
+    def get_fallback_texture(cls):
+        """Return a 1x1 white RGBA texture, creating it on first use."""
+        if cls._fallback_texture is None:
+            gl = cls.gl
+            tex = gl.GLuint()
+            gl.glGenTextures(1, tex)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex)
+            pixel = (gl.GLubyte * 4)(255, 255, 255, 255)
+            gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, 1, 1, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, pixel)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            cls._fallback_texture = tex
+        return cls._fallback_texture
+
+    def __init__(self, title="Newton", screen_width=1920, screen_height=1080, vsync=True, headless=None, device=None):
+        self.draw_sky = True
+        self.draw_fps = True
+        self.draw_shadows = True
+        self.draw_wireframe = False
+        self.wireframe_line_width = 1.5  # pixels
+        self.line_width = 1.5  # pixels, for all log_lines batches
+        self.arrow_scale = 1.0  # screen-space multiplier on arrow line width and arrowhead size
+        self.arrow_length_scale = 1.0  # multiplier on contact-arrow world-space length
+        self.joint_scale = 1.0  # multiplier on joint-axis line length
+        self.com_scale = 1.0  # multiplier on COM sphere radius
+        self.draw_edges = False
+        self._edge_color = (0.05, 0.05, 0.05, 1.0)
+
+        self.background_color = (68.0 / 255.0, 161.0 / 255.0, 255.0 / 255.0)
+
+        self.sky_upper = self.background_color
+        self.sky_lower = (40.0 / 255.0, 44.0 / 255.0, 55.0 / 255.0)
+
+        # Lighting settings
+        self._shadow_radius = 3.0
+        self._diffuse_scale = 1.0
+        self._specular_scale = 1.0
+        self.spotlight_enabled = True
+        self._shadow_extents = 10.0
+        self._exposure = 1.6
+
+        # Hemispherical ambient light colors, interpolated by dot(N, up).
+        # Decoupled from the sky background so the visible sky can be a
+        # saturated blue while the ambient fill stays neutral — a stand-in
+        # for a proper irradiance map that we don't precompute yet.
+        self.ambient_sky = (0.8, 0.8, 0.85)
+        self.ambient_ground = (0.3, 0.3, 0.35)
+
+        # On Wayland, PyOpenGL defaults to EGL which cannot see the GLX context
+        # that pyglet creates via XWayland. Force GLX so both libraries agree.
+        # Must be set before PyOpenGL is first imported (platform is selected
+        # once at import time).
+        if "PYOPENGL_PLATFORM" not in os.environ:
+            # WAYLAND_DISPLAY is the primary indicator; XDG_SESSION_TYPE is
+            # checked as a fallback for sessions where the socket is not yet set.
+            is_wayland = bool(os.environ.get("WAYLAND_DISPLAY")) or os.environ.get("XDG_SESSION_TYPE") == "wayland"
+            if is_wayland:
+                os.environ["PYOPENGL_PLATFORM"] = "glx"
+
+        try:
+            import pyglet
+
+            # disable error checking for performance
+            pyglet.options["debug_gl"] = False
+
+            # try imports
+            from pyglet.graphics.shader import Shader, ShaderProgram  # noqa: F401
+            from pyglet.math import Vec3 as PyVec3  # noqa: F401
+
+            RendererGL.initialize_gl()
+            gl = RendererGL.gl
+        except ImportError as e:
+            raise Exception("OpenGLRenderer requires pyglet (version >= 2.0) to be installed.") from e
+
+        # pyglet's shadow context, if any, shows the driver's version before we open a
+        # window; on OpenGL 1.1 drivers, creating windows can raise spurious GL errors.
+        if gl.current_context is not None:
+            self._check_gl_version(gl.current_context)
+
+        self._title = title
+
+        try:
+            # try to enable MSAA
+            config = pyglet.gl.Config(sample_buffers=1, samples=RendererGL.MSAA_SAMPLES, double_buffer=True)
+            self.window = pyglet.window.Window(
+                width=screen_width,
+                height=screen_height,
+                caption=title,
+                resizable=True,
+                vsync=vsync,
+                visible=not headless,
+                config=config,
+            )
+        except pyglet.window.NoSuchConfigException:
+            # Only the window's own buffer loses multi-sampling here, so the
+            # scene keeps its MSAA framebuffer. _setup_frame_buffer still turns
+            # MSAA off if that framebuffer comes back incomplete.
+            logger.warning("Could not get an MSAA window config.")
+            self.window = pyglet.window.Window(
+                width=screen_width,
+                height=screen_height,
+                caption=title,
+                resizable=True,
+                vsync=vsync,
+                visible=not headless,
+            )
+
+        try:
+            self._check_gl_version(self.window.context)
+            self._setup_renderer(gl, headless, device)
+        except BaseException:
+            # pyglet would otherwise keep the window open for the rest of the process.
+            self.window.close()
+            raise
+
+    def _setup_renderer(self, gl, headless, device):
+        """Set up the GL state, resources, and event handling for the new window."""
+        import pyglet
+
+        gl.glEnable(gl.GL_MULTISAMPLE)
+        # remember sample count for later (e.g., resolving FBO)
+        self.msaa_samples = RendererGL.MSAA_SAMPLES
+
+        set_window_icon(self.window)
+
+        # Pyglet on Windows 8+ (where _always_dwm=True) disables the GL
+        # swap interval to avoid double-syncing with DWM, but then also
+        # skips calling DwmFlush() in flip() due to a condition bug.
+        # We call DwmFlush() ourselves in present() to work around this.
+        self._dwm_flush = None
+        if sys.platform == "win32" and getattr(self.window, "_always_dwm", False):
+            try:
+                self._dwm_flush = ctypes.windll.dwmapi.DwmFlush
+            except (AttributeError, OSError):
+                pass
+
+        if headless is None:
+            self.headless = pyglet.options.get("headless", False)
+        else:
+            self.headless = headless
+        self.app = pyglet.app
+        # Closing the last window sets pyglet's process-wide exit flag.
+        self.app.event_loop.has_exit = False
+
+        # making window current opengl rendering context
+        self._make_current()
+
+        self._screen_width, self._screen_height = self.window.get_framebuffer_size()
+
+        self._camera_speed = 0.04
+        self._last_x, self._last_y = self._screen_width // 2, self._screen_height // 2
+        self._key_callbacks = []
+        self._key_release_callbacks = []
+
+        self._env_texture = None
+        self._env_intensity = 1.0
+        self._env_path = None
+        self._env_texture_obj = None
+
+        default_env = os.path.join(os.path.dirname(__file__), "newton_envmap.jpg")
+        if os.path.exists(default_env):
+            self._env_path = default_env
+        self._mouse_drag_callbacks = []
+        self._mouse_press_callbacks = []
+        self._mouse_release_callbacks = []
+        self._mouse_motion_callbacks = []
+        self._mouse_scroll_callbacks = []
+        self._resize_callbacks = []
+
+        # Initialize device and shape lookup
+        self._device = device if device is not None else wp.get_device()
+        self._shape_lookup = {}
+
+        self._shadow_fbo = None
+        self._shadow_texture = None
+        self._shadow_shader = None
+        self._shadow_width = 4096
+        self._shadow_height = 4096
+        self._light_space_matrix = np.eye(4, dtype=np.float32)
+
+        self._frame_texture = None
+        self._frame_depth_texture = None
+        self._frame_fbo = None
+        self._frame_pbo = None
+        self._oit_fbo = None
+        self._oit_accum_texture = None
+        self._oit_reveal_texture = None
+        self._oit_resolve_shader = None
+        self._shape_transparent_shader = None
+        self._oit_supported = False
+        self._oit_fallback_warned = False
+
+        self._sun_direction = None  # set on first render based on camera up_axis
+
+        self._light_color = (1.0, 1.0, 1.0)
+
+        check_gl_error()
+
+        if not headless:
+            # set up our own event handling so we can synchronously render frames
+            # by calling update() in a loop
+            from pyglet.window import Window
+
+            Window._enable_event_queue = False
+
+            self.window.dispatch_pending_events()
+
+            platform_event_loop = self.app.platform_event_loop
+            platform_event_loop.start()
+
+            # start event loop
+            # self.app.event_loop.dispatch_event("on_enter")
+
+        # create frame buffer for rendering to a texture
+        self._setup_shadow_buffer()
+        self._setup_frame_buffer()
+        self._setup_sky_mesh()
+        self._setup_frame_mesh()
+
+        self._shadow_shader = ShadowShader(gl)
+        self._shape_shader = ShaderShape(gl)
+        self._edge_shader = ShaderEdge(gl)
+        self._frame_shader = FrameShader(gl)
+        self._sky_shader = ShaderSky(gl)
+        self._wireframe_shader = ShaderLine(gl)
+        self._arrow_shader = ShaderArrow(gl)
+
+        if not headless:
+            self._setup_window_callbacks()
+
+    @property
+    def shadow_radius(self) -> float:
+        return self._shadow_radius
+
+    @shadow_radius.setter
+    def shadow_radius(self, value: float):
+        self._shadow_radius = max(float(value), 0.0)
+
+    @property
+    def diffuse_scale(self) -> float:
+        return self._diffuse_scale
+
+    @diffuse_scale.setter
+    def diffuse_scale(self, value: float):
+        self._diffuse_scale = max(float(value), 0.0)
+
+    @property
+    def specular_scale(self) -> float:
+        return self._specular_scale
+
+    @specular_scale.setter
+    def specular_scale(self, value: float):
+        self._specular_scale = max(float(value), 0.0)
+
+    @property
+    def shadow_extents(self) -> float:
+        return self._shadow_extents
+
+    @shadow_extents.setter
+    def shadow_extents(self, value: float):
+        self._shadow_extents = max(float(value), 1e-4)
+
+    @property
+    def exposure(self) -> float:
+        return self._exposure
+
+    @exposure.setter
+    def exposure(self, value: float):
+        self._exposure = max(float(value), 0.0)
+
+    def update(self):
+        self._make_current()
+
+        if not self.headless:
+            import pyglet
+
+            pyglet.clock.tick()
+
+            self.app.platform_event_loop.step(0.001)  # 1ms app polling latency
+            try:
+                self.window.dispatch_events()
+            except (ctypes.ArgumentError, TypeError):
+                # Handle known issue with pyglet xlib backend on some Linux configurations
+                # where window handle can have wrong type in XCheckWindowEvent
+                # This is a non-fatal error that can be safely ignored
+                pass
+
+    def render(self, camera, objects, lines=None, wireframe_shapes=None, arrows=None):
+        gl = RendererGL.gl
+        self._make_current()
+
+        gl.glClearColor(*self.sky_upper, 1)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(True)
+        gl.glDepthRange(0.0, 1.0)
+
+        self.camera = camera
+
+        # Lazy-init sun direction based on camera up axis
+        if self._sun_direction is None:
+            _sun_dirs = {
+                0: np.array((0.8, 0.2, -0.3)),  # X-up
+                1: np.array((0.2, 0.8, -0.3)),  # Y-up
+                2: np.array((0.2, -0.3, 0.8)),  # Z-up
+            }
+            d = _sun_dirs.get(camera.up_axis, _sun_dirs[2])
+            self._sun_direction = d / np.linalg.norm(d)
+
+        # Store matrices for other methods
+        self._view_matrix = self.camera.get_view_matrix()
+        self._projection_matrix = self.camera.get_projection_matrix()
+        scene_has_transparency = self._scene_has_transparency(objects)
+
+        # Lazy-load environment map after a valid GL context is active
+        if self._env_path is not None and self._env_texture is None:
+            try:
+                self.set_environment_map(self._env_path)
+            except Exception:
+                pass
+            self._env_path = None
+
+        # 1. render depth of scene to texture (from light's perspective)
+        gl.glViewport(0, 0, self._shadow_width, self._shadow_height)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._shadow_fbo)
+        gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
+
+        if self.draw_shadows:
+            # Note: lines are skipped during shadow pass since they don't cast shadows
+            self._render_shadow_map(objects, scene_has_transparency=scene_has_transparency)
+
+        # reset viewport
+        gl.glViewport(0, 0, self._screen_width, self._screen_height)
+
+        has_msaa = getattr(self, "msaa_samples", 0) > 0 and self._frame_msaa_fbo is not None
+
+        # select target framebuffer (MSAA or regular) for scene rendering
+        target_fbo = self._frame_msaa_fbo if has_msaa else self._frame_fbo
+
+        # ---------------------------------------
+        # Set texture as render target for MSAA resolve
+
+        gl.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, target_fbo)
+        gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
+
+        gl.glClearColor(*self.sky_upper, 1)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glBindVertexArray(0)
+
+        msaa_resolved = self._render_scene(objects, scene_has_transparency=scene_has_transparency)
+
+        # Render lines after main scene but before MSAA resolve
+        if lines:
+            self._render_lines(lines)
+
+        if arrows:
+            self._render_arrows(arrows)
+
+        if wireframe_shapes:
+            self._render_wireframe_shapes(wireframe_shapes)
+
+        # ------------------------------------------------------------------
+        # If MSAA is enabled, resolve the multi-sample buffer into texture FBO
+        # ------------------------------------------------------------------
+        if has_msaa and not msaa_resolved:
+            self._resolve_msaa_frame()
+
+        # ------------------------------------------------------------------
+        # Draw resolved texture to the screen
+        # ------------------------------------------------------------------
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glViewport(0, 0, self._screen_width, self._screen_height)
+
+        # render frame buffer texture to screen
+        if self._frame_fbo is not None:
+            with self._frame_shader:
+                gl.glActiveTexture(gl.GL_TEXTURE0)
+                gl.glBindTexture(gl.GL_TEXTURE_2D, self._frame_texture)
+                self._frame_shader.update(0)
+
+                gl.glBindVertexArray(self._frame_vao)
+                gl.glDrawElements(gl.GL_TRIANGLES, len(self._frame_indices), gl.GL_UNSIGNED_INT, None)
+                gl.glBindVertexArray(0)
+                gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        if self.draw_fps:
+            gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+            gl.glEnable(gl.GL_BLEND)
+
+        err = gl.glGetError()
+        assert err == gl.GL_NO_ERROR, hex(err)
+
+    def render_texture(
+        self,
+        texture_id: int | None,
+        texture_width: int = 0,
+        texture_height: int = 0,
+        *,
+        flip_y: bool = True,
+    ):
+        """Draw a texture to the frame buffer without rendering the 3D scene.
+
+        Args:
+            texture_id: OpenGL texture id to draw, or ``None`` to only clear.
+            texture_width: Source texture width in pixels.
+            texture_height: Source texture height in pixels.
+            flip_y: Whether the source stores its top row first.
+        """
+        gl = RendererGL.gl
+        self._make_current()
+
+        screen_w = max(int(self._screen_width), 1)
+        screen_h = max(int(self._screen_height), 1)
+
+        assert self._frame_fbo is not None
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._frame_fbo)
+        gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(True)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glViewport(0, 0, screen_w, screen_h)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glDepthMask(False)
+
+        if texture_id is not None and texture_id != 0:
+            draw_x, draw_y = 0, 0
+            draw_w, draw_h = screen_w, screen_h
+            if texture_width > 0 and texture_height > 0:
+                scale = min(screen_w / float(texture_width), screen_h / float(texture_height))
+                draw_w = max(1, int(round(texture_width * scale)))
+                draw_h = max(1, int(round(texture_height * scale)))
+                draw_x = max(0, (screen_w - draw_w) // 2)
+                draw_y = max(0, (screen_h - draw_h) // 2)
+
+            gl.glViewport(draw_x, draw_y, draw_w, draw_h)
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, int(texture_id))
+            with self._frame_shader:
+                self._frame_shader.update(0, flip_y=flip_y)
+                gl.glBindVertexArray(self._frame_vao)
+                gl.glDrawElements(gl.GL_TRIANGLES, len(self._frame_indices), gl.GL_UNSIGNED_INT, None)
+                gl.glBindVertexArray(0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        gl.glDepthMask(True)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        gl.glViewport(0, 0, screen_w, screen_h)
+
+        if self._frame_texture is not None:
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self._frame_texture)
+            with self._frame_shader:
+                self._frame_shader.update(0)
+                gl.glBindVertexArray(self._frame_vao)
+                gl.glDrawElements(gl.GL_TRIANGLES, len(self._frame_indices), gl.GL_UNSIGNED_INT, None)
+                gl.glBindVertexArray(0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        err = gl.glGetError()
+        assert err == gl.GL_NO_ERROR, hex(err)
+
+    def present(self):
+        if not self.headless:
+            if self._dwm_flush is not None and self.window._interval:
+                self._dwm_flush()
+            self.window.flip()
+
+    def resize(self, width, height):
+        self._screen_width, self._screen_height = self.window.get_framebuffer_size()
+        self._setup_frame_buffer()
+
+    def set_title(self, title):
+        self.window.set_caption(title)
+
+    def set_vsync(self, enabled: bool):
+        """Enable or disable vertical synchronization (vsync).
+
+        Args:
+            enabled: If True, enable vsync; if False, disable vsync.
+        """
+        self.window.set_vsync(enabled)
+
+    def get_vsync(self) -> bool:
+        """Get the current vsync state.
+
+        Returns:
+            True if vsync is enabled, False otherwise.
+        """
+        return self.window.vsync
+
+    def has_exit(self):
+        return self.app.event_loop.has_exit
+
+    def close(self):
+        self._make_current()
+
+        if not self.headless:
+            self.app.event_loop.dispatch_event("on_exit")
+            self.app.platform_event_loop.stop()
+
+        RendererGL._fallback_texture = None
+        self.window.close()
+
+    def _setup_window_callbacks(self):
+        """Set up the basic window event handlers."""
+        import pyglet
+
+        self.window.push_handlers(on_draw=self._on_draw)
+        self.window.push_handlers(on_resize=self._on_window_resize)
+        self.window.push_handlers(on_key_press=self._on_key_press)
+        self.window.push_handlers(on_key_release=self._on_key_release)
+        self.window.push_handlers(on_close=self._on_close)
+
+        self._key_handler = pyglet.window.key.KeyStateHandler()
+        self.window.push_handlers(self._key_handler)
+
+        self.window.push_handlers(on_mouse_press=self._on_mouse_press)
+        self.window.push_handlers(on_mouse_release=self._on_mouse_release)
+
+        self.window.on_mouse_scroll = self._on_scroll
+        self.window.on_mouse_drag = self._on_mouse_drag
+        self.window.on_mouse_motion = self._on_mouse_motion
+
+    def register_key_press(self, callback):
+        """Register a callback for key press events.
+
+        Args:
+            callback: Function that takes (symbol, modifiers) parameters
+        """
+        self._key_callbacks.append(callback)
+
+    def register_key_release(self, callback):
+        """Register a callback for key release events.
+
+        Args:
+            callback: Function that takes (symbol, modifiers) parameters
+        """
+        self._key_release_callbacks.append(callback)
+
+    def register_mouse_press(self, callback):
+        """Register a callback for mouse press events.
+
+        Args:
+            callback: Function that takes (x, y, button, modifiers) parameters
+        """
+        self._mouse_press_callbacks.append(callback)
+
+    def register_mouse_release(self, callback):
+        """Register a callback for mouse release events.
+
+        Args:
+            callback: Function that takes (x, y, button, modifiers) parameters
+        """
+        self._mouse_release_callbacks.append(callback)
+
+    def register_mouse_drag(self, callback):
+        """Register a callback for mouse drag events.
+
+        Args:
+            callback: Function that takes (x, y, dx, dy, buttons, modifiers) parameters
+        """
+        self._mouse_drag_callbacks.append(callback)
+
+    def register_mouse_motion(self, callback):
+        """Register a callback for mouse motion events.
+
+        Args:
+            callback: Function that takes (x, y, dx, dy) parameters
+        """
+        self._mouse_motion_callbacks.append(callback)
+
+    def register_mouse_scroll(self, callback):
+        """Register a callback for mouse scroll events.
+
+        Args:
+            callback: Function that takes (x, y, scroll_x, scroll_y) parameters
+        """
+        self._mouse_scroll_callbacks.append(callback)
+
+    def register_resize(self, callback):
+        """Register a callback for window resize events.
+
+        Args:
+            callback: Function that takes (width, height) parameters
+        """
+        self._resize_callbacks.append(callback)
+
+    def register_update(self, callback):
+        """Register a per-frame update callback receiving dt (seconds)."""
+        self._update_callbacks.append(callback)
+
+    def _on_key_press(self, symbol, modifiers):
+        # update key state
+        for callback in self._key_callbacks:
+            callback(symbol, modifiers)
+
+    def _on_key_release(self, symbol, modifiers):
+        # update key state
+        for callback in self._key_release_callbacks:
+            callback(symbol, modifiers)
+
+    def _on_mouse_press(self, x, y, button, modifiers):
+        """Handle mouse button press events."""
+        for callback in self._mouse_press_callbacks:
+            callback(x, y, button, modifiers)
+
+    def _on_mouse_release(self, x, y, button, modifiers):
+        """Handle mouse button release events."""
+        for callback in self._mouse_release_callbacks:
+            callback(x, y, button, modifiers)
+
+    def _on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        # Then call registered callbacks
+        for callback in self._mouse_drag_callbacks:
+            callback(x, y, dx, dy, buttons, modifiers)
+
+    def _on_mouse_motion(self, x, y, dx, dy):
+        """Handle mouse motion events."""
+        for callback in self._mouse_motion_callbacks:
+            callback(x, y, dx, dy)
+
+    def _on_scroll(self, x, y, scroll_x, scroll_y):
+        for callback in self._mouse_scroll_callbacks:
+            callback(x, y, scroll_x, scroll_y)
+
+    def _on_window_resize(self, width, height):
+        self.resize(width, height)
+
+        for callback in self._resize_callbacks:
+            callback(width, height)
+
+    def _on_close(self):
+        self.close()
+
+    def _on_draw(self):
+        pass
+
+    # public query for key state
+    def is_key_down(self, symbol: int) -> bool:
+        if self.headless:
+            return False
+
+        return bool(self._key_handler[symbol])
+
+    def _setup_sky_mesh(self):
+        gl = RendererGL.gl
+
+        # create VAO, VBO, and EBO
+        self._sky_vao = gl.GLuint()
+        gl.glGenVertexArrays(1, self._sky_vao)
+        gl.glBindVertexArray(self._sky_vao)
+
+        sky_mesh = Mesh.create_sphere(
+            1.0,
+            num_latitudes=32,
+            num_longitudes=32,
+            reverse_winding=True,
+            compute_inertia=False,
+        )
+        vertices = np.hstack([sky_mesh.vertices, sky_mesh.normals, sky_mesh.uvs]).astype(np.float32, copy=False)
+        indices = sky_mesh.indices.astype(np.uint32, copy=False)
+        self._sky_tri_count = len(indices)
+
+        self._sky_vbo = gl.GLuint()
+        gl.glGenBuffers(1, self._sky_vbo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._sky_vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices.ctypes.data, gl.GL_STATIC_DRAW)
+
+        self._sky_ebo = gl.GLuint()
+        gl.glGenBuffers(1, self._sky_ebo)
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self._sky_ebo)
+        gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices.ctypes.data, gl.GL_STATIC_DRAW)
+
+        # set up vertex attributes
+        vertex_stride = vertices.shape[1] * vertices.itemsize
+        # positions
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, vertex_stride, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+        # normals
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, vertex_stride, ctypes.c_void_p(3 * vertices.itemsize))
+        gl.glEnableVertexAttribArray(1)
+        # uv coordinates
+        gl.glVertexAttribPointer(2, 2, gl.GL_FLOAT, gl.GL_FALSE, vertex_stride, ctypes.c_void_p(6 * vertices.itemsize))
+        gl.glEnableVertexAttribArray(2)
+
+        gl.glBindVertexArray(0)
+
+        # unbind the VBO and VAO
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+
+        check_gl_error()
+
+    def _setup_frame_buffer(self):
+        gl = RendererGL.gl
+
+        # Ensure MSAA member variables exist even on first call
+        if not hasattr(self, "_frame_msaa_color_rb"):
+            self._frame_msaa_color_rb = None
+        if not hasattr(self, "_frame_msaa_depth_rb"):
+            self._frame_msaa_depth_rb = None
+        if not hasattr(self, "_frame_msaa_fbo"):
+            self._frame_msaa_fbo = None
+
+        self._make_current()
+
+        if self._frame_texture is None:
+            self._frame_texture = gl.GLuint()
+            gl.glGenTextures(1, self._frame_texture)
+        if self._frame_depth_texture is None:
+            self._frame_depth_texture = gl.GLuint()
+            gl.glGenTextures(1, self._frame_depth_texture)
+
+        # set up RGB texture
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        gl.glBindBuffer(gl.GL_PIXEL_UNPACK_BUFFER, 0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._frame_texture)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_RGB,
+            self._screen_width,
+            self._screen_height,
+            0,
+            gl.GL_RGB,
+            gl.GL_UNSIGNED_BYTE,
+            None,
+        )
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+        # set up depth texture
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._frame_depth_texture)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_DEPTH_COMPONENT32,
+            self._screen_width,
+            self._screen_height,
+            0,
+            gl.GL_DEPTH_COMPONENT,
+            gl.GL_FLOAT,
+            None,
+        )
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        # create a framebuffer object (FBO)
+        if self._frame_fbo is None:
+            self._frame_fbo = gl.GLuint()
+            gl.glGenFramebuffers(1, self._frame_fbo)
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._frame_fbo)
+
+            # attach the texture to the FBO as its color attachment
+            gl.glFramebufferTexture2D(
+                gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, gl.GL_TEXTURE_2D, self._frame_texture, 0
+            )
+            # attach the depth texture to the FBO as its depth attachment
+            gl.glFramebufferTexture2D(
+                gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_TEXTURE_2D, self._frame_depth_texture, 0
+            )
+
+            if gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) != gl.GL_FRAMEBUFFER_COMPLETE:
+                logger.error("Framebuffer is not complete!")
+                gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+                sys.exit(1)
+
+        # unbind the FBO (switch back to the default framebuffer)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
+        if self._frame_pbo is None:
+            self._frame_pbo = gl.GLuint()
+            gl.glGenBuffers(1, self._frame_pbo)  # generate 1 buffer reference
+        # binding to this buffer
+        gl.glBindBuffer(gl.GL_PIXEL_PACK_BUFFER, self._frame_pbo)
+
+        # allocate memory for PBO
+        rgb_bytes_per_pixel = 3
+        depth_bytes_per_pixel = 4
+        pixels = np.zeros(
+            (self._screen_height, self._screen_width, rgb_bytes_per_pixel + depth_bytes_per_pixel), dtype=np.uint8
+        )
+        gl.glBufferData(gl.GL_PIXEL_PACK_BUFFER, pixels.nbytes, pixels.ctypes.data, gl.GL_DYNAMIC_DRAW)
+        gl.glBindBuffer(gl.GL_PIXEL_PACK_BUFFER, 0)
+
+        # ---------------------------------------------------------------------
+        # Additional: create MSAA framebuffer if multi-sampling is enabled
+        # ---------------------------------------------------------------------
+        if getattr(self, "msaa_samples", 0) > 0:
+            # color renderbuffer
+            if self._frame_msaa_color_rb is None:
+                self._frame_msaa_color_rb = gl.GLuint()
+                gl.glGenRenderbuffers(1, self._frame_msaa_color_rb)
+            gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._frame_msaa_color_rb)
+            gl.glRenderbufferStorageMultisample(
+                gl.GL_RENDERBUFFER, self.msaa_samples, gl.GL_RGB8, self._screen_width, self._screen_height
+            )
+
+            # depth renderbuffer
+            if self._frame_msaa_depth_rb is None:
+                self._frame_msaa_depth_rb = gl.GLuint()
+                gl.glGenRenderbuffers(1, self._frame_msaa_depth_rb)
+            gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._frame_msaa_depth_rb)
+            gl.glRenderbufferStorageMultisample(
+                gl.GL_RENDERBUFFER, self.msaa_samples, gl.GL_DEPTH_COMPONENT32, self._screen_width, self._screen_height
+            )
+
+            # FBO
+            if self._frame_msaa_fbo is None:
+                self._frame_msaa_fbo = gl.GLuint()
+                gl.glGenFramebuffers(1, self._frame_msaa_fbo)
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._frame_msaa_fbo)
+            gl.glFramebufferRenderbuffer(
+                gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, gl.GL_RENDERBUFFER, self._frame_msaa_color_rb
+            )
+            gl.glFramebufferRenderbuffer(
+                gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_RENDERBUFFER, self._frame_msaa_depth_rb
+            )
+
+            if gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) != gl.GL_FRAMEBUFFER_COMPLETE:
+                logger.warning("MSAA framebuffer incomplete, disabling MSAA.")
+                self.msaa_samples = 0
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
+        if self._oit_fbo is not None:
+            self._setup_oit_buffer()
+
+        check_gl_error()
+
+    def _ensure_transparency_resources(self) -> bool:
+        """Create transparency-only shaders and buffers on first use.
+
+        Returns:
+            True when weighted OIT is usable. False when the GL context lacks
+            independent blending or a complete OIT framebuffer, in which case
+            transparency degrades to single-pass alpha blending.
+        """
+        gl = RendererGL.gl
+        if self._shape_transparent_shader is None:
+            self._shape_transparent_shader = ShaderShape(gl, enable_transparency=True)
+        if self._oit_resolve_shader is None:
+            self._oit_resolve_shader = OITResolveShader(gl)
+        if self._oit_fbo is None:
+            self._setup_oit_buffer()
+        if not self._oit_supported and not self._oit_fallback_warned:
+            self._oit_fallback_warned = True
+            warnings.warn(
+                "ViewerGL: weighted order-independent transparency is unavailable on this GL context "
+                "(requires independent blending and a float OIT framebuffer). Falling back to unsorted "
+                "alpha blending, so overlapping transparent surfaces may blend in the wrong order.",
+                NewtonWarning,
+                stacklevel=2,
+            )
+        return self._oit_supported
+
+    def _setup_oit_buffer(self):
+        gl = RendererGL.gl
+        self._oit_supported = False
+        if not bool(getattr(gl, "glBlendFunci", None)):
+            return
+
+        if self._oit_accum_texture is None:
+            self._oit_accum_texture = gl.GLuint()
+            gl.glGenTextures(1, self._oit_accum_texture)
+        if self._oit_reveal_texture is None:
+            self._oit_reveal_texture = gl.GLuint()
+            gl.glGenTextures(1, self._oit_reveal_texture)
+
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._oit_accum_texture)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_RGBA16F,
+            self._screen_width,
+            self._screen_height,
+            0,
+            gl.GL_RGBA,
+            gl.GL_FLOAT,
+            None,
+        )
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._oit_reveal_texture)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_R16F,
+            self._screen_width,
+            self._screen_height,
+            0,
+            gl.GL_RED,
+            gl.GL_FLOAT,
+            None,
+        )
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        if self._oit_fbo is None:
+            self._oit_fbo = gl.GLuint()
+            gl.glGenFramebuffers(1, self._oit_fbo)
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._oit_fbo)
+        gl.glFramebufferTexture2D(
+            gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, gl.GL_TEXTURE_2D, self._oit_accum_texture, 0
+        )
+        gl.glFramebufferTexture2D(
+            gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT1, gl.GL_TEXTURE_2D, self._oit_reveal_texture, 0
+        )
+        gl.glFramebufferTexture2D(
+            gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_TEXTURE_2D, self._frame_depth_texture, 0
+        )
+        draw_buffers = (gl.GLenum * 2)(gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT1)
+        gl.glDrawBuffers(2, draw_buffers)
+
+        self._oit_supported = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) == gl.GL_FRAMEBUFFER_COMPLETE
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
+    def _setup_frame_mesh(self):
+        gl = RendererGL.gl
+
+        # fmt: off
+        # set up VBO for the quad that is rendered to the user window with the texture
+        self._frame_vertices = np.array([
+            # Positions  TexCoords
+            -1.0, -1.0,  0.0, 0.0,
+             1.0, -1.0,  1.0, 0.0,
+             1.0,  1.0,  1.0, 1.0,
+            -1.0,  1.0,  0.0, 1.0
+        ], dtype=np.float32)
+        # fmt: on
+
+        self._frame_indices = np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32)
+
+        self._frame_vao = gl.GLuint()
+        gl.glGenVertexArrays(1, self._frame_vao)
+        gl.glBindVertexArray(self._frame_vao)
+
+        self._frame_vbo = gl.GLuint()
+        gl.glGenBuffers(1, self._frame_vbo)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._frame_vbo)
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER, self._frame_vertices.nbytes, self._frame_vertices.ctypes.data, gl.GL_STATIC_DRAW
+        )
+
+        self._frame_ebo = gl.GLuint()
+        gl.glGenBuffers(1, self._frame_ebo)
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self._frame_ebo)
+        gl.glBufferData(
+            gl.GL_ELEMENT_ARRAY_BUFFER, self._frame_indices.nbytes, self._frame_indices.ctypes.data, gl.GL_STATIC_DRAW
+        )
+
+        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 4 * self._frame_vertices.itemsize, ctypes.c_void_p(0))
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(
+            1,
+            2,
+            gl.GL_FLOAT,
+            gl.GL_FALSE,
+            4 * self._frame_vertices.itemsize,
+            ctypes.c_void_p(2 * self._frame_vertices.itemsize),
+        )
+        gl.glEnableVertexAttribArray(1)
+
+        check_gl_error()
+
+    def _setup_shadow_buffer(self):
+        gl = RendererGL.gl
+
+        self._make_current()
+
+        # create depth texture FBO
+        self._shadow_fbo = gl.GLuint()
+        gl.glGenFramebuffers(1, self._shadow_fbo)
+
+        self._shadow_texture = gl.GLuint()
+        gl.glGenTextures(1, self._shadow_texture)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._shadow_texture)
+        gl.glTexImage2D(
+            gl.GL_TEXTURE_2D,
+            0,
+            gl.GL_DEPTH_COMPONENT,
+            self._shadow_width,
+            self._shadow_height,
+            0,
+            gl.GL_DEPTH_COMPONENT,
+            gl.GL_FLOAT,
+            None,
+        )
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_BORDER)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_BORDER)
+        border_color = [1.0, 1.0, 1.0, 1.0]
+        gl.glTexParameterfv(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BORDER_COLOR, (gl.GLfloat * 4)(*border_color))
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._shadow_fbo)
+        gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_TEXTURE_2D, self._shadow_texture, 0)
+        gl.glDrawBuffer(gl.GL_NONE)
+        gl.glReadBuffer(gl.GL_NONE)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
+        check_gl_error()
+
+    def _render_shadow_map(self, objects, scene_has_transparency: bool = False):
+        gl = RendererGL.gl
+        from pyglet.math import Mat4, Vec3
+
+        self._make_current()
+
+        extents = self.shadow_extents
+
+        light_near = 1.0
+        light_far = 1000.0
+        camera_pos = np.array(self.camera.pos, dtype=np.float32)
+        light_pos = self._sun_direction * extents
+        light_proj = Mat4.orthogonal_projection(-extents, extents, -extents, extents, light_near, light_far)
+
+        light_view = Mat4.look_at(Vec3(*light_pos), Vec3(0.0, 0.0, 0.0), Vec3(*self.camera.get_up()))
+        self._light_space_matrix = np.array(light_proj @ light_view, dtype=np.float32)
+
+        self._shadow_shader.update(self._light_space_matrix, camera_pos)
+
+        # Render from the light's point of view. Transparent objects do not cast
+        # shadows because the shadow pass has no alpha-aware representation.
+        if scene_has_transparency:
+            shadow_objects = {
+                k: v
+                for k, v in objects.items()
+                if getattr(v, "cast_shadow", True) and not self._object_has_transparency(v)
+            }
+        else:
+            shadow_objects = {k: v for k, v in objects.items() if getattr(v, "cast_shadow", True)}
+        with self._shadow_shader:
+            self._draw_objects(shadow_objects)
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+
+        check_gl_error()
+
+    def _update_shape_shader(self, shader):
+        shader.update(
+            view_matrix=self._view_matrix,
+            projection_matrix=self._projection_matrix,
+            viewport_size=(self._screen_width, self._screen_height),
+            view_pos=self.camera.pos,
+            fog_color=self.sky_lower,
+            up_axis=self.camera.up_axis,
+            sun_direction=self._sun_direction,
+            enable_shadows=self.draw_shadows,
+            shadow_texture=self._shadow_texture,
+            light_space_matrix=self._light_space_matrix,
+            light_color=self._light_color,
+            sky_color=self.ambient_sky,
+            ground_color=self.ambient_ground,
+            env_texture=self._env_texture,
+            env_intensity=self._env_intensity,
+            shadow_radius=self.shadow_radius,
+            diffuse_scale=self.diffuse_scale,
+            specular_scale=self.specular_scale,
+            spotlight_enabled=self.spotlight_enabled,
+            exposure=self.exposure,
+            oit_depth_reference=self.camera.pivot_distance,
+        )
+
+    def _render_scene(
+        self,
+        objects,
+        scene_has_transparency: bool = False,
+    ) -> bool:
+        gl = RendererGL.gl
+        msaa_resolved = False
+
+        if self.draw_sky:
+            self._draw_sky()
+
+        if self.draw_wireframe:
+            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+
+        self._update_shape_shader(self._shape_shader)
+
+        opaque_objects, transparent_objects = self._split_transparent_objects(objects, scene_has_transparency)
+
+        with self._shape_shader:
+            gl.glDisable(gl.GL_BLEND)
+            gl.glDepthMask(True)
+            gl.glVertexAttrib1f(9, 1.0)
+            self._draw_objects(opaque_objects)
+
+        if transparent_objects:
+            oit_supported = self._ensure_transparency_resources()
+            assert self._shape_transparent_shader is not None
+            self._update_shape_shader(self._shape_transparent_shader)
+            self._shape_transparent_shader.set_oit_enabled(oit_supported)
+            with self._shape_transparent_shader:
+                if not oit_supported:
+                    # Blend straight into the active target so transparency still
+                    # benefits from MSAA and no early resolve is needed.
+                    self._render_blended_transparent_objects(transparent_objects)
+                else:
+                    if getattr(self, "msaa_samples", 0) > 0 and self._frame_msaa_fbo is not None:
+                        self._resolve_msaa_frame()
+                        msaa_resolved = True
+                    self._render_transparent_objects(transparent_objects)
+
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+
+        # Edge overlay: redraw the same geometry as lines with polygon offset
+        # to avoid z-fighting (per @mmacklin review on #2300).
+        if self.draw_edges:
+            # Skip objects that opted out of the edge overlay (e.g. ground
+            # planes) via the per-object draw_edge flag. Mirrors the cast_shadow
+            # filter in _render_shadow_map and keeps the decision off the checker
+            # material bit (see #2808 review).
+            edge_objects = {k: v for k, v in objects.items() if getattr(v, "draw_edge", True)}
+            self._edge_shader.update(
+                view_matrix=self._view_matrix,
+                projection_matrix=self._projection_matrix,
+                view_pos=self.camera.pos,
+                edge_color=self._edge_color,
+            )
+            gl.glEnable(gl.GL_POLYGON_OFFSET_LINE)
+            gl.glPolygonOffset(-1.0, -1.0)
+            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+            with self._edge_shader:
+                self._draw_objects(edge_objects)
+            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+            gl.glDisable(gl.GL_POLYGON_OFFSET_LINE)
+
+        check_gl_error()
+        return msaa_resolved
+
+    def _resolve_msaa_frame(self) -> None:
+        """Resolve multisampled opaque color and depth into the texture framebuffer."""
+        gl = RendererGL.gl
+        gl.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER, self._frame_msaa_fbo)
+        gl.glReadBuffer(gl.GL_COLOR_ATTACHMENT0)
+        gl.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, self._frame_fbo)
+        gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
+        gl.glBlitFramebuffer(
+            0,
+            0,
+            self._screen_width,
+            self._screen_height,
+            0,
+            0,
+            self._screen_width,
+            self._screen_height,
+            gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT,
+            gl.GL_NEAREST,
+        )
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._frame_fbo)
+
+    def _render_blended_transparent_objects(self, transparent_objects):
+        """Draw transparent objects with source-alpha blending into the active target.
+
+        Used when weighted OIT is unavailable. Blending is unsorted, so
+        overlapping transparent surfaces may composite in the wrong order, but
+        rendering keeps working instead of failing the frame.
+        """
+        gl = RendererGL.gl
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendEquation(gl.GL_FUNC_ADD)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDepthMask(False)
+        for _name, obj in transparent_objects:
+            if hasattr(obj, "render"):
+                obj.render()
+        gl.glDepthMask(True)
+        gl.glDisable(gl.GL_BLEND)
+
+    def _render_transparent_objects(self, transparent_objects):
+        gl = RendererGL.gl
+        assert self._oit_resolve_shader is not None
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._oit_fbo)
+        gl.glClearBufferfv(gl.GL_COLOR, 0, (gl.GLfloat * 4)(0.0, 0.0, 0.0, 0.0))
+        gl.glClearBufferfv(gl.GL_COLOR, 1, (gl.GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendEquation(gl.GL_FUNC_ADD)
+        gl.glBlendFunci(0, gl.GL_ONE, gl.GL_ONE)
+        gl.glBlendFunci(1, gl.GL_ZERO, gl.GL_ONE_MINUS_SRC_COLOR)
+        gl.glDepthMask(False)
+        for _name, obj in transparent_objects:
+            if hasattr(obj, "render"):
+                obj.render()
+        gl.glDepthMask(True)
+        gl.glDisable(gl.GL_BLEND)
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._frame_fbo)
+        gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        # Composite over the existing opaque target to avoid copying it into another full-size texture.
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendEquation(gl.GL_FUNC_ADD)
+        gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA)
+        with self._oit_resolve_shader:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self._oit_accum_texture)
+            gl.glActiveTexture(gl.GL_TEXTURE1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self._oit_reveal_texture)
+
+            gl.glBindVertexArray(self._frame_vao)
+            gl.glDrawElements(gl.GL_TRIANGLES, len(self._frame_indices), gl.GL_UNSIGNED_INT, None)
+            gl.glBindVertexArray(0)
+
+        gl.glActiveTexture(gl.GL_TEXTURE1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+
+    def _render_lines(self, lines):
+        """Render all line objects using the geometry-shader wide-line pipeline."""
+        gl = RendererGL.gl
+        inv_asp = float(self._screen_height) / float(max(self._screen_width, 1))
+        clip_width = max(0.0, self.line_width) * 2.0 / max(self._screen_height, 1)
+
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        identity = np.eye(4, dtype=np.float32)
+        with self._wireframe_shader:
+            self._wireframe_shader.update_frame(
+                self._view_matrix,
+                self._projection_matrix,
+                inv_asp,
+                line_width=clip_width,
+                alpha=1.0,
+            )
+            self._wireframe_shader.set_world(identity)
+            for line_obj in lines.values():
+                if hasattr(line_obj, "render"):
+                    line_obj.render()
+
+        gl.glDisable(gl.GL_BLEND)
+        check_gl_error()
+
+    def _render_arrows(self, arrows):
+        """Render arrow batches (wide line + arrowhead triangle per segment)."""
+        gl = RendererGL.gl
+        inv_asp = float(self._screen_height) / float(max(self._screen_width, 1))
+        scale = max(0.0, self.arrow_scale)
+        clip_width = (2.0 * scale) * 2.0 / max(self._screen_height, 1)
+        clip_arrow = (8.0 * scale) * 2.0 / max(self._screen_height, 1)
+
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        identity = np.eye(4, dtype=np.float32)
+        with self._arrow_shader:
+            self._arrow_shader.update_frame(
+                self._view_matrix,
+                self._projection_matrix,
+                inv_asp,
+                line_width=clip_width,
+                arrow_size=clip_arrow,
+                alpha=1.0,
+            )
+            self._arrow_shader.set_world(identity)
+            for arrow_obj in arrows.values():
+                if hasattr(arrow_obj, "render"):
+                    arrow_obj.render()
+
+        gl.glDisable(gl.GL_BLEND)
+        check_gl_error()
+
+    def _render_wireframe_shapes(self, wireframe_shapes):
+        """Render wireframe shapes using the geometry-shader line expansion."""
+        gl = RendererGL.gl
+        inv_asp = float(self._screen_height) / float(max(self._screen_width, 1))
+        clip_width = self.wireframe_line_width * 2.0 / max(self._screen_height, 1)
+
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        with self._wireframe_shader:
+            self._wireframe_shader.update_frame(
+                self._view_matrix, self._projection_matrix, inv_asp, line_width=clip_width
+            )
+            for shape in wireframe_shapes.values():
+                if not shape.hidden and shape.num_vertices > 0:
+                    self._wireframe_shader.set_world(shape.world_matrix)
+                    shape.render()
+
+        gl.glDisable(gl.GL_BLEND)
+        check_gl_error()
+
+    def _draw_objects(self, objects):
+        for o in objects.values():
+            if hasattr(o, "render"):
+                o.render()
+
+        check_gl_error()
+
+    def _object_has_transparency(self, obj) -> bool:
+        has_transparency = getattr(obj, "has_transparency", False)
+        return bool(has_transparency() if callable(has_transparency) else has_transparency)
+
+    def _scene_has_transparency(self, objects) -> bool:
+        return any(self._object_has_transparency(obj) for obj in objects.values())
+
+    def _split_transparent_objects(self, objects, scene_has_transparency: bool = True):
+        if not scene_has_transparency:
+            return objects, []
+
+        opaque_objects = {}
+        transparent_objects = []
+        for name, obj in objects.items():
+            if self._object_has_transparency(obj):
+                transparent_objects.append((name, obj))
+            else:
+                opaque_objects[name] = obj
+        return opaque_objects, transparent_objects
+
+    def _draw_sky(self):
+        gl = RendererGL.gl
+
+        self._make_current()
+
+        self._sky_shader.update(
+            view_matrix=self._view_matrix,
+            projection_matrix=self._projection_matrix,
+            camera_pos=self.camera.pos,
+            camera_far=self.camera.far,
+            sky_upper=self.sky_upper,
+            sky_lower=self.sky_lower,
+            sun_direction=self._sun_direction,
+            up_axis=self.camera.up_axis,
+        )
+
+        gl.glBindVertexArray(self._sky_vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, self._sky_tri_count, gl.GL_UNSIGNED_INT, None)
+        gl.glBindVertexArray(0)
+
+        check_gl_error()
+
+    def set_environment_map(self, path: str, intensity: float = 1.0) -> None:
+        gl = RendererGL.gl
+        from ...utils.texture import load_texture_from_file  # noqa: PLC0415
+
+        image = load_texture_from_file(path)
+        if image is None:
+            return
+        if self._env_texture is not None:
+            try:
+                gl.glDeleteTextures(1, self._env_texture)
+            except Exception:
+                pass
+            self._env_texture = None
+        self._env_texture = _upload_texture_from_file(gl, image)
+        self._env_texture_obj = None
+        self._env_intensity = float(intensity)
+
+    def _make_current(self):
+        try:
+            self.window.switch_to()
+        except AttributeError:
+            # The window could be in the process of being closed, in which case
+            # its corresponding context might have been destroyed and set to `None`.
+            pass

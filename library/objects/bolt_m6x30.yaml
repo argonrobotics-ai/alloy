@@ -1,0 +1,26 @@
+schema: alloy.object/1
+name: bolt_m6x30
+shape:
+  mesh:
+    path: meshes/bolt_m6x30_din933.obj
+    sha256: 51f359592bfe6ee87292d9ebe25d1410495a669ca9527c904e43208ddd584b40
+    collision: sdf
+material: steel_zinc_plated
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+precision_partners:
+- nut_m6:thread
+precision_features:
+- name: thread
+  crop:
+  - [-0.004, -0.004, -0.0305]
+  - [0.004, 0.004, 0.0005]
+  analytic_id: iso_thread:M6x1:6g
+  clearance:
+    value: 2.6e-05
+    source: catalog
+    note: 'ISO 965-1 M6x1 6H/6g: es = -26 um, so min pitch-diameter clearance 26 um'

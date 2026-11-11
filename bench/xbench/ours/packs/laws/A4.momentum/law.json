@@ -1,0 +1,42 @@
+{
+ "law": "A4.momentum",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 10.0,
+ "metrics": {
+  "dp_rel": {
+   "abs": 0.0005,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A4: |dp|/|p| <= 5e-4; |dL|/|L| <= 1e-3"
+  },
+  "dL_rel": {
+   "abs": 0.001,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A4: |dp|/|p| <= 5e-4; |dL|/|L| <= 1e-3"
+  }
+ },
+ "stat": {
+  "dp_rel": "mean",
+  "dL_rel": "mean"
+ },
+ "conditions": [
+  {
+   "id": "collide",
+   "params": {},
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "tumble",
+   "params": {},
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "cradle",
+   "params": {},
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

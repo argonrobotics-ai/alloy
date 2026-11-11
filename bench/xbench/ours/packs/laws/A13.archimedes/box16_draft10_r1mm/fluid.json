@@ -1,0 +1,339 @@
+{
+ "schema": "alloy.xbench.ours.fluid/1",
+ "law": "A13.archimedes",
+ "condition": "box16_draft10_r1mm",
+ "scene": "a pool nx x ny x nz cells deep in an open tank, a free box (bx x bx x bz cells, density rho_b) floating in the middle at its expected draft m / (rho0 A_box); cells under it are left out",
+ "params": {
+  "nx": 32,
+  "ny": 32,
+  "nz": 20,
+  "bx": 16,
+  "bz": 12.5,
+  "rho_b": 800.0,
+  "r": 0.001
+ },
+ "dt": 0.000625,
+ "substeps": 1,
+ "duration_s": 5.0,
+ "steps": 8000,
+ "record_every": 1,
+ "particle_frames": [
+  0
+ ],
+ "frames": 8001,
+ "gravity": [
+  -0.0,
+  -0.0,
+  -9.8100004196167
+ ],
+ "worlds": 1,
+ "alloy_solver": "sph",
+ "sph": {
+  "particle_radius": {
+   "value": 0.001,
+   "unit": "m",
+   "meaning": "r; particles start on a cubic lattice of spacing 2r, one per (2r)^3 cell"
+  },
+  "spacing": {
+   "value": 0.002,
+   "unit": "m",
+   "meaning": "2r: rest particle distance (lattice spacing), the 'particle size' of most engines"
+  },
+  "support_radius": {
+   "value": 0.004,
+   "unit": "m",
+   "meaning": "h = 4 r = 2 x spacing: kernel cutoff, W = 0 at distance >= h (SPlisHSPlasH convention; Monaghan's smoothing length of this spline is h / 2)"
+  },
+  "kernel": {
+   "value": "cubic",
+   "unit": "-",
+   "meaning": "cubic spline W = 8 / (pi h^3) f(q), q = |x| / h, f = 6q^3 - 6q^2 + 1 (q <= 1/2), 2 (1 - q)^3 (q <= 1)"
+  },
+  "rest_density": {
+   "value": 1000.0,
+   "unit": "kg/m^3",
+   "meaning": "rho0 of the liquid"
+  },
+  "particle_mass": {
+   "value": 8.00022007751977e-06,
+   "unit": "kg",
+   "meaning": "m = rho0 / S, S = 124996558 m^-3 the kernel sum over the rest lattice (self included): an interior lattice particle has rho = rho0 exactly. rho0 (2r)^3 = 8e-06 kg is 2.75e-05 lighter (relative)"
+  },
+  "lattice_neighbours": {
+   "value": 26.0,
+   "unit": "-",
+   "meaning": "lattice neighbours within h (self excluded)"
+  },
+  "viscosity_model": {
+   "value": "xsph",
+   "unit": "-",
+   "meaning": "Alloy's choice for mu <= 1e-2 Pa s: XSPH velocity smoothing v_i += c sum_j (m_j / rho_j) (v_j - v_i) W_ij after gravity; no other viscous force"
+  },
+  "xsph_c": {
+   "value": 0.01,
+   "unit": "-",
+   "meaning": "XSPH coefficient c"
+  },
+  "pressure_solver": {
+   "value": "DFSPH",
+   "unit": "-",
+   "meaning": "divergence-free SPH (Bender & Koschier 2017): divergence solve, then constant-density solve every step; unilateral (no tension); cg iterations (projected preconditioned CG)"
+  },
+  "max_density_error": {
+   "value": 0.001,
+   "unit": "-",
+   "meaning": "mean max(rho - rho0, 0) / rho0 per world after the density solve (and the per-particle max <= 10 x this)"
+  },
+  "max_divergence_error": {
+   "value": 0.001,
+   "unit": "-",
+   "meaning": "mean max(Drho/Dt, 0) dt / rho0 per world"
+  },
+  "iterations": {
+   "value": [
+    2,
+    50
+   ],
+   "unit": "-",
+   "meaning": "min / max pressure iterations per solve"
+  },
+  "boundary": {
+   "value": "sdf_tube",
+   "unit": "-",
+   "meaning": "walls and bodies enter the density as SDF half-space volumes (tube map with order-1 curvature, Koschier & Bender 2017 family); free-slip walls, no wall viscosity"
+  },
+  "surface_tension": {
+   "value": "none",
+   "unit": "-",
+   "meaning": "none"
+  },
+  "time_step": {
+   "value": 0.000625,
+   "unit": "s",
+   "meaning": "fixed law dt, 1 substep (no CFL adaptation in law runs)"
+  },
+  "initial_pressure": {
+   "value": "primed",
+   "unit": "-",
+   "meaning": "SolverDFSPH.prime solves the hydrostatic pressure as the solver's warm start before step 1; positions and velocities stay as packed (an engine starts from rest; its own pressure initialisation, if any, is a setting to record)"
+  },
+  "neighbor_capacity": {
+   "value": 64,
+   "unit": "-",
+   "meaning": "max neighbours per particle"
+  }
+ },
+ "particles": {
+  "file": "particles.npz",
+  "key": "particle_q",
+  "count": 17920,
+  "mass": 8.00022007751977e-06,
+  "rest_density": 1000.0,
+  "viscosity_Pa_s": 0.0010000000474974513,
+  "velocity": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "lattice_offset_max_m": 1.7881393449270533e-09,
+  "note": "place exactly these (Alloy's float32 values, pack order), at rest; never resample. They are 2r-lattice cell centres (i + 1/2) 2r from the tank's inner corner, minus the cells under the box (archimedes); offsets are float32 rounding only"
+ },
+ "tank": {
+  "walls": {
+   "floor": {
+    "shape": 0,
+    "type": "box",
+    "center": [
+     0.03200000151991844,
+     0.03200000151991844,
+     -0.0020000000949949026
+    ],
+    "quat_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "half_extents": [
+     0.035999998450279236,
+     0.035999998450279236,
+     0.0020000000949949026
+    ]
+   },
+   "x_lo": {
+    "shape": 1,
+    "type": "box",
+    "center": [
+     -0.0020000000949949026,
+     0.03200000151991844,
+     0.04500000178813934
+    ],
+    "quat_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "half_extents": [
+     0.0020000000949949026,
+     0.035999998450279236,
+     0.04500000178813934
+    ]
+   },
+   "x_hi": {
+    "shape": 2,
+    "type": "box",
+    "center": [
+     0.06599999964237213,
+     0.03200000151991844,
+     0.04500000178813934
+    ],
+    "quat_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "half_extents": [
+     0.0020000000949949026,
+     0.035999998450279236,
+     0.04500000178813934
+    ]
+   },
+   "y_lo": {
+    "shape": 3,
+    "type": "box",
+    "center": [
+     0.03200000151991844,
+     -0.0020000000949949026,
+     0.04500000178813934
+    ],
+    "quat_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "half_extents": [
+     0.03200000151991844,
+     0.0020000000949949026,
+     0.04500000178813934
+    ]
+   },
+   "y_hi": {
+    "shape": 4,
+    "type": "box",
+    "center": [
+     0.03200000151991844,
+     0.06599999964237213,
+     0.04500000178813934
+    ],
+    "quat_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "half_extents": [
+     0.03200000151991844,
+     0.0020000000949949026,
+     0.04500000178813934
+    ]
+   }
+  },
+  "inner_lo": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "inner_hi": [
+   0.06399999954737723,
+   0.06399999954737723,
+   0.09000000357627869
+  ],
+  "open_top": true,
+  "wall_thickness": 0.004000000189989805,
+  "note": "static boxes (float32 model values), SDF boundaries; they tile the solid without overlap. The liquid sees only these walls (and the box); there is no gate and no ground plane"
+ },
+ "bodies": [
+  {
+   "name": "body_0",
+   "mass": 0.020480001345276833,
+   "com": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia": [
+    [
+     2.8142937935626833e-06,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     2.8142937935626833e-06,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     3.4952540772792418e-06
+    ]
+   ],
+   "density": 799.9999646330263,
+   "shapes": [
+    {
+     "shape": 5,
+     "type": "box",
+     "center": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "quat_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "half_extents": [
+      0.01600000075995922,
+      0.01600000075995922,
+      0.012500000186264515
+     ]
+    }
+   ],
+   "q": [
+    0.03200000151991844,
+    0.03200000151991844,
+    0.032499998807907104,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "qd": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "motion": "free 6-DOF: gravity + the liquid's wrench (two-way coupling, integrated inside the SPH step); no rigid contact with anything (it touches only the liquid)"
+  }
+ ],
+ "export": {
+  "body_q": "[T, W, 1, 7] float32: box frame origin (= its COM) x y z and quaternion x y z w, world frame, every frame (record_every 1)",
+  "body_qd": "[T, W, 1, 6] float32: COM linear and angular velocity, world frame (contract; not scored)",
+  "body_names": "['body_0'] (bodies[].name)",
+  "particle_q": "float32 [Tp, W, P, 3] holding frame 0 (particle_frame = [0]), or every frame",
+  "metric": "draft = (V_liquid / A_tank - z_bottom) / (1 - A_box / A_tank), z_bottom = box z - half height, mean over the second half of the run; V_liquid = Alloy's LIQ-2 volume of frame 0 (the pack's particles); error = |draft - m / (rho0 A_box)| / (m / (rho0 A_box))"
+ },
+ "export_common": "npz per README contract: meta (dt, record_every, settings incl. the SPH parameter mapping), t [T]; particle_frame [Tp] int (indices into t) when particle_q holds only some frames",
+ "alloy_settings": {
+  "config": "DFSPHConfig(particle_radius=0.001, support_factor=4.0, kernel='cubic', max_density_error=0.001, max_divergence_error=0.001, min_iterations=2, max_iterations=50, cfl=0.2, dt_min=1.953125e-05, dt_max=0.00125, viscosity='auto', xsph_c=0.01, surface_tension='none', boundary='auto', boundary_curvature_order=1, neighbor_capacity=64, reneighbor_skin=0.1, coupling='two_way', world_bounds=None, integrate_bodies='dynamic', min_neighbors_divergence=20.0, divergence_solve=True, divergence_two_sided=False, jacobi_omega=0.5, max_error_factor=10.0, warm_start_density=0.9, warm_start_divergence=0.5, grid_dim=128, viscosity_tolerance=0.001, boundary_viscosity=None, viscosity_max_iterations=100, diagonal_floor=0.25, contact_separation_speed=0.5, pressure_solver='cg')",
+  "dt": 0.000625
+ }
+}

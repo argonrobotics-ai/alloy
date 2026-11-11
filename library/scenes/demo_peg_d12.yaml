@@ -1,0 +1,19 @@
+# Peg-in-hole demo: the precision pair peg_d12:shaft / block_bore_d12_2:bore.
+# The peg starts within the fit's 0.1 mm radial clearance (the bore has no chamfer: a peg that starts further off
+# lands on the rim and wedges or falls off), so every world inserts (tests/contact/test_peg_demo_inserts.py).
+schema: alloy.scene/1
+robots: []
+objects:
+  - object: table_top_plywood
+    pose: [0, 0, -0.009, 0, 0, 0, 1]
+  - object: block_bore_d12_2
+    pose: [0, 0, 4.5 mm, 0, 0, 0, 1]
+  - object: peg_d12
+    pose: [0, 0, 40 mm, 0, 0, 0, 1]
+    randomize:
+      - {field: pose.0, lo: -0.05 mm, hi: 0.05 mm}
+      - {field: pose.1, lo: -0.05 mm, hi: 0.05 mm}
+      - {field: material.density, lo: 7900, hi: 8060}
+      - {field: loads.contact_speed, lo: 10 mm/s, hi: 50 mm/s}
+worlds: 16
+control_dt: 0.02

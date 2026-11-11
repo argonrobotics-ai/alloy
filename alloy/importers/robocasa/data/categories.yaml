@@ -1,0 +1,108 @@
+# RoboCasa category table for the Alloy importer (alloy.importers.robocasa.categories).
+#
+# objects.<category>:
+#   surface: material card whose friction/restitution the object's collision shapes get (the card's `material`)
+#   parts:   visual-part role -> material whose density gives that part's mass. Roles come from Lightwheel part
+#            names: Clear (transparent shell), Prop (contents or attached item), Lid; everything else is `body`.
+#            A role not listed uses `body`.
+#   shell_mm: wall thickness for parts whose mesh is open (not watertight); mass = area x thickness x density
+#   mass_kg: [lo, hi] plausible mass of a real item (ESTIMATE, sanity bound only; outside it the object is flagged
+#            and queued for sourcing)
+#   size_m:  [lo, hi] plausible longest extent of a real item (ESTIMATE, sanity bound for the scale check)
+#
+# fixtures.<kind>: articulated appliances (fixed base). Moving-part masses are the fixture's typical mass split by
+#   visual-part volume (ESTIMATE, note says so); `surface` gives friction.
+#   mass_kg: typical whole-unit mass (manufacturer spec sheets of common models, rounded; ESTIMATE)
+#
+# Materials named robocasa_* are defined in materials.yaml next to this file; the rest are Alloy library materials.
+
+objects:
+  aluminum_foil: {surface: cardboard_corrugated, parts: {body: robocasa_foil_roll_boxed}, mass_kg: [0.1, 0.9], size_m: [0.2, 0.5]}
+  basket: {surface: robocasa_wicker, parts: {body: robocasa_wicker}, shell_mm: 4, mass_kg: [0.1, 1.5], size_m: [0.15, 0.55]}
+  blender_jug: {surface: polycarbonate, parts: {body: polycarbonate, Lid: pp_homopolymer, Prop: pp_homopolymer}, shell_mm: 3, mass_kg: [0.3, 2.0], size_m: [0.15, 0.35]}
+  cheese_grater: {surface: stainless_304, parts: {body: stainless_304, Prop: pp_homopolymer, Clear: pp_homopolymer}, shell_mm: 0.6, mass_kg: [0.05, 0.6], size_m: [0.12, 0.32]}
+  chicken_drumstick: {surface: robocasa_raw_meat, parts: {body: robocasa_raw_meat}, mass_kg: [0.06, 0.3], size_m: [0.08, 0.22]}
+  cinnamon: {surface: glass_soda_lime, parts: {Clear: glass_soda_lime, Prop: robocasa_spice_bulk, Lid: pp_homopolymer, body: glass_soda_lime}, shell_mm: 2, mass_kg: [0.05, 0.45], size_m: [0.05, 0.2]}
+  colander: {surface: stainless_304, parts: {body: stainless_304}, shell_mm: 0.8, mass_kg: [0.1, 1.2], size_m: [0.15, 0.42]}
+  cookie_dough_ball: {surface: robocasa_cookie_dough, parts: {body: robocasa_cookie_dough}, mass_kg: [0.01, 0.1], size_m: [0.02, 0.07]}
+  cream_cheese_stick: {surface: cardboard_corrugated, parts: {body: robocasa_cream_cheese}, mass_kg: [0.05, 0.35], size_m: [0.06, 0.16]}
+  digital_scale: {surface: abs, parts: {body: abs, Clear: glass_soda_lime}, shell_mm: 3, mass_kg: [0.2, 1.8], size_m: [0.12, 0.32]}
+  dish_brush: {surface: pp_homopolymer, parts: {body: pp_homopolymer, Prop: nylon_pa6}, shell_mm: 2, mass_kg: [0.02, 0.2], size_m: [0.12, 0.32]}
+  dish_rack: {surface: stainless_304, parts: {body: stainless_304}, shell_mm: 1, mass_kg: [0.4, 4.0], size_m: [0.3, 0.6]}
+  flour_bag: {surface: paper_80gsm, parts: {body: robocasa_flour_bulk}, mass_kg: [0.4, 2.6], size_m: [0.12, 0.38]}
+  flower_vase: {surface: stoneware_glazed, parts: {body: stoneware_glazed, Clear: glass_soda_lime, Prop: robocasa_plant_foliage}, shell_mm: 5, mass_kg: [0.15, 3.0], size_m: [0.08, 0.5]}
+  fruit_bowl: {surface: stoneware_glazed, parts: {body: stoneware_glazed, Clear: glass_soda_lime, Prop: robocasa_fruit_whole}, shell_mm: 5, mass_kg: [0.2, 4.0], size_m: [0.15, 0.42]}
+  glass_cup: {surface: glass_soda_lime, parts: {body: glass_soda_lime}, shell_mm: 2.5, mass_kg: [0.08, 0.7], size_m: [0.06, 0.2]}
+  honey_bottle: {surface: pet, parts: {body: honey, Clear: honey, Prop: honey, Lid: pp_homopolymer}, mass_kg: [0.15, 1.0], size_m: [0.08, 0.25]}
+  hotdog_bun: {surface: robocasa_bread, parts: {body: robocasa_bread}, mass_kg: [0.02, 0.1], size_m: [0.1, 0.22]}
+  ice_cube: {surface: robocasa_ice, parts: {body: robocasa_ice}, mass_kg: [0.003, 0.05], size_m: [0.012, 0.05]}
+  ice_cube_tray: {surface: pp_homopolymer, parts: {body: pp_homopolymer, Clear: pp_homopolymer, Prop: robocasa_ice}, shell_mm: 1.5, mass_kg: [0.04, 0.9], size_m: [0.18, 0.36]}
+  jar: {surface: glass_soda_lime, parts: {body: glass_soda_lime, Clear: glass_soda_lime, Prop: robocasa_jar_contents, Lid: steel_tinplate}, shell_mm: 3, mass_kg: [0.15, 2.0], size_m: [0.07, 0.28]}
+  juice: {surface: pet, parts: {body: robocasa_juice, Clear: robocasa_juice, Prop: robocasa_juice, Lid: pp_homopolymer}, mass_kg: [0.2, 2.3], size_m: [0.1, 0.32]}
+  kebab_skewer: {surface: robocasa_raw_meat, parts: {body: bamboo, Prop: robocasa_raw_meat}, mass_kg: [0.02, 0.35], size_m: [0.12, 0.36]}
+  kettle: {surface: stainless_304, parts: {body: stainless_304}, shell_mm: 0.8, mass_kg: [0.5, 2.2], size_m: [0.15, 0.32]}
+  knife_block: {surface: wood_beech, parts: {body: wood_beech, Prop: stainless_304}, shell_mm: 5, mass_kg: [0.6, 4.5], size_m: [0.18, 0.42]}
+  lemon_wedge: {surface: robocasa_citrus, parts: {body: robocasa_citrus}, mass_kg: [0.005, 0.05], size_m: [0.025, 0.09]}
+  lettuce: {surface: robocasa_leafy_head, parts: {body: robocasa_leafy_head}, mass_kg: [0.2, 1.1], size_m: [0.1, 0.26]}
+  marshmallow: {surface: robocasa_marshmallow, parts: {body: robocasa_marshmallow}, mass_kg: [0.003, 0.02], size_m: [0.015, 0.055]}
+  mayonnaise: {surface: pet, parts: {body: robocasa_mayonnaise, Clear: robocasa_mayonnaise, Prop: robocasa_mayonnaise, Lid: pp_homopolymer}, mass_kg: [0.2, 1.1], size_m: [0.08, 0.26]}
+  measuring_cup: {surface: pp_homopolymer, parts: {body: pp_homopolymer}, shell_mm: 2, mass_kg: [0.03, 0.6], size_m: [0.06, 0.26]}
+  mug_tree: {surface: wood_beech, parts: {body: wood_beech}, shell_mm: 5, mass_kg: [0.2, 1.8], size_m: [0.22, 0.48]}
+  mustard: {surface: pet, parts: {body: robocasa_mustard, Clear: robocasa_mustard, Prop: robocasa_mustard, Lid: pp_homopolymer}, mass_kg: [0.15, 0.7], size_m: [0.08, 0.26]}
+  oil_and_vinegar_bottle: {surface: glass_soda_lime, parts: {body: glass_soda_lime, Clear: glass_soda_lime, Prop: olive_oil, Prpo: olive_oil, Lid: pp_homopolymer}, shell_mm: 3, mass_kg: [0.2, 1.6], size_m: [0.12, 0.36]}
+  oven_tray: {surface: steel_carbon, parts: {body: steel_carbon}, shell_mm: 0.8, mass_kg: [0.25, 2.0], size_m: [0.25, 0.5]}
+  pancake: {surface: robocasa_pancake, parts: {body: robocasa_pancake}, mass_kg: [0.02, 0.12], size_m: [0.07, 0.22]}
+  paper_towel_holder: {surface: wood_beech, parts: {body: stainless_304, Prop: robocasa_paper_roll, prop: robocasa_paper_roll, Paper: robocasa_paper_roll, Handle: wood_beech}, shell_mm: 1, mass_kg: [0.2, 2.0], size_m: [0.22, 0.42]}
+  paprika: {surface: glass_soda_lime, parts: {Clear: glass_soda_lime, Prop: robocasa_spice_bulk, Lid: pp_homopolymer, body: glass_soda_lime}, shell_mm: 2, mass_kg: [0.05, 0.45], size_m: [0.05, 0.2]}
+  peeler: {surface: pp_homopolymer, parts: {body: pp_homopolymer, Prop: stainless_304, Porp: stainless_304}, shell_mm: 1, mass_kg: [0.015, 0.15], size_m: [0.1, 0.26]}
+  pickle_slice: {surface: robocasa_pickle, parts: {body: robocasa_pickle}, mass_kg: [0.001, 0.02], size_m: [0.015, 0.06]}
+  pitcher: {surface: glass_soda_lime, parts: {body: glass_soda_lime, Clear: glass_soda_lime, Prop: water, Lid: pp_homopolymer}, shell_mm: 3, mass_kg: [0.25, 3.0], size_m: [0.15, 0.36]}
+  pizza: {surface: robocasa_pizza, parts: {body: robocasa_pizza}, mass_kg: [0.2, 1.4], size_m: [0.18, 0.46]}
+  pizza_cutter: {surface: pp_homopolymer, parts: {body: stainless_304, Prop: pp_homopolymer}, shell_mm: 1, mass_kg: [0.04, 0.35], size_m: [0.12, 0.32]}
+  placemat: {surface: cotton_woven, parts: {body: robocasa_placemat}, shell_mm: 2, mass_kg: [0.03, 0.35], size_m: [0.28, 0.52]}
+  plant: {surface: stoneware_glazed, parts: {body: robocasa_potted_plant, Prop: robocasa_plant_foliage}, shell_mm: 5, mass_kg: [0.2, 6.0], size_m: [0.12, 0.7]}
+  pot: {surface: stainless_304, parts: {body: stainless_304}, shell_mm: 1.2, mass_kg: [0.6, 4.5], size_m: [0.18, 0.46]}
+  reamer: {surface: pp_homopolymer, parts: {body: pp_homopolymer, Clear: pp_homopolymer}, shell_mm: 2.5, mass_kg: [0.03, 0.7], size_m: [0.07, 0.22]}
+  salt_and_pepper_shaker: {surface: stoneware_glazed, parts: {body: stoneware_glazed, Prop: robocasa_salt_bulk, prop: robocasa_salt_bulk}, shell_mm: 3, mass_kg: [0.03, 0.4], size_m: [0.05, 0.22]}
+  sandwich_bread: {surface: robocasa_bread, parts: {body: robocasa_bread}, mass_kg: [0.02, 0.9], size_m: [0.08, 0.4]}
+  saucepan: {surface: stainless_304, parts: {body: stainless_304, Lid: glass_soda_lime, Clear: glass_soda_lime, Prop: robocasa_phenolic, prop: robocasa_phenolic}, shell_mm: 1.2, mass_kg: [0.5, 2.6], size_m: [0.22, 0.48]}
+  shrimp: {surface: robocasa_raw_meat, parts: {body: robocasa_raw_meat}, mass_kg: [0.004, 0.04], size_m: [0.03, 0.12]}
+  soap_dispenser: {surface: pet, parts: {body: robocasa_liquid_soap, Clear: robocasa_liquid_soap, Prop: pp_homopolymer}, mass_kg: [0.1, 0.8], size_m: [0.1, 0.26]}
+  spray: {surface: pet, parts: {body: water, Clear: water, Prop: pp_homopolymer}, mass_kg: [0.15, 1.1], size_m: [0.15, 0.32]}
+  stool: {surface: wood_beech, parts: {body: wood_beech, Prop: steel_carbon, prop: steel_carbon}, shell_mm: 3, mass_kg: [1.5, 10.0], size_m: [0.35, 0.85]}
+  strainer: {surface: stainless_304, parts: {body: stainless_304}, shell_mm: 0.5, mass_kg: [0.04, 0.5], size_m: [0.12, 0.38]}
+  straw: {surface: pp_homopolymer, parts: {body: pp_homopolymer}, shell_mm: 0.3, mass_kg: [0.0003, 0.01], size_m: [0.12, 0.28]}
+  sugar_cube: {surface: robocasa_sugar_cube, parts: {body: robocasa_sugar_cube}, mass_kg: [0.0015, 0.008], size_m: [0.008, 0.025]}
+  syrup_bottle: {surface: glass_soda_lime, parts: {body: robocasa_syrup, Clear: robocasa_syrup, Prop: robocasa_syrup, Lid: pp_homopolymer}, mass_kg: [0.2, 1.4], size_m: [0.12, 0.32]}
+  tiered_basket: {surface: steel_carbon, parts: {body: steel_carbon}, shell_mm: 1.5, mass_kg: [0.4, 4.0], size_m: [0.25, 0.65]}
+  tiered_shelf: {surface: wood_beech, parts: {body: wood_beech}, shell_mm: 4, mass_kg: [0.4, 5.0], size_m: [0.2, 0.65]}
+  tomato_slice: {surface: robocasa_tomato, parts: {body: robocasa_tomato}, mass_kg: [0.005, 0.05], size_m: [0.03, 0.1]}
+  tongs: {surface: stainless_304, parts: {body: stainless_304, Tong: stainless_304, Prop: silicone_40a}, shell_mm: 0.8, mass_kg: [0.04, 0.35], size_m: [0.18, 0.38]}
+  tray: {surface: pp_homopolymer, parts: {body: pp_homopolymer}, shell_mm: 2.5, mass_kg: [0.15, 2.0], size_m: [0.28, 0.6]}
+  tupperware: {surface: pp_homopolymer, parts: {body: pp_homopolymer, Clear: pp_homopolymer, Lid: pp_homopolymer}, shell_mm: 1.5, mass_kg: [0.05, 0.8], size_m: [0.08, 0.32]}
+  turkey_slice: {surface: robocasa_raw_meat, parts: {body: robocasa_raw_meat}, mass_kg: [0.005, 0.05], size_m: [0.06, 0.16]}
+  turmeric: {surface: glass_soda_lime, parts: {Clear: glass_soda_lime, Prop: robocasa_spice_bulk, Lid: pp_homopolymer, body: glass_soda_lime}, shell_mm: 2, mass_kg: [0.05, 0.45], size_m: [0.05, 0.2]}
+  utensil_rack: {surface: stainless_304, parts: {body: stainless_304, Prop: stainless_304, prop: stainless_304}, shell_mm: 1, mass_kg: [0.2, 3.0], size_m: [0.18, 0.55]}
+  utensil_set: {surface: stoneware_glazed, parts: {body: stoneware_glazed, Prop: stainless_304, prop: stainless_304}, shell_mm: 4, mass_kg: [0.2, 2.5], size_m: [0.18, 0.42]}
+  whisk: {surface: stainless_304, parts: {body: stainless_304, Prop: pp_homopolymer}, shell_mm: 0.5, mass_kg: [0.03, 0.25], size_m: [0.18, 0.36]}
+  wooden_spoon: {surface: wood_beech, parts: {body: wood_beech}, mass_kg: [0.015, 0.12], size_m: [0.22, 0.42]}
+
+fixtures:
+  blenders: {surface: polycarbonate, mass_kg: 4.0, note: "countertop blenders 3-6 kg"}
+  coffee_machines: {surface: abs, mass_kg: 6.0, note: "drip/espresso machines 3-10 kg"}
+  dishwashers: {surface: stainless_304, mass_kg: 45.0, note: "24 in built-in dishwashers 35-55 kg"}
+  electric_kettles: {surface: stainless_304, mass_kg: 1.2, note: "1.7 l kettles 0.9-1.6 kg"}
+  fridges: {surface: stainless_304, mass_kg: 110.0, note: "full-size refrigerators 80-150 kg"}
+  hoods: {surface: stainless_304, mass_kg: 14.0, note: "30 in range hoods 8-25 kg"}
+  microwaves: {surface: steel_carbon, mass_kg: 15.0, note: "countertop/over-range microwaves 10-25 kg"}
+  ovens: {surface: stainless_304, mass_kg: 70.0, note: "30 in wall ovens / ranges 50-100 kg"}
+  sinks: {surface: stainless_304, mass_kg: 12.0, note: "stainless sinks with faucet 8-20 kg"}
+  stand_mixers: {surface: aluminium_6061_t6, mass_kg: 10.0, note: "tilt-head stand mixers 8-12 kg"}
+  stoves: {surface: stainless_304, mass_kg: 75.0, note: "30 in freestanding ranges 55-100 kg"}
+  stovetops: {surface: glass_soda_lime, mass_kg: 15.0, note: "30 in cooktops 10-22 kg"}
+  toaster_ovens: {surface: stainless_304, mass_kg: 8.0, note: "countertop toaster ovens 5-12 kg"}
+  toasters: {surface: stainless_304, mass_kg: 2.0, note: "2-4 slice toasters 1.2-3.5 kg"}
+  windows: {surface: glass_soda_lime, mass_kg: 30.0, note: "single-hung windows ~0.9 x 1.2 m 20-45 kg"}
+  handles: {surface: stainless_304, mass_kg: 0.15, note: "cabinet pulls 0.05-0.4 kg"}
+  cabinets: {surface: wood_beech, mass_kg: 5.0, note: "cabinet door panels 3-9 kg"}
+  cabinets_composed: {surface: robocasa_particleboard, mass_kg: 30.0, note: "built by alloy.importers.robocasa.cabinets; mass from board volume x density"}

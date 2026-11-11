@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: ledge_plywood
+shape:
+  primitive:
+    kind: box
+    size: [0.075, 0.125, 0.04]
+material: plywood_marine
+motion: static

@@ -1,0 +1,931 @@
+{
+ "schema": "alloy.xbench.ours.law/1",
+ "law": "A4.momentum",
+ "condition": "collide",
+ "params": {},
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 10.0,
+ "steps": 8000,
+ "record_every": 1,
+ "gravity": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "bodies": [
+  {
+   "name": "body_0",
+   "parent": "world",
+   "mass": 0.523599,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.000523599,
+    0.000523599,
+    0.000523599
+   ],
+   "pos": [
+    -0.15,
+    0.2,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.15,
+    0.2,
+    0.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "body_1",
+   "parent": "world",
+   "mass": 0.523599,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.000523599,
+    0.000523599,
+    0.000523599
+   ],
+   "pos": [
+    0.0,
+    0.18,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.0,
+    0.18,
+    0.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "body_2",
+   "parent": "world",
+   "mass": 0.523599,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.000523599,
+    0.000523599,
+    0.000523599
+   ],
+   "pos": [
+    14.0,
+    10.0,
+    10.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    14.0,
+    10.0,
+    10.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "body_3",
+   "parent": "world",
+   "mass": 0.523599,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.000523599,
+    0.000523599,
+    0.000523599
+   ],
+   "pos": [
+    16.0,
+    10.0,
+    10.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    16.0,
+    10.0,
+    10.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "body_4",
+   "parent": "world",
+   "mass": 6.0,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.065,
+    0.05,
+    0.025
+   ],
+   "pos": [
+    18.0,
+    10.0,
+    10.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    18.0,
+    10.0,
+    10.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "name": "joint_1",
+   "type": "free",
+   "body": "body_0",
+   "qposadr": 0,
+   "dofadr": 0,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  },
+  {
+   "name": "joint_2",
+   "type": "free",
+   "body": "body_1",
+   "qposadr": 7,
+   "dofadr": 6,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  },
+  {
+   "name": "joint_3",
+   "type": "free",
+   "body": "body_2",
+   "qposadr": 14,
+   "dofadr": 12,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  },
+  {
+   "name": "joint_4",
+   "type": "free",
+   "body": "body_3",
+   "qposadr": 21,
+   "dofadr": 18,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  },
+  {
+   "name": "joint_5",
+   "type": "free",
+   "body": "body_4",
+   "qposadr": 28,
+   "dofadr": 24,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  }
+ ],
+ "geoms": [
+  {
+   "name": "shape_0_0",
+   "body": "body_0",
+   "type": "sphere",
+   "size": [
+    0.05,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.05
+   ],
+   "rbound": 0.05,
+   "xpos0": [
+    -0.15,
+    0.2,
+    0.0
+   ]
+  },
+  {
+   "name": "shape_1_1",
+   "body": "body_1",
+   "type": "sphere",
+   "size": [
+    0.05,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.05
+   ],
+   "rbound": 0.05,
+   "xpos0": [
+    0.0,
+    0.18,
+    0.0
+   ]
+  },
+  {
+   "name": "shape_2_2",
+   "body": "body_2",
+   "type": "sphere",
+   "size": [
+    0.05,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.05
+   ],
+   "rbound": 0.05,
+   "xpos0": [
+    14.0,
+    10.0,
+    10.0
+   ]
+  },
+  {
+   "name": "shape_3_3",
+   "body": "body_3",
+   "type": "sphere",
+   "size": [
+    0.05,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.05
+   ],
+   "rbound": 0.05,
+   "xpos0": [
+    16.0,
+    10.0,
+    10.0
+   ]
+  },
+  {
+   "name": "shape_4_4",
+   "body": "body_4",
+   "type": "box",
+   "size": [
+    0.05,
+    0.1,
+    0.15
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.1,
+    0.15
+   ],
+   "rbound": 0.18708286933869708,
+   "xpos0": [
+    18.0,
+    10.0,
+    10.0
+   ]
+  }
+ ],
+ "contact_body_pairs": [
+  {
+   "body1": "body_0",
+   "body2": "body_1",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_0",
+   "body2": "body_2",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_0",
+   "body2": "body_3",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_0",
+   "body2": "body_4",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_1",
+   "body2": "body_2",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_1",
+   "body2": "body_3",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_1",
+   "body2": "body_4",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_2",
+   "body2": "body_3",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_2",
+   "body2": "body_4",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "body_3",
+   "body2": "body_4",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  }
+ ],
+ "worlds": 1,
+ "samples": [
+  {}
+ ],
+ "materials": {
+  "shape_0_0": {
+   "mu": 1.0,
+   "restitution": 0.0
+  },
+  "shape_1_1": {
+   "mu": 1.0,
+   "restitution": 0.0
+  },
+  "shape_2_2": {
+   "mu": 1.0,
+   "restitution": 0.0
+  },
+  "shape_3_3": {
+   "mu": 1.0,
+   "restitution": 0.0
+  },
+  "shape_4_4": {
+   "mu": 1.0,
+   "restitution": 0.0
+  }
+ },
+ "initial": [
+  {
+   "bodies": {
+    "body_0": {
+     "q": [
+      -0.15000000596046448,
+      0.20000000298023224,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0
+     ]
+    },
+    "body_1": {
+     "q": [
+      0.0,
+      0.18000000715255737,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "body_2": {
+     "q": [
+      14.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "body_3": {
+     "q": [
+      16.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "body_4": {
+     "q": [
+      18.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "joints": {
+    "joint_1": {
+     "q": [
+      -0.15000000596046448,
+      0.20000000298023224,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0
+     ]
+    },
+    "joint_2": {
+     "q": [
+      0.0,
+      0.18000000715255737,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_3": {
+     "q": [
+      14.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_4": {
+     "q": [
+      16.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_5": {
+     "q": [
+      18.0,
+      10.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "note": "Newton coordinates: body q = x y z qx qy qz qw; free joint q = x y z qx qy qz qw; qd = COM linear then angular velocity, world frame"
+  }
+ ],
+ "drive": null,
+ "extras": {},
+ "alloy_settings": {
+  "solver": "mujoco",
+  "kwargs": {
+   "solver": "newton",
+   "integrator": "rk4",
+   "cone": "elliptic"
+  },
+  "mujoco_solimp": null,
+  "newton_contacts": false
+ }
+}

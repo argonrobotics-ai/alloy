@@ -1,0 +1,14 @@
+schema: alloy.object/1
+name: olive_oil_cup
+shape:
+  particles:
+    region:
+    - [-0.03, -0.03, 0.0]
+    - [0.03, 0.03, 0.04]
+    spacing: 0.004
+material: olive_oil
+features:
+  passage_width:
+    value: 0.06
+    source: model
+    note: cup inner diameter 60 mm

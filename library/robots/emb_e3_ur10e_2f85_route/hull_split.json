@@ -1,0 +1,565 @@
+{
+ "bodies": ".",
+ "config": {
+  "max_verts": 64,
+  "tol_m": 0.0002,
+  "max_pieces": 64
+ },
+ "max_bound_m": 0.00019840716942879277,
+ "max_piece_verts": 57,
+ "meshes": [
+  {
+   "mesh": "gripper_base_mount",
+   "hull_verts": 621,
+   "piece_verts": [
+    42,
+    42,
+    48
+   ],
+   "bound_m": 0.00017679086230469135
+  },
+  {
+   "mesh": "gripper_base",
+   "hull_verts": 811,
+   "piece_verts": [
+    40,
+    41,
+    48,
+    48,
+    54,
+    57,
+    44,
+    43
+   ],
+   "bound_m": 0.00019840716942879277
+  },
+  {
+   "mesh": "gripper_driver",
+   "hull_verts": 212,
+   "piece_verts": [
+    56
+   ],
+   "bound_m": 0.00018871031481528476
+  },
+  {
+   "mesh": "gripper_coupler",
+   "hull_verts": 174,
+   "piece_verts": [
+    54
+   ],
+   "bound_m": 0.00016430639273825505
+  },
+  {
+   "mesh": "gripper_spring_link",
+   "hull_verts": 150,
+   "piece_verts": [
+    53
+   ],
+   "bound_m": 0.00018813145167071894
+  },
+  {
+   "mesh": "gripper_follower",
+   "hull_verts": 188,
+   "piece_verts": [
+    38
+   ],
+   "bound_m": 0.000196214379739465
+  },
+  {
+   "mesh": "mug_base_mesh",
+   "hull_verts": 48,
+   "piece_verts": [
+    48
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_00_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_01_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_02_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_03_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_04_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_05_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_06_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_07_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_08_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_09_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_10_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_11_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_12_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_13_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_14_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_15_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_16_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_17_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_18_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_19_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_20_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_21_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_22_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_foot_23_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_00_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_01_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_02_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_03_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_04_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_05_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_06_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_07_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_08_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_09_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_10_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_11_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_12_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_13_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_14_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_15_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_16_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_17_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_18_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_19_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_20_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_21_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_22_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_wall_23_mesh",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_00_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_01_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_02_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_03_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_04_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_05_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_06_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_07_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_08_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_09_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_10_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_11_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "mug_handle_12_mesh",
+   "hull_verts": 16,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.0
+  }
+ ]
+}

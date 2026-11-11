@@ -1,0 +1,40 @@
+schema: alloy.material/1
+name: glycerol_80
+density:
+  value: 1208.0
+  source: catalog
+  unc: [1207.0, 1213.0]
+  note: 80 wt% glycerol-water at 20 C 1207.9 kg/m^3 from the Bosart-Snoddy (1928) data as computed by Volk and Kaehler 2018
+    (https://link.springer.com/article/10.1007/s00348-018-2527-y); Lange's specific gravity 1.2129 at 15 C agrees within 0.1
+    %
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction, wall drag comes from viscosity/adhesion'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'liquid: inelastic'
+fluid:
+  viscosity:
+    value: 0.0601
+    source: catalog
+    unc: [0.0339, 0.116]
+    note: 80 wt% glycerol 60.1 mPa s at 20 C (116 at 10 C, 33.9 at 30 C), Segur and Oberstar table "Viscosity of Aqueous Glycerine
+      Solutions" (https://web.cecs.pdx.edu/~gerry/class/EAS361/lab/pdf/glycerinWaterViscosity_Dorsey.pdf)
+  surface_tension:
+    value: 0.067
+    source: measured
+    unc: [0.065, 0.068]
+    note: 80 % glycerol / 20 % water in air 67 mN/m at 21.4 C, pendant drop (https://arxiv.org/pdf/2407.10480); the linear
+      fit sigma = 72.76 - 9.04 x of https://arxiv.org/pdf/0812.4361 gives 65.5
+  adhesion:
+    value: 0.05
+    source: model
+    unc: [0.01, 0.1]
+    note: ESTIMATE Akinci 2013 adhesion on plastic, as water (typical 0.01-0.1); the mixture wets polypropylene at 81-85 deg

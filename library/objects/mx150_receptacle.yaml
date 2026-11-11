@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: mx150_receptacle
+shape:
+  primitive:
+    kind: box
+    size: [0.018825, 0.0097, 0.010275]
+material: pa66_gf30

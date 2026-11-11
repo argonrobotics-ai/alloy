@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: pencil_wood_untasked
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.0035, 0.085]
+material: wood_cedar_pencil

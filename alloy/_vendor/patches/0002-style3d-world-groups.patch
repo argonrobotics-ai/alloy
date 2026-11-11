@@ -1,0 +1,225 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/bvh.py b/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/bvh.py
+index 8b5ab8eab..cc5bf1418 100644
+--- a/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/bvh.py
++++ b/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/bvh.py
+@@ -60,6 +60,17 @@ class BvhAabb:
+         self.device = device
+         self.lower_bounds = wp.zeros(num_leaves, dtype=wp.vec3, device=self.device)
+         self.upper_bounds = wp.zeros(num_leaves, dtype=wp.vec3, device=self.device)
++        # Alloy (SCR-WP0-S3D-WORLDS): leaf worlds (int32) set before build() make a grouped BVH; a query given its
++        # elements' worlds then starts at its own world's group root, so overlaid worlds never meet.
++        self.groups = None
++        self._no_groups = wp.zeros(1, dtype=wp.int32, device=self.device)
++
++    def _query_groups(self, query_groups: wp.array | None) -> tuple[wp.array, bool]:
++        # Alloy (SCR-WP0-S3D-WORLDS)
++        if query_groups is None:
++            return self._no_groups, False
++        assert self.groups is not None, "query_groups needs a BVH built with groups"
++        return query_groups, True
+ 
+     def is_built(self) -> bool:
+         """Returns True if the BVH has been built, otherwise False."""
+@@ -81,7 +92,7 @@ class BvhAabb:
+             This function **must not** be called inside a `wp.ScopedCapture()` context,
+             since it performs out-of-place allocations.
+         """
+-        self.bvh = wp.Bvh(self.lower_bounds, self.upper_bounds)
++        self.bvh = wp.Bvh(self.lower_bounds, self.upper_bounds, groups=self.groups)  # Alloy (SCR-WP0-S3D-WORLDS)
+ 
+     def rebuild(self):
+         """Rebuilds the BVH using the current lower and upper bounds.
+@@ -133,6 +144,7 @@ class BvhAabb:
+         query_results: wp.array2d[int],
+         query_radius: float = 0.0,
+         ignore_self_hits: bool = False,
++        query_groups: wp.array | None = None,  # Alloy (SCR-WP0-S3D-WORLDS): each query box's world
+     ):
+         """Queries the BVH for overlapping AABBs.
+ 
+@@ -164,7 +176,8 @@ class BvhAabb:
+         wp.launch(
+             aabb_vs_aabb_kernel,
+             dim=lower_bounds.shape[0],
+-            inputs=[self.bvh.id, query_results.shape[0], query_radius, ignore_self_hits, lower_bounds, upper_bounds],
++            inputs=[self.bvh.id, query_results.shape[0], query_radius, ignore_self_hits, lower_bounds, upper_bounds,
++                    *self._query_groups(query_groups)],  # Alloy (SCR-WP0-S3D-WORLDS)
+             outputs=[query_results],
+             device=self.device,
+             block_dim=64,
+@@ -324,6 +337,7 @@ class BvhEdge(BvhAabb):
+         ignore_self_hits: bool,
+         max_dist: float,
+         query_radius: float = 0.0,
++        query_groups: wp.array | None = None,  # Alloy (SCR-WP0-S3D-WORLDS): each query element's world
+     ):
+         """Queries the BVH to find edges that are within a maximum distance from a set of points.
+ 
+@@ -359,6 +373,7 @@ class BvhEdge(BvhAabb):
+                 test_edge_indices,
+                 edge_pos,
+                 edge_indices,
++                *self._query_groups(query_groups),  # Alloy (SCR-WP0-S3D-WORLDS)
+             ],
+             outputs=[query_results],
+             device=self.device,
+@@ -470,6 +485,7 @@ class BvhTri(BvhAabb):
+         ignore_self_hits: bool,
+         max_dist: float,
+         query_radius: float = 0.0,
++        query_groups: wp.array | None = None,  # Alloy (SCR-WP0-S3D-WORLDS): each query element's world
+     ):
+         """Queries the BVH to find triangles that are within a maximum distance from a set of points.
+ 
+@@ -507,6 +523,7 @@ class BvhTri(BvhAabb):
+                 pos,
+                 tri_pos,
+                 tri_indices,
++                *self._query_groups(query_groups),  # Alloy (SCR-WP0-S3D-WORLDS)
+             ],
+             outputs=[query_results],
+             device=self.device,
+diff --git a/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/kernels.py b/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/kernels.py
+index 50c83a0ff..193e4bbb3 100644
+--- a/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/style3d/collision/bvh/kernels.py
+@@ -83,6 +83,8 @@ def aabb_vs_aabb_kernel(
+     ignore_self_hits: bool,
+     lower_bounds: wp.array[wp.vec3],
+     upper_bounds: wp.array[wp.vec3],
++    query_groups: wp.array[wp.int32],  # Alloy (SCR-WP0-S3D-WORLDS): each query's world (read when grouped)
++    grouped: bool,
+     # outputs
+     query_results: wp.array2d[int],
+ ):
+@@ -90,9 +92,15 @@ def aabb_vs_aabb_kernel(
+     lower = lower_bounds[tid] - wp.vec3(query_radius)
+     upper = upper_bounds[tid] + wp.vec3(query_radius)
+ 
++    root = wp.int32(-1)  # Alloy (SCR-WP0-S3D-WORLDS): a grouped query stays in its own world's subtree
++    if grouped:
++        root = wp.bvh_get_group_root(bvh_id, query_groups[tid])
++        if root < 0:
++            query_results[0, tid] = 0
++            return
+     query_count = wp.int32(0)
+     query_index = wp.int32(-1)
+-    query = wp.bvh_query_aabb(bvh_id, lower, upper)
++    query = wp.bvh_query_aabb(bvh_id, lower, upper, root)
+ 
+     while (query_count < query_list_rows - 1) and wp.bvh_query_next(query, query_index):
+         if not (ignore_self_hits and query_index <= tid):
+@@ -141,6 +149,8 @@ def triangle_vs_point_kernel(
+     pos: wp.array[wp.vec3],
+     tri_pos: wp.array[wp.vec3],
+     tri_indices: wp.array2d[int],
++    query_groups: wp.array[wp.int32],  # Alloy (SCR-WP0-S3D-WORLDS): each query's world (read when grouped)
++    grouped: bool,
+     # outputs
+     query_results: wp.array2d[int],
+ ):
+@@ -150,9 +160,15 @@ def triangle_vs_point_kernel(
+     lower = x0 - wp.vec3(query_radius)
+     upper = x0 + wp.vec3(query_radius)
+ 
++    root = wp.int32(-1)  # Alloy (SCR-WP0-S3D-WORLDS): a grouped query stays in its own world's subtree
++    if grouped:
++        root = wp.bvh_get_group_root(bvh_id, query_groups[vid])
++        if root < 0:
++            query_results[0, vid] = 0
++            return
+     tri_index = wp.int32(-1)
+     query_count = wp.int32(0)
+-    query = wp.bvh_query_aabb(bvh_id, lower, upper)
++    query = wp.bvh_query_aabb(bvh_id, lower, upper, root)
+ 
+     while (query_count < query_list_rows - 1) and wp.bvh_query_next(query, tri_index):
+         t1 = tri_indices[tri_index, 0]
+@@ -183,6 +199,8 @@ def edge_vs_edge_kernel(
+     test_edge_indices: wp.array2d[int],
+     edge_pos: wp.array[wp.vec3],
+     edge_indices: wp.array2d[int],
++    query_groups: wp.array[wp.int32],  # Alloy (SCR-WP0-S3D-WORLDS): each query's world (read when grouped)
++    grouped: bool,
+     # outputs
+     query_results: wp.array2d[int],
+ ):
+@@ -197,9 +215,15 @@ def edge_vs_edge_kernel(
+     lower = wp.min(x0, x1) - wp.vec3(query_radius)
+     upper = wp.max(x0, x1) + wp.vec3(query_radius)
+ 
++    root = wp.int32(-1)  # Alloy (SCR-WP0-S3D-WORLDS): a grouped query stays in its own world's subtree
++    if grouped:
++        root = wp.bvh_get_group_root(bvh_id, query_groups[eid])
++        if root < 0:
++            query_results[0, eid] = 0
++            return
+     edge_index = wp.int32(-1)
+     query_count = wp.int32(0)
+-    query = wp.bvh_query_aabb(bvh_id, lower, upper)
++    query = wp.bvh_query_aabb(bvh_id, lower, upper, root)
+ 
+     while (query_count < query_list_rows - 1) and wp.bvh_query_next(query, edge_index):
+         if ignore_self_hits and edge_index <= eid:
+diff --git a/alloy/_vendor/newton/_src/solvers/style3d/collision/collision.py b/alloy/_vendor/newton/_src/solvers/style3d/collision/collision.py
+index 770a179f7..0de573447 100644
+--- a/alloy/_vendor/newton/_src/solvers/style3d/collision/collision.py
++++ b/alloy/_vendor/newton/_src/solvers/style3d/collision/collision.py
+@@ -2,6 +2,7 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+ 
++import numpy as np  # Alloy (SCR-WP0-S3D-WORLDS)
+ import warp as wp
+ 
+ from alloy._vendor.newton import Contacts, Model, State
+@@ -48,9 +49,25 @@ class Collision:
+         self.Hx = wp.zeros(model.particle_count, dtype=wp.vec3, device=self.model.device)
+         self.contact_hessian_diags = wp.zeros(model.particle_count, dtype=wp.mat33, device=self.model.device)
+ 
++        self.particle_groups = self._group_by_world(model)  # Alloy (SCR-WP0-S3D-WORLDS)
+         self.edge_bvh.build(model.particle_q, self.model.edge_indices, self.radius)
+         self.tri_bvh.build(model.particle_q, self.model.tri_indices, self.radius)
+ 
++    def _group_by_world(self, model: Model) -> wp.array | None:
++        """Alloy (SCR-WP0-S3D-WORLDS): with several worlds, the BVHs' leaves are grouped by their particles' world
++        and every query starts at its own world's group root. Upstream queried the whole tree, so the sheets of
++        overlaid worlds collided with each other (and took each other's 32 candidate slots). One world, or a sheet
++        with global particles (world -1), keeps the ungrouped tree. Returns the particles' worlds, or None."""
++        if model.world_count <= 1 or model.particle_world is None or model.particle_count == 0:
++            return None
++        world = model.particle_world.numpy()
++        if world.min() < 0:
++            return None
++        device = self.model.device
++        self.tri_bvh.groups = wp.array(world[model.tri_indices.numpy()[:, 0]].astype(np.int32), device=device)
++        self.edge_bvh.groups = wp.array(world[model.edge_indices.numpy()[:, 2]].astype(np.int32), device=device)
++        return wp.array(world.astype(np.int32), device=device)
++
+     def rebuild_bvh(self, pos: wp.array[wp.vec3]):
+         """
+         Rebuild triangle and edge BVHs.
+@@ -95,6 +112,7 @@ class Collision:
+                 True,
+                 max_dist,
+                 query_radius,
++                self.particle_groups,  # Alloy (SCR-WP0-S3D-WORLDS)
+             )
+ 
+         # Edge-edge collision candidates
+@@ -108,6 +126,7 @@ class Collision:
+                 True,
+                 max_dist,
+                 query_radius,
++                self.edge_bvh.groups,  # Alloy (SCR-WP0-S3D-WORLDS)
+             )
+ 
+         # Face-edge collision candidates
+@@ -118,6 +137,7 @@ class Collision:
+                 self.broad_phase_ef,
+                 query_radius,
+                 False,
++                self.edge_bvh.groups,  # Alloy (SCR-WP0-S3D-WORLDS): the query boxes are edges
+             )
+ 
+     def accumulate_contact_force(

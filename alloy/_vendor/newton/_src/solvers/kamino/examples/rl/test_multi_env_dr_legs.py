@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+###########################################################################
+# Quick smoke test: DR Legs with many parallel environments
+#
+# Usage:
+#   python test_multi_env_dr_legs.py                          # default 2048 envs
+#   python test_multi_env_dr_legs.py --num-worlds 4096
+#   python test_multi_env_dr_legs.py --num-worlds 1024 2048 4096  # sweep
+###########################################################################
+
+import argparse
+import logging
+import time
+
+import warp as wp
+
+from alloy._vendor import newton
+from alloy._vendor.newton._src.solvers.kamino._src.utils.sim import Simulator
+
+logger = logging.getLogger(__name__)
+
+wp.set_module_options({"enable_backward": False})
+
+
+def make_settings(sim_dt: float = 0.004) -> Simulator.Config:
+    settings = Simulator.Config()
+    settings.dt = sim_dt
+    settings.solver.use_collision_detector = True
+    settings.solver.integrator = "moreau"
+    settings.solver.constraints.alpha = 0.1
+    settings.solver.padmm.primal_tolerance = 1e-6
+    settings.solver.padmm.dual_tolerance = 1e-6
+    settings.solver.padmm.compl_tolerance = 1e-6
+    settings.solver.padmm.max_iterations = 200
+    settings.solver.padmm.rho_0 = 0.1
+    settings.solver.padmm.use_acceleration = True
+    settings.solver.padmm.warmstart_mode = "containers"
+    settings.solver.collect_solver_info = False
+    settings.solver.compute_solution_metrics = False
+    return settings
+
+
+def run_test(num_worlds: int, num_steps: int, device):
+    asset_path = newton.utils.download_asset("disneyresearch")
+    usd_path = str(asset_path / "dr_legs" / "usd" / "dr_legs_with_boxes.usda")
+
+    logger.info("--- Testing %s environments ---", num_worlds)
+
+    # Build model
+    logger.info("Building model...")
+    builder_single = newton.ModelBuilder()
+    builder_single.add_usd(source=usd_path)
+    builder = newton.ModelBuilder()
+    builder.replicate(builder=builder_single, copy_count=num_worlds)
+    offset = wp.transformf(0.0, 0.0, 0.265, 0.0, 0.0, 0.0, 1.0)
+    builder.body_q = [wp.mul(offset, q) for q in builder.body_q]
+    model = builder.finalize(device=device)
+
+    # Create simulator
+    logger.info("Creating simulator...")
+    settings = make_settings(0.004)
+    sim = Simulator(model=model, config=settings)
+    sim.set_control_callback(lambda _: None)
+
+    logger.debug("Model size: %s", sim.model.size)
+    logger.debug("Contacts capacity: %s", sim.contacts.model_max_contacts_host)
+
+    # Warm-up: step without CUDA graphs to compile kernels
+    logger.info("Stepping (warmup)...")
+    try:
+        sim.step()
+        wp.synchronize()
+        logger.info("Warmup step 1 OK")
+    except Exception as e:
+        logger.error("Warmup step 1 FAILED: %s", e)
+        return False
+
+    # Reset
+    logger.info("Resetting...")
+    sim.reset()
+    wp.synchronize()
+    logger.info("Reset OK")
+
+    # Step multiple times
+    logger.info("Stepping %s times...", num_steps)
+    t0 = time.perf_counter()
+    for _i in range(num_steps):
+        sim.step()
+    wp.synchronize()
+    t1 = time.perf_counter()
+
+    logger.info("OK: %s envs x %s steps in %.2fs (%.0f steps/s)", num_worlds, num_steps, t1 - t0, num_steps / (t1 - t0))
+    return True
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Multi-env smoke test for DR Legs")
+    parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--num-worlds", type=int, nargs="+", default=[2048])
+    parser.add_argument("--num-steps", type=int, default=10)
+    args = parser.parse_args()
+
+    if args.device:
+        device = wp.get_device(args.device)
+        wp.set_device(device)
+    else:
+        device = wp.get_preferred_device()
+
+    for nw in args.num_worlds:
+        ok = run_test(nw, args.num_steps, device)
+        if not ok:
+            logger.error("FAILED at %s envs", nw)
+            break
+
+    logger.info("Done!")

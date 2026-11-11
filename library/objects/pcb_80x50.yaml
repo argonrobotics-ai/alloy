@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: pcb_80x50
+shape:
+  primitive:
+    kind: box
+    size: [0.04, 0.025, 0.0008]
+material: fr4

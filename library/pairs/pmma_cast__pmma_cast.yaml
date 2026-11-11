@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pmma_cast
+b: pmma_cast
+mu_static:
+  value: 0.8
+  source: catalog
+  unc: [0.76, 0.84]
+  note: Engineering ToolBox friction-coefficients-d_778 Plexiglas/Plexiglas clean dry 0.8
+mu_dynamic:
+  value: 0.8
+  source: catalog
+  unc: [0.76, 0.84]
+  note: Engineering ToolBox friction-coefficients-d_778 Plexiglas/Plexiglas clean dry 0.8

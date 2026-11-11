@@ -1,0 +1,190 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""Example Basic Pendulum
+
+Shows how to set up a simulation of a simple double pendulum using the
+newton.ModelBuilder() class.
+
+Success criteria:
+- The two-link pendulum swings back and forth with both joints connected.
+- Motion stays bounded and in the pendulum plane without explosive separation.
+
+Runs:
+- `python -m newton.examples basic_pendulum`
+- `python -m newton.examples basic_pendulum --solver xpbd`
+- `python -m newton.examples basic_pendulum --solver kamino`
+"""
+
+import warp as wp
+
+from alloy._vendor import newton
+import alloy._vendor.newton.examples; from alloy._vendor import newton
+
+
+class Example:
+    def __init__(self, viewer, args):
+        # setup simulation parameters first
+        self.fps = 100
+        self.frame_dt = 1.0 / self.fps
+        self.sim_time = 0.0
+        self.sim_substeps = 10
+        self.sim_dt = self.frame_dt / self.sim_substeps
+
+        self.viewer = viewer
+        self.args = args
+        self.solver_type = getattr(args, "solver", "xpbd") if args is not None else "xpbd"
+        if self.solver_type == "kamino":
+            self.sim_substeps = 2
+            self.sim_dt = self.frame_dt / self.sim_substeps
+
+        builder = newton.ModelBuilder()
+        if self.solver_type == "kamino":
+            newton.solvers.SolverKamino.register_custom_attributes(builder)
+
+        hx = 1.0
+        hy = 0.1
+        hz = 0.1
+
+        # create first link
+        link_0 = builder.add_link()
+        builder.add_shape_box(link_0, hx=hx, hy=hy, hz=hz)
+
+        link_1 = builder.add_link()
+        builder.add_shape_box(link_1, hx=hx, hy=hy, hz=hz)
+
+        # add joints
+        rot = wp.quat_from_axis_angle(wp.vec3(0.0, 0.0, 1.0), -wp.pi * 0.5)
+        j0 = builder.add_joint_revolute(
+            parent=-1,
+            child=link_0,
+            axis=wp.vec3(0.0, 1.0, 0.0),
+            # rotate pendulum around the z-axis to appear sideways to the viewer
+            parent_xform=wp.transform(p=wp.vec3(0.0, 0.0, 5.0), q=rot),
+            child_xform=wp.transform(p=wp.vec3(-hx, 0.0, 0.0), q=wp.quat_identity()),
+        )
+        j1 = builder.add_joint_revolute(
+            parent=link_0,
+            child=link_1,
+            axis=wp.vec3(0.0, 1.0, 0.0),
+            parent_xform=wp.transform(p=wp.vec3(hx, 0.0, 0.0), q=wp.quat_identity()),
+            child_xform=wp.transform(p=wp.vec3(-hx, 0.0, 0.0), q=wp.quat_identity()),
+        )
+
+        # Create articulation from joints
+        builder.add_articulation([j0, j1], label="pendulum")
+
+        # add ground plane
+        builder.add_ground_plane()
+
+        # finalize model
+        self.model = builder.finalize()
+
+        if self.solver_type == "kamino":
+            solver_config = newton.solvers.SolverKamino.Config.from_model(
+                self.model,
+                dynamics_solver="dvi",
+                sparse_dynamics=True,
+                sparse_jacobian=True,
+            )
+            solver_config.dvi.bilateral_solver_type = "LLTBRCM"
+            solver_config.dvi.max_alternating_iterations = 8
+            solver_config.dvi.bilateral_solve_interval = 8
+            self.solver = newton.solvers.SolverKamino(self.model, config=solver_config)
+        else:
+            self.solver = newton.solvers.SolverXPBD(self.model)
+
+        self.state_0 = self.model.state()
+        self.state_1 = self.model.state()
+        self.control = self.model.control()
+
+        # not required for MuJoCo, but required for other solvers
+        newton.eval_fk(self.model, self.model.joint_q, self.model.joint_qd, self.state_0)
+
+        if self.solver_type == "kamino":
+            self.collision_pipeline = None
+            self.contacts = None
+        else:
+            self.collision_pipeline = newton.CollisionPipeline(self.model)
+            self.contacts = self.collision_pipeline.contacts()
+
+        self.viewer.set_model(self.model)
+
+        self.capture()
+
+    def capture(self):
+        with wp.ScopedCapture() as capture:
+            self.simulate()
+        self.graph = capture.graph
+
+    def simulate(self):
+        contacts = None if self.solver_type == "kamino" else self.contacts
+        for _ in range(self.sim_substeps):
+            self.state_0.clear_forces()
+
+            # apply forces to the model
+            self.viewer.apply_forces(self.state_0)
+
+            if self.collision_pipeline is not None:
+                self.collision_pipeline.collide(self.state_0, self.contacts)
+            self.solver.step(self.state_0, self.state_1, self.control, contacts, self.sim_dt)
+
+            # swap states
+            self.state_0, self.state_1 = self.state_1, self.state_0
+
+    def step(self):
+        if self.graph:
+            wp.capture_launch(self.graph)
+        else:
+            self.simulate()
+
+        self.sim_time += self.frame_dt
+
+    def test_final(self):
+        # rough check that the pendulum links are in the correct area
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "pendulum links in correct area",
+            lambda q, qd: abs(q[0]) < 1e-5 and abs(q[1]) < 1.0 and q[2] < 5.0 and q[2] > 0.0,
+            [0, 1],
+        )
+
+        def check_velocities(_, qd):
+            # velocity outside the plane of the pendulum should be close to zero
+            check = abs(qd[0]) < 1e-4 and abs(qd[6]) < 1e-4
+            # velocity in the plane of the pendulum should be reasonable
+            check = check and abs(qd[1]) < 10.0 and abs(qd[2]) < 5.0 and abs(qd[3]) < 10.0 and abs(qd[4]) < 10.0
+            return check
+
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "pendulum links have reasonable velocities",
+            check_velocities,
+            [0, 1],
+        )
+
+    def render(self):
+        self.viewer.begin_frame(self.sim_time)
+        self.viewer.log_state(self.state_0)
+        if self.contacts is not None:
+            self.viewer.log_contacts(self.contacts, self.state_0)
+        self.viewer.end_frame()
+
+
+if __name__ == "__main__":
+    # Parse arguments and initialize viewer
+    parser = newton.examples.create_parser()
+    parser.add_argument(
+        "--solver",
+        type=str,
+        choices=["xpbd", "kamino"],
+        default="xpbd",
+        help="Solver backend to use.",
+    )
+    viewer, args = newton.examples.init(parser)
+
+    # Create viewer and run
+    newton.examples.run(Example(viewer, args), args)

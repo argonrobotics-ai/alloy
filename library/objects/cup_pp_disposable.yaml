@@ -1,0 +1,17 @@
+schema: alloy.object/1
+name: cup_pp_disposable
+shape:
+  mesh:
+    path: meshes/cup_pp_disposable.obj
+    sha256: 7179ad1bd5703ce79dd85b04d306ec6a2236db27acde37e742cf463c4da4bbab
+    collision: sdf
+material: pp_homopolymer
+features:
+  thickness:
+    value: 0.00035
+    source: model
+    note: 7 oz PP cup wall 0.3-0.4 mm (food-service catalogues)
+  min_wall:
+    value: 0.00035
+    source: model
+    note: 7 oz PP cup wall 0.3-0.4 mm (food-service catalogues)

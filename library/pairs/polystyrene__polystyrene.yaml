@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: polystyrene
+b: polystyrene
+mu_static:
+  value: 0.5
+  source: catalog
+  unc: [0.475, 0.525]
+  note: Engineering ToolBox friction-coefficients-d_778 polystyrene/polystyrene clean dry 0.5
+mu_dynamic:
+  value: 0.5
+  source: catalog
+  unc: [0.475, 0.525]
+  note: Engineering ToolBox friction-coefficients-d_778 polystyrene/polystyrene clean dry 0.5

@@ -1,0 +1,6 @@
+{
+ "schema": "alloy.look/1",
+ "material": "fr4",
+ "preset": "pcb_green",
+ "note": "FR4 board with green solder mask"
+}

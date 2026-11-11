@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "wood_beech",
+ "preset": "wood_oak",
+ "texture": "polyhaven:white_maple_veneer",
+ "scale_m": 0.6,
+ "note": "beech: pale, fine grain (maple veneer scan, closest CC0 match)",
+ "licence": "textures: Poly Haven (polyhaven.com) 'white_maple_veneer', CC0"
+}

@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "paint_enamel_aerosol",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.445,
+  0.012,
+  0.016
+ ],
+ "roughness": 0.15,
+ "subsurface": 0.0,
+ "note": "wet gloss enamel, gloss red (sRGB 178, 28, 34 as linear): high gloss"
+}

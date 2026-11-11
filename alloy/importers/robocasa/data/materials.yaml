@@ -1,0 +1,87 @@
+# New materials for RoboCasa imports (alloy.importers.robocasa.materials).
+#
+# `surface:` entries become full Alloy material cards (robocasa_<name>.yaml): the object's collision shapes use their
+# friction and restitution. `fill:` entries are densities only, used for the mass of a part (a jar's contents, a
+# bottle's liquid) and never for contact. Every value is [value, lo, hi] with a source tag and a note. ESTIMATE in a
+# note means the value is a model estimate waiting for a better source (queued for the sourcing agent).
+
+surface:
+  robocasa_wicker:
+    density: [550, 400, 700, model, "ESTIMATE: rattan/wicker 400-700 kg/m3 (dry rattan cane)"]
+    mu: [0.4, 0.3, 0.3, 0.5, model, "ESTIMATE: dry woven cane on wood/steel"]
+    restitution: [0.3, 0.1, 0.5, model, "ESTIMATE: woven basket, mid value"]
+  robocasa_raw_meat:
+    density: [1060, 1040, 1080, model, "ESTIMATE: lean muscle tissue 1.04-1.08 g/cm3"]
+    mu: [0.4, 0.3, 0.25, 0.6, model, "ESTIMATE: wet raw meat on steel/plastic"]
+    restitution: [0.05, 0.0, 0.15, model, "ESTIMATE: soft tissue, near inelastic"]
+  robocasa_bread:
+    density: [230, 180, 320, model, "ESTIMATE: white pan bread specific volume 3-5.5 ml/g"]
+    mu: [0.6, 0.5, 0.4, 0.8, model, "ESTIMATE: bread crust on wood/steel"]
+    restitution: [0.1, 0.0, 0.2, model, "ESTIMATE: crumb absorbs impact"]
+  robocasa_ice:
+    density: [917, 915, 920, catalog, "ice Ih at 0 C, 0.9167 g/cm3 (CRC Handbook of Chemistry and Physics)"]
+    mu: [0.1, 0.05, 0.02, 0.3, model, "ESTIMATE: wet ice near 0 C on steel/plastic; dry cold ice is higher"]
+    restitution: [0.3, 0.1, 0.5, model, "ESTIMATE: ice cube on a hard surface"]
+  robocasa_citrus:
+    density: [980, 930, 1030, model, "ESTIMATE: citrus fruit 0.93-1.03 g/cm3"]
+    mu: [0.5, 0.4, 0.3, 0.7, model, "ESTIMATE: moist fruit flesh/peel on steel/plastic"]
+    restitution: [0.1, 0.0, 0.3, model, "ESTIMATE: soft produce"]
+  robocasa_leafy_head:
+    density: [500, 300, 700, model, "ESTIMATE: whole lettuce head incl. air between leaves"]
+    mu: [0.5, 0.4, 0.3, 0.7, model, "ESTIMATE: moist leaves on steel/plastic"]
+    restitution: [0.2, 0.0, 0.4, model, "ESTIMATE: soft produce"]
+  robocasa_marshmallow:
+    density: [400, 250, 600, model, "ESTIMATE: aerated confection 0.25-0.6 g/cm3"]
+    mu: [0.8, 0.7, 0.5, 1.0, model, "ESTIMATE: tacky sugar surface"]
+    restitution: [0.4, 0.2, 0.6, model, "ESTIMATE: springy foam"]
+  robocasa_pancake:
+    density: [550, 400, 700, model, "ESTIMATE: cooked batter 0.4-0.7 g/cm3"]
+    mu: [0.6, 0.5, 0.4, 0.8, model, "ESTIMATE: cooked batter on plate/pan"]
+    restitution: [0.05, 0.0, 0.15, model, "ESTIMATE: soft, near inelastic"]
+  robocasa_pickle:
+    density: [990, 950, 1030, model, "ESTIMATE: cucumber 0.95-1.03 g/cm3"]
+    mu: [0.4, 0.3, 0.2, 0.6, model, "ESTIMATE: wet slice"]
+    restitution: [0.1, 0.0, 0.2, model, "ESTIMATE: soft produce"]
+  robocasa_pizza:
+    density: [750, 600, 900, model, "ESTIMATE: baked pizza 0.6-0.9 g/cm3"]
+    mu: [0.6, 0.5, 0.4, 0.8, model, "ESTIMATE: crust on board/pan"]
+    restitution: [0.05, 0.0, 0.15, model, "ESTIMATE: soft, near inelastic"]
+  robocasa_sugar_cube:
+    density: [1300, 1150, 1450, model, "ESTIMATE: pressed sucrose (crystal 1.587 g/cm3, CRC) with 10-30 % voids"]
+    mu: [0.6, 0.5, 0.4, 0.8, model, "ESTIMATE: rough crystalline surface"]
+    restitution: [0.2, 0.1, 0.4, model, "ESTIMATE: brittle cube"]
+  robocasa_tomato:
+    density: [990, 940, 1050, model, "ESTIMATE: tomato 0.94-1.05 g/cm3"]
+    mu: [0.4, 0.3, 0.2, 0.6, model, "ESTIMATE: wet slice"]
+    restitution: [0.05, 0.0, 0.15, model, "ESTIMATE: soft produce"]
+  robocasa_cookie_dough:
+    density: [1200, 1100, 1300, model, "ESTIMATE: sugar-butter-flour dough 1.1-1.3 g/cm3"]
+    mu: [0.8, 0.6, 0.5, 1.0, model, "ESTIMATE: tacky dough"]
+    restitution: [0.0, 0.0, 0.05, model, "ESTIMATE: plastic dough, no bounce"]
+  robocasa_particleboard:
+    density: [680, 600, 800, model, "ESTIMATE: melamine-faced particleboard 0.6-0.8 g/cm3 (cabinet carcass and door boards)"]
+    mu: [0.35, 0.3, 0.25, 0.5, model, "ESTIMATE: melamine laminate on wood/plastic"]
+    restitution: [0.3, 0.1, 0.5, model, "ESTIMATE: rigid board"]
+  robocasa_handle_metal:
+    density: [6600, 2700, 7900, model, "ESTIMATE: zinc-alloy/steel cabinet pulls (Zamak 6.6, aluminium 2.7, steel 7.9 g/cm3)"]
+    mu: [0.3, 0.25, 0.2, 0.45, model, "ESTIMATE: plated metal on skin/rubber"]
+    restitution: [0.5, 0.3, 0.7, model, "ESTIMATE: metal"]
+
+fill:
+  robocasa_foil_roll_boxed: [430, 250, 700, model, "ESTIMATE: ~0.33 kg (7 m2 x 11 um foil + box + core) over a 30 x 5 x 5 cm box"]
+  robocasa_spice_bulk: [520, 450, 650, model, "ESTIMATE: ground spices 2.3-3.0 g per 4.93 ml tsp (USDA household weights)"]
+  robocasa_cream_cheese: [1030, 980, 1070, model, "ESTIMATE: cream cheese ~1.0-1.07 g/cm3"]
+  robocasa_flour_bulk: [530, 500, 600, model, "ESTIMATE: all-purpose wheat flour 125 g per 236.6 ml cup (USDA household weight), bagged"]
+  robocasa_plant_foliage: [700, 500, 900, model, "ESTIMATE: leaf tissue 0.5-0.9 g/cm3"]
+  robocasa_fruit_whole: [870, 750, 960, model, "ESTIMATE: mixed whole fruit (apples ~0.8, oranges ~0.9, bananas ~0.95 g/cm3)"]
+  robocasa_jar_contents: [1100, 900, 1350, model, "ESTIMATE: preserves/sauces/pickled food 0.9-1.35 g/cm3"]
+  robocasa_juice: [1045, 1030, 1060, model, "ESTIMATE: fruit juice 10-13 Brix (sucrose-solution tables)"]
+  robocasa_mayonnaise: [930, 900, 960, model, "ESTIMATE: ~80 % oil emulsion"]
+  robocasa_mustard: [1070, 1030, 1120, model, "ESTIMATE: prepared mustard"]
+  robocasa_paper_roll: [60, 30, 120, model, "ESTIMATE: 150-250 g paper-towel roll over ~4 l of roll volume"]
+  robocasa_placemat: [700, 300, 1300, model, "ESTIMATE: woven fabric to vinyl sheet"]
+  robocasa_potted_plant: [700, 300, 1200, model, "ESTIMATE: pot + moist potting mix + plant, effective"]
+  robocasa_salt_bulk: [1220, 1150, 1300, model, "ESTIMATE: table salt 18 g per 14.8 ml tbsp (USDA household weight)"]
+  robocasa_phenolic: [1350, 1300, 1400, model, "ESTIMATE: phenolic (Bakelite-type) handle moulding 1.3-1.4 g/cm3"]
+  robocasa_liquid_soap: [1030, 1000, 1060, model, "ESTIMATE: liquid hand/dish soap"]
+  robocasa_syrup: [1326, 1310, 1340, model, "ESTIMATE: 66 Brix syrup (maple syrup standard) from sucrose-solution tables"]

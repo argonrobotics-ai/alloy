@@ -1,0 +1,49 @@
+schema: alloy.material/1
+name: stainless_303
+density:
+  value: 8027.0
+  source: catalog
+  unc: [7900.0, 8060.0]
+  note: 303 stainless; uses 8027
+surface:
+  mu_static:
+    value: 0.7
+    source: catalog
+    unc: [0.5, 0.8]
+    note: dry stainless on stainless, steel-steel range Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.5
+    source: catalog
+    unc: [0.4, 0.6]
+    note: dry stainless on stainless, steel-steel range Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.5, 0.9]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 193000000000.0
+    source: catalog
+    unc: [190000000000.0, 200000000000.0]
+    note: austenitic stainless, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+  poisson:
+    value: 0.29
+    source: catalog
+    unc: [0.27, 0.3]
+    note: austenitic stainless, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+plastic:
+  yield_stress:
+    value: 240000000.0
+    source: catalog
+    unc: [190000000.0, 240000000.0]
+    note: 'DOC: AISI 303 annealed bar, ASM data sheet "Tensile Strength, Yield 240 MPa 34800 psi at 0.2% offset" https://www.aerospacemetals.com/wp-content/uploads/2023/07/AISI-Type-303-Stainless-Steel-annealed-bar-tested-at-RT.pdf
+      ; unc: solution-annealed bar minimum "190 MPa (min)" https://www.smithsadvanced.com/assets/pdf/303-stainless-steel-bar.pdf'
+  model: j2
+  hardening_modulus:
+    value: 1590000000.0
+    source: model
+    unc: [1320000000.0, 1590000000.0]
+    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 620 MPa (same sheet:
+      "Tensile Strength, Ultimate 620 MPa"), eu = 1 − σy0/σu = 0.613 (EN 1993-1-4 Annex C, Rasmussen 2003, as Afshan & Gardner
+      2012 Eq. 13); unc: Rolled Alloys 30 / 75 ksi gives 1320 MPa'

@@ -1,0 +1,566 @@
+{
+ "what": "alloy.estimate calibration rows (FIX-LIST 7): wall time of sim.run(seconds) per row, one process",
+ "commit": "8b9715996 (Alloy main, 2026-11-09)",
+ "harness": "[internal note] (rows.py scenes; build, warm-up (12 periods on a GPU, 1 on a CPU), sim.reset(), then sim.run(seconds) timed per control period)",
+ "machines": {
+  "cpu": "GCE spot n2d-standard-16 (1 / 4 worlds) and -32 (64 worlds), AMD EPYC; 4 and 9 rows at once, under one per physical core; default CPU route (MuJoCo C)",
+  "cuda": "GCE spot g2-standard-8, one NVIDIA L4 (driver 580), one row at a time"
+ },
+ "measured_wall_s": "warm stepping: on the GPU, each period that captured CUDA graphs (the first ~5 after the reset, and again when a new graph key appears, e.g. a liquid's step rung mid-run) is replaced by the median of the next 3 that did not; first_run_wall_s keeps them (kernels already compiled)",
+ "left_out": [
+  "arm at 1,024 worlds on the L4: its graph did not fit in device memory and stepped eagerly (1.65 s per control period); the model assumes graphs",
+  "cloth_super at 64 worlds on the CPU: past the harness's 2 h limit (the default sheet took 78 min; super costs about 1.6x)"
+ ],
+ "rows": [
+  {
+   "row": "arm",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 0.9673,
+   "first_run_wall_s": 0.9673,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "arm",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 1.9115,
+   "first_run_wall_s": 1.9115,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "arm",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 21.3108,
+   "first_run_wall_s": 21.3108,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 0.7532,
+   "first_run_wall_s": 0.7532,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 1.3694,
+   "first_run_wall_s": 1.3694,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 12.8875,
+   "first_run_wall_s": 12.8876,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 3.3744,
+   "first_run_wall_s": 3.3744,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 4.0602,
+   "first_run_wall_s": 4.0602,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 10.9297,
+   "first_run_wall_s": 10.9297,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 103.5811,
+   "first_run_wall_s": 103.5811,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 315.6584,
+   "first_run_wall_s": 315.6584,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 4683.8723,
+   "first_run_wall_s": 4683.8723,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 30.3319,
+   "first_run_wall_s": 30.3319,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 93.7441,
+   "first_run_wall_s": 93.7441,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 1377.5958,
+   "first_run_wall_s": 1377.5958,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_super",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 158.2087,
+   "first_run_wall_s": 158.2087,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_super",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 502.337,
+   "first_run_wall_s": 502.337,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.5,
+   "measured_wall_s": 65.6179,
+   "first_run_wall_s": 65.6179,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.5,
+   "measured_wall_s": 237.1623,
+   "first_run_wall_s": 237.1622,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.5,
+   "measured_wall_s": 3671.6127,
+   "first_run_wall_s": 3671.6128,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 61.0894,
+   "first_run_wall_s": 61.0893,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 152.3192,
+   "first_run_wall_s": 152.3192,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 1914.247,
+   "first_run_wall_s": 1914.247,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cpu",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 52.6989,
+   "first_run_wall_s": 52.6989,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cpu",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 140.4585,
+   "first_run_wall_s": 140.4585,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cpu",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 1807.4946,
+   "first_run_wall_s": 1807.4946,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "arm",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 0.5385,
+   "first_run_wall_s": 0.9481,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "arm",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 0.5822,
+   "first_run_wall_s": 0.9802,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "arm",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 0.8628,
+   "first_run_wall_s": 1.2749,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 1.1977,
+   "first_run_wall_s": 2.2387,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 1.209,
+   "first_run_wall_s": 2.272,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 1.3433,
+   "first_run_wall_s": 2.3986,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin",
+   "device": "cuda:0",
+   "worlds": 512,
+   "seconds": 1.0,
+   "measured_wall_s": 1.6367,
+   "first_run_wall_s": 2.6956,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 0.376,
+   "first_run_wall_s": 0.6778,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 0.3811,
+   "first_run_wall_s": 0.686,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "bin_k",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 0.4308,
+   "first_run_wall_s": 0.7336,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 5.0037,
+   "first_run_wall_s": 8.0599,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 5.4998,
+   "first_run_wall_s": 8.5323,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_default",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 15.5067,
+   "first_run_wall_s": 18.4925,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 1.5109,
+   "first_run_wall_s": 2.2893,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 1.744,
+   "first_run_wall_s": 2.5192,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_fast",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 5.305,
+   "first_run_wall_s": 6.075,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_super",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 7.1669,
+   "first_run_wall_s": 11.6921,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_super",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 7.919,
+   "first_run_wall_s": 12.4046,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "cloth_super",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 21.6604,
+   "first_run_wall_s": 26.1241,
+   "physics_steps_per_period": 8.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.5,
+   "measured_wall_s": 2.8425,
+   "first_run_wall_s": 2.9178,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.5,
+   "measured_wall_s": 2.9679,
+   "first_run_wall_s": 3.0439,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "pour",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.5,
+   "measured_wall_s": 13.5369,
+   "first_run_wall_s": 13.6102,
+   "physics_steps_per_period": 4.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 7.3255,
+   "first_run_wall_s": 18.7275,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 7.7023,
+   "first_run_wall_s": 19.7475,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 12.9059,
+   "first_run_wall_s": 24.8229,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1k",
+   "device": "cuda:0",
+   "worlds": 256,
+   "seconds": 1.0,
+   "measured_wall_s": 30.9931,
+   "first_run_wall_s": 42.7642,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cuda:0",
+   "worlds": 1,
+   "seconds": 1.0,
+   "measured_wall_s": 7.2526,
+   "first_run_wall_s": 18.2212,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cuda:0",
+   "worlds": 4,
+   "seconds": 1.0,
+   "measured_wall_s": 7.2102,
+   "first_run_wall_s": 18.7863,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  },
+  {
+   "row": "r1s",
+   "device": "cuda:0",
+   "worlds": 64,
+   "seconds": 1.0,
+   "measured_wall_s": 11.2721,
+   "first_run_wall_s": 22.8236,
+   "physics_steps_per_period": 16.0,
+   "check_ok": true
+  }
+ ]
+}

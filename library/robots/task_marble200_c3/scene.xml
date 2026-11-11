@@ -1,0 +1,1013 @@
+<mujoco model="task_marble200_c3">
+ <compiler angle="radian" autolimits="true" inertiafromgeom="false" balanceinertia="false" boundmass="0" boundinertia="0" fusestatic="false" discardvisual="false" alignfree="false" />
+ <option timestep="0.002" impratio="1.0" tolerance="1e-08" ls_tolerance="0.01" noslip_tolerance="1e-06" ccd_tolerance="1e-06" sleep_tolerance="0.001" gravity="0.0 0.0 -9.81" wind="0.0 0.0 0.0" magnetic="0.0 -0.5 0.0" density="0.0" viscosity="0.0" o_margin="0.0" o_solref="0.02 1.0" o_solimp="0.9 0.95 0.001 0.5 2.0" o_friction="1.0 1.0 0.005 0.0001 0.0001" iterations="50" ls_iterations="50" noslip_iterations="0" ccd_iterations="35" sdf_iterations="10" sdf_initpoints="40" integrator="implicitfast" cone="elliptic" jacobian="auto" solver="Newton" />
+ <asset />
+ <worldbody>
+  <geom name="geom0" type="box" pos="0.0 0.0 -0.01" quat="1.0 0.0 0.0 0.0" size="0.16 0.16 0.01" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  <geom name="geom1" type="box" pos="0.16 0.0 0.097" quat="1.0 0.0 0.0 0.0" size="0.01 0.16 0.097" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  <geom name="geom2" type="box" pos="-0.16 0.0 0.097" quat="1.0 0.0 0.0 0.0" size="0.01 0.16 0.097" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  <geom name="geom3" type="box" pos="0.0 0.16 0.097" quat="1.0 0.0 0.0 0.0" size="0.16 0.01 0.097" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  <geom name="geom4" type="box" pos="0.0 -0.16 0.097" quat="1.0 0.0 0.0 0.0" size="0.16 0.01 0.097" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  <body name="o0" pos="-0.1 -0.1 0.05" quat="1.0 0.0 0.0 0.0">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint0" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom5" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o1" pos="-0.06 -0.1 0.05" quat="0.9999990411788826 0.0011344634127363584 0.0007941242151677561 9.009057310832345e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint1" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom6" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o2" pos="-0.02 -0.1 0.05" quat="0.9999961647189921 0.002268923219115649 0.001588244863400197 3.603619469103179e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint2" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom7" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o3" pos="0.02 -0.1 0.05" quat="0.9999913706307144 0.003403375812794147 0.0023823583777753455 8.10813084838342e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint3" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom8" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o4" pos="0.06 -0.1 0.05" quat="0.9999846589313592 0.0045378175874548135 0.0031764611913979 1.4414422592839477e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint4" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom9" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o5" pos="0.1 -0.1 0.05" quat="0.9999760296451599 0.005672244936820636 0.003970549737412575 2.252247051604313e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint5" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom10" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o6" pos="-0.1 -0.06 0.05" quat="0.9999654828032734 0.006806654254667972 0.004764620449017434 3.2432243521312453e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint6" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom11" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o7" pos="-0.06 -0.06 0.05" quat="0.9999530184437805 0.007941041934839896 0.00555866975947723 4.4143703601827585e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint7" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom12" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o8" pos="-0.02 -0.06 0.05" quat="0.999938636611685 0.009075404371259527 0.006352694102136747 5.7656805840772256e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint8" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom13" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o9" pos="0.02 -0.06 0.05" quat="0.9999223373589143 0.010209737957943386 0.007146689910434127 7.297149841150094e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint9" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom14" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o10" pos="0.06 -0.06 0.05" quat="0.9999041207443189 0.011344039089014733 0.00794065361791422 9.008772257773194e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint10" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom15" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o11" pos="0.1 -0.06 0.05" quat="0.9998839868336716 0.012478304158716905 0.008734581658241898 0.00010900541269376583">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint11" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom16" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o12" pos="-0.1 -0.02 0.05" quat="0.9998619356996683 0.013612529561426652 0.00952847046521543 0.00012972449620473017">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint12" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom17" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o13" pos="-0.06 -0.02 0.05" quat="0.9998379674219273 0.014746711691667486 0.010322316472779767 0.00015224489364684928">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint13" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom18" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o14" pos="-0.02 -0.02 0.05" quat="0.9998120820869884 0.01588084694412302 0.011116116115039919 0.00017656651864774036">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint14" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom19" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o15" pos="0.02 -0.02 0.05" quat="0.9997842797883134 0.017014931713650292 0.011909865826274266 0.0002026892779267348">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint15" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom20" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o16" pos="0.06 -0.02 0.05" quat="0.9997545606262855 0.01814896239529313 0.012703562040947903 0.00023061307129522575">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint16" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom21" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o17" pos="0.1 -0.02 0.05" quat="0.9997229247082091 0.01928293538429546 0.013497201193725968 0.000260337791657041">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint17" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom22" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o18" pos="-0.1 0.02 0.05" quat="0.9996893721483084 0.02041684707611467 0.014290779719486968 0.00029186332500884135">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint18" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom23" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o19" pos="-0.06 0.02 0.05" quat="0.9996539030677287 0.021550693866434916 0.015084294053336129 0.00032518955044054577">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint19" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom24" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o20" pos="-0.02 0.02 0.05" quat="0.9996165175945344 0.022684472151180492 0.0158777406306187 0.0003603163401357807">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint20" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom25" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o21" pos="0.02 0.02 0.05" quat="0.9995772158637094 0.02381817832652913 0.016671115886933305 0.00039724355937235657">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint21" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom26" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o22" pos="0.06 0.02 0.05" quat="0.9995359980171561 0.02495180878892536 0.01746441625814527 0.0004359710665227692">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint22" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom27" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o23" pos="0.1 0.02 0.05" quat="0.9994928642036953 0.026085359935093824 0.01825763818039993 0.0004764987130547268">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint23" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom28" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o24" pos="-0.1 0.06 0.05" quat="0.9994478145790656 0.027218828162052615 0.019050778090135983 0.0005188263435317032">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint24" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom29" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o25" pos="-0.06 0.06 0.05" quat="0.9999993135067152 0.0009599307244590373 0.0006719514018604274 6.450272387960136e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint25" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom30" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o26" pos="-0.02 0.06 0.05" quat="0.9999967320676718 0.0020943913203954117 0.0014660728310191549 3.070540246671784e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint26" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom31" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o27" pos="0.02 0.06 0.05" quat="0.9999922329981927 0.0032288452584517038 0.0022601876750764148 7.297852940318439e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint27" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom32" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o28" pos="0.06 0.06 0.05" quat="0.9999858163145224 0.004363288932305897 0.0030542923671319335 1.3326949106787653e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint28" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom33" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o29" pos="0.1 0.06 0.05" quat="0.9999774820398291 0.005497718735673955 0.0038483833403234005 2.1157805622775797e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint29" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom34" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o30" pos="-0.1 0.1 0.05" quat="0.9999672302042045 0.0066321310623231565 0.004642457027839805 3.0790392454710014e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint30" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom35" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o31" pos="-0.06 0.1 0.05" quat="0.9999550608446643 0.007766522306085441 0.0054365098629347705 4.222467265886002e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint31" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom36" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o32" pos="-0.02 0.1 0.05" quat="0.9999409740051473 0.008900888860870747 0.006230538278939901 5.5460602381475655e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint32" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom37" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o33" pos="0.02 0.1 0.05" quat="0.9999249697365156 0.010035227120680355 0.0070245387092781105 7.049813085895017e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint33" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom38" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o34" pos="0.06 0.1 0.05" quat="0.9999070480965546 0.011169533479620242 0.007818507587476955 8.733720041800918e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint34" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom39" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o35" pos="0.1 0.1 0.05" quat="0.9998872091499724 0.012303804331914393 0.008612441347181986 0.00010597774647592539">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint35" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom40" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o36" pos="-0.1 -0.1 0.09" quat="0.9998654529683996 0.013438036071918171 0.009406336422170073 0.0001264196975407591">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint36" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom41" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o37" pos="-0.06 -0.1 0.09" quat="0.9998417796303894 0.014572225094131641 0.010200189246362738 0.0001486629752116242">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint37" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom42" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o38" pos="-0.02 -0.1 0.09" quat="0.999816189221417 0.015706367793212914 0.010993996253839492 0.00017270749417898018">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint38" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom43" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o39" pos="0.02 -0.1 0.09" quat="0.9997886818338794 0.016840460563991484 0.01178775387885118 0.00019855316222494978">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint39" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom44" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o40" pos="0.06 -0.1 0.09" quat="0.9997592575670948 0.017974499801481567 0.012581458555833307 0.00022619988022366222">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint40" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom45" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o41" pos="0.1 -0.1 0.09" quat="0.9997279165273026 0.01910848190089544 0.013375106719419357 0.00025564754214162224">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint41" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom46" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o42" pos="-0.1 -0.06 0.09" quat="0.9996946588276632 0.020242403257656787 0.014168694804454157 0.00028689603503810493">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint42" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom47" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o43" pos="-0.06 -0.06 0.09" quat="0.9996594845882563 0.02137626026741401 0.01496221924600717 0.0003199452390655761">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint43" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom48" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o44" pos="-0.02 -0.06 0.09" quat="0.9996223939360822 0.022510049326053574 0.01575567647938586 0.00035479502747013845">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint44" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom49" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o45" pos="0.02 -0.06 0.09" quat="0.9995833870050604 0.023643766829713368 0.01654906294014901 0.0003914452665920038">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint45" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom50" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o46" pos="0.06 -0.06 0.09" quat="0.9995424639360289 0.024777409174796 0.01734237506412003 0.0004298958158659899">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint46" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom51" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o47" pos="0.1 -0.06 0.09" quat="0.9994996248767442 0.025910972757982164 0.01813560928740032 0.0004701465278220453">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint47" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom52" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o48" pos="-0.1 -0.02 0.09" quat="0.9994548699818804 0.027044453976243926 0.018928762046382573 0.0005121972480857961">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint48" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom53" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o49" pos="-0.06 -0.02 0.09" quat="0.9999995404466114 0.000785397963956051 0.0005497785171169452 4.317951264033392e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint49" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom54" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o50" pos="-0.02 -0.02 0.09" quat="0.9999972540286356 0.0019198592640921675 0.0013439006427776756 2.580107183956583e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint50" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom55" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o51" pos="0.02 -0.02 0.09" quat="0.9999930499783395 0.0030543144611694913 0.002138016732093346 6.53022080823111e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint51" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom56" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o52" pos="0.06 -0.02 0.09" quat="0.9999869283109023 0.004188759948861352 0.0029321232181590265 1.228212084941619e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint52" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom57" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o53" pos="0.1 -0.02 0.09" quat="0.9999788890484272 0.005323192120876999 0.003726216534105698 1.9835785247334816e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint53" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom58" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o54" pos="-0.1 0.02 0.09" quat="0.9999689322199408 0.006457607370974951 0.004520293113113589 2.9191185031525846e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint54" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom59" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o55" pos="-0.06 0.02 0.09" quat="0.9999570578613933 0.007592002092976327 0.005314349388425512 4.0348284321351816e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint55" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom60" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o56" pos="-0.02 0.02 0.09" quat="0.9999432660156586 0.008726372680778199 0.006108381793360205 5.330704032613258e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint56" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom61" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o57" pos="0.02 0.02 0.09" quat="0.9999275567325335 0.00986071552836693 0.006902386761325665 6.806740334530458e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint57" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom62" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o58" pos="0.06 0.02 0.09" quat="0.9999099300687387 0.010995027029831515 0.0076963607258324854 8.462931676860591e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint58" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom63" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o59" pos="0.1 0.02 0.09" quat="0.9998903860879168 0.01212930357937692 0.008490300120507194 0.00010299271707628701">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint59" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom64" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o60" pos="-0.1 0.06 0.09" quat="0.9998689248606336 0.013263541571337429 0.009284201379105586 0.00012315753383934725">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint60" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom65" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o61" pos="-0.06 0.06 0.09" quat="0.9998455464643774 0.01439773740018997 0.010078060935526063 0.00014512368971979694">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint61" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom66" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o62" pos="-0.02 0.06 0.09" quat="0.9998202509835585 0.015531887460567481 0.010871875223822967 0.0001688911004709456">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint62" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom67" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o63" pos="0.02 0.06 0.09" quat="0.999793038509509 0.01666598814727221 0.011665640678219916 0.00019445967493771522">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint63" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom68" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o64" pos="0.06 0.06 0.09" quat="0.9997639091404821 0.0178000358552891 0.012459353733123128 0.00022182931505697985">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint64" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom69" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o65" pos="0.1 0.06 0.09" quat="0.9997328629816529 0.018934026979799075 0.013253010823134773 0.0002509999158579306">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint65" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom70" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o66" pos="-0.1 0.1 0.09" quat="0.9996999001451163 0.020067957916192432 0.014046608383066287 0.0002819713654624667">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint66" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom71" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o67" pos="-0.06 0.1 0.09" quat="0.9996650207498885 0.021201825060082134 0.014840142847951711 0.00031474354508561145">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint67" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom72" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o68" pos="-0.02 0.1 0.09" quat="0.9996282249219044 0.022335624807317156 0.015633610653061025 0.00034931632903595496">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint68" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom73" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o69" pos="0.02 0.1 0.09" quat="0.9995895127940192 0.02346935355399583 0.016427008233913475 0.000385689584716122">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint69" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom74" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o70" pos="0.06 0.1 0.09" quat="0.9995488845060065 0.024603007696479186 0.017220332026290894 0.0004238631726232654">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint70" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom75" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o71" pos="0.1 0.1 0.09" quat="0.9995063402045588 0.02573658363140425 0.018013578466251054 0.000463836946349586">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint71" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom76" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o72" pos="-0.1 -0.1 0.13" quat="0.9994618800432856 0.0268700777556974 0.018806743990140963 0.0005056107525828767">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint72" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom77" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o73" pos="-0.06 -0.1 0.13" quat="0.9999997219985516 0.0006108651443593299 0.00042760557392569235 2.612094132615674e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint73" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom78" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o74" pos="-0.02 -0.1 0.13" quat="0.9999977306018387 0.0017453270633377832 0.0012217283116640802 2.1323203254771233e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint74" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom79" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o75" pos="0.02 -0.1 0.13" quat="0.999993821571085 0.002879783434079271 0.00201584556181435 5.805234521804015e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint75" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom80" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o76" pos="0.06 -0.1 0.13" quat="0.9999879949204042 0.004014230650252778 0.0028099537574672313 1.1279937915570433e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint76" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom81" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o77" pos="0.1 -0.1 0.13" quat="0.9999802506708343 0.005148665105561161 0.0036040493317473117 1.8556409509727943e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint77" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom82" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o78" pos="-0.1 -0.06 0.13" quat="0.9999705888503369 0.006283083193754489 0.004398128717826375 2.7634621396929667e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint78" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom83" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o79" pos="-0.06 -0.06 0.13" quat="0.9999590094937969 0.007417481308643383 0.0051921883489367375 3.851453875963414e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint79" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom84" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o80" pos="-0.02 -0.06 0.13" quat="0.9999455126430231 0.008551855844112362 0.005986224658384591 5.119611987023499e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint80" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom85" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o81" pos="0.02 -0.06 0.13" quat="0.9999300983467473 0.009686203194133183 0.006780234079563325 6.567931609121622e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint81" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom86" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o82" pos="0.06 -0.06 0.13" quat="0.9999127666606248 0.010820519752778179 0.007574213045966888 8.196407187533338e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint82" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom87" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o83" pos="0.1 -0.06 0.13" quat="0.9998935176472333 0.011954801914233615 0.008368157991203098 0.00010005032476582024">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint83" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom88" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o84" pos="-0.1 -0.02 0.13" quat="0.999872351376074 0.013089046072813 0.009162065349007003 0.0001199380053966215">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint84" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom89" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o85" pos="-0.06 -0.02 0.13" quat="0.9998492679235698 0.014223248622970459 0.009955931553254188 0.0001416270374926507">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint85" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom90" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o86" pos="-0.02 -0.02 0.13" quat="0.9998242673730661 0.015357405959314056 0.010749753037974142 0.00016511733787007472">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint86" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom91" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o87" pos="0.02 -0.02 0.13" quat="0.9997973498148298 0.01649151447661912 0.01154352623736357 0.00019040881643662285">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint87" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom92" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o88" pos="0.06 -0.02 0.13" quat="0.9997685153460503 0.017625570569841625 0.01233724758579973 0.0002175013761919227">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint88" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom93" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o89" pos="0.1 -0.02 0.13" quat="0.9997377640708369 0.018759570634131473 0.01313091351785378 0.0002463949132278611">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint89" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom94" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o90" pos="-0.1 0.02 0.13" quat="0.9997050961002206 0.019893511064845885 0.01392452046830409 0.000277089316728971">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint90" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom95" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o91" pos="-0.06 0.02 0.13" quat="0.999670511552152 0.021027388257562687 0.01471806487214959 0.00030958446897284386">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint91" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom96" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o92" pos="-0.02 0.02 0.13" quat="0.9996340105515026 0.02216119860809369 0.015511543164623094 0.0003438802453305682">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint92" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom97" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o93" pos="0.02 0.02 0.13" quat="0.9995955932300623 0.023294938512498 0.016304951781204627 0.0003799765142671935">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint93" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom98" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o94" pos="0.06 0.02 0.13" quat="0.9995552597265406 0.024428604367095347 0.017098287157634763 0.00041787313734221977">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint94" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom99" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o95" pos="0.1 0.02 0.13" quat="0.9995130101865654 0.025562192568479435 0.017891545729927946 0.000457569969210113">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint95" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom100" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o96" pos="-0.1 0.06 0.13" quat="0.9994688447626823 0.026695699513531262 0.018684723934385826 0.0004990668576208467">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint96" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom101" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o97" pos="-0.06 0.06 0.13" quat="0.9999998581625202 0.00043633227880080985 0.0003054325852750569 1.3327011485578546e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint97" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom102" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o98" pos="-0.02 0.06 0.13" quat="0.9999981617872405 0.0015707947312641416 0.001099555850666703 1.7271797118817028e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint98" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom103" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o99" pos="0.02 0.06 0.13" quat="0.9999945477763632 0.002705252190312819 0.0018936741772276591 5.122894146848506e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint99" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom104" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o100" pos="0.06 0.06 0.13" quat="0.9999890161429368 0.0038397010496118026 0.0026877839980446283 1.0320400396224554e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint100" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom105" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o101" pos="0.1 0.06 0.13" quat="0.999981566906934 0.004974137702857868 0.003481881746236123 1.7319678526091834e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint101" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom106" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o102" pos="-0.1 0.1 0.13" quat="0.9999722000952512 0.0061085585437929526 0.004275963854965796 2.6120701692220178e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint102" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom107" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o103" pos="-0.06 0.1 0.13" quat="0.9999609157417082 0.007242959966217492 0.005070026757455785 3.6723436140167195e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint103" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom108" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o104" pos="-0.02 0.1 0.13" quat="0.9999477138870487 0.00837733836400377 0.005864066887000044 4.9127841205403944e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint104" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom109" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o105" pos="0.02 0.1 0.13" quat="0.9999325945789395 0.009511690131109255 0.006658080676977685 6.333386931346634e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint105" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom110" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o106" pos="0.06 0.1 0.13" quat="0.9999155578719704 0.010646011661589936 0.007452064560866314 7.934146598013222e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint106" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom111" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o107" pos="0.1 0.1 0.13" quat="0.9998966038276547 0.011780299349613681 0.008246014972255364 9.715056981162425e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint107" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom112" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o108" pos="-0.1 -0.1 0.17" quat="0.9998757325144279 0.01291454958947356 0.009039928344859442 0.00011676111250483847">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint108" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom113" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o109" pos="-0.06 -0.1 0.17" quat="0.999852944007648 0.01404875877560119 0.009833801112531642 0.00013817301884759854">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint109" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom114" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o110" pos="-0.02 -0.1 0.17" quat="0.999828238389596 0.01518292330258008 0.010627629709276908 0.00016138620671893577">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint110" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom115" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o111" pos="0.02 -0.1 0.17" quat="0.9998016157494738 0.016317039565158974 0.01142141056926535 0.00018640058708939498">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint111" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom116" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o112" pos="0.06 -0.1 0.17" quat="0.9997730761834055 0.017451103958265168 0.012215140126845589 0.00021321606402136572">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint112" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom117" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o113" pos="0.1 -0.1 0.17" quat="0.999742619794436 0.018585112877017872 0.013008814816558072 0.0002418325346694396">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint113" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom118" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o114" pos="-0.1 -0.06 0.17" quat="0.9997102466925314 0.01971906271674154 0.01380243107314843 0.0002722498892807932">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint114" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom119" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o115" pos="-0.06 -0.06 0.17" quat="0.999675956994578 0.0208529498729792 0.014595985331580793 0.0003044680111955966">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint115" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom120" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o116" pos="-0.02 -0.06 0.17" quat="0.9996397508243823 0.021986770741505776 0.015389474027051118 0.00033848677684744747">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint116" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom121" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o117" pos="0.02 -0.06 0.17" quat="0.99960162831267 0.02312052171834148 0.016182893595000542 0.0003743060557638318">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint117" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom122" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o118" pos="0.06 -0.06 0.17" quat="0.9995615895970861 0.02425419919976507 0.01697624047112868 0.0004119257105666088">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint118" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom123" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o119" pos="0.1 -0.06 0.17" quat="0.999519634822194 0.025387799582327238 0.017769511091406977 0.0004513455969725229">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint119" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom124" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o120" pos="-0.1 -0.02 0.17" quat="0.9994757641394753 0.026521319262863916 0.018562701892092026 0.000492565563793741">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint120" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom125" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o121" pos="-0.06 -0.02 0.17" quat="0.9999999489385059 0.0002617993804124304 0.00018325956415343113 4.7977242799810005e-08">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint121" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom126" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o122" pos="-0.02 -0.02 0.17" quat="0.9999985475848046 0.0013962622810031356 0.0009773832727738893 1.3646853799473632e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint122" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom127" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o123" pos="0.02 -0.02 0.17" quat="0.9999952285941123 0.002530720743001935 0.001771502591321522 4.483199745304716e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint123" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom128" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o124" pos="0.06 -0.02 0.17" quat="0.9999899919784129 0.0036651711600700788 0.0025656139528793236 9.403508378481539e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint124" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom129" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o125" pos="0.1 -0.02 0.17" quat="0.9999828377566137 0.004799609925898581 0.003359713790560044 1.6125592408692e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint125" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom130" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o126" pos="-0.1 0.02 0.17" quat="0.9999737659545459 0.005934033434221561 0.004153798537519525 2.4649426054825017e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint126" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom131" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o127" pos="-0.06 0.02 0.17" quat="0.9999627766049644 0.007068438078829587 0.004947864626970033 3.4974976625540226e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint127" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom132" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o128" pos="-0.02 0.02 0.17" quat="0.9999498697475474 0.008202820253583019 0.005741908492193613 4.7102204519389736e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint128" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom133" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o129" pos="0.02 0.02 0.17" quat="0.9999350454288966 0.00933717635242535 0.0065359265665554025 6.1031063224965484e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint129" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom134" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o130" pos="0.06 0.02 0.17" quat="0.9999183037025372 0.010471502769396552 0.007329915283516988 7.676149932107248e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint130" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom135" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o131" pos="0.1 0.02 0.17" quat="0.9998996446289166 0.011605795898646406 0.008123871076649733 9.429345247692768e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint131" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom136" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o132" pos="-0.1 0.06 0.17" quat="0.9998790682754061 0.012740052134447849 0.008917790379648113 0.00011362685545238448">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint132" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom137" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o133" pos="-0.06 0.06 0.17" quat="0.9998565747162982 0.013874267871210324 0.009711669626343051 0.00013476163409818323">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint133" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom138" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o134" pos="-0.02 0.06 0.17" quat="0.9998321640328092 0.0150084395034931 0.010505505250715261 0.00015769770735622702">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint134" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom139" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o135" pos="0.02 0.06 0.17" quat="0.999805836313076 0.016142563426018625 0.011299293686908582 0.00018243498725988393">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint135" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom140" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o136" pos="0.06 0.06 0.17" quat="0.9997775916521578 0.017276636033685865 0.012093031369243291 0.00020897337893431393">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint136" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom141" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o137" pos="0.1 0.06 0.17" quat="0.9997474301520352 0.018410653721583636 0.012886714732229467 0.00023731278059682258">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint137" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom142" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o138" pos="-0.1 0.1 0.17" quat="0.9997153519216089 0.01954461288500395 0.013680340210580302 0.0002674530835572398">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint138" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom143" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o139" pos="-0.06 0.1 0.17" quat="0.9996813570767008 0.020678509919455326 0.014473904239225437 0.00029939417221832405">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint139" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom144" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o140" pos="-0.02 0.1 0.17" quat="0.999645445740053 0.021812341220676164 0.01526740325332431 0.00033313592407619385">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint140" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom145" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o141" pos="0.02 0.1 0.17" quat="0.9996076180413266 0.022946103184648056 0.016060833688279458 0.0003686782097207825">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint141" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom146" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o142" pos="0.06 0.1 0.17" quat="0.999567874117102 0.024079792207609127 0.016854191979749862 0.0004060208928363209">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint142" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom147" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o143" pos="0.1 0.1 0.17" quat="0.9995262141108785 0.025213404686067357 0.01764747456366429 0.00044516383020184455">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint143" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom148" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o144" pos="-0.1 -0.1 0.21" quat="0.9994826381730731 0.026346937016813926 0.018440677876234587 0.0004861068716917268">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint144" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom149" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o145" pos="-0.06 -0.1 0.21" quat="0.9999999943265007 8.726646232613429e-05 6.108652354920992e-05 5.33080483618596e-09">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint145" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom150" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o146" pos="-0.02 -0.1 0.21" quat="0.9999988879944971 0.0012217297256866678 0.000855210590973995 1.0448373625798889e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint146" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom151" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o147" pos="0.02 -0.1 0.21" quat="0.9999958640242738 0.0023561891052784343 0.0016493308170842074 3.886151375241544e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint147" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom152" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o148" pos="0.06 -0.1 0.21" quat="0.9999909224267489 0.0034906409947592877 0.002443443634959449 8.529261945573189e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint148" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom153" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o149" pos="0.1 -0.1 0.21" quat="0.9999840632197649 0.004625081787814794 0.003237545477707023 1.4974151265922832e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint149" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom154" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o150" pos="-0.1 -0.06 0.21" quat="0.9999752864280874 0.005759507878171574 0.0040316327784752715 2.3220794618300743e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint150" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom155" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o151" pos="-0.06 -0.06 0.21" quat="0.9999645920834065 0.006893915659610642 0.004825701970466919 3.326916037447149e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint151" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom156" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o152" pos="-0.02 -0.06 0.21" quat="0.9999519802243348 0.008028301525980752 0.005619749486952398 4.5119209996071685e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint152" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom157" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o153" pos="0.02 -0.06 0.21" quat="0.9999374508964096 0.009162661871211746 0.0064137717612832 5.877089803475345e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint153" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom158" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o154" pos="0.06 -0.06 0.21" quat="0.9999210041520903 0.01029699308932787 0.007207765226905206 7.422417213235362e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint154" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom159" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o155" pos="0.1 -0.06 0.21" quat="0.9999026400507598 0.011431291574461154 0.00800172631737202 9.147897302108873e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint155" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom160" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o156" pos="-0.1 -0.02 0.21" quat="0.9998823586587235 0.012565553720864719 0.008795651466358306 0.0001105352345237755">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint156" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom161" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o157" pos="-0.06 -0.02 0.21" quat="0.9998601600492102 0.013699775922926134 0.009589537107673135 0.00013139288355407745">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint157" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom162" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o158" pos="-0.02 -0.02 0.21" quat="0.9998360443023703 0.014833954575180755 0.010383379675273306 0.0001540518401167768">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint158" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom163" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o159" pos="0.02 -0.02 0.21" quat="0.9998100115052759 0.015968086072325055 0.011177175603276687 0.00017851201730807238">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint159" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom164" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o160" pos="0.06 -0.02 0.21" quat="0.9997820617519217 0.017102166809229977 0.011970921325975553 0.00020477332131590314">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint160" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom165" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o161" pos="0.1 -0.02 0.21" quat="0.9997521951432231 0.018236193180954256 0.012764613277849907 0.00023283565142029737">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint161" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom166" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o162" pos="-0.1 0.02 0.21" quat="0.9997204117870165 0.019370161582757773 0.013558247893580823 0.0002626988999937477">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint162" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom167" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o163" pos="-0.06 0.02 0.21" quat="0.9996867117980591 0.02050406841011488 0.014351821608063788 0.0002943629525016121">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint163" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom168" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o164" pos="-0.02 0.02 0.21" quat="0.999651095298028 0.02163791005872774 0.015145330856422006 0.0003278276875025396">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint164" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom169" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o165" pos="0.02 0.02 0.21" quat="0.9996135624155201 0.022771682924539658 0.01593877207401975 0.0003630929766489229">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint165" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom170" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o166" pos="0.06 0.02 0.21" quat="0.9995741132860514 0.023905383403748433 0.01673214169647568 0.00040015868468737647">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint166" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom171" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o167" pos="0.1 0.02 0.21" quat="0.9995327480520567 0.02503900789281965 0.017525436159676198 0.00043902466945923923">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint167" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom172" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o168" pos="-0.1 0.06 0.21" quat="0.9994894668628886 0.026172552788500055 0.018318651899788724 0.00047969078190110464">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint168" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom173" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o169" pos="-0.06 0.06 0.21" quat="0.999444269874818 0.02730601448783088 0.01911178535327507 0.0005221568660453751">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint169" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom174" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o170" pos="-0.02 0.06 0.21" quat="0.9999991830162897 0.0010471970784466512 0.0007330378182553847 7.676356888137994e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint170" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom175" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o171" pos="0.02 0.06 0.21" quat="0.9999964540667935 0.0021816572902741476 0.001527158867504 3.33174909085665e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint171" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom176" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o172" pos="0.06 0.06 0.21" quat="0.9999918074878655 0.0033161105668111303 0.0023212730572731597 7.697661176860102e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint172" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom177" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o173" pos="0.1 0.06 0.21" quat="0.9999852432962826 0.004450553301738033 0.003115376820665036 1.386535520230757e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint173" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom178" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o174" pos="-0.1 0.1 0.21" quat="0.9999767615157458 0.005584981888774291 0.003909466590820792 2.1834807512332868e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint174" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom179" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o175" pos="-0.06 0.1 0.21" quat="0.9999663621768791 0.006719392721691683 0.004703538800933916 3.160598754180827e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint175" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom180" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o176" pos="-0.02 0.1 0.21" quat="0.9999540453172309 0.007853782194327676 0.005497589884263554 4.3178857815458286e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint176" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom181" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o177" pos="0.02 0.1 0.21" quat="0.9999398109812726 0.008988146700598759 0.006291616274147862 5.655337394799921e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint177" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom182" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o178" pos="0.06 0.1 0.21" quat="0.9999236592203989 0.010122482634513798 0.007085614404017327 7.172948464430436e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint178" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom183" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o179" pos="0.1 0.1 0.21" quat="0.9999055900929277 0.011256786390187366 0.007879580707408115 8.870713169959503e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint179" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom184" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o180" pos="-0.1 -0.1 0.25" quat="0.9998856036640994 0.012391054361853086 0.0086735116179754 0.00010748624999965715">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint180" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom185" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o181" pos="-0.06 -0.1 0.25" quat="0.9998637000060775 0.013525282943876978 0.009467403569506703 0.00012806676752108383">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint181" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom186" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o182" pos="-0.02 -0.1 0.25" quat="0.9998398791979474 0.014659468530770785 0.010261252995935229 0.00015044860533154332">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint182" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom187" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o183" pos="0.02 -0.1 0.25" quat="0.9998141413257168 0.015793607517205335 0.011055056331353199 0.00017463167759007307">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint183" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom188" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o184" pos="0.06 -0.1 0.25" quat="0.999786486482315 0.016927696298023855 0.011848810010025187 0.00020061589154739913">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint184" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom189" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o185" pos="0.1 -0.1 0.25" quat="0.9997569147675929 0.018061731268255325 0.012642510466401444 0.00022840114754628152">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint185" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom190" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o186" pos="-0.1 -0.06 0.25" quat="0.9997254262883222 0.01919570882312781 0.013436154135131252 0.0002579873390218853">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint186" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom191" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o187" pos="-0.06 -0.06 0.25" quat="0.9996920211581952 0.020329625358081797 0.014229737451076236 0.0002893743525021773">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint187" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom192" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o188" pos="-0.02 -0.06 0.25" quat="0.9996566994978247 0.02146347726878354 0.015023256849323697 0.0003225620676083484">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint188" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom193" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o189" pos="0.02 -0.06 0.25" quat="0.9996194614347427 0.022597260951138363 0.015816708765199958 0.0003575503570552619">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint189" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom194" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o190" pos="0.06 -0.06 0.25" quat="0.9995803071034011 0.023730972801304057 0.016610089634283683 0.0003943390866519276">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint190" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom195" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o191" pos="0.1 -0.06 0.25" quat="0.9995392366451699 0.02486460921570413 0.017403395892419186 0.0004329281153020004">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint191" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom196" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o192" pos="-0.1 -0.02 0.25" quat="0.999496250208338 0.025998166591041223 0.01819662397572981 0.00047331729500430696">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint192" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom197" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o193" pos="-0.06 -0.02 0.25" quat="0.9994513479481115 0.02713164132431038 0.018989770320631212 0.000515506470853396">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint193" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom198" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o194" pos="-0.02 -0.02 0.25" quat="0.9999994326501567 0.0008726643524150067 0.0006108649676064317 5.33080383812353e-07">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint194" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom199" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o195" pos="0.02 -0.02 0.25" quat="0.9999969987216211 0.002007125311120924 0.0014049867555692 2.819992942476455e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint195" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom200" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o196" pos="0.06 -0.02 0.25" quat="0.999992647161687 0.003141579889357334 0.002199102232808635 6.908706147831674e-06">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint196" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom201" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o197" pos="0.1 -0.02 0.25" quat="0.9999863779860664 0.004276024480799854 0.0029932078324220956 1.2799204318498312e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint197" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom202" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o198" pos="-0.1 0.02 0.25" quat="0.9999781912173946 0.00541045547916105 0.0037872999875438766 2.04914648627358e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint198" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom203" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+  <body name="o199" pos="-0.06 0.02 0.25" quat="0.9999680868852312 0.006544869278203782 0.004581375131358547 2.9985458278526806e-05">
+   <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.005361651462126581" diaginertia="1.372582774304405e-07 1.372582774304405e-07 1.372582774304405e-07" />
+   <joint name="joint199" type="free" stiffness="0.0" actuatorfrclimited="false" actuatorgravcomp="false" group="0" armature="0.0" damping="0.0" frictionloss="0.0" solreffriction="0.02 1.0" solimpfriction="0.9 0.95 0.001 0.5 2.0" />
+   <geom name="geom204" type="sphere" pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" size="0.008 0.0 0.0" contype="1" conaffinity="1" condim="3" priority="0" friction="0.5 0.005 0.0001" solmix="1.0" solref="0.004 1.0" solimp="0.9 0.95 0.001 0.5 2.0" margin="0.0" gap="0.0" group="0" rgba="0.5 0.5 0.5 1.0" />
+  </body>
+ </worldbody>
+ <actuator />
+</mujoco>

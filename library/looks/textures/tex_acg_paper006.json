@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_paper006",
+ "family": "paper",
+ "preset": "paper",
+ "texture": "ambientcg:Paper006",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0002,
+ "detail": null,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Paper006",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.264,
+ "note": "beige paper: ambientCG 'Paper 006', 0.4 m tile, 1k maps"
+}

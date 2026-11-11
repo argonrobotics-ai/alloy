@@ -1,0 +1,19 @@
+{
+ "schema": "alloy.look/1",
+ "object": "pencil_wood_untasked",
+ "materials": {
+  "body": {
+   "preset": "plastic_gloss",
+   "base_color": [
+    0.95,
+    0.72,
+    0.08
+   ],
+   "roughness": 0.3,
+   "coat": 0.3
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "pencil: yellow lacquered paint over the cedar"
+}

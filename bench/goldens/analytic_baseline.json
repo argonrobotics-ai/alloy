@@ -1,0 +1,3757 @@
+{
+ "schema": "alloy.bench.baseline/1",
+ "entries": {
+  "A1.freefall|featherstone|cpu|quick": {
+   "law": "A1.freefall",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982401748289,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0010315888999509004,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:03-0700"
+  },
+  "A1.freefall|featherstone|cuda:0|quick": {
+   "law": "A1.freefall",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982830306173,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0010281243734241875,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:34:26+0000"
+  },
+  "A1.freefall|mujoco|cpu|quick": {
+   "law": "A1.freefall",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0038171787931855325,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0010315430926072545,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:20-0800"
+  },
+  "A1.freefall|mujoco|cuda:0|quick": {
+   "law": "A1.freefall",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0038171575605226763,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.001028078411710227,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:33:06+0000"
+  },
+  "A1.freefall|semi_implicit|cpu|quick": {
+   "law": "A1.freefall",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982401748289,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0010315430926072545,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:03-0700"
+  },
+  "A1.freefall|semi_implicit|cuda:0|quick": {
+   "law": "A1.freefall",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982830306173,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.001028078411710227,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:34:58+0000"
+  },
+  "A1.freefall|xpbd|cpu|quick": {
+   "law": "A1.freefall",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982401748289,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.0010315430926072545,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:03-0700"
+  },
+  "A1.freefall|xpbd|cuda:0|quick": {
+   "law": "A1.freefall",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pos_err_ratio": {
+     "verdict": "pass",
+     "error": 0.5016982830306173,
+     "bound": 1.0,
+     "unit": "1"
+    },
+    "vel_err_ratio": {
+     "verdict": "pass",
+     "error": 0.001028078411710227,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:33:47+0000"
+  },
+  "A10.capstan.rod_vbd|vbd|cpu|quick": {
+   "law": "A10.capstan.rod_vbd",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ratio_rel_err": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:06:03-0800"
+  },
+  "A10.capstan.rod_vbd|vbd|cuda:0|quick": {
+   "law": "A10.capstan.rod_vbd",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ratio_rel_err": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:49:27+0000"
+  },
+  "A10.capstan|mujoco|cpu|quick": {
+   "law": "A10.capstan",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ratio_rel_err": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "2eecca2d89",
+   "date": "2026-11-04T11:56:08-0800"
+  },
+  "A10.capstan|mujoco|cuda:0|quick": {
+   "law": "A10.capstan",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ratio_rel_err": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:43:55+0000"
+  },
+  "A11.cantilever.rod_vbd|vbd|cpu|quick": {
+   "law": "A11.cantilever.rod_vbd",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "tip_drop_rel_err": {
+     "verdict": "pass",
+     "error": 0.0007530203809797964,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:06:15-0800"
+  },
+  "A11.cantilever.rod_vbd|vbd|cuda:0|quick": {
+   "law": "A11.cantilever.rod_vbd",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "tip_drop_rel_err": {
+     "verdict": "pass",
+     "error": 0.0007089883771418393,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:50:41+0000"
+  },
+  "A11.cantilever|mujoco|cpu|quick": {
+   "law": "A11.cantilever",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "tip_drop_rel_err": {
+     "verdict": "pass",
+     "error": 6.390750683982205e-06,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:04:17-0800"
+  },
+  "A11.cantilever|mujoco|cuda:0|quick": {
+   "law": "A11.cantilever",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "tip_drop_rel_err": {
+     "verdict": "pass",
+     "error": 6.390750683982205e-06,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:50:37+0000"
+  },
+  "A11.catenary.rod_vbd|vbd|cpu|quick": {
+   "law": "A11.catenary.rod_vbd",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "sag_rel_err": {
+     "verdict": "pass",
+     "error": 0.0016020666795895089,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:06:27-0800"
+  },
+  "A11.catenary.rod_vbd|vbd|cuda:0|quick": {
+   "law": "A11.catenary.rod_vbd",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "sag_rel_err": {
+     "verdict": "pass",
+     "error": 0.001602281168816777,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:51:58+0000"
+  },
+  "A11.catenary|mujoco|cpu|quick": {
+   "law": "A11.catenary",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "sag_rel_err": {
+     "verdict": "pass",
+     "error": 0.0015949693808543497,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:05:16-0800"
+  },
+  "A11.catenary|mujoco|cuda:0|quick": {
+   "law": "A11.catenary",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "sag_rel_err": {
+     "verdict": "pass",
+     "error": 0.0015946727566136243,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:51:55+0000"
+  },
+  "A11.hanging_chain.rod_vbd|vbd|cpu|quick": {
+   "law": "A11.hanging_chain.rod_vbd",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "omega1_rel_err": {
+     "verdict": "pass",
+     "error": 0.002315862562046078,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:06:35-0800"
+  },
+  "A11.hanging_chain.rod_vbd|vbd|cuda:0|quick": {
+   "law": "A11.hanging_chain.rod_vbd",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "omega1_rel_err": {
+     "verdict": "pass",
+     "error": 0.0023060148134561587,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:52:33+0000"
+  },
+  "A11.hanging_chain|mujoco|cpu|quick": {
+   "law": "A11.hanging_chain",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "omega1_rel_err": {
+     "verdict": "pass",
+     "error": 0.0028921265789041417,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:05:48-0800"
+  },
+  "A11.hanging_chain|mujoco|cuda:0|quick": {
+   "law": "A11.hanging_chain",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "omega1_rel_err": {
+     "verdict": "pass",
+     "error": 0.0028915563185394344,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:52:31+0000"
+  },
+  "A11.torsion.rod_vbd|vbd|cpu|quick": {
+   "law": "A11.torsion.rod_vbd",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "twist_rel_err": {
+     "verdict": "pass",
+     "error": 2.240936038067076e-06,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:07:41-0800"
+  },
+  "A11.torsion.rod_vbd|vbd|cuda:0|quick": {
+   "law": "A11.torsion.rod_vbd",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "twist_rel_err": {
+     "verdict": "pass",
+     "error": 2.568995671303753e-06,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:52:54+0000"
+  },
+  "A11.torsion|mujoco|cpu|quick": {
+   "law": "A11.torsion",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "twist_rel_err": {
+     "verdict": "pass",
+     "error": 9.913711634945699e-07,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "eaeba4537f",
+   "date": "2026-11-09T15:07:36-0800"
+  },
+  "A11.torsion|mujoco|cuda:0|quick": {
+   "law": "A11.torsion",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "twist_rel_err": {
+     "verdict": "pass",
+     "error": 1.0122113499599905e-06,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:52:53+0000"
+  },
+  "A12.buckling|mujoco|cpu|quick": {
+   "law": "A12.buckling",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pcr_rel_err": {
+     "verdict": "pass",
+     "error": 0.012499999999999956,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:06:15-0800"
+  },
+  "A12.buckling|mujoco|cuda:0|quick": {
+   "law": "A12.buckling",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pcr_rel_err": {
+     "verdict": "pass",
+     "error": 0.012499999999999956,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:53:13+0000"
+  },
+  "A13.archimedes|sph|cpu|quick": {
+   "law": "A13.archimedes",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "draft": {
+     "verdict": "pass",
+     "error": 0.04347068371748436,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "20141cb6aa",
+   "date": "2026-11-04T21:09:53-0800"
+  },
+  "A13.archimedes|sph|cuda:0|quick": {
+   "law": "A13.archimedes",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "draft": {
+     "verdict": "pass",
+     "error": 0.04565588305342981,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:54:44+0000"
+  },
+  "A13.hydrostatic|sph|cpu|quick": {
+   "law": "A13.hydrostatic",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "wall_force": {
+     "verdict": "pass",
+     "error": 0.0015462274788471042,
+     "bound": 0.03,
+     "unit": "1"
+    },
+    "volume_loss": {
+     "verdict": "pass",
+     "error": 0.0002940148718377947,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "20141cb6aa",
+   "date": "2026-11-04T21:10:02-0800"
+  },
+  "A13.hydrostatic|sph|cuda:0|quick": {
+   "law": "A13.hydrostatic",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "wall_force": {
+     "verdict": "pass",
+     "error": 0.002309333951663297,
+     "bound": 0.03,
+     "unit": "1"
+    },
+    "volume_loss": {
+     "verdict": "pass",
+     "error": 0.00026324899134070684,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:54:49+0000"
+  },
+  "A13.piston_displacement|sph|cpu|quick": {
+   "law": "A13.piston_displacement",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "outflow": {
+     "verdict": "fail",
+     "error": 0.09023401876527526,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "0b1af22da0",
+   "date": "2026-11-05T05:44:34-0800"
+  },
+  "A13.piston_displacement|sph|cuda:0|quick": {
+   "law": "A13.piston_displacement",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "outflow": {
+     "verdict": "fail",
+     "error": 0.08501775292302693,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:55:08+0000"
+  },
+  "A13.resting_jitter|sph|cpu|quick": {
+   "law": "A13.resting_jitter",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rms_speed": {
+     "verdict": "pass",
+     "error": 0.001123170463640991,
+     "bound": 0.003,
+     "unit": "m/s"
+    },
+    "growth": {
+     "verdict": "pass",
+     "error": -0.07970731076807058,
+     "bound": 0.1,
+     "unit": "1"
+    }
+   },
+   "commit": "8b8919d465",
+   "date": "2026-11-04T01:47:43-0800"
+  },
+  "A13.resting_jitter|sph|cuda:0|quick": {
+   "law": "A13.resting_jitter",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rms_speed": {
+     "verdict": "pass",
+     "error": 0.0006838770434240631,
+     "bound": 0.003,
+     "unit": "m/s"
+    },
+    "growth": {
+     "verdict": "pass",
+     "error": -0.41198173847061215,
+     "bound": 0.1,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:55:28+0000"
+  },
+  "A13.sealed_column|sph|cpu|quick": {
+   "law": "A13.sealed_column",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pressure": {
+     "verdict": "pass",
+     "error": 0.06025222724264523,
+     "bound": 0.1,
+     "unit": "1"
+    },
+    "drift": {
+     "verdict": "pass",
+     "error": 0.004731894781192144,
+     "bound": 0.1,
+     "unit": "spacing"
+    },
+    "void": {
+     "verdict": "pass",
+     "error": 0.0017582287876684033,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "control": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "20141cb6aa",
+   "date": "2026-11-04T21:16:34-0800"
+  },
+  "A13.sealed_column|sph|cuda:0|quick": {
+   "law": "A13.sealed_column",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pressure": {
+     "verdict": "pass",
+     "error": 0.09099709388015964,
+     "bound": 0.1,
+     "unit": "1"
+    },
+    "drift": {
+     "verdict": "pass",
+     "error": 0.008062149087587994,
+     "bound": 0.1,
+     "unit": "spacing"
+    },
+    "void": {
+     "verdict": "pass",
+     "error": 0.0004826834628379739,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "control": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:55:45+0000"
+  },
+  "A14.dam_break|sph|cpu|quick": {
+   "law": "A14.dam_break",
+   "solver": "sph",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ritter_excess": {
+     "verdict": "pass",
+     "error": 8.692343955729598e-09,
+     "bound": 0.025,
+     "unit": "1"
+    }
+   },
+   "commit": "20141cb6aa",
+   "date": "2026-11-04T21:16:49-0800"
+  },
+  "A14.dam_break|sph|cuda:0|quick": {
+   "law": "A14.dam_break",
+   "solver": "sph",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "ritter_excess": {
+     "verdict": "pass",
+     "error": 8.692343955729598e-09,
+     "bound": 0.025,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:55:50+0000"
+  },
+  "A15.neohookean_explicit|semi_implicit|cpu|quick": {
+   "law": "A15.neohookean_explicit",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:57-0700"
+  },
+  "A15.neohookean_explicit|semi_implicit|cuda:0|quick": {
+   "law": "A15.neohookean_explicit",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:56:34+0000"
+  },
+  "A15.neohookean|vbd|cpu|quick": {
+   "law": "A15.neohookean",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "pass",
+     "error": 0.0027576158978713963,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:43-0700"
+  },
+  "A15.neohookean|vbd|cuda:0|quick": {
+   "law": "A15.neohookean",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "pass",
+     "error": 0.0027575641432054186,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:56:25+0000"
+  },
+  "A15.neohookean|xpbd|cpu|quick": {
+   "law": "A15.neohookean",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:45-0700"
+  },
+  "A15.neohookean|xpbd|cuda:0|quick": {
+   "law": "A15.neohookean",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "stress_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.05,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:56:27+0000"
+  },
+  "A16.selftest|none|cpu|quick": {
+   "law": "A16.selftest",
+   "solver": "none",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "selftest_pass_rate": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "1"
+    }
+   },
+   "commit": "02a1ea7c36-dirty",
+   "date": "2026-11-04T14:52:02-0800"
+  },
+  "A16.selftest|none|cuda:0|quick": {
+   "law": "A16.selftest",
+   "solver": "none",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "selftest_pass_rate": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:31:39+0000"
+  },
+  "A17.vbd_momentum|vbd|cpu|quick": {
+   "law": "A17.vbd_momentum",
+   "solver": "vbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "free_err": {
+     "verdict": "pass",
+     "error": 1.386240748655742e-05,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "flat_err": {
+     "verdict": "pass",
+     "error": 3.7594202899355227e-06,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "curved_err": {
+     "verdict": "pass",
+     "error": 1.0386598663621008e-05,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "02a1ea7c36-dirty",
+   "date": "2026-11-04T14:52:09-0800"
+  },
+  "A17.vbd_momentum|vbd|cuda:0|quick": {
+   "law": "A17.vbd_momentum",
+   "solver": "vbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "free_err": {
+     "verdict": "pass",
+     "error": 1.386240748655742e-05,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "flat_err": {
+     "verdict": "pass",
+     "error": 4.129450960474879e-06,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "curved_err": {
+     "verdict": "pass",
+     "error": 1.20109110532296e-05,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:56:37+0000"
+  },
+  "A2.pendulum|featherstone|cpu|quick": {
+   "law": "A2.pendulum",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "pass",
+     "error": 8.065983708005032e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:06-0700"
+  },
+  "A2.pendulum|featherstone|cuda:0|quick": {
+   "law": "A2.pendulum",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "pass",
+     "error": 8.09018487741225e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:15+0000"
+  },
+  "A2.pendulum|mujoco|cpu|quick": {
+   "law": "A2.pendulum",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "pass",
+     "error": 8.060067888595594e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "96379dbea0",
+   "date": "2026-11-05T16:15:12-0800"
+  },
+  "A2.pendulum|mujoco|cuda:0|quick": {
+   "law": "A2.pendulum",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "pass",
+     "error": 8.069714661770197e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:13+0000"
+  },
+  "A2.pendulum|semi_implicit|cpu|quick": {
+   "law": "A2.pendulum",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:06-0700"
+  },
+  "A2.pendulum|semi_implicit|cuda:0|quick": {
+   "law": "A2.pendulum",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:15+0000"
+  },
+  "A2.pendulum|xpbd|cpu|quick": {
+   "law": "A2.pendulum",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "fail",
+     "error": 0.014218085040666604,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:06-0700"
+  },
+  "A2.pendulum|xpbd|cuda:0|quick": {
+   "law": "A2.pendulum",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "period_rel_err": {
+     "verdict": "fail",
+     "error": 0.01421711451519634,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:14+0000"
+  },
+  "A3.contact_energy|featherstone|cpu|quick": {
+   "law": "A3.contact_energy",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "step_gain": {
+     "verdict": "fail",
+     "error": 31.949263303663752,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "fail",
+     "error": 35.20867554849239,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:10-0700"
+  },
+  "A3.contact_energy|featherstone|cuda:0|quick": {
+   "law": "A3.contact_energy",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "step_gain": {
+     "verdict": "fail",
+     "error": 31.949326096783143,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "fail",
+     "error": 35.20873787326408,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:36+0000"
+  },
+  "A3.contact_energy|mujoco|cpu|quick": {
+   "law": "A3.contact_energy",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "step_gain": {
+     "verdict": "pass",
+     "error": 0.0029758939667081513,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "pass",
+     "error": 8.531804140290386e-07,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:28-0800"
+  },
+  "A3.contact_energy|mujoco|cuda:0|quick": {
+   "law": "A3.contact_energy",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "step_gain": {
+     "verdict": "pass",
+     "error": 0.00298509785295529,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "pass",
+     "error": 8.531804140290386e-07,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:25+0000"
+  },
+  "A3.contact_energy|semi_implicit|cpu|quick": {
+   "law": "A3.contact_energy",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "step_gain": {
+     "verdict": "fail",
+     "error": 31.949263303663752,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "fail",
+     "error": 35.20867554849239,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:10-0700"
+  },
+  "A3.contact_energy|semi_implicit|cuda:0|quick": {
+   "law": "A3.contact_energy",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "step_gain": {
+     "verdict": "fail",
+     "error": 31.94937160440936,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "fail",
+     "error": 35.20878309880715,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:36+0000"
+  },
+  "A3.contact_energy|xpbd|cpu|quick": {
+   "law": "A3.contact_energy",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "step_gain": {
+     "verdict": "pass",
+     "error": 0.0020921553365203242,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:09-0700"
+  },
+  "A3.contact_energy|xpbd|cuda:0|quick": {
+   "law": "A3.contact_energy",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "step_gain": {
+     "verdict": "pass",
+     "error": 0.0020921898722471906,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "cum_gain": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.5,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:32+0000"
+  },
+  "A3.pendulum_energy|featherstone|cpu|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "pass",
+     "error": 0.001474158608431928,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:13-0700"
+  },
+  "A3.pendulum_energy|featherstone|cuda:0|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "pass",
+     "error": 0.0014739962601904059,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:41+0000"
+  },
+  "A3.pendulum_energy|mujoco|cpu|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "pass",
+     "error": 0.001474158608431928,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:30-0800"
+  },
+  "A3.pendulum_energy|mujoco|cuda:0|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "pass",
+     "error": 0.0014745584250731652,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:39+0000"
+  },
+  "A3.pendulum_energy|semi_implicit|cpu|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:14-0700"
+  },
+  "A3.pendulum_energy|semi_implicit|cuda:0|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:41+0000"
+  },
+  "A3.pendulum_energy|xpbd|cpu|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "fail",
+     "error": 0.038032701523111445,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "82263de86a-dirty",
+   "date": "2026-10-31T21:57:13-0700"
+  },
+  "A3.pendulum_energy|xpbd|cuda:0|quick": {
+   "law": "A3.pendulum_energy",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "energy_drift": {
+     "verdict": "fail",
+     "error": 0.03803272101045787,
+     "bound": 0.005,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:35:40+0000"
+  },
+  "A4.collide_small_lever|featherstone|cpu|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 2.443972150513042e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.007234640757389343,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:47-0800"
+  },
+  "A4.collide_small_lever|featherstone|cuda:0|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 2.5463115409962923e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.007234760219861811,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:02+0000"
+  },
+  "A4.collide_small_lever|mujoco|cpu|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 1.1920928955078125e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "pass",
+     "error": 1.365099708640957e-05,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:46-0800"
+  },
+  "A4.collide_small_lever|mujoco|cuda:0|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 3.0135733509297204e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "pass",
+     "error": 1.1702698535264477e-05,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:00+0000"
+  },
+  "A4.collide_small_lever|semi_implicit|cpu|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 5.960464477539063e-08,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.007235223771292201,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:48-0800"
+  },
+  "A4.collide_small_lever|semi_implicit|cuda:0|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 1.1920928955078125e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.007234910622660536,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:02+0000"
+  },
+  "A4.collide_small_lever|xpbd|cpu|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 2.9802322387695312e-08,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.0017899976250866933,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:47-0800"
+  },
+  "A4.collide_small_lever|xpbd|cuda:0|quick": {
+   "law": "A4.collide_small_lever",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 1.0431748274012852e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.0017907557104306577,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:01+0000"
+  },
+  "A4.momentum|featherstone|cpu|quick": {
+   "law": "A4.momentum",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 5.383012255486383e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.006780393660019032,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:55-0800"
+  },
+  "A4.momentum|featherstone|cuda:0|quick": {
+   "law": "A4.momentum",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 4.828671794179955e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.0032472631254124927,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:13+0000"
+  },
+  "A4.momentum|mujoco|cpu|quick": {
+   "law": "A4.momentum",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 1.1920928955078125e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "pass",
+     "error": 3.6918886705718027e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:53-0800"
+  },
+  "A4.momentum|mujoco|cuda:0|quick": {
+   "law": "A4.momentum",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 4.009492411337412e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "pass",
+     "error": 4.060520037889212e-06,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:11+0000"
+  },
+  "A4.momentum|semi_implicit|cpu|quick": {
+   "law": "A4.momentum",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 8.940696716308594e-08,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.002490530368140157,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:56-0800"
+  },
+  "A4.momentum|semi_implicit|cuda:0|quick": {
+   "law": "A4.momentum",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "pass",
+     "error": 1.7136335372924805e-07,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.002497504010229577,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:14+0000"
+  },
+  "A4.momentum|xpbd|cpu|quick": {
+   "law": "A4.momentum",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "fail",
+     "error": 0.018624067306518555,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.018624067306518638,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "8dc5a073d1",
+   "date": "2026-11-01T22:27:55-0800"
+  },
+  "A4.momentum|xpbd|cuda:0|quick": {
+   "law": "A4.momentum",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "dp_rel": {
+     "verdict": "fail",
+     "error": 0.018624067306518555,
+     "bound": 0.0005,
+     "unit": "1"
+    },
+    "dL_rel": {
+     "verdict": "fail",
+     "error": 0.018624067306518638,
+     "bound": 0.001,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:12+0000"
+  },
+  "A5.isotropy|featherstone|cpu|quick": {
+   "law": "A5.isotropy",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:06-0800"
+  },
+  "A5.isotropy|featherstone|cuda:0|quick": {
+   "law": "A5.isotropy",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:25+0000"
+  },
+  "A5.isotropy|mujoco|cpu|quick": {
+   "law": "A5.isotropy",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "pass",
+     "error": 0.0009264263105072535,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:39-0800"
+  },
+  "A5.isotropy|mujoco|cuda:0|quick": {
+   "law": "A5.isotropy",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "pass",
+     "error": 0.0009264263105072535,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:20+0000"
+  },
+  "A5.isotropy|semi_implicit|cpu|quick": {
+   "law": "A5.isotropy",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:07-0800"
+  },
+  "A5.isotropy|semi_implicit|cuda:0|quick": {
+   "law": "A5.isotropy",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:27+0000"
+  },
+  "A5.isotropy|xpbd|cpu|quick": {
+   "law": "A5.isotropy",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:05-0800"
+  },
+  "A5.isotropy|xpbd|cuda:0|quick": {
+   "law": "A5.isotropy",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "slip_force_spread": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:23+0000"
+  },
+  "A5.onset|featherstone|cpu|quick": {
+   "law": "A5.onset",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 19.322995344797775,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:11-0800"
+  },
+  "A5.onset|featherstone|cuda:0|quick": {
+   "law": "A5.onset",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 19.32456990083059,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:32+0000"
+  },
+  "A5.onset|mujoco|cpu|quick": {
+   "law": "A5.onset",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "pass",
+     "error": 5.22483484625506e-06,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:42-0800"
+  },
+  "A5.onset|mujoco|cuda:0|quick": {
+   "law": "A5.onset",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "pass",
+     "error": 5.221287816918146e-06,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:29+0000"
+  },
+  "A5.onset|semi_implicit|cpu|quick": {
+   "law": "A5.onset",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 19.32443777720134,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:11-0800"
+  },
+  "A5.onset|semi_implicit|cuda:0|quick": {
+   "law": "A5.onset",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 19.32274401187897,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:32+0000"
+  },
+  "A5.onset|xpbd|cpu|quick": {
+   "law": "A5.onset",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 0.034915574360638864,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:10-0800"
+  },
+  "A5.onset|xpbd|cuda:0|quick": {
+   "law": "A5.onset",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "onset_err_deg": {
+     "verdict": "fail",
+     "error": null,
+     "bound": 0.1,
+     "unit": "deg"
+    },
+    "creep": {
+     "verdict": "fail",
+     "error": 0.03491517466803393,
+     "bound": 9.999999999999999e-06,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:31+0000"
+  },
+  "A5.slide_recipe|mujoco|cpu|quick": {
+   "law": "A5.slide_recipe",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_spread": {
+     "verdict": "fail",
+     "error": 0.13257097382899946,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "96379dbea0",
+   "date": "2026-11-05T16:15:17-0800"
+  },
+  "A5.slide_recipe|mujoco|cuda:0|quick": {
+   "law": "A5.slide_recipe",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_spread": {
+     "verdict": "fail",
+     "error": 0.13277657273492824,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:04+0000"
+  },
+  "A5.slide_spread|mujoco|cpu|quick": {
+   "law": "A5.slide_spread",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_spread": {
+     "verdict": "fail",
+     "error": 0.10279324103032844,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "6152770980",
+   "date": "2026-11-03T10:50:25-0800"
+  },
+  "A5.slide_spread|mujoco|cuda:0|quick": {
+   "law": "A5.slide_spread",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_spread": {
+     "verdict": "fail",
+     "error": 0.10305056896369091,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:23+0000"
+  },
+  "A5.slide|featherstone|cpu|quick": {
+   "law": "A5.slide",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "fail",
+     "error": 4.372583975817504,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "fail",
+     "error": 6.443168700333856,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:19-0800"
+  },
+  "A5.slide|featherstone|cuda:0|quick": {
+   "law": "A5.slide",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "fail",
+     "error": 4.372593055528768,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "fail",
+     "error": 7.4774746985018465,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:57+0000"
+  },
+  "A5.slide|mujoco|cpu|quick": {
+   "law": "A5.slide",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "pass",
+     "error": 0.0016161860983600427,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "pass",
+     "error": 0.002743251472711629,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:07:56-0800"
+  },
+  "A5.slide|mujoco|cuda:0|quick": {
+   "law": "A5.slide",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "pass",
+     "error": 0.004547847457485424,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "pass",
+     "error": 0.0032719859480858505,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:53+0000"
+  },
+  "A5.slide|semi_implicit|cpu|quick": {
+   "law": "A5.slide",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "fail",
+     "error": 4.372060593040849,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "fail",
+     "error": 7.578145772398941,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:20-0800"
+  },
+  "A5.slide|semi_implicit|cuda:0|quick": {
+   "law": "A5.slide",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "fail",
+     "error": 4.372054153319151,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "fail",
+     "error": 7.675452443859141,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:58+0000"
+  },
+  "A5.slide|xpbd|cpu|quick": {
+   "law": "A5.slide",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "pass",
+     "error": 3.340070761961215e-05,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "pass",
+     "error": 0.006127893141998513,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "e5536fac60",
+   "date": "2026-11-01T14:01:18-0800"
+  },
+  "A5.slide|xpbd|cuda:0|quick": {
+   "law": "A5.slide",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "accel_rel_err": {
+     "verdict": "pass",
+     "error": 3.4196720255652865e-05,
+     "bound": 0.01,
+     "unit": "1"
+    },
+    "stop_rel_err": {
+     "verdict": "pass",
+     "error": 0.006127789776852676,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:36:56+0000"
+  },
+  "A5.speed|mujoco|cpu|quick": {
+   "law": "A5.speed",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "force_rel_err": {
+     "verdict": "pass",
+     "error": 1.2689818285060994e-06,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "96379dbea0",
+   "date": "2026-11-05T16:15:20-0800"
+  },
+  "A5.speed|mujoco|cuda:0|quick": {
+   "law": "A5.speed",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "force_rel_err": {
+     "verdict": "pass",
+     "error": 1.7510445585733336e-06,
+     "bound": 0.02,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:38+0000"
+  },
+  "A6.restitution|featherstone|cpu|quick": {
+   "law": "A6.restitution",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "fail",
+     "error": 35.74250306025803,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "84069354e5",
+   "date": "2026-11-01T14:35:28-0800"
+  },
+  "A6.restitution|featherstone|cuda:0|quick": {
+   "law": "A6.restitution",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "fail",
+     "error": 35.74258660362209,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:54+0000"
+  },
+  "A6.restitution|mujoco|cpu|quick": {
+   "law": "A6.restitution",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "pass",
+     "error": 0.7684104830947909,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "2cd8be498d",
+   "date": "2026-11-01T19:08:19-0800"
+  },
+  "A6.restitution|mujoco|cuda:0|quick": {
+   "law": "A6.restitution",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "pass",
+     "error": 0.768401411046233,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:46+0000"
+  },
+  "A6.restitution|semi_implicit|cpu|quick": {
+   "law": "A6.restitution",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "fail",
+     "error": 35.74250306025803,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "84069354e5",
+   "date": "2026-11-01T14:35:28-0800"
+  },
+  "A6.restitution|semi_implicit|cuda:0|quick": {
+   "law": "A6.restitution",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "fail",
+     "error": 35.74258660362209,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:54+0000"
+  },
+  "A6.restitution|xpbd|cpu|quick": {
+   "law": "A6.restitution",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "pass",
+     "error": 0.11597739814517895,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "84069354e5",
+   "date": "2026-11-01T14:35:27-0800"
+  },
+  "A6.restitution|xpbd|cuda:0|quick": {
+   "law": "A6.restitution",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rebound_err_ratio": {
+     "verdict": "pass",
+     "error": 0.11597739814517895,
+     "bound": 1.0,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:37:53+0000"
+  },
+  "A7.hydroelastic|mujoco|cpu|quick": {
+   "law": "A7.hydroelastic",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "not_run",
+   "metrics": {
+    "exponent_err": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    },
+    "prefactor_rel_err": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    },
+    "settle_rel_err": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:02:11-0800"
+  },
+  "A7.hydroelastic|mujoco|cuda:0|quick": {
+   "law": "A7.hydroelastic",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "exponent_err": {
+     "verdict": "pass",
+     "error": 0.005536381064037199,
+     "bound": 0.05,
+     "unit": "1"
+    },
+    "prefactor_rel_err": {
+     "verdict": "pass",
+     "error": 0.025945896400489166,
+     "bound": 0.1,
+     "unit": "1"
+    },
+    "settle_rel_err": {
+     "verdict": "pass",
+     "error": 9.035663731165207e-07,
+     "bound": 0.01,
+     "unit": "1"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:40:36+0000"
+  },
+  "A8.clearance|none|cpu|quick": {
+   "law": "A8.clearance",
+   "solver": "none",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "not_run",
+   "metrics": {
+    "gap_err_m": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    },
+    "tilt_err_deg": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    }
+   },
+   "commit": "20141cb6aa",
+   "date": "2026-11-04T21:04:01-0800"
+  },
+  "A8.clearance|none|cuda:0|quick": {
+   "law": "A8.clearance",
+   "solver": "none",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "gap_err_m": {
+     "verdict": "pass",
+     "error": 3.065662639413838e-07,
+     "bound": 1e-06,
+     "unit": "m"
+    },
+    "tilt_err_deg": {
+     "verdict": "pass",
+     "error": 0.0023032901461126866,
+     "bound": 0.01,
+     "unit": "deg"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:40:54+0000"
+  },
+  "A8.push|mujoco|cpu|quick": {
+   "law": "A8.push",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "not_run",
+   "metrics": {
+    "pen_max_m": {
+     "verdict": "not_run",
+     "error": null,
+     "bound": null,
+     "unit": "1"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:02:11-0800"
+  },
+  "A8.push|mujoco|cuda:0|quick": {
+   "law": "A8.push",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "pen_max_m": {
+     "verdict": "pass",
+     "error": 2.636108547449112e-05,
+     "bound": 5e-05,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:41:43+0000"
+  },
+  "A8.squeeze_face|mujoco|cpu|quick": {
+   "law": "A8.squeeze_face",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "peak_pen_m": {
+     "verdict": "pass",
+     "error": 5.3282055887393653e-05,
+     "bound": 0.001,
+     "unit": "m"
+    }
+   },
+   "commit": "96379dbea0",
+   "date": "2026-11-05T16:15:29-0800"
+  },
+  "A8.squeeze_face|mujoco|cuda:0|quick": {
+   "law": "A8.squeeze_face",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "peak_pen_m": {
+     "verdict": "pass",
+     "error": 5.036802031099796e-05,
+     "bound": 0.001,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:42:38+0000"
+  },
+  "A8.squeeze_wedge|mujoco|cpu|quick": {
+   "law": "A8.squeeze_wedge",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "peak_pen_m": {
+     "verdict": "fail",
+     "error": 0.0013881369959563017,
+     "bound": 0.001,
+     "unit": "m"
+    }
+   },
+   "commit": "96379dbea0",
+   "date": "2026-11-05T16:15:33-0800"
+  },
+  "A8.squeeze_wedge|mujoco|cuda:0|quick": {
+   "law": "A8.squeeze_wedge",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "peak_pen_m": {
+     "verdict": "fail",
+     "error": 0.002113130409270525,
+     "bound": 0.001,
+     "unit": "m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:42:42+0000"
+  },
+  "A9.thread_rundown|mujoco|cpu|quick": {
+   "law": "A9.thread_rundown",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "advance_per_rev": {
+     "verdict": "pass",
+     "error": 1.0170424477374575e-06,
+     "bound": 7.5e-06,
+     "unit": "m"
+    },
+    "rundown_torque": {
+     "verdict": "pass",
+     "error": 5.180413019484874e-05,
+     "bound": 0.0002441561693837289,
+     "unit": "N*m"
+    }
+   },
+   "commit": "27da84245e",
+   "date": "2026-11-04T09:03:01-0800"
+  },
+  "A9.thread_rundown|mujoco|cuda:0|quick": {
+   "law": "A9.thread_rundown",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "advance_per_rev": {
+     "verdict": "pass",
+     "error": 1.0172118609715498e-06,
+     "bound": 7.5e-06,
+     "unit": "m"
+    },
+    "rundown_torque": {
+     "verdict": "pass",
+     "error": 5.216880456020232e-05,
+     "bound": 0.0002441561693837289,
+     "unit": "N*m"
+    }
+   },
+   "commit": "cc76dbe4ca",
+   "date": "2026-11-09T23:43:23+0000"
+  },
+  "D1.rerun|featherstone|cpu|quick": {
+   "law": "D1.rerun",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:04-0700"
+  },
+  "D1.rerun|featherstone|cuda:0|quick": {
+   "law": "D1.rerun",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:13+0000"
+  },
+  "D1.rerun|mujoco|cpu|quick": {
+   "law": "D1.rerun",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:00-0700"
+  },
+  "D1.rerun|mujoco|cuda:0|quick": {
+   "law": "D1.rerun",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "fail",
+     "error": 1749759775.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:09+0000"
+  },
+  "D1.rerun|semi_implicit|cpu|quick": {
+   "law": "D1.rerun",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:05-0700"
+  },
+  "D1.rerun|semi_implicit|cuda:0|quick": {
+   "law": "D1.rerun",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:14+0000"
+  },
+  "D1.rerun|xpbd|cpu|quick": {
+   "law": "D1.rerun",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:03-0700"
+  },
+  "D1.rerun|xpbd|cuda:0|quick": {
+   "law": "D1.rerun",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "max_ulp": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "ulp"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:12+0000"
+  },
+  "D2.batch|featherstone|cpu|quick": {
+   "law": "D2.batch",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:12-0700"
+  },
+  "D2.batch|featherstone|cuda:0|quick": {
+   "law": "D2.batch",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:26+0000"
+  },
+  "D2.batch|mujoco|cpu|quick": {
+   "law": "D2.batch",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:09-0700"
+  },
+  "D2.batch|mujoco|cuda:0|quick": {
+   "law": "D2.batch",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:21+0000"
+  },
+  "D2.batch|semi_implicit|cpu|quick": {
+   "law": "D2.batch",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:13-0700"
+  },
+  "D2.batch|semi_implicit|cuda:0|quick": {
+   "law": "D2.batch",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:27+0000"
+  },
+  "D2.batch|xpbd|cpu|quick": {
+   "law": "D2.batch",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:11-0700"
+  },
+  "D2.batch|xpbd|cuda:0|quick": {
+   "law": "D2.batch",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "batch_dev_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:24+0000"
+  },
+  "D3.spread|featherstone|cpu|quick": {
+   "law": "D3.spread",
+   "solver": "featherstone",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:24-0700"
+  },
+  "D3.spread|featherstone|cuda:0|quick": {
+   "law": "D3.spread",
+   "solver": "featherstone",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:41+0000"
+  },
+  "D3.spread|mujoco|cpu|quick": {
+   "law": "D3.spread",
+   "solver": "mujoco",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:19-0700"
+  },
+  "D3.spread|mujoco|cuda:0|quick": {
+   "law": "D3.spread",
+   "solver": "mujoco",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "fail",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "fail",
+     "error": 4.310254951057788e-09,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:35+0000"
+  },
+  "D3.spread|semi_implicit|cpu|quick": {
+   "law": "D3.spread",
+   "solver": "semi_implicit",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:25-0700"
+  },
+  "D3.spread|semi_implicit|cuda:0|quick": {
+   "law": "D3.spread",
+   "solver": "semi_implicit",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:43+0000"
+  },
+  "D3.spread|xpbd|cpu|quick": {
+   "law": "D3.spread",
+   "solver": "xpbd",
+   "device": "cpu",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "b1a5c54e32-dirty",
+   "date": "2026-10-31T22:20:22-0700"
+  },
+  "D3.spread|xpbd|cuda:0|quick": {
+   "law": "D3.spread",
+   "solver": "xpbd",
+   "device": "cuda:0",
+   "mode": "quick",
+   "verdict": "pass",
+   "metrics": {
+    "rerun_w1_m": {
+     "verdict": "pass",
+     "error": 0.0,
+     "bound": 0.0,
+     "unit": "m"
+    }
+   },
+   "commit": "",
+   "date": "2026-11-01T05:18:39+0000"
+  }
+ },
+ "history": [
+  {
+   "date": "2026-10-31T21:57:57-0700",
+   "reason": "initial baseline: stock Newton ac7f7830 solvers on CPU, quick (WP6)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A1.freefall|mujoco|cpu|quick",
+    "A1.freefall|xpbd|cpu|quick",
+    "A1.freefall|featherstone|cpu|quick",
+    "A1.freefall|semi_implicit|cpu|quick",
+    "A2.pendulum|mujoco|cpu|quick",
+    "A2.pendulum|xpbd|cpu|quick",
+    "A2.pendulum|featherstone|cpu|quick",
+    "A2.pendulum|semi_implicit|cpu|quick",
+    "A3.contact_energy|mujoco|cpu|quick",
+    "A3.contact_energy|xpbd|cpu|quick",
+    "A3.contact_energy|featherstone|cpu|quick",
+    "A3.contact_energy|semi_implicit|cpu|quick",
+    "A3.pendulum_energy|mujoco|cpu|quick",
+    "A3.pendulum_energy|xpbd|cpu|quick",
+    "A3.pendulum_energy|featherstone|cpu|quick",
+    "A3.pendulum_energy|semi_implicit|cpu|quick",
+    "A4.momentum|mujoco|cpu|quick",
+    "A4.momentum|xpbd|cpu|quick",
+    "A4.momentum|featherstone|cpu|quick",
+    "A4.momentum|semi_implicit|cpu|quick",
+    "A5.onset|mujoco|cpu|quick",
+    "A5.onset|xpbd|cpu|quick",
+    "A5.onset|featherstone|cpu|quick",
+    "A5.onset|semi_implicit|cpu|quick",
+    "A5.slide|mujoco|cpu|quick",
+    "A5.slide|xpbd|cpu|quick",
+    "A5.slide|featherstone|cpu|quick",
+    "A5.slide|semi_implicit|cpu|quick",
+    "A6.restitution|mujoco|cpu|quick",
+    "A6.restitution|xpbd|cpu|quick",
+    "A6.restitution|featherstone|cpu|quick",
+    "A6.restitution|semi_implicit|cpu|quick",
+    "A15.neohookean|vbd|cpu|quick",
+    "A15.neohookean|xpbd|cpu|quick",
+    "A15.neohookean_explicit|semi_implicit|cpu|quick",
+    "A7|any|cpu|full",
+    "A8|any|cpu|full",
+    "A9|any|cpu|full",
+    "A10|any|cpu|full",
+    "A11|any|cpu|full",
+    "A12|any|cpu|full",
+    "A13|any|cpu|full",
+    "A14|any|cpu|full"
+   ]
+  },
+  {
+   "date": "2026-10-31T22:23:19-0700",
+   "reason": "add cuda:0 (a dev GPU VM L4, wp6 @ b094c26, scripts/gpu_run.sh WP6 tests/bench/test_gpu_suite.py) analytic + determinism quick keys, and CPU determinism quick keys (wp6 @ b1a5c54)",
+   "overwrite": false,
+   "keys": [
+    "A1.freefall|featherstone|cuda:0|quick",
+    "A1.freefall|mujoco|cuda:0|quick",
+    "A1.freefall|semi_implicit|cuda:0|quick",
+    "A1.freefall|xpbd|cuda:0|quick",
+    "A15.neohookean|vbd|cuda:0|quick",
+    "A15.neohookean|xpbd|cuda:0|quick",
+    "A15.neohookean_explicit|semi_implicit|cuda:0|quick",
+    "A16.selftest|none|cuda:0|quick",
+    "A2.pendulum|featherstone|cuda:0|quick",
+    "A2.pendulum|mujoco|cuda:0|quick",
+    "A2.pendulum|semi_implicit|cuda:0|quick",
+    "A2.pendulum|xpbd|cuda:0|quick",
+    "A3.contact_energy|featherstone|cuda:0|quick",
+    "A3.contact_energy|mujoco|cuda:0|quick",
+    "A3.contact_energy|semi_implicit|cuda:0|quick",
+    "A3.contact_energy|xpbd|cuda:0|quick",
+    "A3.pendulum_energy|featherstone|cuda:0|quick",
+    "A3.pendulum_energy|mujoco|cuda:0|quick",
+    "A3.pendulum_energy|semi_implicit|cuda:0|quick",
+    "A3.pendulum_energy|xpbd|cuda:0|quick",
+    "A4.momentum|featherstone|cuda:0|quick",
+    "A4.momentum|mujoco|cuda:0|quick",
+    "A4.momentum|semi_implicit|cuda:0|quick",
+    "A4.momentum|xpbd|cuda:0|quick",
+    "A5.onset|featherstone|cuda:0|quick",
+    "A5.onset|mujoco|cuda:0|quick",
+    "A5.onset|semi_implicit|cuda:0|quick",
+    "A5.onset|xpbd|cuda:0|quick",
+    "A5.slide|featherstone|cuda:0|quick",
+    "A5.slide|mujoco|cuda:0|quick",
+    "A5.slide|semi_implicit|cuda:0|quick",
+    "A5.slide|xpbd|cuda:0|quick",
+    "A6.restitution|featherstone|cuda:0|quick",
+    "A6.restitution|mujoco|cuda:0|quick",
+    "A6.restitution|semi_implicit|cuda:0|quick",
+    "A6.restitution|xpbd|cuda:0|quick",
+    "D1.rerun|featherstone|cuda:0|quick",
+    "D1.rerun|mujoco|cuda:0|quick",
+    "D1.rerun|semi_implicit|cuda:0|quick",
+    "D1.rerun|xpbd|cuda:0|quick",
+    "D2.batch|featherstone|cuda:0|quick",
+    "D2.batch|mujoco|cuda:0|quick",
+    "D2.batch|semi_implicit|cuda:0|quick",
+    "D2.batch|xpbd|cuda:0|quick",
+    "D3.spread|featherstone|cuda:0|quick",
+    "D3.spread|mujoco|cuda:0|quick",
+    "D3.spread|semi_implicit|cuda:0|quick",
+    "D3.spread|xpbd|cuda:0|quick",
+    "A10|any|cuda:0|full",
+    "A11|any|cuda:0|full",
+    "A12|any|cuda:0|full",
+    "A13|any|cuda:0|full",
+    "A14|any|cuda:0|full",
+    "A7|any|cuda:0|full",
+    "A8|any|cuda:0|full",
+    "A9|any|cuda:0|full",
+    "D1.rerun|featherstone|cpu|quick",
+    "D1.rerun|mujoco|cpu|quick",
+    "D1.rerun|semi_implicit|cpu|quick",
+    "D1.rerun|xpbd|cpu|quick",
+    "D2.batch|featherstone|cpu|quick",
+    "D2.batch|mujoco|cpu|quick",
+    "D2.batch|semi_implicit|cpu|quick",
+    "D2.batch|xpbd|cpu|quick",
+    "D3.spread|featherstone|cpu|quick",
+    "D3.spread|mujoco|cpu|quick",
+    "D3.spread|semi_implicit|cpu|quick",
+    "D3.spread|xpbd|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T06:09:09-0800",
+   "reason": "A6 follows SPEC 5.3 damping path: native gains on MuJoCo dynamic shapes, PairTable K/kd on Featherstone/SemiImplicit (was ShapeConfig.restitution)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A6.restitution|mujoco|cpu|quick",
+    "A6.restitution|xpbd|cpu|quick",
+    "A6.restitution|featherstone|cpu|quick",
+    "A6.restitution|semi_implicit|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T11:20:34-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A5.isotropy|mujoco|cpu|quick",
+    "A5.isotropy|xpbd|cpu|quick",
+    "A5.isotropy|featherstone|cpu|quick",
+    "A5.isotropy|semi_implicit|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T12:01:09-0800",
+   "reason": "A5 per bench + SCR-WP6-3: isotropy is the slip-force spread (A5.isotropy); A5.slide kinetic metrics gated on the MuJoCo default route; A5.slide_recipe known gap",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A5.isotropy|mujoco|cpu|quick",
+    "A5.isotropy|xpbd|cpu|quick",
+    "A5.isotropy|featherstone|cpu|quick",
+    "A5.isotropy|semi_implicit|cpu|quick",
+    "A5.onset|mujoco|cpu|quick",
+    "A5.onset|xpbd|cpu|quick",
+    "A5.onset|featherstone|cpu|quick",
+    "A5.onset|semi_implicit|cpu|quick",
+    "A5.slide|mujoco|cpu|quick",
+    "A5.slide|xpbd|cpu|quick",
+    "A5.slide|featherstone|cpu|quick",
+    "A5.slide|semi_implicit|cpu|quick",
+    "A5.slide_recipe|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T13:29:12-0800",
+   "reason": "A5 quick mode uses the bench's 16 azimuths and 1 s: 8 azimuths over 0.5 s missed MuJoCo's slide anisotropy (box yaw spin-up, WP3 FRIC rows); A5.slide mujoco 9.8 % now fails in quick as in full",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A5.isotropy|mujoco|cpu|quick",
+    "A5.isotropy|xpbd|cpu|quick",
+    "A5.isotropy|featherstone|cpu|quick",
+    "A5.isotropy|semi_implicit|cpu|quick",
+    "A5.onset|mujoco|cpu|quick",
+    "A5.onset|xpbd|cpu|quick",
+    "A5.onset|featherstone|cpu|quick",
+    "A5.onset|semi_implicit|cpu|quick",
+    "A5.slide|mujoco|cpu|quick",
+    "A5.slide|xpbd|cpu|quick",
+    "A5.slide|featherstone|cpu|quick",
+    "A5.slide|semi_implicit|cpu|quick",
+    "A5.slide_recipe|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T14:01:28-0800",
+   "reason": "SCR-WP3-7: A5.slide on MuJoCo gated at azimuth 0; 16-azimuth spread as known gaps A5.slide_spread (defaults) and A5.slide_recipe (recipe)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A5.isotropy|mujoco|cpu|quick",
+    "A5.isotropy|xpbd|cpu|quick",
+    "A5.isotropy|featherstone|cpu|quick",
+    "A5.isotropy|semi_implicit|cpu|quick",
+    "A5.onset|mujoco|cpu|quick",
+    "A5.onset|xpbd|cpu|quick",
+    "A5.onset|featherstone|cpu|quick",
+    "A5.onset|semi_implicit|cpu|quick",
+    "A5.slide|mujoco|cpu|quick",
+    "A5.slide|xpbd|cpu|quick",
+    "A5.slide|featherstone|cpu|quick",
+    "A5.slide|semi_implicit|cpu|quick",
+    "A5.slide_recipe|mujoco|cpu|quick",
+    "A5.slide_spread|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T14:35:28-0800",
+   "reason": "A6 on MuJoCo mirrors the assembler: static solmix on the floor, native gains capped at dt (WP2 5cbbbbf)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A6.restitution|mujoco|cpu|quick",
+    "A6.restitution|xpbd|cpu|quick",
+    "A6.restitution|featherstone|cpu|quick",
+    "A6.restitution|semi_implicit|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T19:08:19-0800",
+   "reason": "MuJoCo laws on Alloy's routed settings (builtin kwargs, SCR-WP6-4 rk4 for free-body scenes); A3/A4 off the static-hold recipe",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A1.freefall|mujoco|cpu|quick",
+    "A2.pendulum|mujoco|cpu|quick",
+    "A3.contact_energy|mujoco|cpu|quick",
+    "A3.pendulum_energy|mujoco|cpu|quick",
+    "A4.momentum|mujoco|cpu|quick",
+    "A5.isotropy|mujoco|cpu|quick",
+    "A5.onset|mujoco|cpu|quick",
+    "A5.slide|mujoco|cpu|quick",
+    "A5.slide_recipe|mujoco|cpu|quick",
+    "A5.slide_spread|mujoco|cpu|quick",
+    "A6.restitution|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-01T22:27:56-0800",
+   "reason": "A4 collide world re-conditioned (coordinator 2026-11-01, test conditioning, tolerance unchanged): 0.2 m lever, window ends at 1 m separation; A4.collide_small_lever (the original world) is informational",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A4.collide_small_lever|mujoco|cpu|quick",
+    "A4.collide_small_lever|xpbd|cpu|quick",
+    "A4.collide_small_lever|featherstone|cpu|quick",
+    "A4.collide_small_lever|semi_implicit|cpu|quick",
+    "A4.momentum|mujoco|cpu|quick",
+    "A4.momentum|xpbd|cpu|quick",
+    "A4.momentum|featherstone|cpu|quick",
+    "A4.momentum|semi_implicit|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-03T06:13:08-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A5.speed|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-03T10:50:46-0800",
+   "reason": "SCR-WP3-10 300 fill-in: A5.speed fixed, slide spread 0.034 -> 0.103 (coordinator ruling 2026-11-03 ~19:15Z, [internal note]: a stated trade, shown beside SB-12; known gap since SCR-WP3-7, never gated; CPU quick accel_spread 0.0339 -> 0.1028)",
+   "overwrite": true,
+   "keys": [
+    "A5.slide_spread|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-03T21:55:11-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A17.vbd_momentum|vbd|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T01:47:43-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A13.resting_jitter|sph|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T09:06:15-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A7.hydroelastic|mujoco|cpu|quick",
+    "A8.push|mujoco|cpu|quick",
+    "A8.squeeze_face|mujoco|cpu|quick",
+    "A8.squeeze_wedge|mujoco|cpu|quick",
+    "A9.thread_rundown|mujoco|cpu|quick",
+    "A11.cantilever|mujoco|cpu|quick",
+    "A11.catenary|mujoco|cpu|quick",
+    "A11.hanging_chain|mujoco|cpu|quick",
+    "A12.buckling|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T09:09:33-0800",
+   "reason": "SCR-WP3-10 on main 27da8424: the MuJoCo route fills in impratio 300; A5.speed fail 0.970 -> pass (WP3 confirms 9.744e-07)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A5.speed|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T11:56:08-0800",
+   "reason": "new keys from run",
+   "overwrite": false,
+   "keys": [
+    "A10.capstan|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T14:51:54-0800",
+   "reason": "BUL-0014 box-box line contacts on main d4864988 (ruling 20:08Z option 3): peak 12.7 -> 2.15 mm, still fail vs 1 mm (red in SB-12 per 18:14Z (a))",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A8.squeeze_wedge|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T14:52:09-0800",
+   "reason": "WP11's coarse step is the vbd capability's default since main 8423239b (SCR-WP11-2): A17 flat 0.398 / curved 2.29 fail -> 3.8e-6 / 1.0e-5 pass (Newton 25f406c7; WP11's ac7f7830 run: 5.3e-6 / 1.2e-5)",
+   "overwrite": true,
+   "keys": [
+    "A16.selftest|none|cpu|quick",
+    "A17.vbd_momentum|vbd|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-04T21:20:25-0800",
+   "reason": "new keys from the Newton 47afecd7 re-feed run (main 20141cb6, CPU quick)",
+   "overwrite": false,
+   "keys": [
+    "A13.archimedes|sph|cpu|quick",
+    "A13.hydrostatic|sph|cpu|quick",
+    "A13.piston_displacement|sph|cpu|quick",
+    "A13.sealed_column|sph|cpu|quick",
+    "A14.dam_break|sph|cpu|quick",
+    "A8.clearance|none|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-05T02:25:14-0800",
+   "reason": "WP3's MJCF light-body rule on main aeac0ab1 (coordinator ruling 2026-11-05 07:19Z): A8.squeeze_face 0.152 -> 0.063 mm (pass), A8.squeeze_wedge 2.153 -> 2.023 mm (fail, known gap); the other 75 CPU quick results equal 20141cb6's",
+   "overwrite": true,
+   "keys": [
+    "A8.squeeze_face|mujoco|cpu|quick",
+    "A8.squeeze_wedge|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-05T06:09:53-0800",
+   "reason": "WP9's SCR-WP9-12 (0b1af22d: the ambient residual offset of sealed liquid carries no net load; coordinator 2026-11-05): A13.piston_displacement quick outflow 0.0711 -> 0.0902 (fail; WP6's CPU quick run on 0b1af22d). Quick is outside the law's validity range (a 0.03 s push of 2 layers; full mode pushes 47 layers after the fit start), so SB-12 counts the law's full-mode verdict (+0.18 %, pass) per the coordinator's 05:48Z rule, and the law stays in SB-12's denominator",
+   "overwrite": true,
+   "keys": [
+    "A13.piston_displacement|sph|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-05T14:32:29-0800",
+   "reason": "WP13's A8 squeeze tip 1 kg stand-in -> T12's measured 0.3 kg effective mass (a0eb9cf6; coordinator ruling 2026-11-05 21:04Z, notes/wp0-a8-bound.md: a fidelity fix): CPU quick on main 5dac9aac, A8.squeeze_wedge 2.023 -> 1.839 mm (fail vs 1 mm, known gap), A8.squeeze_face 0.063 -> 0.050 mm (pass); re-keyed so a revert to the stand-in shows",
+   "overwrite": true,
+   "keys": [
+    "A8.squeeze_face|mujoco|cpu|quick",
+    "A8.squeeze_wedge|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-05T16:15:33-0800",
+   "reason": "WP3 coordinate carry default-on (SCR-SC10-3; coordinator rulings 2026-11-05 22:33Z GO, 22:50Z A8 re-key: carry-on closer to dt/2, quick max off/on dt 1.839/1.388, dt/2 0.736/0.734, dt/4 0.739/0.765 mm): CPU quick MuJoCo rows the carry moves, none flips (A2.pendulum, A5.slide_recipe, A5.speed, A8.squeeze_face, A8.squeeze_wedge); re-keyed so a revert shows",
+   "overwrite": true,
+   "keys": [
+    "A2.pendulum|mujoco|cpu|quick",
+    "A5.slide_recipe|mujoco|cpu|quick",
+    "A5.speed|mujoco|cpu|quick",
+    "A8.squeeze_face|mujoco|cpu|quick",
+    "A8.squeeze_wedge|mujoco|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-09T15:08:20-0800",
+   "reason": "audit AB-laws-1: CPU-quick keys for the six rod laws that ran keyless (A11.torsion and the rod_vbd twins of A10.capstan, A11.cantilever / catenary / hanging_chain / torsion), all pass at eaeba4537 on main 270ead86d; a keyless law that does not pass now fails the gate",
+   "overwrite": false,
+   "keys": [
+    "A10.capstan.rod_vbd|vbd|cpu|quick",
+    "A11.cantilever.rod_vbd|vbd|cpu|quick",
+    "A11.catenary.rod_vbd|vbd|cpu|quick",
+    "A11.hanging_chain.rod_vbd|vbd|cpu|quick",
+    "A11.torsion|mujoco|cpu|quick",
+    "A11.torsion.rod_vbd|vbd|cpu|quick"
+   ]
+  },
+  {
+   "date": "2026-11-09T16:00:23-0800",
+   "reason": "audit laws-4 (coordinator 2026-11-09 23:28Z): the cuda:0 quick analytic rows re-keyed from one L4 run of the whole suite at cc76dbe4 ([internal note]). The 11-01 rows predate the law changes re-keyed on CPU since (A5 azimuth-0 gate, A6 damping path, A4 lever) and covered 36 of 71 rows; every GPU verdict equals the law's CPU key. First cuda keys for A7.hydroelastic, A8.clearance, A8.push (CUDA-only laws, all pass), which no gate compared; tests/bench/test_gpu_suite.py now compares the GPU suites to the baseline",
+   "overwrite": true,
+   "keys": [
+    "A1.freefall|featherstone|cuda:0|quick",
+    "A1.freefall|mujoco|cuda:0|quick",
+    "A1.freefall|semi_implicit|cuda:0|quick",
+    "A1.freefall|xpbd|cuda:0|quick",
+    "A10.capstan|mujoco|cuda:0|quick",
+    "A10.capstan.rod_vbd|vbd|cuda:0|quick",
+    "A11.cantilever|mujoco|cuda:0|quick",
+    "A11.cantilever.rod_vbd|vbd|cuda:0|quick",
+    "A11.catenary|mujoco|cuda:0|quick",
+    "A11.catenary.rod_vbd|vbd|cuda:0|quick",
+    "A11.hanging_chain|mujoco|cuda:0|quick",
+    "A11.hanging_chain.rod_vbd|vbd|cuda:0|quick",
+    "A11.torsion|mujoco|cuda:0|quick",
+    "A11.torsion.rod_vbd|vbd|cuda:0|quick",
+    "A12.buckling|mujoco|cuda:0|quick",
+    "A13.archimedes|sph|cuda:0|quick",
+    "A13.hydrostatic|sph|cuda:0|quick",
+    "A13.piston_displacement|sph|cuda:0|quick",
+    "A13.resting_jitter|sph|cuda:0|quick",
+    "A13.sealed_column|sph|cuda:0|quick",
+    "A14.dam_break|sph|cuda:0|quick",
+    "A15.neohookean|vbd|cuda:0|quick",
+    "A15.neohookean|xpbd|cuda:0|quick",
+    "A15.neohookean_explicit|semi_implicit|cuda:0|quick",
+    "A16.selftest|none|cuda:0|quick",
+    "A17.vbd_momentum|vbd|cuda:0|quick",
+    "A2.pendulum|featherstone|cuda:0|quick",
+    "A2.pendulum|mujoco|cuda:0|quick",
+    "A2.pendulum|semi_implicit|cuda:0|quick",
+    "A2.pendulum|xpbd|cuda:0|quick",
+    "A3.contact_energy|featherstone|cuda:0|quick",
+    "A3.contact_energy|mujoco|cuda:0|quick",
+    "A3.contact_energy|semi_implicit|cuda:0|quick",
+    "A3.contact_energy|xpbd|cuda:0|quick",
+    "A3.pendulum_energy|featherstone|cuda:0|quick",
+    "A3.pendulum_energy|mujoco|cuda:0|quick",
+    "A3.pendulum_energy|semi_implicit|cuda:0|quick",
+    "A3.pendulum_energy|xpbd|cuda:0|quick",
+    "A4.collide_small_lever|featherstone|cuda:0|quick",
+    "A4.collide_small_lever|mujoco|cuda:0|quick",
+    "A4.collide_small_lever|semi_implicit|cuda:0|quick",
+    "A4.collide_small_lever|xpbd|cuda:0|quick",
+    "A4.momentum|featherstone|cuda:0|quick",
+    "A4.momentum|mujoco|cuda:0|quick",
+    "A4.momentum|semi_implicit|cuda:0|quick",
+    "A4.momentum|xpbd|cuda:0|quick",
+    "A5.isotropy|featherstone|cuda:0|quick",
+    "A5.isotropy|mujoco|cuda:0|quick",
+    "A5.isotropy|semi_implicit|cuda:0|quick",
+    "A5.isotropy|xpbd|cuda:0|quick",
+    "A5.onset|featherstone|cuda:0|quick",
+    "A5.onset|mujoco|cuda:0|quick",
+    "A5.onset|semi_implicit|cuda:0|quick",
+    "A5.onset|xpbd|cuda:0|quick",
+    "A5.slide|featherstone|cuda:0|quick",
+    "A5.slide|mujoco|cuda:0|quick",
+    "A5.slide|semi_implicit|cuda:0|quick",
+    "A5.slide|xpbd|cuda:0|quick",
+    "A5.slide_recipe|mujoco|cuda:0|quick",
+    "A5.slide_spread|mujoco|cuda:0|quick",
+    "A5.speed|mujoco|cuda:0|quick",
+    "A6.restitution|featherstone|cuda:0|quick",
+    "A6.restitution|mujoco|cuda:0|quick",
+    "A6.restitution|semi_implicit|cuda:0|quick",
+    "A6.restitution|xpbd|cuda:0|quick",
+    "A7.hydroelastic|mujoco|cuda:0|quick",
+    "A8.clearance|none|cuda:0|quick",
+    "A8.push|mujoco|cuda:0|quick",
+    "A8.squeeze_face|mujoco|cuda:0|quick",
+    "A8.squeeze_wedge|mujoco|cuda:0|quick",
+    "A9.thread_rundown|mujoco|cuda:0|quick"
+   ]
+  },
+  {
+   "date": "2026-11-09T16:00:49-0800",
+   "reason": "audit laws-4: placeholder rows (`<family>|any|<device>|full`, not_run, written 10-31 / 11-01 while the producers were unmerged) for families whose laws are registered and keyed now; no run produces them, so they could only ever match themselves",
+   "dropped": true,
+   "keys": [
+    "A10|any|cpu|full",
+    "A10|any|cuda:0|full",
+    "A11|any|cpu|full",
+    "A11|any|cuda:0|full",
+    "A12|any|cpu|full",
+    "A12|any|cuda:0|full",
+    "A13|any|cpu|full",
+    "A13|any|cuda:0|full",
+    "A14|any|cpu|full",
+    "A14|any|cuda:0|full",
+    "A7|any|cpu|full",
+    "A7|any|cuda:0|full",
+    "A8|any|cpu|full",
+    "A8|any|cuda:0|full",
+    "A9|any|cpu|full",
+    "A9|any|cuda:0|full"
+   ]
+  }
+ ]
+}

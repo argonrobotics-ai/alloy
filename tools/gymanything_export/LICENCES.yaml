@@ -1,0 +1,37 @@
+# Licence of every file in this folder (release builder table, docs/oss/release_pipeline.md "Licence tables").
+# Each ex_<sim>.py is Alloy code that runs Gym-Anything for Robotics' own builders (MIT, Copyright (c) 2026
+# cmu-l3) and carries their cited constants; the licence audit (licence_audit.py) found no other code or asset
+# that any exporter reads: no robot model, NVIDIA content or downloaded dressing. Helpers are Alloy's own code.
+schema: alloy.licences/1
+entries:
+  - {path: ex_barcode_scanning.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_classroom_arrangement.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_concrete_finishing.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_control_cable.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_deposit_cans.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_drilling.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_filleting.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_football.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_forklift.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_gift_bags.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_ingredient_mixing.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_label_application.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_laundry.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_lockkey.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_painting.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_pencap.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_percussion.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_sewing.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_soil_excavation.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_surface_rinsing.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_sweeping.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_syringe_handling.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_tighten_codex.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_titrate.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_welding.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_whiteboard.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_wine_pouring.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: ex_wiping.py, licence: MIT, source: "https://github.com/gym-anything/robotics @febb260"}
+  - {path: _common.py, licence: Apache-2.0, source: "Alloy (this repository)"}
+  - {path: run.py, licence: Apache-2.0, source: "Alloy (this repository)"}
+  - {path: licence_audit.py, licence: Apache-2.0, source: "Alloy (this repository)"}

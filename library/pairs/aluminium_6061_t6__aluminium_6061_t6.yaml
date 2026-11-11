@@ -1,0 +1,20 @@
+schema: alloy.pair/1
+a: aluminium_6061_t6
+b: aluminium_6061_t6
+mu_static:
+  value: 1.05
+  source: catalog
+  unc: [1.0, 1.35]
+  note: Engineering ToolBox friction-coefficients-d_778 Al/Al clean dry static 1.05-1.35, kinetic 0.4; uses 1.05 as the single
+    mu
+mu_dynamic:
+  value: 0.4
+  source: catalog
+  unc: [0.35, 0.45]
+  note: Engineering ToolBox friction-coefficients-d_778 Al/Al clean dry static 1.05-1.35, kinetic 0.4; uses 1.05 as the single
+    mu
+torsional_lever:
+  value: 1.0e-05
+  source: model
+  note: MuJoCo floor; Hertz lever 1e-6..1e-4 m
+single_mu: static

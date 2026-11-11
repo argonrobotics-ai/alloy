@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: film_lldpe_sheet
+shape:
+  primitive:
+    kind: box
+    size: [0.15, 0.15, 1.27e-05]
+material: film_lldpe
+features:
+  thickness:
+    value: 2.54e-05
+    source: catalog
+    note: 'DOC: the C4LL 1018 datasheet test film "Film (1.0 mil/25.4 micron)" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000000546/0/en'
+  min_wall:
+    value: 2.54e-05
+    source: catalog
+    note: 'DOC: the C4LL 1018 datasheet test film "Film (1.0 mil/25.4 micron)" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000000546/0/en
+      (contact uses the film route particle radius, 0.5 mm)'
+budget:
+  particles: 441
+route:
+  route: cloth_film
+  reason: 'thin plastic film: strain-capped membrane, hinge bending with crease memory and air drag'

@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: rolling_pin_beech
+shape:
+  primitive:
+    kind: capsule
+    size: [0.0225, 0.0775]
+material: wood_beech

@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: silicone_mat
+shape:
+  primitive:
+    kind: box
+    size: [0.15, 0.1, 0.0005]
+material: silicone_40a
+features:
+  thickness:
+    value: 0.001
+    source: model
+    note: 1 mm mat
+  min_wall:
+    value: 0.001
+    source: model
+    note: 1 mm mat

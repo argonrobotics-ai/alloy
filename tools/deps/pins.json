@@ -1,0 +1,199 @@
+{
+  "schema": "alloy.deps/1",
+  "checked": "2026-11-09",
+  "python": ">=3.11,<3.13",
+  "deps": [
+    {
+      "name": "newton",
+      "module": "alloy._vendor.newton",
+      "kind": "vendored",
+      "pin": "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0",
+      "version": "1.8.0rc1",
+      "base": "db915e1c79e9e4a09f61221f743e1e4fe814d75c",
+      "base_in_release": null,
+      "where": [
+        "alloy/_vendor/VENDORED.md",
+        "alloy/core/newton_compat.py NEWTON_PIN"
+      ],
+      "why": "Alloy uses Newton 1.8 APIs (coupled solvers, compact soft contacts) that no final release has yet, plus eleven VBD cloth and contact commits and the N-solver proxy coupling of ours on top of the public release-1.8 branch (2026-11-09, five days after 1.8.0rc1). The commit ships inside the alloy-engine wheel as alloy/_vendor/newton (its LICENSE, NOTICE and SPDX headers kept), so installing Alloy never installs or touches a separate newton package.",
+      "released": false,
+      "patches": [
+        {
+          "commit": "1b9275393c29a5b302d518a87ae26c736fe7f3ae",
+          "was": "5721809f",
+          "topic": "bending",
+          "upstream": "pr-open",
+          "pr": 5131,
+          "why": "the dihedral bending force of hinges with triangles under about 1 mm was dropped (degeneracy test was absolute)"
+        },
+        {
+          "commit": "1c4c9440ebbbc62f727e7e40a1de3f98d3a4c52f",
+          "was": "00199c60",
+          "topic": "bending",
+          "upstream": "pr-open",
+          "pr": 5131,
+          "why": "test for the bending fix"
+        },
+        {
+          "commit": "11b06386458e84137ded9621a2b2f540dbb7fde6",
+          "was": "a30fc1e4",
+          "topic": "bending",
+          "upstream": "pr-open",
+          "pr": 5131,
+          "why": "test for the bending fix"
+        },
+        {
+          "commit": "762c75c9324473b28032465ccda4e52ac7f9b533",
+          "was": "6a4c1483",
+          "topic": "lumped-corner-hessian",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "edge/face soft contacts over-relaxed with a squared barycentric weight; a clamped sheet chattered and lost most of its friction at 10-20 iterations"
+        },
+        {
+          "commit": "4e578c412559a254961a802290f4d03fb271581b",
+          "was": "65b7c92e",
+          "topic": "lumped-corner-hessian",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "tests for the lumped corner Hessian"
+        },
+        {
+          "commit": "28b23602b86d0fe897c9f0553f74569ffa9d99e0",
+          "was": "55a6cdd4",
+          "topic": "smooth-self-contact-onset",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "self-contact stiffness jumped from 0 to full at the contact distance; resting cloth layers jittered"
+        },
+        {
+          "commit": "0017063a4bfc4bc2eabc12cb77582da552f4a75a",
+          "was": "47afecd7",
+          "topic": "lumped-corner-hessian",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "tests aligned with the lumped corner Hessian (tests only; the attachment test is upstream's rewrite from #5146)"
+        },
+        {
+          "commit": "217d9a77976c3ff4d9c80c2b4f3fe9e98cc1f05a",
+          "was": "4629ac08",
+          "topic": "membrane-normal",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "the out-of-plane stiffness of the membrane Hessian made flat cloth converge very slowly out of plane"
+        },
+        {
+          "commit": "948b257c2ab2d6bcd2c4ff9cae459c5016db4f60",
+          "was": "8f3466f9",
+          "topic": "membrane-normal",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "keeps the clamped normal stiffness for cloth pieces in contact (the exact value broke gripper pinches and resting film); ported onto release-1.8's accumulate_elasticity_force_and_hessian"
+        },
+        {
+          "commit": "3cfcde2e06be3c0c5b554b036a06ebcbd6b56992",
+          "was": "4c8869b7",
+          "topic": "pinned-piece-start",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "a pinned sheet with stiff hinges settled past its static equilibrium at finite iterations (inertial start x + h*v + h^2*a_ext); pinned pieces start from x + h*v"
+        },
+        {
+          "commit": "4be4c8219c70c5bc6f0fa1a417c63722f66299d2",
+          "was": "4f3b41ef",
+          "topic": "bending-angle-wrap",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "a fold resting near +-pi read a 2*pi bending-angle difference and got a wrong-way torque (jitter on folds and seams)"
+        },
+        {
+          "commit": "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0",
+          "was": "d15a836c",
+          "topic": "proxy-graph",
+          "upstream": "not-posted",
+          "pr": null,
+          "why": "couple more than two solvers over an acyclic proxy graph (SolverCoupledProxy): robot -> soft body -> liquid chains"
+        }
+      ],
+      "routes": {
+        "vendored": "shipped inside alloy-engine as alloy/_vendor/newton; no separate newton wheel",
+        "release": "public newton==1.8.0 from PyPI once final, with the unmerged commits upstreamed or vendored (paused)",
+        "wait": "#5146 is upstream and in the base; #5131 is open; nine commits are not posted"
+      },
+      "path": "alloy/_vendor/newton",
+      "base_branch": "release-1.8",
+      "base_contains_release": "1.8.0rc1",
+      "dropped": [
+        {
+          "was": "5db5889f",
+          "pr": 5146,
+          "upstream_commit": "99374901c",
+          "why": "attachment forces in the deterministic VBD contact gather: merged upstream and in release-1.8, so the base carries it"
+        }
+      ]
+    },
+    {
+      "name": "mujoco-warp",
+      "module": "alloy._vendor.mujoco_warp",
+      "kind": "vendored",
+      "pin": "f34c6dd52813852d0f1a2ab6d1f4d21ef1f0829f",
+      "version": "3.17.0",
+      "where": [
+        "alloy/_vendor/VENDORED.md",
+        "alloy/core/newton_compat.py MJWARP_PIN",
+        "alloy/precision/mjw_pin.py PIN"
+      ],
+      "why": "release v3.17.0, the MuJoCo Warp that Newton release-1.8 is built against (its eq_data is 12 wide, MuJoCo 3.17's layout). Files unchanged; it ships inside the alloy-engine wheel as alloy/_vendor/mujoco_warp (LICENSE and SPDX headers kept) so its Warp kernels carry Alloy's own names and a mujoco-warp of the user's is left alone. Alloy patches it at run time (the EPA of the unmerged mujoco_warp#1845, the ordered route).",
+      "released": true,
+      "in_release": "3.17.0",
+      "routes": {
+        "vendored": "shipped inside alloy-engine as alloy/_vendor/mujoco_warp; no separate mujoco-warp wheel",
+        "release": "mujoco-warp==3.17.0 on PyPI is the same code; requiring it instead would share Warp kernels with the user's copy and tie the run-time patches to whatever version is installed"
+      },
+      "path": "alloy/_vendor/mujoco_warp"
+    },
+    {
+      "name": "mujoco",
+      "module": "mujoco",
+      "kind": "pypi",
+      "pin": "3.17.0",
+      "where": [
+        "pyproject.toml (the vendored Newton release-1.8 and MuJoCo Warp v3.17.0 need MuJoCo 3.17)"
+      ],
+      "why": "MuJoCo C: MJCF loading, the CPU route for rigid bodies and robots, and CPU cross-checks. 3.17.0 is the version the vendored Newton release-1.8 and MuJoCo Warp v3.17.0 are built against (3.16 fails every MuJoCo-routed scene: eq_data is 11 wide there)",
+      "released": true,
+      "routes": {
+        "vendored": "mujoco==3.17.0 from PyPI"
+      }
+    },
+    {
+      "name": "warp-lang",
+      "module": "warp",
+      "kind": "pypi",
+      "pin": "1.18.0",
+      "where": [
+        "pyproject.toml (the vendored Newton needs warp-lang>=1.17.0)"
+      ],
+      "why": "the GPU kernel language under Newton and MuJoCo Warp; 1.18.0 is what every Alloy result ran on",
+      "released": true,
+      "routes": {
+        "vendored": "warp-lang==1.18.0 from PyPI (1.19.0 is newer and untested with Alloy)"
+      }
+    },
+    {
+      "name": "pytetwild",
+      "module": "pytetwild",
+      "kind": "pypi",
+      "pin": "0.2.3",
+      "extra": "mesh",
+      "where": [
+        "pyproject.toml [mesh]"
+      ],
+      "why": "tetrahedral meshing for soft bodies; 0.3+ imports pyvista at import time without declaring it",
+      "released": true,
+      "routes": {
+        "release": "keep the exact pin in the [mesh] extra"
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+<!-- A 100 x 80 x 60 mm box with a hinged 6 mm lid (articulated MJCF object for WP1 tests and demos). -->
+<mujoco model="hinged_box">
+  <compiler angle="radian"/>  <!-- the lid range is 0-2 rad; MJCF reads angles in degrees by default (XB4-7) -->
+  <worldbody>
+    <body name="box" pos="0 0 0.03">
+      <freejoint/>
+      <geom name="base" type="box" size="0.05 0.04 0.03" density="600"/>
+      <body name="lid" pos="0 0.04 0.03">
+        <joint name="hinge" type="hinge" axis="-1 0 0" range="0 2"/>  <!-- positive q lifts the lid -->
+        <geom name="lid" type="box" size="0.05 0.04 0.003" pos="0 -0.04 0.003" density="600"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

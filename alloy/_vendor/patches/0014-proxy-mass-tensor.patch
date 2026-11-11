@@ -1,0 +1,347 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/rigid_vbd_kernels.py b/alloy/_vendor/newton/_src/solvers/vbd/rigid_vbd_kernels.py
+index 2508ae755..0039446f3 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/rigid_vbd_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/rigid_vbd_kernels.py
+@@ -4151,6 +4151,133 @@ def forward_step_rigid_bodies(
+     body_inertia_q[tid] = q_new
+ 
+ 
++# Alloy (proxy-mass-tensor): the two definitions below are new; ``forward_step_rigid_bodies`` above is unchanged.
++@wp.func
++def integrate_rigid_body_tensor(
++    q: wp.transform,
++    qd: wp.spatial_vector,
++    f: wp.spatial_vector,
++    com: wp.vec3,
++    inertia: wp.mat33,
++    inv_mass: float,
++    inv_mass_tensor: wp.mat33,
++    inv_inertia: wp.mat33,
++    gravity: wp.vec3,
++    angular_damping: float,
++    dt: float,
++):
++    """``integrate_rigid_body`` (solvers/solver.py) with a 3x3 inverse mass for the force term.
++
++    ``inv_mass_tensor`` is in the body frame; the world tensor is ``R * inv_mass_tensor * R^T`` with R the
++    orientation at the start of the step (``q``). Gravity enters as the force ``gravity / inv_mass`` through the
++    same tensor: a body with ``identity * inv_mass`` falls with g as before, and a coupling proxy, whose force
++    input already carries ``-gravity / inv_mass`` from the coupler (``subtract_proxy_body_forces_kernel``), has no
++    net gravity along any direction, as with the scalar mass. Every other line is ``integrate_rigid_body``'s.
++    """
++    # unpack transform
++    x0 = wp.transform_get_translation(q)
++    r0 = wp.transform_get_rotation(q)
++
++    # unpack spatial twist
++    w0 = wp.spatial_bottom(qd)
++    v0 = wp.spatial_top(qd)
++
++    # unpack spatial wrench
++    t0 = wp.spatial_bottom(f)
++    f0 = wp.spatial_top(f)
++
++    x_com = x0 + wp.quat_rotate(r0, com)
++
++    # linear part: world inverse mass tensor from the start-of-step orientation
++    rot0 = wp.quat_to_matrix(r0)
++    inv_mass_world = rot0 * inv_mass_tensor * wp.transpose(rot0)
++    weight = wp.vec3(0.0, 0.0, 0.0)
++    if inv_mass > 0.0:
++        weight = gravity / inv_mass
++    v1 = v0 + inv_mass_world * (f0 + weight) * dt
++    x1 = x_com + v1 * dt
++
++    # angular part (compute in body frame)
++    wb = wp.quat_rotate_inv(r0, w0)
++    tb = wp.quat_rotate_inv(r0, t0) - wp.cross(wb, inertia * wb)  # coriolis forces
++
++    w1 = wp.quat_rotate(r0, wb + inv_inertia * tb * dt)
++    r1 = wp.normalize(r0 + wp.quat(w1, 0.0) * r0 * 0.5 * dt)
++
++    # angular damping
++    w1 *= 1.0 - angular_damping * dt
++
++    q_new = wp.transform(x1 - wp.quat_rotate(r1, com), r1)
++    qd_new = wp.spatial_vector(v1, w1)
++
++    return q_new, qd_new
++
++
++@wp.kernel
++def forward_step_rigid_bodies_tensor(
++    # Inputs
++    dt: float,
++    gravity: wp.array[wp.vec3],
++    body_world: wp.array[wp.int32],
++    pose_rebaseline_mask: wp.array[wp.bool],
++    body_f: wp.array[wp.spatial_vector],
++    body_com: wp.array[wp.vec3],
++    body_inertia: wp.array[wp.mat33],
++    body_inv_mass: wp.array[float],
++    body_inv_inertia: wp.array[wp.mat33],
++    body_q: wp.array[wp.transform],
++    body_qd: wp.array[wp.spatial_vector],
++    body_inv_mass_tensor: wp.array[wp.mat33],
++    body_q_prev: wp.array[wp.transform],
++    body_inertia_q: wp.array[wp.transform],
++):
++    """``forward_step_rigid_bodies`` with a per-body 3x3 inverse mass (body frame) for the force term.
++
++    A copy of ``forward_step_rigid_bodies`` that takes ``body_inv_mass_tensor`` and calls
++    :func:`integrate_rigid_body_tensor`. The scalar ``body_inv_mass`` still gates kinematic bodies and gravity.
++    """
++    tid = wp.tid()
++
++    world_idx = body_world[tid]
++    q_current = body_q[tid]
++    if _world_selected(world_idx, pose_rebaseline_mask):
++        # The constructor or reset() may precede state pose preparation.
++        body_q_prev[tid] = q_current
++
++    # Early exit for kinematic bodies (inv_mass == 0).
++    inv_m = body_inv_mass[tid]
++    if inv_m == 0.0:
++        body_inertia_q[tid] = q_current
++        return
++
++    # Read body state (only for dynamic bodies)
++    qd_current = body_qd[tid]
++    f_current = body_f[tid]
++    com_local = body_com[tid]
++    I_local = body_inertia[tid]
++    inv_I = body_inv_inertia[tid]
++    world_g = gravity[world_idx]
++
++    q_new, qd_new = integrate_rigid_body_tensor(
++        q_current,
++        qd_current,
++        f_current,
++        com_local,
++        I_local,
++        inv_m,
++        body_inv_mass_tensor[tid],
++        inv_I,
++        world_g,
++        0.0,  # angular_damping = 0 (consistent with particle VBD)
++        dt,
++    )
++
++    # Update current transform, velocity, and set inertial target
++    body_q[tid] = q_new
++    body_qd[tid] = qd_new
++    body_inertia_q[tid] = q_new
++
++
+ @wp.kernel
+ def build_body_body_contact_lists(
+     rigid_contact_count: wp.array[int],
+@@ -6278,8 +6405,15 @@ def compute_body_particle_contact_forces(
+ 
+ 
+ @functools.cache
+-def create_solve_rigid_body(has_tendons: bool):
+-    """Specialize the body solve to exclude tendon assembly for tendon-free models."""
++def create_solve_rigid_body(has_tendons: bool, mass_tensor: bool = False):
++    """Specialize the body solve to exclude tendon assembly for tendon-free models.
++
++    Alloy (proxy-mass-tensor): with ``mass_tensor`` the kernel's ``body_mass`` argument is an array of 3x3 mass tensors
++    (body frame) and the linear inertial term uses the full tensor. Both choices are static, so the default
++    variant has the argument types and the generated code it had without this option.
++    """
++    # Alloy (proxy-mass-tensor): the type of the kernel's ``body_mass`` argument.
++    body_mass_array = wp.array[wp.mat33] if mass_tensor else wp.array[float]
+ 
+     # Separate module so SolverVBD can enable fast math; keep small-angle sin/cos out of reachable code
+     @_alloy_warp.kernel(module="unique", enable_backward=False)
+@@ -6289,7 +6423,7 @@ def create_solve_rigid_body(has_tendons: bool):
+         body_q: wp.array[wp.transform],
+         body_q_prev: wp.array[wp.transform],
+         body_q_rest: wp.array[wp.transform],
+-        body_mass: wp.array[float],
++        body_mass: body_mass_array,
+         body_inv_mass: wp.array[float],
+         body_inertia: wp.array[wp.mat33],
+         body_inertia_q: wp.array[wp.transform],
+@@ -6382,7 +6516,9 @@ def create_solve_rigid_body(has_tendons: bool):
+             body_ids_in_color: Body indices in current color group (for parallel coloring).
+             body_q_prev: Previous body transforms (for damping and friction).
+             body_q_rest: Rest transforms (for joint targets).
+-            body_mass: Body masses.
++            body_mass: Body masses. With ``mass_tensor``: 3x3 mass tensors in the body frame; the world tensor
++                is ``R * M * R^T`` with R the orientation in ``body_q_prev`` (the pose the step started from,
++                the same over all iterations).
+             body_inv_mass: Inverse masses (0 for kinematic bodies).
+             body_inertia: Inertia tensors (local body frame).
+             body_inertia_q: Inertial target transforms (from forward integration).
+@@ -6433,8 +6569,16 @@ def create_solve_rigid_body(has_tendons: bool):
+         com_star = pos_star + wp.quat_rotate(rot_star, body_com_local)
+ 
+         # Linear inertial force and Hessian
+-        inertial_coeff = m * dt_sqr_reciprocal
+-        f_lin = (com_star - com_current) * inertial_coeff
++        if wp.static(mass_tensor):
++            # Alloy (proxy-mass-tensor): m is the body-frame mass tensor. Its world form gives the force here and the full
++            # 3x3 Hessian block below; the scalar diagonal term is zero.
++            R_start = wp.quat_to_matrix(wp.transform_get_rotation(body_q_prev[body_index]))
++            inertial_ll = (R_start * m * wp.transpose(R_start)) * dt_sqr_reciprocal
++            inertial_coeff = 0.0
++            f_lin = inertial_ll * (com_star - com_current)
++        else:
++            inertial_coeff = m * dt_sqr_reciprocal
++            f_lin = (com_star - com_current) * inertial_coeff
+ 
+         # Compute relative rotation via quaternion difference
+         # dq = q_current^-1 * q_star
+@@ -6481,6 +6625,8 @@ def create_solve_rigid_body(has_tendons: bool):
+             ext_h_ll[2, 1],
+             ext_h_ll[2, 2] + inertial_coeff,
+         )
++        if wp.static(mass_tensor):
++            h_ll = h_ll + inertial_ll
+ 
+         if wp.static(has_tendons):
+             tendon_force, tendon_torque, tendon_h_ll, tendon_h_al, tendon_h_aa = evaluate_tendon_force_hessians(
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+index da3b44194..4fcde18a2 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+@@ -90,6 +90,7 @@ from .rigid_vbd_kernels import (
+     compute_rod_dahl_parameters,
+     create_solve_rigid_body,
+     forward_step_rigid_bodies,
++    forward_step_rigid_bodies_tensor,
+     init_body_body_contact_materials,
+     init_body_body_contacts_alm,
+     init_body_particle_contacts,
+@@ -1133,6 +1134,12 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+ 
+         options = {"deterministic": effective_deterministic, "deterministic_max_records": 0}
+         self._solve_rigid_body_kernel = create_solve_rigid_body(model.tendon_count > 0)
++        # Alloy (proxy-mass-tensor): per-body 3x3 mass tensors for coupling proxies, off until set_proxy_mass_tensors().
++        self.body_inv_mass_tensor = None
++        self.body_mass_tensor = None
++        self.proxy_mass_tensor_enabled = False
++        self._solve_rigid_body_tensor_kernel = None
++        self._solve_rigid_body_module_options = options | {"fast_math": enable_fast_math}
+         if integrates_rigid_bodies:
+             rigid_modules = (
+                 rigid_vbd_kernels,
+@@ -1683,6 +1690,55 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                 "or ModelBuilder.set_coloring() before calling ModelBuilder.finalize()."
+             )
+ 
++    def set_proxy_mass_tensors(self, inv_mass_tensor: np.ndarray | None, mass_tensor: np.ndarray | None) -> None:
++        """Alloy (proxy-mass-tensor): give every body a 3x3 inverse mass and mass for the linear part of the rigid solve.
++
++        Both arrays are ``(body_count, 3, 3)``, in each body's own frame (world tensor ``R T R^T`` with R the
++        body's orientation), and inverses of each other; pass ``identity * inv_mass`` and ``identity * mass`` for
++        a body that keeps its scalar mass. The forward step then uses ``inv_mass_tensor`` for the force term and
++        the body solve ``mass_tensor`` for its inertial term; gravity enters as the weight ``gravity / inv_mass``
++        through the same tensor; gates and seeds keep the scalar masses.
++
++        The first call allocates the two device arrays and builds the tensor variant of the solve kernel; later
++        calls copy into the same arrays. ``None, None`` switches back to the scalar kernels (the arrays stay).
++        Switch before a CUDA graph is captured: a captured graph keeps the kernels it was captured with.
++        A model with tendons keeps the scalar kernels (a warning says so). Checked on the CPU only.
++
++        Raises:
++            ValueError: one argument is None, a shape is not ``(body_count, 3, 3)``, or this solver does not
++                integrate rigid bodies.
++        """
++        if inv_mass_tensor is None and mass_tensor is None:
++            self.proxy_mass_tensor_enabled = False
++            return
++        if inv_mass_tensor is None or mass_tensor is None:
++            raise ValueError("set_proxy_mass_tensors needs both tensors, or None for both")
++        if not self._integrates_rigid_bodies:
++            raise ValueError("set_proxy_mass_tensors: this SolverVBD does not integrate rigid bodies")
++        if self.model.tendon_count > 0:
++            # The tendon variant of the tensor solve has never been stepped: keep the scalar kernels.
++            warnings.warn(
++                "set_proxy_mass_tensors: the model has tendons; the scalar proxy masses are kept", stacklevel=2
++            )
++            self.proxy_mass_tensor_enabled = False
++            return
++        shape = (self.model.body_count, 3, 3)
++        values = [np.ascontiguousarray(a, dtype=np.float32) for a in (inv_mass_tensor, mass_tensor)]
++        for name, value in zip(("inv_mass_tensor", "mass_tensor"), values, strict=True):
++            if value.shape != shape:
++                raise ValueError(f"set_proxy_mass_tensors: {name} has shape {value.shape}, expected {shape}")
++        if self.body_inv_mass_tensor is None:
++            self.body_inv_mass_tensor = wp.array(values[0], dtype=wp.mat33, device=self.device)
++            self.body_mass_tensor = wp.array(values[1], dtype=wp.mat33, device=self.device)
++            self._solve_rigid_body_tensor_kernel = create_solve_rigid_body(False, True)
++            self._set_module_options(
++                self._solve_rigid_body_module_options, module=self._solve_rigid_body_tensor_kernel.module
++            )
++        else:
++            self.body_inv_mass_tensor.assign(values[0])
++            self.body_mass_tensor.assign(values[1])
++        self.proxy_mass_tensor_enabled = True
++
+     @override
+     def notify_model_changed(self, flags: ModelFlags | int) -> None:
+         """Refresh solver caches affected by the specified model-property flags."""
+@@ -4289,21 +4345,27 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                 )
+ 
+             # Forward integrate rigid bodies (body_q modified in-place for dynamic bodies only).
++            forward_inputs = [
++                dt,
++                model.gravity,
++                model.body_world,
++                self._rigid_pose_rebaseline_mask,
++                body_f_for_integration,
++                model.body_com,
++                model.body_inertia,
++                self.body_inv_mass_effective,
++                self.body_inv_inertia_effective,
++                state_in.body_q,  # input/output
++                state_in.body_qd,  # input/output
++            ]
++            forward_kernel = forward_step_rigid_bodies
++            if self.proxy_mass_tensor_enabled:
++                # Alloy (proxy-mass-tensor): the force term reads the per-body 3x3 inverse mass.
++                forward_kernel = forward_step_rigid_bodies_tensor
++                forward_inputs.append(self.body_inv_mass_tensor)
+             wp.launch(
+-                kernel=forward_step_rigid_bodies,
+-                inputs=[
+-                    dt,
+-                    model.gravity,
+-                    model.body_world,
+-                    self._rigid_pose_rebaseline_mask,
+-                    body_f_for_integration,
+-                    model.body_com,
+-                    model.body_inertia,
+-                    self.body_inv_mass_effective,
+-                    self.body_inv_inertia_effective,
+-                    state_in.body_q,  # input/output
+-                    state_in.body_qd,  # input/output
+-                ],
++                kernel=forward_kernel,
++                inputs=forward_inputs,
+                 outputs=[
+                     self.body_q_prev,  # rebaselined for flagged worlds (first step / reset)
+                     self.body_inertia_q,
+@@ -5023,15 +5085,17 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                     device=self.device,
+                 )
+ 
++            # Alloy (proxy-mass-tensor): with proxy mass tensors on, the tensor variant reads them in place of body_mass.
++            tensor_solve = self.proxy_mass_tensor_enabled
+             wp.launch(
+-                kernel=self._solve_rigid_body_kernel,
++                kernel=self._solve_rigid_body_tensor_kernel if tensor_solve else self._solve_rigid_body_kernel,
+                 inputs=[
+                     dt,
+                     color_group,
+                     state_in.body_q,
+                     self.body_q_prev,
+                     model.body_q,
+-                    model.body_mass,
++                    self.body_mass_tensor if tensor_solve else model.body_mass,
+                     self.body_inv_mass_effective,
+                     model.body_inertia,
+                     self.body_inertia_q,

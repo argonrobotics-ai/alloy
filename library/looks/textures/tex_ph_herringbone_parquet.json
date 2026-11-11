@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_herringbone_parquet",
+ "family": "floor",
+ "preset": "wood_oak",
+ "texture": "polyhaven:herringbone_parquet",
+ "res": "2k",
+ "scale_m": 3.4,
+ "bump_m": 0.0005,
+ "source": "https://polyhaven.com/a/herringbone_parquet",
+ "author": "Jenelle van Heerden, Sergej Majboroda",
+ "licence": "CC0-1.0",
+ "albedo": 0.186,
+ "note": "herringbone parquet: Poly Haven 'Herringbone Parquet', 3.4 m tile, 2k maps"
+}

@@ -1,0 +1,27 @@
+diff --git a/alloy/_vendor/newton/_src/geometry/contact_match.py b/alloy/_vendor/newton/_src/geometry/contact_match.py
+index a091eb96a..58ceeae2a 100644
+--- a/alloy/_vendor/newton/_src/geometry/contact_match.py
++++ b/alloy/_vendor/newton/_src/geometry/contact_match.py
+@@ -497,8 +497,11 @@ def _save_sorted_state_kernel(data: _SaveStateData):
+ #
+ # Sticky mode preserves only the fields that actually change across frames
+ # for a matched contact: the body-frame contact points (``point0``/``point1``)
+-# and offsets (``offset0``/``offset1``), plus the world-frame normal (which
+-# is already persisted for matching in ``_prev_normal``, no extra allocation).
++# and offsets (``offset0``/``offset1``). Alloy (SCR-WP9-ROD F3): the normal is
++# not replayed. It is world-frame (``_prev_normal``), so it does not turn with the
++# bodies: a gripped rod rolled 0.3 rad by its pads kept its first-contact normal,
++# and the tilted normal force pushed the wrist back with 125x the rod's torque.
++# The fresh frame's normal is used with the replayed body-frame witnesses.
+ #
+ # Everything else is either key-derived or a per-shape constant that does
+ # not change between frames, so the new frame's values are already correct:
+@@ -576,7 +579,7 @@ def _replay_matched_kernel(data: _ReplayData):
+     data.point1[tid] = data.prev_point1[idx]
+     data.offset0[tid] = data.prev_offset0[idx]
+     data.offset1[tid] = data.prev_offset1[idx]
+-    data.normal[tid] = data.prev_normal[idx]
++    # Alloy (SCR-WP9-ROD F3): keep the fresh normal (module note above), not data.prev_normal[idx].
+ 
+ 
+ # ------------------------------------------------------------------

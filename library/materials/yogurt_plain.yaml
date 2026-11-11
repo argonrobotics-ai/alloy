@@ -1,0 +1,46 @@
+schema: alloy.material/1
+name: yogurt_plain
+density:
+  value: 1045.0
+  source: measured
+  unc: [1031.0, 1060.0]
+  note: 'SNIPPET: FAO/INFOODS density database v2, row ''Yoghurt, plain, unsweetened'' 1.06 g/ml (source FNDDS 4.1) and a
+    second plain yoghurt row at 1.031, read in search summaries of an uploaded copy (https://www.scribd.com/document/520916457/Densitydatabasev2-1);
+    the FAO repository page and file did not open (403 / 404); midpoint'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+plastic:
+  yield_stress:
+    value: 11.7
+    source: fit
+    unc: [11.31, 12.09]
+    note: 'Herschel-Bulkley fit of a low-fat commercial dairy yogurt (20 C, cup and bob, 0-200-0 1/s, fit on the down ramp):
+      tau0 11.7 ± 0.39 Pa, K 2.50 ± 0.37 Pa·s^n, n 0.55 ± 0.03, R2 0.91; apparent viscosity 0.24 Pa s at 200 1/s; https://pmc.ncbi.nlm.nih.gov/articles/PMC7142433/'
+fluid:
+  viscosity:
+    value: 0.887
+    source: fit
+    unc: [0.705, 1.091]
+    note: 'Bingham plastic viscosity at 10 1/s from the same fit: K 10^n / 10 = 2.50 x 3.548 / 10 = 0.887 Pa s (the starting
+      value; the yield stress routes it to the paste solver, which sets each particle''s viscosity from K and n); fit: https://pmc.ncbi.nlm.nih.gov/articles/PMC7142433/'
+  consistency:
+    value: 2.5
+    source: fit
+    unc: [2.13, 2.87]
+    note: Herschel-Bulkley K of the same fit (2.50 ± 0.37 Pa·s^n), https://pmc.ncbi.nlm.nih.gov/articles/PMC7142433/
+  flow_index:
+    value: 0.55
+    source: fit
+    unc: [0.52, 0.58]
+    note: Herschel-Bulkley n of the same fit (0.55 ± 0.03), https://pmc.ncbi.nlm.nih.gov/articles/PMC7142433/

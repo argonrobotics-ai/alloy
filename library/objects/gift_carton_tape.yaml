@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: gift_carton_tape
+shape:
+  primitive:
+    kind: box
+    size: [0.185, 0.024, 2.4e-05]
+material: film_hdpe
+features:
+  thickness:
+    value: 4.8e-05
+    source: catalog
+    note: 'DOC: 3M Scotch Box Sealing Tape 371 TDS (Oct 2006, 70-0710-0274-8) "Tape Thickness: 1.9 mil (0.048 mm) D-3652",
+      backing "Biaxially oriented polypropylene"; a 48 mm x 370 mm strip over a carton''s top seam with a 10 mm tab (alloy/tasks/gift_carton_tape.py).
+      The backing is the library''s HDPE film (no BOPP film card): E 1.0 GPa against BOPP''s ~2 GPa, which only sets the strip''s
+      bending and weight here; the peel arm''s E·t is the Bonds config''s'
+  min_wall:
+    value: 4.8e-05
+    source: catalog
+    note: 'DOC: the same sheet "Tape Thickness: 1.9 mil (0.048 mm)" (contact uses the film route particle radius)'
+budget:
+  particles: 700
+route:
+  route: cloth_film
+  reason: 'box-sealing tape: a strain-capped film strip that WP13''s Bonds plug-in bonds to the carton and peels'

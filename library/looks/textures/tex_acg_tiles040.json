@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_tiles040",
+ "family": "tile",
+ "preset": "ceramic_white",
+ "texture": "ambientcg:Tiles040",
+ "res": "1k",
+ "scale_m": 0.6,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Tiles040",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.709,
+ "note": "terrazzo tiles: ambientCG 'Tiles 040', 0.6 m tile, 1k maps"
+}

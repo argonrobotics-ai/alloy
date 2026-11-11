@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_floor_tiles_06",
+ "family": "floor",
+ "preset": "ceramic_white",
+ "texture": "polyhaven:floor_tiles_06",
+ "res": "2k",
+ "scale_m": 3.0,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/floor_tiles_06",
+ "author": "Rob Tuytel",
+ "licence": "CC0-1.0",
+ "albedo": 0.176,
+ "note": "floor tiles: Poly Haven 'Floor Tiles 06', 3 m tile, 2k maps"
+}

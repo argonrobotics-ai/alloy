@@ -1,0 +1,362 @@
+[
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__0.npz",
+  "index": 0,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__1.npz",
+  "index": 1,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__2.npz",
+  "index": 2,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__3.npz",
+  "index": 3,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__4.npz",
+  "index": 4,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__5.npz",
+  "index": 5,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__6.npz",
+  "index": 6,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__7.npz",
+  "index": 7,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__8.npz",
+  "index": 8,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__9.npz",
+  "index": 9,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__10.npz",
+  "index": 10,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__11.npz",
+  "index": 11,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__12.npz",
+  "index": 12,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__13.npz",
+  "index": 13,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__14.npz",
+  "index": 14,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__15.npz",
+  "index": 15,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__16.npz",
+  "index": 16,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__17.npz",
+  "index": 17,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__18.npz",
+  "index": 18,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop5cm",
+  "file": "trials/drop5cm__19.npz",
+  "index": 19,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__0.npz",
+  "index": 0,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__1.npz",
+  "index": 1,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__2.npz",
+  "index": 2,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__3.npz",
+  "index": 3,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__4.npz",
+  "index": 4,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__5.npz",
+  "index": 5,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__6.npz",
+  "index": 6,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__7.npz",
+  "index": 7,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__8.npz",
+  "index": 8,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__9.npz",
+  "index": 9,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__10.npz",
+  "index": 10,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__11.npz",
+  "index": 11,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__12.npz",
+  "index": 12,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__13.npz",
+  "index": 13,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__14.npz",
+  "index": 14,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__15.npz",
+  "index": 15,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__16.npz",
+  "index": 16,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__17.npz",
+  "index": 17,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__18.npz",
+  "index": 18,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop10cm",
+  "file": "trials/drop10cm__19.npz",
+  "index": 19,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__0.npz",
+  "index": 0,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__1.npz",
+  "index": 1,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__2.npz",
+  "index": 2,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__3.npz",
+  "index": 3,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__4.npz",
+  "index": 4,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__5.npz",
+  "index": 5,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__6.npz",
+  "index": 6,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__7.npz",
+  "index": 7,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__8.npz",
+  "index": 8,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__9.npz",
+  "index": 9,
+  "split": "calib"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__10.npz",
+  "index": 10,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__11.npz",
+  "index": 11,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__12.npz",
+  "index": 12,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__13.npz",
+  "index": 13,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__14.npz",
+  "index": 14,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__15.npz",
+  "index": 15,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__16.npz",
+  "index": 16,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__17.npz",
+  "index": 17,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__18.npz",
+  "index": 18,
+  "split": "valid"
+ },
+ {
+  "condition_id": "drop15cm",
+  "file": "trials/drop15cm__19.npz",
+  "index": 19,
+  "split": "valid"
+ }
+]

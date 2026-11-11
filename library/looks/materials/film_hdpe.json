@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "film_hdpe",
+ "preset": "plastic_translucent_white",
+ "roughness": 0.4,
+ "note": "HDPE film: milky translucent white (carrier-bag film)"
+}

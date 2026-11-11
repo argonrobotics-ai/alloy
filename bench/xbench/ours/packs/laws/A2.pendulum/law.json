@@ -1,0 +1,42 @@
+{
+ "law": "A2.pendulum",
+ "dt": 0.001,
+ "substeps": 1,
+ "duration_s": 2.0,
+ "metrics": {
+  "period_rel_err": {
+   "abs": 0.001,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A2: period <= 0.1 % at dt 1 ms"
+  }
+ },
+ "stat": {
+  "period_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "amp5deg",
+   "params": {
+    "theta0": 0.08726646259971647
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "amp45deg",
+   "params": {
+    "theta0": 0.7853981633974483
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "amp90deg",
+   "params": {
+    "theta0": 1.5707963267948966
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

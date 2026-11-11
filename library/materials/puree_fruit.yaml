@@ -1,0 +1,39 @@
+schema: alloy.material/1
+name: puree_fruit
+density:
+  value: 1040.0
+  source: model
+  unc: [1030.0, 1060.0]
+  note: 'ESTIMATE: no density in the rheology source; a puree of about 10 % soluble solids is close to a 10 Brix sugar solution
+    (1040 kg/m^3)'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+fluid:
+  viscosity:
+    value: 2.06
+    source: fit
+    unc: [1.15, 2.06]
+    note: 'apparent viscosity at 10 1/s of the power law below, K 10^(n-1) = 7.32 x 10^-0.55 = 2.06 Pa s (the starting value);
+      8.5 % solids (K 4.18, n 0.44) gives 1.15; fit: https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/'
+  consistency:
+    value: 7.32
+    source: fit
+    unc: [4.18, 7.32]
+    note: 'power law of a fruit sauce (fruit not named, so indicative for apple sauce), 26 C, Table 1 row ''Sauce fruit''
+      (after Steffe): 10.5 % solids n 0.45, K 7.32; 9.6 % n 0.45, K 5.63; 8.5 % n 0.44, K 4.18; no yield stress listed; https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/'
+  flow_index:
+    value: 0.45
+    source: fit
+    unc: [0.44, 0.45]
+    note: power-law n of the same row (10.5 % solids), https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/

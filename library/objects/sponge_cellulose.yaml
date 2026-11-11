@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: sponge_cellulose
+shape:
+  primitive:
+    kind: box
+    size: [0.057, 0.032, 0.0125]
+material: sponge_cellulose_wet

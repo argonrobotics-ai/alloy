@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_denim_fabric_03",
+ "family": "fabric",
+ "preset": "linen",
+ "texture": "polyhaven:denim_fabric_03",
+ "res": "1k",
+ "scale_m": 0.27,
+ "bump_m": 0.0004,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/denim_fabric_03",
+ "author": "colormass, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.095,
+ "note": "denim: Poly Haven 'Denim Fabric 03', 0.27 m tile, 1k maps"
+}

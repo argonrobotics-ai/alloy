@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_carpet016",
+ "family": "floor",
+ "preset": "cotton_terry",
+ "texture": "ambientcg:Carpet016",
+ "res": "2k",
+ "scale_m": 1.7,
+ "bump_m": 0.0015,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Carpet016",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.44,
+ "note": "beige carpet: ambientCG 'Carpet 016', 1.7 m tile, 2k maps"
+}

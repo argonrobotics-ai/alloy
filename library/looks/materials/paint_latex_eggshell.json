@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "paint_latex_eggshell",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.86,
+  0.84,
+  0.78
+ ],
+ "roughness": 0.35,
+ "subsurface": 0.1,
+ "note": "wet latex eggshell in the can, extra-white base: off-white, satin-wet sheen (the dry film is flatter; tint per task)"
+}

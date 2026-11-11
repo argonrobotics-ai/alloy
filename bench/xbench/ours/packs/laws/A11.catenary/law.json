@@ -1,0 +1,45 @@
+{
+ "law": "A11.catenary",
+ "dt": 0.002,
+ "substeps": 1,
+ "duration_s": 8.0,
+ "metrics": {
+  "sag_rel_err": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "bench \u00a74 A11: catenary sag within 1 %"
+  }
+ },
+ "stat": {
+  "sag_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "span90",
+   "params": {
+    "span": 0.9,
+    "links": 40.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "span80",
+   "params": {
+    "span": 0.8,
+    "links": 40.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "span60",
+   "params": {
+    "span": 0.6,
+    "links": 40.0
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

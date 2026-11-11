@@ -1,0 +1,12 @@
+{
+ "schema": "alloy.look/1",
+ "material": "steel_carbon",
+ "preset": "steel_brushed",
+ "base_color": [
+  0.55,
+  0.55,
+  0.56
+ ],
+ "roughness": 0.35,
+ "note": "bare carbon steel: darker than stainless"
+}

@@ -1,0 +1,9 @@
+schema: alloy.object/1
+name: shoelace_cotton
+shape:
+  curve:
+    points:
+    - [0.0, 0.0, 0.0]
+    - [1.2, 0.0, 0.0]
+    radius: 0.0020800000000000003
+material: cotton_woven

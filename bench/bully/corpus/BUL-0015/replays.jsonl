@@ -1,0 +1,1 @@
+{"by": "alloy-dev", "commit": "2b12d5855783108ec48516f4e75a70bb7e4a94fc", "counts": true, "date": "2026-11-03", "device": "cuda:0", "finding": "BUL-0015", "gpu": "L4", "kind": "command", "note": "WP5's measurement of the exact command (SCR-SC3-3), 4-5 GPU processes on the L4", "runs": 8, "trips": 3}

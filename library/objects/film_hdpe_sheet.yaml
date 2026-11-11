@@ -1,0 +1,23 @@
+schema: alloy.object/1
+name: film_hdpe_sheet
+shape:
+  primitive:
+    kind: box
+    size: [0.15, 0.15, 6.35e-06]
+material: film_hdpe
+features:
+  thickness:
+    value: 1.27e-05
+    source: catalog
+    note: 'DOC: the HD 5201 datasheet test film "Film (0.5 mil/12.7 micron)" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000100750/0/en
+      ; HDPE T-shirt bags are 12.5-15 um'
+  min_wall:
+    value: 1.27e-05
+    source: catalog
+    note: 'DOC: the HD 5201 datasheet test film "Film (0.5 mil/12.7 micron)" https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000100750/0/en
+      ; HDPE T-shirt bags are 12.5-15 um (contact uses the film route particle radius, 0.5 mm)'
+budget:
+  particles: 441
+route:
+  route: cloth_film
+  reason: 'thin plastic film: strain-capped membrane, hinge bending with crease memory and air drag'

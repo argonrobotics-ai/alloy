@@ -1,0 +1,40 @@
+schema: alloy.material/1
+name: sauce_ketchup
+density:
+  value: 1092.0
+  source: measured
+  unc: [1080.0, 1110.0]
+  note: tomato ketchup 1092 kg/m^3, Morna and Bura 2019, Annals Univ. Oradea XVIII/B (https://protmed.uoradea.ro/facultate/publicatii/ecotox_zooteh_ind_alim/2019B/Food/11%20Morna.pdf)
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+plastic:
+  yield_stress:
+    value: 21.8
+    source: measured
+    unc: [15.0, 30.0]
+    note: 'stress ramp 0-200 Pa, plate-plate 40 mm serrated, 25 C: ''Ketchup requires the most stress before it starts to
+      flow (21.8 Pa; see table in Figure 1)'', NETZSCH application note AN 250 (https://analyzing-testing.netzsch.com/_Resources/Persistent/c/b/f/f/cbff86c12d6e4f0fc004e0938e2bb28f717813c2/AN%20250_Why%20do%20you%20hit%20the%20end%20of%20your%20ketchup%20bottle.pdf);
+      literature values 15 Pa (De Kee 1980), 22.8 Pa (Ofoli 1987), 18-30 Pa (squeezing flow) and 26-30 Pa (vane), Table I
+      of Severa et al. 2005'
+fluid:
+  viscosity:
+    value: 1.8
+    source: fit
+    unc: [0.98, 3.23]
+    note: 'Bingham plastic viscosity, so that yield stress + viscosity x rate gives the measured stress at 10 1/s: commercial
+      ketchup power law ''K was constituted on 29.10 Pa.s n and flow behaviour index n on 0.136'' (Severa et al. 2005, Acta
+      Univ. Agric. Silvic. Mendelianae Brun. 53(2), https://acta.mendelu.cz/pdfs/acu/2005/02/01.pdf) gives 39.8 Pa at 10 1/s;
+      (39.8 - 21.8) / 10 = 1.8 Pa s. Range: 0.98 (yield 30 Pa) to 3.23 (their measured 4.73 Pa s at 10 1/s, yield 15 Pa).
+      No Herschel-Bulkley K and n here: the same paper''s power-law fits disagree (K 241.2, n 0.3778 from its spindle data
+      vs the 29.10 / 0.136 quoted in its text), so ketchup stays Bingham (yield stress + this viscosity)'

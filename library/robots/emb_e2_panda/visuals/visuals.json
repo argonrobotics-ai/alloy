@@ -1,0 +1,1466 @@
+{
+ "schema": "alloy.robot_visuals/1",
+ "pack": "emb_e2_panda",
+ "by": "alloy.tasks.emb_visuals",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "licence": "Apache-2.0 (mujoco_menagerie franka_emika_panda)",
+  "models": {
+   "franka_emika_panda/panda.xml": "c047a49f3c770ff2393e2a74f7e0fbd9d99080a305407254f8ff53ac053cde3b"
+  },
+  "meshes": {
+   "franka_emika_panda/assets/link0_0.obj": "6b9f41a4c203540daaeb7a33cc3d0d6c6a32dc8bba187074eeaf97b3e36b3f9c",
+   "franka_emika_panda/assets/link0_1.obj": "57673d2ee2a9db2e10c8986ae57c56a7c39c012b60fd26d7d8549553b664a5ed",
+   "franka_emika_panda/assets/link0_2.obj": "1ca435a2a87a9608a146a47955724d43dd7ce10fc3dd3018800aa98f8ba86e05",
+   "franka_emika_panda/assets/link0_3.obj": "3e9c6334d2b3b47944af3458ee5f20519abc20fe7ee23063bb53405ccab28046",
+   "franka_emika_panda/assets/link0_4.obj": "215d25789704936120f119c0bc1cc7f68516dd3f8f1df61457b71acac3873f26",
+   "franka_emika_panda/assets/link0_5.obj": "9361b104e93743045107aa5b15fb1a0835ba9c1f355aae71f56403cf6a9c33f6",
+   "franka_emika_panda/assets/link0_7.obj": "2dc0b8ebbbc80e4c065d71e195adbc384f673438641fac82b07b801b4d2837cb",
+   "franka_emika_panda/assets/link0_8.obj": "3b8c436999db5586b8eb47bed2b0aa7de6993868b2681b4c04246eeac42fdb7a",
+   "franka_emika_panda/assets/link0_9.obj": "45178f97d2b5da6bce11f610212c4ef7d08c73db33a4fc38e1b7f66b93d023f5",
+   "franka_emika_panda/assets/link0_10.obj": "c9198b9d8534d628d097b0f2b239bb30343353182df098ce0d9db6bc13326848",
+   "franka_emika_panda/assets/link0_11.obj": "f0adec78d6677b7799d25121981270e8bfe119b5c18d08a91ee37a54ad75f65c",
+   "franka_emika_panda/assets/link1.obj": "51091e776b16babdbe2f3849b5c041f921d1f11dd94ac19a0f1c81abf496fbae",
+   "franka_emika_panda/assets/link2.obj": "5c9f8e715de52c3eb71b475de35993b3b96081e02abea9f28c414768877fc59b",
+   "franka_emika_panda/assets/link3_0.obj": "ce2da87f51708e11b189249d41401065dabe89a06e251185a06cef4d5ff27178",
+   "franka_emika_panda/assets/link3_1.obj": "2880b7753a7173f38fa87ee21da4dfc7fa7be46fbe07bac5aef9e128513cb118",
+   "franka_emika_panda/assets/link3_2.obj": "670cff81ae84693769ca4ae658c154cf909d81167e7c8d22b70ea977f2504efa",
+   "franka_emika_panda/assets/link3_3.obj": "30ede0c812efd0e0b767d134a4eae0b84e0fa407bb6325a5a555e0569b3a3ffd",
+   "franka_emika_panda/assets/link4_0.obj": "443bf6d178177cf347951ecf107ccd10ca444e605e375b67304579e5f948806f",
+   "franka_emika_panda/assets/link4_1.obj": "ca935ec7cc8b3f0e86aa079c76b0b3bf593b1e9830bab0fa7131ac51577c74f0",
+   "franka_emika_panda/assets/link4_2.obj": "c89caf26d379c35bb9e191ee2d91d09ab29ecc792b48d8bc10b39e5b38222175",
+   "franka_emika_panda/assets/link4_3.obj": "1495d17f45bdb230cf58b0beef9da4e8c9cfe76a3d2d38da89017efe5e093136",
+   "franka_emika_panda/assets/link5_0.obj": "a3238b8f2af0f2eb66d9fe63dc5d41ac52d5d38507241b5ed10e3cb019ab3e71",
+   "franka_emika_panda/assets/link5_1.obj": "9d994bbf83ec241e301b5197a6846da13f2a4a0582edb2c0f76962c5549649d6",
+   "franka_emika_panda/assets/link5_2.obj": "83b4ffe9f772cd7fe182e98640650eebc899aaf01842656574b0416c90dd40a4",
+   "franka_emika_panda/assets/link6_0.obj": "0504c70ebf1b284ee8faae7dcb896b8830bc672a6552015dd5dbd121fa031fb9",
+   "franka_emika_panda/assets/link6_1.obj": "45f7ca77695198b6d86ec2417ad4e42e6275044f0f96266699ee8e1057757ac1",
+   "franka_emika_panda/assets/link6_2.obj": "e54eee4d8232947ee8af65afd5a067e09dac2da6e7e585cb1dccb65496457da0",
+   "franka_emika_panda/assets/link6_3.obj": "d4f6a25ef32fa1fa4734146981994ee760232cb077c80fea6487d78a077c7f27",
+   "franka_emika_panda/assets/link6_4.obj": "be353480fe71d46f7a96f0a3cbb7e112caaf8d88368826f321a36a253c8749b2",
+   "franka_emika_panda/assets/link6_5.obj": "7c87664623c3e1a6cb330db273227a69626dc5e53b4caff1d4ee7911eb3340c6",
+   "franka_emika_panda/assets/link6_6.obj": "8fbc031e0d07b795ebf99115c75223141caaba317cab569159f3d477a7821681",
+   "franka_emika_panda/assets/link6_7.obj": "7dc5ebb799fe281aab27d6e84e7a4efa0a8e42da2369ec83de3ea3f206f62d73",
+   "franka_emika_panda/assets/link6_8.obj": "e3f77381817a341030f9dcc4c4aa7c559f80411b453fd87eb0fefecca82151bf",
+   "franka_emika_panda/assets/link6_9.obj": "25a56ea9b02a03b6cb5a81f31c54f54d0185e1a0b3937c37e4289d896e50215a",
+   "franka_emika_panda/assets/link6_10.obj": "365f26c21d10332cab8d8704645cb46930c30b3085956f2d097498c793f24db4",
+   "franka_emika_panda/assets/link6_11.obj": "8ae61e08b3ad064f25bbf03b22e59cc15d65883b5a7ce92711aff29df2493901",
+   "franka_emika_panda/assets/link6_12.obj": "f28d1bfd62b0244ffd19fb35fe9edefdf583d3c9167db944e87185d919e1d021",
+   "franka_emika_panda/assets/link6_13.obj": "0a55fa92dccb261d07200e6565fca4c850fd17f0c1ecf38821c0b97d51796c7d",
+   "franka_emika_panda/assets/link6_14.obj": "750ae3ee4781e62e3a045c662195247b03f6642b05aa93104f08258e5f6eba26",
+   "franka_emika_panda/assets/link6_15.obj": "5999c1c2497a004a7c4bbe034cdf13744f839d85ae7a11b1bc386c48a3e642e6",
+   "franka_emika_panda/assets/link6_16.obj": "551d7a8b37c53e7a152d008b4e36992e5b5abe74a4be18b57ee6319c27def09f",
+   "franka_emika_panda/assets/link7_0.obj": "04586b0bde011715cfc22072ac72fe0717eb4d4817bcf665987ce6cd88eb2b93",
+   "franka_emika_panda/assets/link7_1.obj": "c3f72289f394c9d6749a4a327fb11f05b203c37c95032c92f28019b40ebe7e00",
+   "franka_emika_panda/assets/link7_2.obj": "d2faecedb304d0989040d082410378dc949dbbda23bd18c05134f08aae984db5",
+   "franka_emika_panda/assets/link7_3.obj": "b62d87c4d4bdb7b281ed341d347c39dad0e50bf36aed8ac11d050073701d5f70",
+   "franka_emika_panda/assets/link7_4.obj": "cb78ccb61fd4ad6c7bff4c4d2e6cb41e1964a5a3e1a28e67c0c6202371cfc018",
+   "franka_emika_panda/assets/link7_5.obj": "099071d3090b51471ba52f4f90814fd3089f4975d196e4d488117073d0bfe491",
+   "franka_emika_panda/assets/link7_6.obj": "99469e2d95ab74ce0292f2f16954c87a8a7dc16652e62e970fe37c94330a81bb",
+   "franka_emika_panda/assets/link7_7.obj": "426c3db8a19373f3dc73d4bec672e948121b2914c10e2e7b9c7ea80643a19e54",
+   "franka_emika_panda/assets/hand_0.obj": "b94aab901086f85df04c019b30f43bf9aa23a7ad0443ec80a8c14662a41cabd2",
+   "franka_emika_panda/assets/hand_1.obj": "cd76f7494bb314406a1819c46eb826ee254894f87235714f604a470653d9badb",
+   "franka_emika_panda/assets/hand_2.obj": "e0f44a71712afa5b98eb20355eff17763d3e2e19f459b2bef19abed3727e64b3",
+   "franka_emika_panda/assets/hand_3.obj": "a431a06d99e88a1b322b3122a01424ee7704daeaad0bc343b90b9604f014ad0c",
+   "franka_emika_panda/assets/hand_4.obj": "21f96ef6a8de082e41b1ea9834f1043de359e5d60305541bcb63539581f53bff",
+   "franka_emika_panda/assets/finger_0.obj": "215098c0fcdf7192f6c503a37cf49e3efecf8a9e1320f02b17c5584d89cc5b2c",
+   "franka_emika_panda/assets/finger_1.obj": "cf239e9aca26bba09dbbf1c544c47d87cfc9a2f0637c8bb786af750b6d4eca44"
+  }
+ },
+ "note": "display only: contype = conaffinity = 0, density 0, under the bodies' explicit inertials; meshes as .msh with exactly coincident vertices merged and zero-area faces dropped",
+ "geoms": [
+  {
+   "name": "link0_vis0_off_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_0",
+   "file": "franka_emika_panda_link0_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "link0_vis1_black",
+   "body": "link0",
+   "mesh": "vis_link0_link0_1",
+   "file": "franka_emika_panda_link0_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link0_vis2_off_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_2",
+   "file": "franka_emika_panda_link0_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "link0_vis3_black",
+   "body": "link0",
+   "mesh": "vis_link0_link0_3",
+   "file": "franka_emika_panda_link0_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link0_vis4_off_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_4",
+   "file": "franka_emika_panda_link0_4.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "link0_vis5_black",
+   "body": "link0",
+   "mesh": "vis_link0_link0_5",
+   "file": "franka_emika_panda_link0_5.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link0_vis6_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_7",
+   "file": "franka_emika_panda_link0_7.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link0_vis7_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_8",
+   "file": "franka_emika_panda_link0_8.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link0_vis8_black",
+   "body": "link0",
+   "mesh": "vis_link0_link0_9",
+   "file": "franka_emika_panda_link0_9.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link0_vis9_off_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_10",
+   "file": "franka_emika_panda_link0_10.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "link0_vis10_white",
+   "body": "link0",
+   "mesh": "vis_link0_link0_11",
+   "file": "franka_emika_panda_link0_11.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link1_vis0_white",
+   "body": "link1",
+   "mesh": "vis_link1_link1",
+   "file": "franka_emika_panda_link1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link2_vis0_white",
+   "body": "link2",
+   "mesh": "vis_link2_link2",
+   "file": "franka_emika_panda_link2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link3_vis0_white",
+   "body": "link3",
+   "mesh": "vis_link3_link3_0",
+   "file": "franka_emika_panda_link3_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link3_vis1_white",
+   "body": "link3",
+   "mesh": "vis_link3_link3_1",
+   "file": "franka_emika_panda_link3_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link3_vis2_white",
+   "body": "link3",
+   "mesh": "vis_link3_link3_2",
+   "file": "franka_emika_panda_link3_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link3_vis3_black",
+   "body": "link3",
+   "mesh": "vis_link3_link3_3",
+   "file": "franka_emika_panda_link3_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link4_vis0_white",
+   "body": "link4",
+   "mesh": "vis_link4_link4_0",
+   "file": "franka_emika_panda_link4_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link4_vis1_white",
+   "body": "link4",
+   "mesh": "vis_link4_link4_1",
+   "file": "franka_emika_panda_link4_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link4_vis2_black",
+   "body": "link4",
+   "mesh": "vis_link4_link4_2",
+   "file": "franka_emika_panda_link4_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link4_vis3_white",
+   "body": "link4",
+   "mesh": "vis_link4_link4_3",
+   "file": "franka_emika_panda_link4_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link5_vis0_black",
+   "body": "link5",
+   "mesh": "vis_link5_link5_0",
+   "file": "franka_emika_panda_link5_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link5_vis1_white",
+   "body": "link5",
+   "mesh": "vis_link5_link5_1",
+   "file": "franka_emika_panda_link5_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link5_vis2_white",
+   "body": "link5",
+   "mesh": "vis_link5_link5_2",
+   "file": "franka_emika_panda_link5_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis0_off_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_0",
+   "file": "franka_emika_panda_link6_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "link6_vis1_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_1",
+   "file": "franka_emika_panda_link6_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis2_black",
+   "body": "link6",
+   "mesh": "vis_link6_link6_2",
+   "file": "franka_emika_panda_link6_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link6_vis3_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_3",
+   "file": "franka_emika_panda_link6_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis4_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_4",
+   "file": "franka_emika_panda_link6_4.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis5_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_5",
+   "file": "franka_emika_panda_link6_5.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis6_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_6",
+   "file": "franka_emika_panda_link6_6.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis7_light_blue",
+   "body": "link6",
+   "mesh": "vis_link6_link6_7",
+   "file": "franka_emika_panda_link6_7.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.03921600058674812,
+    0.5411760210990906,
+    0.7803919911384583,
+    1.0
+   ],
+   "material": "light_blue"
+  },
+  {
+   "name": "link6_vis8_light_blue",
+   "body": "link6",
+   "mesh": "vis_link6_link6_8",
+   "file": "franka_emika_panda_link6_8.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.03921600058674812,
+    0.5411760210990906,
+    0.7803919911384583,
+    1.0
+   ],
+   "material": "light_blue"
+  },
+  {
+   "name": "link6_vis9_black",
+   "body": "link6",
+   "mesh": "vis_link6_link6_9",
+   "file": "franka_emika_panda_link6_9.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link6_vis10_black",
+   "body": "link6",
+   "mesh": "vis_link6_link6_10",
+   "file": "franka_emika_panda_link6_10.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link6_vis11_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_11",
+   "file": "franka_emika_panda_link6_11.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis12_green",
+   "body": "link6",
+   "mesh": "vis_link6_link6_12",
+   "file": "franka_emika_panda_link6_12.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.0,
+    1.0,
+    0.0,
+    1.0
+   ],
+   "material": "green"
+  },
+  {
+   "name": "link6_vis13_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_13",
+   "file": "franka_emika_panda_link6_13.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link6_vis14_black",
+   "body": "link6",
+   "mesh": "vis_link6_link6_14",
+   "file": "franka_emika_panda_link6_14.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link6_vis15_black",
+   "body": "link6",
+   "mesh": "vis_link6_link6_15",
+   "file": "franka_emika_panda_link6_15.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link6_vis16_white",
+   "body": "link6",
+   "mesh": "vis_link6_link6_16",
+   "file": "franka_emika_panda_link6_16.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link7_vis0_white",
+   "body": "link7",
+   "mesh": "vis_link7_link7_0",
+   "file": "franka_emika_panda_link7_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "link7_vis1_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_1",
+   "file": "franka_emika_panda_link7_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis2_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_2",
+   "file": "franka_emika_panda_link7_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis3_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_3",
+   "file": "franka_emika_panda_link7_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis4_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_4",
+   "file": "franka_emika_panda_link7_4.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis5_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_5",
+   "file": "franka_emika_panda_link7_5.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis6_black",
+   "body": "link7",
+   "mesh": "vis_link7_link7_6",
+   "file": "franka_emika_panda_link7_6.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "link7_vis7_white",
+   "body": "link7",
+   "mesh": "vis_link7_link7_7",
+   "file": "franka_emika_panda_link7_7.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "hand_vis0_off_white",
+   "body": "hand",
+   "mesh": "vis_hand_hand_0",
+   "file": "franka_emika_panda_hand_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "hand_vis1_black",
+   "body": "hand",
+   "mesh": "vis_hand_hand_1",
+   "file": "franka_emika_panda_hand_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "hand_vis2_black",
+   "body": "hand",
+   "mesh": "vis_hand_hand_2",
+   "file": "franka_emika_panda_hand_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "hand_vis3_white",
+   "body": "hand",
+   "mesh": "vis_hand_hand_3",
+   "file": "franka_emika_panda_hand_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "material": "white"
+  },
+  {
+   "name": "hand_vis4_off_white",
+   "body": "hand",
+   "mesh": "vis_hand_hand_4",
+   "file": "franka_emika_panda_hand_4.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "left_finger_vis0_off_white",
+   "body": "left_finger",
+   "mesh": "vis_left_finger_finger_0",
+   "file": "franka_emika_panda_finger_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "left_finger_vis1_black",
+   "body": "left_finger",
+   "mesh": "vis_left_finger_finger_1",
+   "file": "franka_emika_panda_finger_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "right_finger_vis0_off_white",
+   "body": "right_finger",
+   "mesh": "vis_right_finger_finger_0",
+   "file": "franka_emika_panda_finger_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.9019610285758972,
+    0.9215689897537231,
+    0.9294120073318481,
+    1.0
+   ],
+   "material": "off_white"
+  },
+  {
+   "name": "right_finger_vis1_black",
+   "body": "right_finger",
+   "mesh": "vis_right_finger_finger_1",
+   "file": "franka_emika_panda_finger_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.25,
+    0.25,
+    0.25,
+    1.0
+   ],
+   "material": "black"
+  }
+ ]
+}

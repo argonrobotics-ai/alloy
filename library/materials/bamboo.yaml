@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: bamboo
+density:
+  value: 700.0
+  source: catalog
+  unc: [600.0, 850.0]
+  note: bamboo culm wall 600-800 kg/m^3 (Ashby natural materials data)
+surface:
+  mu_static:
+    value: 0.4
+    source: catalog
+    unc: [0.25, 0.5]
+    note: bamboo on wood/ceramic, wood range Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.3
+    source: catalog
+    unc: [0.2, 0.4]
+    note: bamboo on wood/ceramic, wood range Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: wood on wood/steel impacts 0.4-0.6; mid value
+elastic:
+  youngs:
+    value: 17000000000.0
+    source: model
+    unc: [12000000000.0, 22000000000.0]
+    note: bamboo along fibre 15-20 GPa, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: bamboo along fibre 15-20 GPa, Ashby, Materials Selection in Mechanical Design 4e (2011) App. A

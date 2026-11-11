@@ -1,0 +1,9 @@
+schema: alloy.object/1
+name: harness_lead
+shape:
+  curve:
+    points:
+    - [0.0, 0.0, 0.0]
+    - [0.15, 0.0, 0.0]
+    radius: 0.0010600000000000002
+material: cable_harness_composite

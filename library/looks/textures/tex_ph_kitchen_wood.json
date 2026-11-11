@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_kitchen_wood",
+ "family": "wood",
+ "preset": "wood_oak",
+ "texture": "polyhaven:kitchen_wood",
+ "res": "1k",
+ "scale_m": 0.6,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/kitchen_wood",
+ "author": "Rob Tuytel",
+ "licence": "CC0-1.0",
+ "albedo": 0.125,
+ "note": "kitchen worktop wood: Poly Haven 'Kitchen Wood', 0.6 m tile, 1k maps"
+}

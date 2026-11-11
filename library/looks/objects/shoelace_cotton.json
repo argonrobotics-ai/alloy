@@ -1,0 +1,19 @@
+{
+ "schema": "alloy.look/1",
+ "object": "shoelace_cotton",
+ "materials": {
+  "body": {
+   "preset": "linen",
+   "texture": null,
+   "tex_tint": false,
+   "base_color": [
+    0.93,
+    0.93,
+    0.92
+   ]
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "shoelace: white cotton braid"
+}

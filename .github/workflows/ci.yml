@@ -1,0 +1,153 @@
+# CPU CI for the public repository: install from a clean checkout, run the CPU suite and the README quick start.
+# GPU tests skip without a CUDA device. Runs only on public repositories (never on a private mirror).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-tests:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache Warp kernels and rod self-test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/warp
+            ~/.cache/alloy
+          key: warp-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'alloy/_vendor/VENDORED.md') }}
+
+      - name: Install
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -e ".[dev]" pytest-xdist
+          .venv/bin/python -c "import alloy, warp; print('alloy', alloy.__version__, 'warp', warp.config.version)"
+
+      - name: CPU test suite
+        run: |
+          # cold caches on a 4-core runner: a test that triggers a big first compile (MuJoCo Warp scene kernels) or a
+          # rod route's cantilever self-test took > 900 s in a fresh container, though seconds warm; the caches above
+          # make later runs warm
+          PYTHON=.venv/bin/python ALLOY_CI_WORKERS=4 scripts/ci_cpu.sh -p no:cacheprovider --timeout 1800
+
+      - name: README quick start
+        run: |
+          .venv/bin/python - <<'EOF'
+          import re, pathlib
+          text = pathlib.Path("README.md").read_text()
+          code = re.search(r"## Quick start.*?```python\n(.*?)```", text, re.S).group(1)
+          exec(compile(code, "README.md quick start", "exec"), {"__name__": "__main__"})
+          EOF
+
+  # Release wheels (SCR-WP8-6: a small C extension for the CPU route, built against the pinned MuJoCo). Built for
+  # the supported platforms only: Linux x86_64 and aarch64 and macOS arm64 (no Windows, no 32-bit), kept as workflow
+  # artifacts; nothing is uploaded to PyPI here. While the extension compiles on first use the package is pure
+  # Python, cibuildwheel has nothing to build, and the job says so.
+  wheels:
+    if: ${{ !github.event.repository.private }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-14]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Has a compiled extension?
+        id: ext
+        run: |
+          python - <<'EOF'
+          import os, pathlib, re
+          text = pathlib.Path("pyproject.toml").read_text() + (pathlib.Path("setup.py").read_text()
+                                                               if pathlib.Path("setup.py").exists() else "")
+          has = bool(re.search(r"ext[-_]modules|Extension\(", text))
+          print("compiled extension:", has)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"has={'1' if has else '0'}\n")
+          EOF
+      - name: Build wheels
+        if: steps.ext.outputs.has == '1'
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_BUILD: "cp311-* cp312-*"
+          CIBW_ARCHS: auto64            # each runner's own 64-bit arch: x86_64, aarch64, arm64 (never i686)
+          CIBW_SKIP: "*-musllinux_*"
+          CIBW_TEST_COMMAND: >-
+            python -c "import alloy; print(alloy.__version__)"
+      - uses: actions/upload-artifact@v4
+        if: steps.ext.outputs.has == '1'
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  # Both CPU-route paths on each supported platform (Linux, macOS arm64; no Windows): with the C step (compiled on
+  # first use with the machine's C compiler) and without it (ALLOY_NO_EXT=1), where the route falls back to its numpy
+  # step with one warning. The fallback leg also runs with no working C compiler (a Mac without Apple clang, whose
+  # cc only asks to install the developer tools): the route must fall back the same way, not fail.
+  cpu-route-paths:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+        path: [compiled, fallback]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip build
+          .venv/bin/python -m build --sdist --outdir dist .
+          .venv/bin/python -m pip install "$(ls dist/*.tar.gz)[dev]"
+      - name: Switch the C step off
+        if: matrix.path == 'fallback'
+        run: echo "ALLOY_NO_EXT=1" >> "$GITHUB_ENV"
+      - name: CPU-route tests on this path
+        run: |
+          # tests marked cpu_route run on both paths; the fallback run expects the numpy-fallback warning
+          .venv/bin/python -m pytest tests -q -m "cpu_route and not gpu and not slow" -p no:cacheprovider \
+            --timeout 900 || { rc=$?; [ $rc -eq 5 ] && echo "no cpu_route tests yet" || exit $rc; }
+      - name: The installed Alloy runs a robot on the expected step
+        run: |
+          cd "$RUNNER_TEMP"
+          "$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/.github/scripts/cpu_route_check.py" \
+            --expect ${{ matrix.path == 'fallback' && 'numpy' || 'c' }}
+      - name: No working C compiler falls back with the warning
+        if: matrix.path == 'fallback'
+        run: |
+          printf '#!/bin/sh\necho "xcode-select: note: No developer tools were found, requesting install." >&2\nexit 1\n' \
+            > "$RUNNER_TEMP/cc"
+          chmod +x "$RUNNER_TEMP/cc"
+          cd "$RUNNER_TEMP"
+          env -u ALLOY_NO_EXT CC="$RUNNER_TEMP/cc" ALLOY_CACHE_DIR="$RUNNER_TEMP/alloy-cache" \
+            "$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/.github/scripts/cpu_route_check.py" --expect numpy

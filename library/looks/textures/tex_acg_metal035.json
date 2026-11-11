@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal035",
+ "family": "metal",
+ "preset": "copper",
+ "texture": "ambientcg:Metal035",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal035",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.212,
+ "note": "copper: ambientCG 'Metal 035', 0.4 m tile, 1k maps"
+}

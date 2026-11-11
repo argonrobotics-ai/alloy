@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: pom_acetal
+b: pom_acetal
+mu_static:
+  value: 0.37
+  source: catalog
+  unc: [0.35, 0.39]
+  note: Polyplastics DURACON M90-44 data sheet, POM vs POM 0.06 MPa 15 cm/s; static static not reported; set equal to the
+    kinetic value
+mu_dynamic:
+  value: 0.37
+  source: catalog
+  unc: [0.35, 0.39]
+  note: Polyplastics DURACON M90-44 data sheet, POM vs POM 0.06 MPa 15 cm/s; static static not reported; set equal to the
+    kinetic value

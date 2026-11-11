@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "material": "soil_sand_damp",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.55,
+  0.46,
+  0.33
+ ],
+ "roughness": 0.85,
+ "texture": "polyhaven:dense_sand",
+ "scale_m": 0.3,
+ "note": "damp sand (6 % water): the dry-sand texture, darkened and a little less rough, as water darkens sand",
+ "licence": "textures: Poly Haven (polyhaven.com) 'dense_sand', CC0"
+}

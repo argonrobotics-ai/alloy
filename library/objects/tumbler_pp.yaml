@@ -1,0 +1,17 @@
+schema: alloy.object/1
+name: tumbler_pp
+shape:
+  mesh:
+    path: meshes/tumbler_pp.obj
+    sha256: 8011e70703a28ea291b067e008716182067e8bc557dde824b4b695a078d4e160
+    collision: sdf
+material: pp_homopolymer
+features:
+  thickness:
+    value: 0.0012
+    source: model
+    note: 1.2 mm wall (ours, from the model mass)
+  min_wall:
+    value: 0.0012
+    source: model
+    note: 1.2 mm wall (ours, from the model mass)

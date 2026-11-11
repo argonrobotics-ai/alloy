@@ -1,0 +1,35 @@
+{
+ "embodiment": "e5_fr3_duo_stiff",
+ "title": "Franka Mobile FR3 Duo (TMR base, spine, two FR3 + hands), contact variant solref 0.005 s",
+ "source": {
+  "url": "https://github.com/frankarobotics/franka_description",
+  "commit": "7aeeddc449edf8d62b594f9e36a81da53e7796f9",
+  "files": {
+   "mobile_fr3_duo.urdf": "76a0f5c497d9f7d70f20b2518783301bf39f4bca435deb2a3901719bd2f7a2b9",
+   "GENERATED.json": "a6b1ed9ef82f409b37319a0c34c64bbb730183faf7cdb04f983a9371b563ca8a",
+   "LICENSE": "4b25434e6ec2012e28a484f1d7924a0fd1a8bf232c2be2d50d584d299d04d6d6"
+  }
+ },
+ "licence": "Apache-2.0 (frankarobotics/franka_description; gains and pose: gym-anything/robotics mobile-fr3-duo, MIT)",
+ "world": "floor z = 0, the robot on it; table 1.2 x 1.2 m, top 0.75 m, x 0.7-1.9 m in front; box, cylinder and T14's mug on it as for tabletop",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
+  "Duo wheels (two casters, two drive wheels): solref 0.02 -> 0.005 s and solimp 0.9 0.95 -> 0.95 0.99. The URDF has no contact parameters; at MuJoCo's defaults the 0.2 kg casters rested 10.0 mm inside a rigid floor under the 328 kg robot; they now rest 0.43 mm deep. Shapes and friction unchanged (alloy.tasks.emb_robots.firm_wheels)",
+  "contact variant of emb_e5_fr3_duo: every geom's solref set to [0.005, 1.0] (time constant, damping ratio); a solimp softer than MuJoCo's default (dmin < 0.9; Go2's feet) set to the default; friction, margins, stiffer solimp and everything else as the verdict scene"
+ ],
+ "hull_split": 0.0001962586688237863,
+ "init": {
+  "nq": 56,
+  "nv": 52,
+  "nu": 21,
+  "nbody": 35,
+  "ngeom": 158,
+  "init_contacts": 1,
+  "init_deepest_mm": 0.0,
+  "ok": true
+ }
+}

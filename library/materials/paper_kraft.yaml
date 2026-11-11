@@ -1,0 +1,86 @@
+schema: alloy.material/1
+name: paper_kraft
+density:
+  value: 740.0
+  source: catalog
+  unc: [730.0, 750.0]
+  note: 'DOC: Nordic Paper GS520 MG Plain Kraft Paper, unbleached, 100 g/m2 "Density kg/m3 534 740 Thickness (um) 135" https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf
+    ; the 60 g/m2 sheet of the same grade reads 730'
+surface:
+  mu_static:
+    value: 0.6
+    source: catalog
+    unc: [0.4, 0.65]
+    note: 'DOC: Billerud QuickFill Brown SE (brown sack kraft) "Friction coeff. Static WS 0.60 0.60 0.60 0.60 ISO 15359" https://www.billerud.com/globalassets/billerud/our-offer/packaging-materials/sack-paper/techdatasheet_qf-brown-se.pdf
+      ; wire side, paper on paper; a glazed (MG) face is slicker, hence the range down to 0.4'
+  mu_dynamic:
+    value: 0.45
+    source: model
+    unc: [0.3, 0.6]
+    note: 'ESTIMATE: no kraft sheet lists a kinetic value; paper on paper kinetic runs below static (Billerud static 0.60,
+      ISO 15359)'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.1]
+    note: 'ESTIMATE: a paper sheet does not bounce; air drag and the sheet absorb the impact'
+elastic:
+  youngs:
+    value: 4610000000.0
+    source: model
+    unc: [3110000000.0, 6830000000.0]
+    note: 'ESTIMATE: no kraft sheet gives a modulus; geometric mean of a measured 150 g/m2 paper "MD (E1) 6.83 CD (E2) 3.11"
+      GPa (Nayakanti, Tawfick & Hart 2018, SI Table 1, Daler-Rowney Canford, ISO strips with DIC) https://arxiv.org/pdf/1707.03673
+      ; the film route takes one isotropic modulus'
+  poisson:
+    value: 0.23
+    source: model
+    unc: [0.15, 0.35]
+    note: 'ESTIMATE: the same paper "nu12 0.23" (Nayakanti et al. 2018, SI Table 1) https://arxiv.org/pdf/1707.03673'
+plastic:
+  yield_stress:
+    value: 64400000.0
+    source: catalog
+    unc: [43000000.0, 86000000.0]
+    note: 'DOC: Nordic Paper GS520 100 g/m2 "Tensile strength mean ( kN/m ) 8,7" (MD 11,6 / CD 5,8, ISO 1924-3) over "Thickness
+      (um) 135": 8.7 kN/m / 135 um = 64 MPa (CD 43, MD 86) https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf
+      ; the film route caps in-plane strain at yield / E = 1.4 %, under the sheet''s "Elongation MD % 1,6 ... CD 2,8"'
+failure:
+  fracture_strain:
+    value: 0.022
+    source: catalog
+    unc: [0.016, 0.028]
+    note: 'DOC: Nordic Paper GS520 100 g/m2 "Elongation MD % 1924-3 1,6 Elongation CD % 1924-3 2,8" (mean of MD and CD; the
+      60 g/m2 sheet reads the same) https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf ; the
+      film route tears its seams on force or at its own overload strain (alloy/solvers/film/config.py SEAM_OVERLOAD_STRAIN):
+      its strain cap (yield / E = 1.4 %) sits just under this'
+  fracture_stress:
+    value: 64400000.0
+    source: catalog
+    unc: [43000000.0, 86000000.0]
+    note: 'DOC: Nordic Paper GS520 100 g/m2 "Tensile strength mean ( kN/m ) 8,7" (MD 11,6 / CD 5,8, ISO 1924-3) over "Thickness
+      (um) 135": 64 MPa (CD 43, MD 86) https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf ;
+      the 60 g/m2 sheet: 5,2 kN/m over 82 um = 63 MPa https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%2060%20GSM.pdf'
+  tear_energy:
+    value: 14100.0
+    source: catalog
+    unc: [12100.0, 14800.0]
+    note: 'DOC: Nordic Paper GS520 100 g/m2 "Tear strength MD ( mN ) 900 ... Tear strength CD ( mN ) 1000" (Elmendorf, ISO
+      1974) https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf ; an Elmendorf tear at mean
+      force F through thickness h takes 2F per unit length torn: 2 x 950 mN / 135 um = 14.1 kJ/m2 (MD 13.3, CD 14.8); the
+      60 g/m2 sheet "498 ... 570" mN over 82 um: 12.1-13.9 kJ/m2 https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%2060%20GSM.pdf'
+film:
+  dead_fold_yield:
+    value: 0.63
+    source: model
+    unc: [0.6, 1.05]
+    note: 'ESTIMATE: a sheet folded flat and released opens to its fold memory angle; printing paper "minimum angle ... ~36
+      ... degrees in the case of printing paper" (K. Farain, arXiv 1905.09220) https://arxiv.org/pdf/1905.09220 ; 36 deg =
+      0.63 rad under a firm press, wider (to ~60 deg) under a light one'
+  crease_ratio:
+    value: 200.0
+    source: model
+    unc: [50.0, 800.0]
+    note: 'ESTIMATE: a fold line bends like L* = 200 h of plate, kappa = B / L*; measured on Mylar creases "kappa, scales
+      as B/h ... L*~200h" (Lechenault, Thiria & Adda-Bedia 2014, PRL 112, 244301) https://arxiv.org/pdf/1404.1243 ; no paper
+      crease stiffness found: 0.037 N·m/rad per m at 135 um (0.014 at 82 um)'

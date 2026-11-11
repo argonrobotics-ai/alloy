@@ -1,0 +1,20 @@
+schema: alloy.pair/1
+a: glass_soda_lime
+b: glass_soda_lime
+mu_static:
+  value: 0.092
+  source: measured
+  unc: [0.086, 0.098]
+  note: Foerster, Louge, Chang & Allia 1994, Phys. Fluids 6(3):1108 (3.18 mm soda-lime spheres, mu 0.092 +-0.006); clean flat
+    glass plates are adhesive (0.94/0.4, Serway & Jewett 9e Table 5.1)
+mu_dynamic:
+  value: 0.092
+  source: measured
+  unc: [0.086, 0.098]
+  note: Foerster, Louge, Chang & Allia 1994, Phys. Fluids 6(3):1108 (3.18 mm soda-lime spheres, mu 0.092 +-0.006); clean flat
+    glass plates are adhesive (0.94/0.4, Serway & Jewett 9e Table 5.1)
+restitution:
+  value: 0.97
+  source: measured
+  unc: [0.92, 0.98]
+  note: 'Foerster et al. 1994: e 0.97 +-0.01 at 0.3-1.7 m/s'

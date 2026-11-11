@@ -1,0 +1,25 @@
+schema: alloy.object/1
+name: cardboard_blank_creased
+shape:
+  primitive:
+    kind: box
+    size: [0.15, 0.1, 0.00175]
+material: cardboard_corrugated
+features:
+  thickness:
+    value: 0.0035
+    source: model
+    note: single-wall board 3.5 mm
+  creases:
+  - a: [-0.05, -0.1, 0.0]
+    b: [-0.05, 0.1, 0.0]
+    stiffness:
+      value: 0.05
+      source: model
+      note: scored crease 0.01-0.1 N·m/rad (packaging fold tests)
+  - a: [0.05, -0.1, 0.0]
+    b: [0.05, 0.1, 0.0]
+    stiffness:
+      value: 0.05
+      source: model
+      note: scored crease 0.01-0.1 N·m/rad

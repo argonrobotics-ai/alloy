@@ -1,0 +1,18 @@
+schema: alloy.object/1
+name: cloth_cotton_sheet
+shape:
+  primitive:
+    kind: box
+    size: [0.25, 0.25, 0.0004875]
+material: cloth_cotton_plain
+features:
+  thickness:
+    value: 0.000975
+    source: catalog
+    note: 'DOC: plain-weave cotton KES thickness at 0.5 gf/cm² "To 0.975" mm https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/'
+  min_wall:
+    value: 0.000975
+    source: catalog
+    note: 'DOC: plain-weave cotton KES thickness at 0.5 gf/cm² "To 0.975" mm https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/'
+budget:
+  particles: 441

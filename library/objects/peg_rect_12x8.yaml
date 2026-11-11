@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: peg_rect_12x8
+shape:
+  primitive:
+    kind: box
+    size: [0.006, 0.004, 0.025]
+material: stainless_303
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+precision_partners:
+- block_rect_hole_12x8:bore
+precision_features:
+- name: shaft
+  crop:
+  - [-0.007, -0.005, -0.025500000000000002]
+  - [0.007, 0.005, -0.01]
+  clearance:
+    value: 0.0002
+    source: catalog
+    note: 12 x 8 mm peg in a 12.2 x 8.2 mm hole, 0.2 mm clearance

@@ -1,0 +1,37 @@
+schema: alloy.material/1
+name: water
+density:
+  value: 997.05
+  source: catalog
+  unc: [996.0, 998.2]
+  note: water at 25 C and 1 atm 997.05 kg/m^3 (CRC Handbook 97e, Properties of water); NIST Chemistry WebBook saturated liquid
+    at 25 C 997.00 kg/m^3 (https://webbook.nist.gov/cgi/fluid.cgi?TLow=20&THigh=25&TInc=5&Digits=5&ID=C7732185&Action=Load&Type=SatP&TUnit=C&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=mPa*s&STUnit=N%2Fm&RefState=DEF)
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction, wall drag comes from viscosity/adhesion'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'liquid: inelastic'
+fluid:
+  viscosity:
+    value: 0.00089
+    source: catalog
+    unc: [0.00089, 0.001002]
+    note: 'water 25 C 0.890 mPa·s: NIST Chemistry WebBook 890.04 uPa s at 25 C, 1001.6 at 20 C (https://webbook.nist.gov/cgi/fluid.cgi?TLow=20&THigh=25&TInc=5&Digits=5&ID=C7732185&Action=Load&Type=SatP&TUnit=C&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=mPa*s&STUnit=N%2Fm&RefState=DEF)'
+  surface_tension:
+    value: 0.07197
+    source: catalog
+    unc: [0.0715, 0.0728]
+    note: 'water 25 C 71.97 mN/m: NIST Chemistry WebBook 0.071972 N/m at 25 C, 0.072736 at 20 C (https://webbook.nist.gov/cgi/fluid.cgi?TLow=20&THigh=25&TInc=5&Digits=5&ID=C7732185&Action=Load&Type=SatP&TUnit=C&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=mPa*s&STUnit=N%2Fm&RefState=DEF)'
+  adhesion:
+    value: 0.05
+    source: model
+    unc: [0.01, 0.1]
+    note: Akinci 2013 adhesion for water on plastic, typical 0.01-0.1

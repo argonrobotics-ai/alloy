@@ -1,0 +1,47 @@
+schema: alloy.material/1
+name: towel_cotton_terry
+density:
+  value: 763.6
+  source: catalog
+  unc: [530.0, 1043.0]
+  note: 'DOC: woven cotton terry "Mass per square unit ... g/m2 353.28 458.15 318.15 ... 626.00" (EN 12127); 458 g/m² (fabric
+    2) over the 0.6 mm model thickness of the towel cards = 764 kg/m³ (318-626 g/m² -> 530-1043) https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663'
+surface:
+  mu_static:
+    value: 0.38
+    source: catalog
+    unc: [0.33, 0.51]
+    note: 'DOC: terry friction EN ISO 8295 (200 g block, 100 mm/min) "Static, - 0.399 0.382 0.438 ... 0.505" https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663'
+  mu_dynamic:
+    value: 0.35
+    source: model
+    unc: [0.3, 0.5]
+    note: 'ESTIMATE: just below the static value; the same table''s "Dynamic" row (0.86-1.02) exceeds its static row and is
+      not used'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.05]
+    note: 'ESTIMATE: a towel absorbs an impact in its pile; no bounce'
+elastic:
+  youngs:
+    value: 872000.0
+    source: model
+    unc: [356000.0, 1036000.0]
+    note: 'ESTIMATE (back-calculated): the cloth route uses one modulus, D = E·h³/(12(1-ν²)) at the 0.6 mm model thickness
+      matched to the measured terry bending "Bending stiffness, uN.m ... Cantilever ... Mean 7.03 17.24 ... 20.48" (17.24
+      uN.m, range 7.0-20.5) https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663 ; membrane stretch
+      is then E·h/(1-ν²) = 575 N/m'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'ESTIMATE: woven fabric effective in-plane value, used only in the plate formula above'
+  bending:
+    value: 1.7248351648351644e-05
+    source: catalog
+    unc: [7.042e-06, 2.049e-05]
+    note: 'DOC: measured terry bending stiffness "Bending stiffness, uN.m ... Cantilever ... Mean 7.03 17.24 ... 20.48" (17.24
+      uN·m, range 7.0-20.5) https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663 ; the value stored
+      is youngs'' fit at the 0.6 mm model thickness (0.05 % above 17.24 uN·m), so the towel objects are unchanged. The cloth
+      route uses it at any sheet thickness, which is then the contact thickness (R2-E1)'

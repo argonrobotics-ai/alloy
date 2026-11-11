@@ -1,0 +1,9 @@
+# P3-2b embodiment e3_ur10e_2f85: Universal Robots UR10e + Robotiq 2F-85. Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (BSD-3-Clause (mujoco_menagerie universal_robots_ur10e, robotiq_2f85)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e3_ur10e_2f85/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e3_ur10e_2f85
+objects: []
+control_dt: 0.002

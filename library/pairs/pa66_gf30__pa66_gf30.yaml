@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pa66_gf30
+b: pa66_gf30
+mu_static:
+  value: 0.2
+  source: model
+  unc: [0.15, 0.25]
+  note: Engineering ToolBox friction-coefficients-d_778 nylon/nylon clean dry 0.15-0.25, closest match
+mu_dynamic:
+  value: 0.2
+  source: model
+  unc: [0.15, 0.25]
+  note: Engineering ToolBox friction-coefficients-d_778 nylon/nylon clean dry 0.15-0.25, closest match

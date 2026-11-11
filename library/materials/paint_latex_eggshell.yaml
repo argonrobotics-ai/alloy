@@ -1,0 +1,47 @@
+schema: alloy.material/1
+name: paint_latex_eggshell
+density:
+  value: 1295.0
+  source: catalog
+  unc: [1295.0, 1306.0]
+  note: 'DOC: interior latex eggshell (ProMar 200 Zero VOC Eg-Shel, Extra White B20W12651) ''Weight per Gallon: 10.81 lbs''
+    (product data sheet 101.83A, https://sherlink.sherwin.com/sher-link/ViewHearsCountryCodeDoc?type=DP&sku=650865017&language=E);
+    older sheets 10.82 and 10.9 lb/gal; tints vary'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction; tool drag comes from its viscosity and yield stress'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: inelastic'
+plastic:
+  yield_stress:
+    value: 0.25
+    source: model
+    unc: [0.2, 1.0]
+    note: 'ESTIMATE from guideline values: as applied, sheared by the roller: ''Good leveling and flow is obtained if τ y
+      is smaller than 0.25 Pa after high shear mixing''; at rest in the can it rebuilds: ''A yield stress τ y larger than
+      1 Pa and a LSV above 50 Pas'' (TA Instruments, https://www.azom.com/article.aspx?ArticleID=12120). This card holds the
+      applied value, so 2 mm roller stipple can level; a Bingham film on a wall holds below h_c = τ_y/(ρg), 19.7 µm. The rebuild
+      at rest (to 2 Pa in about 20 s) is alloy.tasks.paint_materials.aged_yield'
+fluid:
+  viscosity:
+    value: 7.25
+    source: model
+    unc: [4.75, 9.75]
+    note: 'ESTIMATE from guideline values: the Bingham plastic viscosity, the apparent 5-10 Pa s at 1 /s less τ_y/γ̇: ''Drying,
+      leveling, minimal sag | 1 | 5 to 10'' (Pa s, Table 1), ''Sagging will occur if the viscosity is below 10Pas'' (https://www.azom.com/article.aspx?ArticleID=12120).
+      Right at sag and levelling rates (0.04-0.3 /s); about 40x too draggy for roller slip and tray uptake, where it is 0.05-0.15
+      Pa s at 1e4 /s (same source) or ''ICI fluid viscosities of 1 to 2 poise'' (Hester & Squire 1997, https://www.paint.org/wp-content/uploads/2021/09/jctJAN97-Hester.pdf)'
+  surface_tension:
+    value: 0.025
+    source: catalog
+    unc: [0.025, 0.035]
+    note: 'DOC: ''The coating surface tension is about 25 dyne/cm.'' (Hester & Squire 1997, a worked-example input, https://www.paint.org/wp-content/uploads/2021/09/jctJAN97-Hester.pdf);
+      the upper end, 35 mN/m, is an estimate'

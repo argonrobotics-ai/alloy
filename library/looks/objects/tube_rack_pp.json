@@ -1,0 +1,18 @@
+{
+ "schema": "alloy.look/1",
+ "object": "tube_rack_pp",
+ "materials": {
+  "body": {
+   "preset": "plastic_matte",
+   "base_color": [
+    0.92,
+    0.92,
+    0.9
+   ],
+   "roughness": 0.45
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "tube rack: white PP"
+}

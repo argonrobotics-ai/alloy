@@ -1,0 +1,44 @@
+schema: alloy.material/1
+name: sponge_cellulose_wet
+density:
+  value: 350.0
+  source: model
+  unc: [32.0, 700.0]
+  note: 'ESTIMATE: a wrung-out wet sponge, about half the water a saturated one holds. Bounds: the dry fibre alone, ''Their
+    dry mass, measured after oven drying, was 23.7g ... Their volume upon full wetting was 744cm3'' (32 kg/m3, https://escholarship.org/content/qt12b238cd/qt12b238cd_noSplash_bf187a96ee7dd8512c2b63470fa7a2e4.pdf),
+    and saturated, with ''Absorption of the sponge : 20 times its dry weight'' (about 670 kg/m3, https://spontex.ppe-analytics.com/en/product/b549ace7cf31742b93b74318c4df3239/pdf/technical-sheet)'
+surface:
+  mu_static:
+    value: 0.6
+    source: model
+    unc: [0.2, 1.3]
+    note: 'ESTIMATE: no measured sponge friction found; dry open-cell cellular rubber reads 1.11 on steel and 1.30 on wood
+      (Forbo data sheet), the upper end; a wet sponge on a wet surface slides more easily'
+  mu_dynamic:
+    value: 0.5
+    source: model
+    unc: [0.15, 1.1]
+    note: 'ESTIMATE: below mu_static; no measured value found'
+  restitution:
+    value: 0.05
+    source: model
+    unc: [0.0, 0.2]
+    note: 'ESTIMATE: no measured value found; a wet open-cell sponge barely bounces'
+elastic:
+  youngs:
+    value: 150000.0
+    source: model
+    unc: [30000.0, 300000.0]
+    note: 'ESTIMATE from two proxies that agree: a water-saturated regenerated-cellulose sponge, ''The compressive modulus
+      was then measured in a fully saturated condition'' and ''The compressive modulus for the non reinforced material was
+      0.2 MPa'' (92 % void volume, denser than a kitchen sponge, https://patents.google.com/patent/US5492723A/en, Example
+      11); and a commercial cellulose sponge, ''the shear modulus G = 1.62 MPa'' (https://pmc.ncbi.nlm.nih.gov/articles/PMC5909416;
+      E = 2G(1 + nu) = 4.2 MPa, read as dry) divided by the wet-to-dry stiffening ''the bulk modulus of the sponge increased
+      by about one and a half orders of magnitude'' (x 32, Rey et al. above) = 0.13 MPa. Open-cell scaling with the lower
+      kitchen-sponge density sets the low end'
+  poisson:
+    value: 0.25
+    source: catalog
+    unc: [0.24, 0.31]
+    note: 'DOC: ''Poisson''s ratio varies between 0.24 and 0.31, thus validating the assumption n = 0.25'' (cellulose kitchen
+      sponge, compression in three directions, https://escholarship.org/content/qt12b238cd/qt12b238cd_noSplash_bf187a96ee7dd8512c2b63470fa7a2e4.pdf)'

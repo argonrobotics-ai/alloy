@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "batter_cake_quinoa",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.87,
+  0.74,
+  0.5
+ ],
+ "roughness": 0.35,
+ "subsurface": 0.2,
+ "note": "cake batter: opaque satin light tan"
+}

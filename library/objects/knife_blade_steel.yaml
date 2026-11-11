@@ -1,0 +1,20 @@
+schema: alloy.object/1
+name: knife_blade_steel
+shape:
+  primitive:
+    kind: box
+    size: [0.06, 0.0125, 0.0006]
+material: stainless_304
+features:
+  thickness:
+    value: 0.0012
+    source: model
+    note: 1.2 mm blade
+  min_wall:
+    value: 0.0012
+    source: model
+    note: 1.2 mm blade
+topology: {}
+blade:
+  edge_a: [-0.06, -0.0125, 0.0]
+  edge_b: [0.06, -0.0125, 0.0]

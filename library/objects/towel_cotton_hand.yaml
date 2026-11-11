@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: towel_cotton_hand
+shape:
+  primitive:
+    kind: box
+    size: [0.45, 0.25, 0.0003]
+material: towel_cotton_terry
+features:
+  thickness:
+    value: 0.0006
+    source: model
+    unc: [0.0004, 0.001]
+    note: 'ESTIMATE (model thickness): a 90 x 50 cm cotton terry hand towel, long side along x (DOC size: "White Hand Towel
+      100% cotton Medium weight 500gsm Size: 50cm x 90cm" https://thetowelshop.co.uk/500gsm-institutional-hotel-hand-towels);
+      the pile is 3.6-6.8 mm thick (https://jtatm.textiles.ncsu.edu/index.php/JTATM/article/download/7926/4091/33663) but
+      the cloth route sets bending from E·h³ and stretch from E·h with one E, so h is the thickness that gives the measured
+      bending without a rubbery stretch; contact sits 0.3 mm off the mid-plane'
+  min_wall:
+    value: 0.0006
+    source: model
+    unc: [0.0004, 0.001]
+    note: 'ESTIMATE: the model thickness above'
+budget:
+  particles: 861

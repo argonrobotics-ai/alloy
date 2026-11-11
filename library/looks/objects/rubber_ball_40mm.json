@@ -1,0 +1,18 @@
+{
+ "schema": "alloy.look/1",
+ "object": "rubber_ball_40mm",
+ "materials": {
+  "body": {
+   "preset": "rubber_grey",
+   "base_color": [
+    0.72,
+    0.1,
+    0.08
+   ],
+   "roughness": 0.5
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "bouncy rubber ball: red"
+}

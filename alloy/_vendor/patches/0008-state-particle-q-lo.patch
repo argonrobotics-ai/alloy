@@ -1,0 +1,128 @@
+diff --git a/alloy/_vendor/newton/_src/sim/model.py b/alloy/_vendor/newton/_src/sim/model.py
+index e80fe09ca..5c51e872a 100644
+--- a/alloy/_vendor/newton/_src/sim/model.py
++++ b/alloy/_vendor/newton/_src/sim/model.py
+@@ -499,6 +499,9 @@ class Model:
+         "particle_q": AttributeSpec(AttributeFrequency.PARTICLE),
+         "particle_qd": AttributeSpec(AttributeFrequency.PARTICLE),
+         "particle_f": AttributeSpec(AttributeFrequency.PARTICLE),
++        # Alloy (SCR-WP11-F32): each particle's sub-ulp position remainder (true position = particle_q + it), a State
++        # array like particle_f (Model.state() allocates it)
++        "particle_q_lo": AttributeSpec(AttributeFrequency.PARTICLE),
+         "particle_mass": AttributeSpec(AttributeFrequency.PARTICLE),
+         "particle_inv_mass": AttributeSpec(AttributeFrequency.PARTICLE),
+         "particle_radius": AttributeSpec(AttributeFrequency.PARTICLE),
+@@ -2531,6 +2534,9 @@ class Model:
+             s.particle_q = wp.clone(self.particle_q, requires_grad=requires_grad)
+             s.particle_qd = wp.clone(self.particle_qd, requires_grad=requires_grad)
+             s.particle_f = wp.zeros_like(self.particle_qd, requires_grad=requires_grad)
++            # Alloy (SCR-WP11-F32): the sub-ulp position remainder VBD carries from step to step (zero at the start);
++            # state-owned, so snapshots, State.assign and re-steps from the same input carry it with the positions
++            s.particle_q_lo = wp.zeros_like(self.particle_q, requires_grad=requires_grad)
+ 
+         # rigid bodies
+         if self.body_count:
+@@ -3273,6 +3279,7 @@ class Model:
+                     "particle_q",
+                     "particle_qd",
+                     "particle_f",
++                    "particle_q_lo",
+                 )
+             )
+         if self.body_count:
+diff --git a/alloy/_vendor/newton/_src/solvers/coupled/solver_coupled.py b/alloy/_vendor/newton/_src/solvers/coupled/solver_coupled.py
+index d9f3e2720..61b0ad31d 100644
+--- a/alloy/_vendor/newton/_src/solvers/coupled/solver_coupled.py
++++ b/alloy/_vendor/newton/_src/solvers/coupled/solver_coupled.py
+@@ -3310,6 +3310,7 @@ class SolverCoupled(SolverBase, CouplingInterface):
+                     ],
+                     device=self.model.device,
+                 )
++                _scatter_particle_remainder(entry, state_out, self.model.device)
+             if (
+                 entry.joint_q_indices.shape[0] > 0
+                 and entry.state_1.joint_q is not None
+@@ -4137,6 +4138,7 @@ def _copy_state_to_entry(src: State, dst: State, entry: SolverEntry) -> int:
+             ],
+             device=device,
+         )
++        _copy_particle_remainder(src, dst, entry.particle_local_to_global, device)
+     if dst.particle_f is not None:
+         if src.particle_f is None:
+             dst.particle_f.zero_()
+@@ -4178,6 +4180,7 @@ def _copy_state(src: State, dst: State) -> None:
+     if src.particle_q is not None and dst.particle_q is not None:
+         _copy_prefix(dst.particle_q, src.particle_q, "particle_q")
+         _copy_prefix(dst.particle_qd, src.particle_qd, "particle_qd")
++        _copy_remainder_prefix(src, dst)
+     if dst.particle_f is not None:
+         if src.particle_f is not None:
+             _copy_prefix(dst.particle_f, src.particle_f, "particle_f")
+@@ -4188,6 +4191,20 @@ def _copy_state(src: State, dst: State) -> None:
+         _copy_prefix(dst.joint_qd, src.joint_qd, "joint_qd")
+ 
+ 
++def _copy_remainder_prefix(src: State, dst: State) -> None:
++    """Alloy (SCR-WP11-F32): the sub-ulp position remainder (State.particle_q_lo, patch 0007) rides with particle_q.
++    A substepped entry steps from ``state_1`` after ``_copy_same_view_state(state_0, state_1)``; without this its first
++    substep read the remainder ``state_1`` kept from the last exchange (a rolled-back attempt's, after a restore) and
++    an odd substep count left the final one in ``state_tmp``. From a State without it, the destination's is zeroed."""
++    lo_src, lo_dst = getattr(src, "particle_q_lo", None), getattr(dst, "particle_q_lo", None)
++    if lo_dst is None:
++        return
++    if lo_src is None:
++        lo_dst.zero_()
++    else:
++        _copy_prefix(lo_dst, lo_src, "particle_q_lo")
++
++
+ def _copy_same_view_state(src: State, dst: State) -> None:
+     """Copy persistent arrays between states allocated from the same model view.
+ 
+@@ -4267,6 +4284,46 @@ def _copy_mapped_body_state(
+     dst_body_qd[local_id] = src_body_qd[global_id]
+ 
+ 
++@wp.kernel(enable_backward=False)
++def _copy_mapped_particle_vec3(local_to_global: wp.array[int], src: wp.array[wp.vec3], dst: wp.array[wp.vec3]):
++    local_id = wp.tid()
++    global_id = local_to_global[local_id]
++    if global_id < 0:
++        return
++    dst[local_id] = src[global_id]
++
++
++@wp.kernel(enable_backward=False)
++def _scatter_mapped_particle_vec3(
++    indices: wp.array[int], global_to_local: wp.array[int], src: wp.array[wp.vec3], dst: wp.array[wp.vec3]
++):
++    global_id = indices[wp.tid()]
++    local_id = global_to_local[global_id]
++    if local_id < 0:
++        return
++    dst[global_id] = src[local_id]
++
++
++def _copy_particle_remainder(src: State, dst: State, local_to_global: wp.array, device) -> None:
++    """Alloy (SCR-WP11-F32): the particles' sub-ulp position remainder (State.particle_q_lo) rides with particle_q
++    into an entry; from a State without it (hand-built), the entry's is zeroed beside the new particle_q."""
++    lo_src, lo_dst = getattr(src, "particle_q_lo", None), getattr(dst, "particle_q_lo", None)
++    if lo_dst is not None and lo_src is None:
++        lo_dst.zero_()
++    elif lo_src is not None and lo_dst is not None and local_to_global.shape[0] > 0:
++        wp.launch(_copy_mapped_particle_vec3, dim=local_to_global.shape[0], inputs=[local_to_global, lo_src],
++                  outputs=[lo_dst], device=device)
++
++
++def _scatter_particle_remainder(entry: SolverEntry, state_out: State, device) -> None:
++    """Alloy (SCR-WP11-F32): an entry's particle_q_lo back into the scene state, with particle_q."""
++    lo_src, lo_dst = getattr(entry.state_1, "particle_q_lo", None), getattr(state_out, "particle_q_lo", None)
++    if lo_src is not None and lo_dst is not None:
++        wp.launch(_scatter_mapped_particle_vec3, dim=entry.particle_indices.shape[0],
++                  inputs=[entry.particle_indices, entry.particle_global_to_local, lo_src], outputs=[lo_dst],
++                  device=device)
++
++
+ @wp.kernel(enable_backward=False)
+ def _copy_mapped_particle_state(
+     local_to_global: wp.array[int],

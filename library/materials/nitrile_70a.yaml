@@ -1,0 +1,38 @@
+schema: alloy.material/1
+name: nitrile_70a
+density:
+  value: 1250.0
+  source: catalog
+  unc: [1150.0, 1350.0]
+  note: NBR 70 Shore A compound 1.15-1.35 g/cm3 (O-ring compound data sheets)
+surface:
+  mu_static:
+    value: 1.0
+    source: model
+    unc: [0.7, 1.3]
+    note: dry rubber pad on smooth hard surfaces 0.8-1.2 (rubber friction literature); internal gripper-pad assets use mu
+      1.0
+  mu_dynamic:
+    value: 0.8
+    source: model
+    unc: [0.6, 1.1]
+    note: dry rubber pad on smooth hard surfaces 0.8-1.2 (rubber friction literature); internal gripper-pad assets use mu
+      1.0
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: filled rubber compounds rebound 0.3-0.7 (Lupke rebound, ISO 4662 ranges); mid value
+elastic:
+  youngs:
+    value: 5500000.0
+    source: catalog
+    unc: [4000000.0, 7000000.0]
+    note: 70 Shore A ~ 5.5 MPa, Gent, Engineering with Rubber 3e (2012) ch.1, E vs Shore A; nu 0.49 (near-incompressible,
+      snh)
+  poisson:
+    value: 0.49
+    source: catalog
+    unc: [0.48, 0.499]
+    note: 70 Shore A ~ 5.5 MPa, Gent, Engineering with Rubber 3e (2012) ch.1, E vs Shore A; nu 0.49 (near-incompressible,
+      snh)

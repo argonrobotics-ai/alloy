@@ -1,0 +1,50 @@
+schema: alloy.material/1
+name: aluminium_6061_t6
+density:
+  value: 2700.0
+  source: catalog
+  unc: [2690.0, 2710.0]
+  note: 6061-T6 2.70 g/cm3, Callister & Rethwisch 9e (2014) App. B B.1
+surface:
+  mu_static:
+    value: 0.61
+    source: catalog
+    unc: [0.45, 0.8]
+    note: aluminium on steel (dry), Serway & Jewett 9e Table 5.1; Al on Al is adhesive (> 1, Engineering ToolBox, friction
+      coefficients table) and lives in a pair card
+  mu_dynamic:
+    value: 0.47
+    source: catalog
+    unc: [0.35, 0.6]
+    note: aluminium on steel (dry), Serway & Jewett 9e Table 5.1; Al on Al is adhesive (> 1, Engineering ToolBox, friction
+      coefficients table) and lives in a pair card
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.4, 0.8]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 69000000000.0
+    source: catalog
+    unc: [68000000000.0, 70000000000.0]
+    note: 6061-T6, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+  poisson:
+    value: 0.33
+    source: catalog
+    unc: [0.32, 0.34]
+    note: 6061-T6, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+plastic:
+  yield_stress:
+    value: 276000000.0
+    source: catalog
+    note: 'DOC: 6061-T6 0.2 % yield, ASM Material Data Sheet (asm.matweb.com ma6061t6) "Tensile Yield Strength 276 MPa 40000
+      psi AA; Typical", as printed in https://quickparts.com/wp-content/uploads/2024/05/Aluminum-6061.pdf'
+  model: j2
+  hardening_modulus:
+    value: 998000000.0
+    source: model
+    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 310 MPa (same sheet:
+      "Ultimate Tensile Strength 310 MPa 45000 psi AA; Typical"), eu = e^n − 1 from Hollomon n 0.05 (Considère; "Aluminum
+      6061–T6 | 0.05 | 410", https://en.wikipedia.org/wiki/Strain_hardening_exponent table citing Kalpakjian 2014 p. 62, not
+      re-read in the book)'

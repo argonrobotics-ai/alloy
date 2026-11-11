@@ -1,0 +1,26 @@
+schema: alloy.object/1
+name: paper_wrap_tear_sheet
+shape:
+  primitive:
+    kind: box
+    size: [0.25, 0.25, 4.1e-05]
+material: paper_kraft
+features:
+  thickness:
+    value: 8.2e-05
+    source: catalog
+    note: 'DOC: Nordic Paper GS520 MG Plain Kraft Paper, unbleached, 60 g/m2 "Density kg/m3 534 730 Thickness (um) 82" https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%2060%20GSM.pdf
+      ; a light kraft wrapping paper'
+  min_wall:
+    value: 8.2e-05
+    source: catalog
+    note: 'DOC: the same sheet "Thickness (um) 82" (contact uses the film route particle radius)'
+budget:
+  particles: 1241
+topology:
+  spare_vertices: 800
+  split_spacing: 0.05
+route:
+  route: cloth_film
+  reason: 'paper: strain-capped membrane (paper barely stretches), hinge bending with fold memory and air drag; tear lines
+    on a 5 cm grid (alloy/solvers/film/seams.py)'

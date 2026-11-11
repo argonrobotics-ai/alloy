@@ -1,0 +1,432 @@
+{
+"materials": {
+"blade_tin": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": null,
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_blade_tin__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_blade_tin__Roughness",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_blade_tin__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.5704815983772278, 0.5704815983772278, 0.5382355451583862), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_blade_tin__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.3499999940395355, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.25, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n",
+"spec": {
+"base_color": [
+0.78,
+0.78,
+0.76
+],
+"preset": "zinc_plated",
+"roughness": 0.25
+},
+"tree_sha256": "b104785eb0c5dae62109713adcfdadfd58384aa04264ca30149004266f6a1e66"
+},
+"bracket_al": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_bracket_al__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_bracket_al__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_bracket_al__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_bracket_al__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.0030959751456975937, 0.0030959751456975937, 0.003254215233027935), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_bracket_al__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.11999999731779099, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.550000011920929, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_bracket_al__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 833.3333129882812, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 2.9999999242136255e-05, 0.5)\n    return v4\n",
+"spec": {
+"preset": "powder_coat_black",
+"roughness": 0.55
+},
+"tree_sha256": "3adfb0c2f70599af7e722fa562ec6029ca4970da5cba1618d6879dfbf52c2212"
+},
+"header_pbt": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_header_pbt__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_header_pbt__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_header_pbt__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_header_pbt__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.004896310158073902, 0.004896310158073902, 0.005422868765890598), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_header_pbt__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.25, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.550000011920929, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_header_pbt__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 2500.0, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 9.999999747378752e-06, 0.5)\n    return v4\n",
+"spec": {
+"base_color": [
+0.06,
+0.06,
+0.065
+],
+"preset": "abs_black",
+"rough_var": 0.25,
+"roughness": 0.55
+},
+"tree_sha256": "8c79c7e5c9b956fe2122131d618cd7362966e4a40078e21e4288be723db570bb"
+},
+"housing_pa66": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_housing_pa66__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_housing_pa66__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_housing_pa66__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_housing_pa66__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.005981059744954109, 0.005981059744954109, 0.006571403704583645), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_housing_pa66__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.25, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.5, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_housing_pa66__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 2500.0, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 9.999999747378752e-06, 0.5)\n    return v4\n",
+"spec": {
+"base_color": [
+0.07,
+0.07,
+0.075
+],
+"preset": "abs_black",
+"rough_var": 0.25,
+"roughness": 0.5
+},
+"tree_sha256": "198aed8211b5d71ddc57627c4b4e90d4882aefea51588d86c94458d12f3da7f6"
+},
+"plaster_wall": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_plaster_wall__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_plaster_wall__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_plaster_wall__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_plaster_wall__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.7105664610862732, 0.6920710802078247, 0.6382831931114197), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_plaster_wall__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.11999999731779099, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.8500000238418579, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_plaster_wall__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 2500.0, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 9.999999747378752e-06, 0.5)\n    return v4\n",
+"spec": {
+"base_color": [
+0.86,
+0.85,
+0.82
+],
+"preset": "plastic_matte",
+"roughness": 0.85
+},
+"tree_sha256": "03c882c6b568fb3998979eb4ec323bd98909b46e80199b5be7e4a297fc6bc421"
+},
+"walnut_worktop": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [
+"american_walnut_veneer_diff_2k.jpg"
+],
+"name": "mat_walnut_worktop__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_walnut_worktop__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [
+"american_walnut_veneer_disp_2k.png"
+],
+"name": "mat_walnut_worktop__height",
+"returns": "float"
+}
+},
+"images": [
+{
+"file": "american_walnut_veneer_diff_2k.jpg",
+"key": "american_walnut_veneer_diff_2k.jpg",
+"srgb": true
+},
+{
+"file": "american_walnut_veneer_disp_2k.png",
+"key": "american_walnut_veneer_disp_2k.png",
+"srgb": false
+}
+]
+},
+"source": "@wp.func\ndef mat_walnut_worktop__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float, img_0: wp.array3d(dtype=float)) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.svm_vector_math(nd.VMATH_SCALE, v1, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), 1.6666666269302368)\n    v4 = wp.vec3((v3)[1], (v3)[2], 0.0)\n    v6 = v4\n    v5 = nd.image_cubic_repeat(img_0, v6[0], v6[1])\n    v5 = nd.srgb_to_linear3(v5)\n    v7 = nd.mix_vector(0.0, n, wp.vec3(0.0, 0.0, 0.0), 1)\n    v8, v9 = nd.svm_vector_math(nd.VMATH_ABSOLUTE, v7, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_MULTIPLY, v9, v9, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v12, v13 = nd.svm_vector_math(nd.VMATH_MULTIPLY, v11, v11, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v14 = nd.svm_math(nd.MATH_ADD, (v13)[0], (v13)[1], 0.5)\n    v15 = nd.svm_math(nd.MATH_ADD, v14, (v13)[2], 0.5)\n    v16 = nd.svm_math(nd.MATH_MAXIMUM, v15, 9.999999974752427e-07, 0.5)\n    v17 = nd.svm_math(nd.MATH_DIVIDE, (v13)[0], v16, 0.5)\n    v18, v19 = nd.svm_vector_math(nd.VMATH_SCALE, v5, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v17)\n    v20 = wp.vec3((v3)[0], (v3)[2], 0.0)\n    v22 = v20\n    v21 = nd.image_cubic_repeat(img_0, v22[0], v22[1])\n    v21 = nd.srgb_to_linear3(v21)\n    v23 = nd.svm_math(nd.MATH_DIVIDE, (v13)[1], v16, 0.5)\n    v24, v25 = nd.svm_vector_math(nd.VMATH_SCALE, v21, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v23)\n    v26, v27 = nd.svm_vector_math(nd.VMATH_ADD, v19, v25, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v28 = wp.vec3((v3)[0], (v3)[1], 0.0)\n    v30 = v28\n    v29 = nd.image_cubic_repeat(img_0, v30[0], v30[1])\n    v29 = nd.srgb_to_linear3(v29)\n    v31 = nd.svm_math(nd.MATH_DIVIDE, (v13)[2], v16, 0.5)\n    v32, v33 = nd.svm_vector_math(nd.VMATH_SCALE, v29, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v31)\n    v34, v35 = nd.svm_vector_math(nd.VMATH_ADD, v27, v33, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v36, v37 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v38 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v36, 2.0, -1.0)\n    v39 = nd.svm_math(nd.MATH_MULTIPLY, v38, 0.029999999329447746, 0.5)\n    v40 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v41 = nd.svm_math(nd.MATH_MULTIPLY, v40, 0.017999999225139618, 0.5)\n    v42 = nd.svm_math(nd.MATH_ADD, v39, v41, 0.5)\n    v43 = nd.svm_math(nd.MATH_ADD, v42, 1.0, 0.5)\n    v44, v45 = nd.svm_vector_math(nd.VMATH_SCALE, v35, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v43)\n    return v45\n\n\n@wp.func\ndef mat_walnut_worktop__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.10000000149011612, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.44999998807907104, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_walnut_worktop__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float, img_0: wp.array3d(dtype=float)) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.svm_vector_math(nd.VMATH_SCALE, v1, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), 1.6666666269302368)\n    v4 = wp.vec3((v3)[1], (v3)[2], 0.0)\n    v6 = v4\n    v5 = nd.image_cubic_repeat(img_0, v6[0], v6[1])\n    v7 = nd.mix_vector(0.0, n, wp.vec3(0.0, 0.0, 0.0), 1)\n    v8, v9 = nd.svm_vector_math(nd.VMATH_ABSOLUTE, v7, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_MULTIPLY, v9, v9, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v12, v13 = nd.svm_vector_math(nd.VMATH_MULTIPLY, v11, v11, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v14 = nd.svm_math(nd.MATH_ADD, (v13)[0], (v13)[1], 0.5)\n    v15 = nd.svm_math(nd.MATH_ADD, v14, (v13)[2], 0.5)\n    v16 = nd.svm_math(nd.MATH_MAXIMUM, v15, 9.999999974752427e-07, 0.5)\n    v17 = nd.svm_math(nd.MATH_DIVIDE, (v13)[0], v16, 0.5)\n    v18, v19 = nd.svm_vector_math(nd.VMATH_SCALE, v5, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v17)\n    v20 = wp.vec3((v3)[0], (v3)[2], 0.0)\n    v22 = v20\n    v21 = nd.image_cubic_repeat(img_0, v22[0], v22[1])\n    v23 = nd.svm_math(nd.MATH_DIVIDE, (v13)[1], v16, 0.5)\n    v24, v25 = nd.svm_vector_math(nd.VMATH_SCALE, v21, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v23)\n    v26, v27 = nd.svm_vector_math(nd.VMATH_ADD, v19, v25, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v28 = wp.vec3((v3)[0], (v3)[1], 0.0)\n    v30 = v28\n    v29 = nd.image_cubic_repeat(img_0, v30[0], v30[1])\n    v31 = nd.svm_math(nd.MATH_DIVIDE, (v13)[2], v16, 0.5)\n    v32, v33 = nd.svm_vector_math(nd.VMATH_SCALE, v29, wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v31)\n    v34, v35 = nd.svm_vector_math(nd.VMATH_ADD, v27, v33, wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v36, v37 = nd.svm_vector_math(nd.VMATH_DOT, v35, wp.vec3(0.33329999446868896, 0.33329999446868896, 0.33340001106262207), wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v38 = nd.svm_math(nd.MATH_MULTIPLY, v36, 0.00019999999494757503, 0.5)\n    return v38\n",
+"spec": {
+"preset": "wood_oak",
+"roughness": 0.45,
+"scale_m": 0.6,
+"texture": "polyhaven:american_walnut_veneer"
+},
+"tree_sha256": "82c00869cf1919c153a6b71c2da2cddde877779a9af42b256d87a94b38180e3a"
+},
+"wire_black": {
+"meta": {
+"bevel": null,
+"bump": null,
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_wire_black__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_wire_black__Roughness",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_wire_black__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.001702786423265934, 0.001702786423265934, 0.0018575851572677493), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_wire_black__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.20000000298023224, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.3499999940395355, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n",
+"spec": {
+"preset": "pvc_cable_black",
+"roughness": 0.35
+},
+"tree_sha256": "f751c6de53ab1f6591bba922063a6c856fc19b0a678bcb68368a66b3e2c38b72"
+},
+"wire_red": {
+"meta": {
+"bevel": null,
+"bump": null,
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_wire_red__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_wire_red__Roughness",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_wire_red__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.1473190039396286, 0.001934984466060996, 0.0015479875728487968), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_wire_red__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.20000000298023224, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.3499999940395355, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n",
+"spec": {
+"base_color": [
+0.42,
+0.025,
+0.02
+],
+"preset": "pvc_cable_black",
+"roughness": 0.35
+},
+"tree_sha256": "8cb78449284df8596cc1aa8ecc73162f4614e32988f17ebadd0c2b944393b62c"
+},
+"yam_dark": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_yam_dark__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_yam_dark__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_yam_dark__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_yam_dark__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.0027089782524853945, 0.0027089782524853945, 0.0030959751456975937), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_yam_dark__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.15000000596046448, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.3199999928474426, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_yam_dark__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 2500.0, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 7.999999979801942e-06, 0.5)\n    return v4\n",
+"spec": {
+"preset": "aluminum_anodized_black"
+},
+"tree_sha256": "0bbff6a508c06610270f4bdeb3c668fcd6091709b1114d27996af09937a036a1"
+},
+"yam_link": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": null,
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_yam_link__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_yam_link__Roughness",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_yam_link__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.8073459267616272, 0.8275708556175232, 0.8275708556175232), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_yam_link__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.svm_vector_math(nd.VMATH_MULTIPLY, v1, wp.vec3(50.0, 25000.0, 25000.0), wp.vec3(0.0, 0.0, 0.0), 1.0)\n    v4, v5 = nd.tex_noise_3d(v3, 1.0, 2.0, 0.5, 2.0, 0.0, 1)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v4, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.3499999940395355, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v7, 1.0, 0.5)\n    v9 = nd.svm_math(nd.MATH_MULTIPLY, 0.30000001192092896, v8, 0.5)\n    v10 = nd.svm_math(nd.MATH_MAXIMUM, v9, 0.0, 0.5)\n    v11, v12 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v13 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v11, 2.0, -1.0)\n    v14 = nd.svm_math(nd.MATH_MULTIPLY, v13, 0.20000000298023224, 0.5)\n    v15 = nd.svm_math(nd.MATH_ADD, v14, 1.0, 0.5)\n    v16 = nd.svm_math(nd.MATH_MULTIPLY, v10, v15, 0.5)\n    v17 = nd.svm_math(nd.MATH_MAXIMUM, v16, 0.0, 0.5)\n    return v17\n",
+"spec": {
+"preset": "aluminum_bare"
+},
+"tree_sha256": "820c46c78810610ba2876cfc38b933fbb4302da15e98170664a172bf9b34014c"
+},
+"yam_pad": {
+"meta": {
+"bevel": {
+"radius": 0.0005000000237487257,
+"samples": 8
+},
+"bump": {
+"distance": 1.0,
+"filter_width": 0.10000000149011612,
+"invert": false,
+"normal_from_bevel": true,
+"strength": 1.0
+},
+"functions": {
+"Base_Color": {
+"images": [],
+"name": "mat_yam_pad__Base_Color",
+"returns": "vec3"
+},
+"Roughness": {
+"images": [],
+"name": "mat_yam_pad__Roughness",
+"returns": "float"
+},
+"height": {
+"images": [],
+"name": "mat_yam_pad__height",
+"returns": "float"
+}
+},
+"images": []
+},
+"source": "@wp.func\ndef mat_yam_pad__Base_Color(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> wp.vec3:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 33.33333206176758, 3.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.029999999329447746, 0.5)\n    v6 = nd.svm_math(nd.MATH_MULTIPLY_ADD, rnd, 2.0, -1.0)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, v6, 0.017999999225139618, 0.5)\n    v8 = nd.svm_math(nd.MATH_ADD, v5, v7, 0.5)\n    v9 = nd.svm_math(nd.MATH_ADD, v8, 1.0, 0.5)\n    v10, v11 = nd.svm_vector_math(nd.VMATH_SCALE, wp.vec3(0.0021671827416867018, 0.0021671827416867018, 0.0021671827416867018), wp.vec3(0.0, 0.0, 0.0), wp.vec3(0.0, 0.0, 0.0), v9)\n    return v11\n\n\n@wp.func\ndef mat_yam_pad__Roughness(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 50.0, 5.0, 0.550000011920929, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY_ADD, v2, 2.0, -1.0)\n    v5 = nd.svm_math(nd.MATH_MULTIPLY, v4, 0.15000000596046448, 0.5)\n    v6 = nd.svm_math(nd.MATH_ADD, v5, 1.0, 0.5)\n    v7 = nd.svm_math(nd.MATH_MULTIPLY, 0.7200000286102295, v6, 0.5)\n    v8 = nd.svm_math(nd.MATH_MAXIMUM, v7, 0.0, 0.5)\n    return v8\n\n\n@wp.func\ndef mat_yam_pad__height(p: wp.vec3, n: wp.vec3, uv: wp.vec3, col: wp.vec3, rnd: float) -> float:\n    v1 = nd.mix_vector(0.0, p, wp.vec3(0.0, 0.0, 0.0), 1)\n    v2, v3 = nd.tex_noise_3d(v1, 1250.0, 6.0, 0.6000000238418579, 2.0, 0.0, 1)\n    v4 = nd.svm_math(nd.MATH_MULTIPLY, v2, 1.9999999494757503e-05, 0.5)\n    return v4\n",
+"spec": {
+"preset": "rubber_black"
+},
+"tree_sha256": "f89481715a2c8f1afb6e5a761bc82fa68cdf71f457ab91ad7708df1ae75bca89"
+}
+},
+"textures": {
+"american_walnut_veneer_diff_2k.jpg": {
+"colorspace": "sRGB"
+},
+"american_walnut_veneer_disp_2k.png": {
+"colorspace": "Non-Color"
+}
+}
+}

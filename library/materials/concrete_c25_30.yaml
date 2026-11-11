@@ -1,0 +1,36 @@
+schema: alloy.material/1
+name: concrete_c25_30
+density:
+  value: 2400.0
+  source: catalog
+  unc: [2300.0, 2500.0]
+  note: plain normal-weight concrete 24 kN/m^3, +1 kN/m^3 for normal reinforcement (EN 1991-1-1 Table A.1 as quoted by New
+    Steel Construction, 'They've changed the density of concrete - or have they?')
+surface:
+  mu_static:
+    value: 0.6
+    source: model
+    unc: [0.4, 0.8]
+    note: no code value ("Values for the coefficient of friction are not included in design codes such as BS 8110 and Eurocode
+      2", Concrete Bookshop); a model value for a troweled or formed face
+  mu_dynamic:
+    value: 0.5
+    source: model
+    unc: [0.35, 0.7]
+    note: model value, below the static one (see mu_static)
+  restitution:
+    value: 0.2
+    source: model
+    unc: [0.1, 0.4]
+    note: rough brittle surface; model value
+elastic:
+  youngs:
+    value: 31000000000.0
+    source: catalog
+    unc: [28000000000.0, 34000000000.0]
+    note: C25/30 mean secant modulus Ecm 31 GPa (fck 25 MPa), EN 1992-1-1 Table 3.1; unc +-10 % is a model band
+  poisson:
+    value: 0.2
+    source: catalog
+    unc: [0.15, 0.22]
+    note: uncracked concrete 0.2, EN 1992-1-1 3.1.3(4)

@@ -1,0 +1,44 @@
+schema: alloy.material/1
+name: cloth_polyester_woven
+density:
+  value: 438.9
+  source: catalog
+  unc: [322.0, 480.0]
+  note: 'DOC: woven polyester "fabric weight of 158 g/m2" at "~0.36 mm" (compression curve at ~20 gf/cm) https://pmc.ncbi.nlm.nih.gov/articles/PMC6316920/'
+surface:
+  mu_static:
+    value: 0.2
+    source: model
+    unc: [0.12, 0.35]
+    note: 'ESTIMATE: above the kinetic value below'
+  mu_dynamic:
+    value: 0.15
+    source: model
+    unc: [0.1, 0.3]
+    note: 'ESTIMATE (proxy): KES MIU 0.141 of a polyester-warp plain weave (Choi et al. 2019, Textile Coloration and Finishing
+      31(4), Table 6), not a pure polyester fabric'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.05]
+    note: 'ESTIMATE: fabric impacts are fully damped'
+elastic:
+  youngs:
+    value: 803000.0
+    source: model
+    unc: [413000.0, 5740000.0]
+    note: 'ESTIMATE (back-calculated): one modulus for the cloth route, D = E·h³/(12(1-ν²)) at h 0.36 mm matched to a polyester-warp
+      plain weave "B 0.035" gf·cm²/cm = 3.4e-6 N·m (Choi et al. 2019, Table 6); range from the lightest polyester plain weaves
+      (0.018 gf·cm²/cm, snippet) to the control bound of https://pmc.ncbi.nlm.nih.gov/articles/PMC6316920/ (~0.25 gf·cm²/cm)'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'ESTIMATE: woven fabric effective in-plane value, used only in the plate formula above'
+  bending:
+    value: 3.430839560439561e-06
+    source: model
+    unc: [1.765e-06, 2.452e-05]
+    note: 'ESTIMATE (derived): youngs'' plate value at this card''s 0.36 mm model thickness (0.035 gf·cm²/cm, the polyester
+      plain weave B youngs'' note quotes from Choi et al. 2019, Table 6, not re-read here). The cloth route uses it at any
+      sheet thickness, which is then the contact thickness (R2-E1)'

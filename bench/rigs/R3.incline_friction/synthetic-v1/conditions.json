@@ -1,0 +1,14 @@
+[
+ {
+  "id": "pp_on_steel",
+  "params": {
+   "mu_static": 0.35
+  }
+ },
+ {
+  "id": "rubber_on_wood",
+  "params": {
+   "mu_static": 0.7
+  }
+ }
+]

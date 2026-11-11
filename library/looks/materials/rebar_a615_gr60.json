@@ -1,0 +1,12 @@
+{
+ "schema": "alloy.look/1",
+ "material": "rebar_a615_gr60",
+ "preset": "steel_black_oxide",
+ "base_color": [
+  0.21,
+  0.2,
+  0.19
+ ],
+ "roughness": 0.6,
+ "note": "hot-rolled rebar: dark mill scale (iron oxide, as black oxide), matte, not brushed"
+}

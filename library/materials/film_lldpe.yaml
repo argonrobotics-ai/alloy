@@ -1,0 +1,43 @@
+schema: alloy.material/1
+name: film_lldpe
+density:
+  value: 918.0
+  source: catalog
+  unc: [915.0, 923.0]
+  note: 'DOC: ExxonMobil C4LL 1018 (applications include shopping bags) "Density / Specific Gravity | 0.918 g/cm³ | ASTM D792"
+    https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000000546/0/en'
+surface:
+  mu_static:
+    value: 0.65
+    source: model
+    unc: [0.12, 0.9]
+    note: 'ESTIMATE: no datasheet splits static and kinetic; at or above the kinetic value below'
+  mu_dynamic:
+    value: 0.6
+    source: model
+    unc: [0.1, 0.8]
+    note: 'ESTIMATE (proxy): unslipped LDPE film on itself 0.60-0.80 (Dow 410F, ASTM D1894); slip-additive LLDPE "Coefficient
+      of Friction (Blown Film) 0.12" (Braskem LL4405S, https://sushengpolymer.com/media/pdf/SXupgc_BraskemPELL4405S.pdf)'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.1]
+    note: 'ESTIMATE: a thin film does not bounce; air drag and the sheet itself absorb the impact'
+elastic:
+  youngs:
+    value: 190000000.0
+    source: catalog
+    unc: [190000000.0, 230000000.0]
+    note: 'DOC: C4LL 1018 "Secant Modulus MD - 1% Secant | 28000 psi | 190 MPa | ASTM D882" (TD 230 MPa), 25.4 um film https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000000546/0/en'
+  poisson:
+    value: 0.44
+    source: model
+    unc: [0.4, 0.46]
+    note: 'ESTIMATE: LLDPE taken as LDPE, "Poisson''s ratio μ 0.439" https://pmc.ncbi.nlm.nih.gov/articles/PMC7155928/table/tb1'
+plastic:
+  yield_stress:
+    value: 9600000.0
+    source: catalog
+    unc: [9600000.0, 10000000.0]
+    note: 'DOC: C4LL 1018 "Tensile Strength at Yield MD | 1400 psi | 9.6 MPa | ASTM D882" (TD 10 MPa) https://www.exxonmobilchemical.com/en/chemicals/webapi/dps/v1/datasheets/150000000546/0/en
+      . The film route caps in-plane strain at yield / E'

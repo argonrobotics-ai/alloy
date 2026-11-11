@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: jar_glass_8oz
+shape:
+  mesh:
+    path: meshes/jar_glass_8oz.obj
+    sha256: 9515e564dd1d36997f889a8c15c9e28b4367d5036303d87752aa9b06b0d5ddd7
+    collision: sdf
+material: glass_soda_lime

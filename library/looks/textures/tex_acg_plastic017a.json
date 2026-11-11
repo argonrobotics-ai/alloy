@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_plastic017a",
+ "family": "plastic",
+ "preset": "plastic_matte",
+ "texture": "ambientcg:Plastic017A",
+ "res": "1k",
+ "scale_m": 0.3,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Plastic017A",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.376,
+ "note": "green plastic: ambientCG 'Plastic 017 A', 0.3 m tile, 1k maps"
+}

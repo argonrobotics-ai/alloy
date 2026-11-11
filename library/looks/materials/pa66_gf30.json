@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pa66_gf30",
+ "preset": "abs_black",
+ "roughness": 0.55,
+ "note": "glass-filled PA66 connector housings: black, satin"
+}

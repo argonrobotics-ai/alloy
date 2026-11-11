@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "yogurt_plain",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.93,
+  0.92,
+  0.88
+ ],
+ "roughness": 0.3,
+ "subsurface": 0.35,
+ "note": "yogurt: opaque soft-gloss white"
+}

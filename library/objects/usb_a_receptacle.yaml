@@ -1,0 +1,25 @@
+schema: alloy.object/1
+name: usb_a_receptacle
+shape:
+  mesh:
+    path: meshes/usb_a_receptacle.obj
+    sha256: 6b01966c20752cf44572d5c5899c053012de8bee91903573cb2656bd7b10fe2a
+    collision: sdf
+material: abs
+part_materials:
+  housing: abs
+  tongue: pbt
+motion: static
+features:
+  precision_anchor: [0.0, 0.0, 0.012]
+precision_partners:
+- usb_a_plug:shell
+precision_features:
+- name: port
+  crop:
+  - [-0.007, -0.003, 0.0025]
+  - [0.007, 0.003, 0.0125]
+  clearance:
+    value: 0.0005
+    source: catalog
+    note: 'USB-A: receptacle 12.5 x 5.12 mm vs plug shell 12.0 x 4.5 mm, 0.5 mm clearance across the width'

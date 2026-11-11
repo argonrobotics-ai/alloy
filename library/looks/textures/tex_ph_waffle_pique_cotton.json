@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_waffle_pique_cotton",
+ "family": "fabric",
+ "preset": "linen",
+ "texture": "polyhaven:waffle_pique_cotton",
+ "res": "1k",
+ "scale_m": 0.28,
+ "bump_m": 0.0004,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/waffle_pique_cotton",
+ "author": "colormass, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.397,
+ "note": "waffle pique cotton (dish towel): Poly Haven 'Waffle Pique Cotton', 0.28 m tile, 1k maps"
+}

@@ -1,0 +1,35 @@
+schema: alloy.material/1
+name: honey
+density:
+  value: 1420.0
+  source: catalog
+  unc: [1380.0, 1450.0]
+  note: true specific gravity at 20 C 1.4237 at 17 % water, 1.4171 at 18 %, 1.3950 at 21 %, 1.4457 at 13 % (White 1975, FAO
+    Value-added products from beekeeping, ch. 2, Table 2.4, https://www.fao.org/4/w0076e/w0076e04.htm); 1420 = about 17.5
+    % water
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'viscous liquid: no Coulomb friction, wall drag comes from viscosity/adhesion'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'viscous liquid: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'viscous liquid: inelastic'
+fluid:
+  viscosity:
+    value: 6.0
+    source: catalog
+    unc: [2.0, 10.0]
+    note: white clover honey at 25 C 13.8 Pa s at 15.5 % water, 4.8 at 18.2 %, 2.0 at 20.2 % (Munro 1943, FAO ch. 2, Table
+      2.2, https://www.fao.org/4/w0076e/w0076e04.htm); 6 Pa s = about 17.6 % water, in line with the density at about 17.5
+      %
+  surface_tension:
+    value: 0.05
+    source: model
+    unc: [0.04, 0.065]
+    note: ~ 50 mN/m (sugar solutions)

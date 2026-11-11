@@ -1,0 +1,48 @@
+schema: alloy.material/1
+name: peanut_butter
+density:
+  value: 1100.0
+  source: model
+  unc: [1000.0, 1200.0]
+  note: 'ESTIMATE: no measured density found; a paste of about half peanut oil (about 920 kg/m^3) and half ground solids (about
+    1300-1400) with little air'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+plastic:
+  yield_stress:
+    value: 374.0
+    source: measured
+    unc: [27.0, 374.0]
+    note: 'Bingham apparent yield stress of commercial peanut butters, Citerne, Carreau and Moan 2001, Rheol. Acta 40:86,
+      as quoted on https://en.wikipedia.org/wiki/Rheology_of_peanut_butter: ''The apparent yield stress for the stabilized
+      suspension (374 Pa)''; 27 Pa for the unstabilized one (hence the wide range). A Bingham fit of other butters than the
+      K and n below: the stress at 10 1/s, 374 + 208 = 582 Pa, is a hybrid of two products and two fits'
+fluid:
+  viscosity:
+    value: 20.8
+    source: fit
+    unc: [15.0, 27.0]
+    note: 'consistency-part stress at 10 1/s over 10 1/s: K 10^n / 10 = 82.49 x 2.518 / 10 = 20.8 Pa s (the starting value);
+      K and n come from a different study and product than the yield stress (a hybrid, see plastic.yield_stress); fit: https://rcastoragev2.blob.core.windows.net/012b76ea01a50c6cd23c84238223d053/main.PMC11447364.pdf'
+  consistency:
+    value: 82.49
+    source: fit
+    unc: [82.49, 84.68]
+    note: 'control peanut butter, Herschel-Bulkley with the power-law part listed (no tau0 given), 25 C day 1: K 82.49 Pa·s^n,
+      n 0.401; 45 C: K 84.68, n 0.419; Brookfield PV3T, SC-27 spindle, 1-8 rpm; https://rcastoragev2.blob.core.windows.net/012b76ea01a50c6cd23c84238223d053/main.PMC11447364.pdf'
+  flow_index:
+    value: 0.401
+    source: fit
+    unc: [0.401, 0.419]
+    note: n of the same fit, https://rcastoragev2.blob.core.windows.net/012b76ea01a50c6cd23c84238223d053/main.PMC11447364.pdf

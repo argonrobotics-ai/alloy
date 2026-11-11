@@ -1,0 +1,11 @@
+# The card library ships inside the package (setup.py stages it at alloy/_data/library; SCR-OSS2-2).
+graft library
+# The docs and examples the package's docstrings and errors point at, and the agent quick start (2026-11-11).
+# docs/: the public set only (an allow-list: setup.py's DOCS_PUBLIC; AGENTS.md also ships in the wheel).
+# install.sh does not ship (pip only).
+graft docs/public
+graft docs/known_gaps
+graft docs/guide
+graft examples
+include AGENTS.md llms.txt
+global-exclude __pycache__ *.pyc .DS_Store

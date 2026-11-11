@@ -1,0 +1,18 @@
+{
+ "schema": "alloy.look/1",
+ "object": "battery_holder_pp",
+ "materials": {
+  "body": {
+   "preset": "plastic_matte",
+   "base_color": [
+    0.04,
+    0.04,
+    0.04
+   ],
+   "roughness": 0.5
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "battery holder: black"
+}

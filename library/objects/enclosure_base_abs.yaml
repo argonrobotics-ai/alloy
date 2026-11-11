@@ -1,0 +1,13 @@
+schema: alloy.object/1
+name: enclosure_base_abs
+shape:
+  mesh:
+    path: meshes/enclosure_abs_base.obj
+    sha256: 318e6fe742bf770f90c7747201b561e19f31e7c672b5f76f8f94905ee95f92e3
+    collision: sdf
+material: abs
+loads:
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'snapfit_enclosure: lid lip clearance 0.2 mm, box only located'

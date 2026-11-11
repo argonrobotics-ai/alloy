@@ -1,0 +1,9 @@
+# T14 tool fetch (reference-task, two YAM arms, toy car, spatulas, spoon, rolling pin, duck, mug, bin), converted from r1_t14/model.mjb; trace t14. Replay tier: the whole recorded model as one MJCF robot (alloy.tasks.scenes).
+schema: alloy.scene/1
+robots:
+- path: robots/task_t14/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: task_t14
+objects: []
+control_dt: 0.0008333333333

@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: wood_cedar_pencil
+density:
+  value: 400.0
+  source: catalog
+  unc: [350.0, 500.0]
+  note: incense-cedar SG 0.37, USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC; pencil with graphite core, effective
+surface:
+  mu_static:
+    value: 0.4
+    source: catalog
+    unc: [0.25, 0.5]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.3
+    source: catalog
+    unc: [0.2, 0.4]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: wood on wood/steel impacts 0.4-0.6; mid value
+elastic:
+  youngs:
+    value: 7200000000.0
+    source: catalog
+    unc: [6000000000.0, 10000000000.0]
+    note: incense-cedar MOE 7.2 GPa, USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC; core and lacquer ignored
+  poisson:
+    value: 0.35
+    source: catalog
+    unc: [0.3, 0.42]
+    note: incense-cedar MOE 7.2 GPa, USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC; core and lacquer ignored

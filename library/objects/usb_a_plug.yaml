@@ -1,0 +1,34 @@
+schema: alloy.object/1
+name: usb_a_plug
+shape:
+  mesh:
+    path: meshes/usb_a_plug.obj
+    sha256: dc26a4eb101cfd93a69bd6843e71309b5303d5a77fcb1ad54d0764b7a2544ae4
+    collision: sdf
+material: steel_nickel_plated
+part_materials:
+  insert: pbt
+  overmold: pvc_cable_jacket
+  shell: steel_nickel_plated
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+features:
+  min_wall:
+    value: 0.000315
+    source: catalog
+    note: shell sheet 0.315 mm
+precision_partners:
+- usb_a_receptacle:port
+precision_features:
+- name: shell
+  crop:
+  - [-0.006500000000000001, -0.00275, 0.0]
+  - [0.006500000000000001, 0.00275, 0.01225]
+  clearance:
+    value: 0.0005
+    source: catalog
+    note: 'USB-A: receptacle 12.5 x 5.12 mm vs plug shell 12.0 x 4.5 mm, 0.5 mm clearance across the width'

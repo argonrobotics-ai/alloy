@@ -1,0 +1,56 @@
+schema: alloy.material/1
+name: soil_clay_loam
+density:
+  value: 2650.0
+  source: catalog
+  unc: [2600.0, 2750.0]
+  note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Bulk: ASABE
+    suggested default 14 kN/m3 = 1427 kg/m3, not measured; top soils 11-18 kN/m3 (same ASABE guideline)'
+surface:
+  mu_static:
+    value: 0.10510423526567647
+    source: catalog
+    unc: [0.10510423526567647, 0.6]
+    note: 'clay loam on steel: ASABE suggested default delta 6 deg, adhesion 0 (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf);
+      measured clay-loam adhesion 1.7-5.7 kPa at 15-30 % water (https://sta.uwi.edu/eng/wije/vol3802_jan2016/documents/Vol38No2ManRABirchJan2016.pdf,
+      Table 2) adds c_a / sigma_n ~ 0.1-0.5 at 10-20 kPa contact pressure, so the upper bound is widened'
+  mu_dynamic:
+    value: 0.09459381173910883
+    source: model
+    note: 'clay loam on steel: ASABE suggested default delta 6 deg, adhesion 0 (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf);
+      measured clay-loam adhesion 1.7-5.7 kPa at 15-30 % water (https://sta.uwi.edu/eng/wije/vol3802_jan2016/documents/Vol38No2ManRABirchJan2016.pdf,
+      Table 2) adds c_a / sigma_n ~ 0.1-0.5 at 10-20 kPa contact pressure, so the upper bound is widened; dynamic 0.9 x static
+      (model)'
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: soil impacts are almost fully plastic (model)
+elastic:
+  youngs:
+    value: 10000000.0
+    source: model
+    unc: [5000000.0, 50000000.0]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws); soil Young''s
+      modulus 5-50 MPa is typical, no single source opened'
+plastic:
+  friction_angle:
+    value: 0.17453292519943295
+    source: catalog
+    unc: [0.08726646259971647, 0.17453292519943295]
+    note: 'clay loam: ASABE suggested default phi 10 deg, not measured; typical clay 5-10 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf)'
+  cohesion:
+    value: 30000.0
+    source: catalog
+    unc: [10000.0, 40000.0]
+    note: 'clay loam: ASABE suggested default c 30 kPa, not measured; moist plastic clay 10-40 kPa (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf).
+      A free column of this card stands to H_c = 5.1 m: a shallow bed is rigid under gravity and a tool must exceed ~30 kPa
+      to cut it'

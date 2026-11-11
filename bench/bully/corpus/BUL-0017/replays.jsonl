@@ -1,0 +1,3 @@
+{"counts": true, "date": "2026-11-04T15:25:45+00:00", "device": "cuda:0", "finding": "BUL-0017", "runs": 10, "trips": 10}
+{"by": "alloy-dev", "commit": "4a69ced68e4e412713af7fd3e8cfa0556b2c561f", "counts": false, "date": "2026-11-04T17:55:30+00:00", "device": "cuda:0", "finding": "BUL-0017", "gpu": "L4", "note": "WP5's replay after its float64 guard fallback (4fa33d8b); 2 guarded refactors per run", "runs": 10, "trips": 0}
+{"by": "alloy-dev", "commit": "4a69ced68e4e412713af7fd3e8cfa0556b2c561f", "counts": false, "date": "2026-11-04T18:07:27+00:00", "device": "cuda:0", "finding": "BUL-0017", "gpu": "L4", "note": "WP5's replay after its float64 guard fallback (4fa33d8b); 2 guarded refactors per run", "runs": 10, "trips": 0}

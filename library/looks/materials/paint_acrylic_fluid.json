@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "paint_acrylic_fluid",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.55,
+  0.015,
+  0.02
+ ],
+ "roughness": 0.2,
+ "subsurface": 0.1,
+ "note": "wet artist fluid acrylic, cadmium red (sRGB 196, 32, 38 as linear): glossy while wet"
+}

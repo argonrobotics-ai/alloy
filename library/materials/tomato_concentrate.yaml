@@ -1,0 +1,38 @@
+schema: alloy.material/1
+name: tomato_concentrate
+density:
+  value: 1090.0
+  source: measured
+  unc: [1085.0, 1095.0]
+  note: tomato paste 1.085 g/cm3 (X-ray CT) and 1.095 (pycnometer), Table 5 of Kelkar et al. 2015, J. Food Eng. (https://pmc.ncbi.nlm.nih.gov/articles/PMC4384159/)
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+fluid:
+  viscosity:
+    value: 4.7
+    source: fit
+    unc: [3.32, 4.7]
+    note: 'apparent viscosity at 10 1/s of the power law below, K 10^(n-1) = 18.7 x 10^-0.6 = 4.70 Pa s (the starting value);
+      25 % solids (K 12.9, n 0.41) gives 3.32; fit: https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/'
+  consistency:
+    value: 18.7
+    source: fit
+    unc: [12.9, 18.7]
+    note: 'power law of concentrated tomato juice at 32.2 C, Table 1: 30 % solids n 0.40, K 18.7; 25 % solids n 0.41, K 12.9;
+      12.8 % solids n 0.43, K 2.0 (fitted with no yield stress); https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/'
+  flow_index:
+    value: 0.4
+    source: fit
+    unc: [0.4, 0.41]
+    note: power-law n of the same row (30 % solids), https://www.orientjchem.org/vol38no6/rheological-behavior-of-fruit-and-vegetable-purees-and-tomato-sauce/

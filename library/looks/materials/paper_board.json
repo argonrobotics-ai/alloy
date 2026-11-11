@@ -1,0 +1,8 @@
+{
+ "schema": "alloy.look/1",
+ "material": "paper_board",
+ "preset": "paper",
+ "base_color": [0.82, 0.82, 0.8],
+ "roughness": 0.6,
+ "note": "white lined chipboard, the white coated top side (a bag's bottom board)"
+}

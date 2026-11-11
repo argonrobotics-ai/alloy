@@ -1,0 +1,13 @@
+schema: alloy.object/1
+name: tray_aluminium
+shape:
+  mesh:
+    path: meshes/tray_aluminium.obj
+    sha256: dd6835df127e697c712b2bf155bde5dee187b470d9776c98230aa719da860d32
+    collision: sdf
+material: aluminium_6061_t6
+features:
+  thickness:
+    value: 0.002
+    source: model
+    note: 2 mm sheet tray

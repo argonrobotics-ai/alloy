@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: wood_pine
+density:
+  value: 510.0
+  source: catalog
+  unc: [400.0, 560.0]
+  note: pine; uses 510; USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC pines SG 0.35-0.51
+surface:
+  mu_static:
+    value: 0.4
+    source: catalog
+    unc: [0.25, 0.5]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.3
+    source: catalog
+    unc: [0.2, 0.4]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: wood on wood/steel impacts 0.4-0.6; mid value
+elastic:
+  youngs:
+    value: 9000000000.0
+    source: catalog
+    unc: [8000000000.0, 12000000000.0]
+    note: pine MOE along grain 8.5-12 GPa, USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC; nu_LR 0.33-0.42
+  poisson:
+    value: 0.37
+    source: catalog
+    unc: [0.33, 0.42]
+    note: pine MOE along grain 8.5-12 GPa, USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a, 12% MC; nu_LR 0.33-0.42

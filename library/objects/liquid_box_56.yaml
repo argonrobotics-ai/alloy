@@ -1,0 +1,18 @@
+schema: alloy.object/1
+name: liquid_box_56
+shape:
+  mesh:
+    path: meshes/liquid_box_56.obj
+    sha256: 2e3f49922078189b96f2c8cd36a692fc4038bbefc0911676822bd466e3fa642c
+    collision: sdf
+material: pp_homopolymer
+features:
+  thickness:
+    value: 0.004
+    source: model
+    note: 'open container for the liquid and grain fills (water_box_200ml and the other *_box_* cards): 56 x 56 mm inside,
+      80 mm deep, 4 mm walls and floor, origin at the centre of its bottom face; square so a fill starts at rest'
+  min_wall:
+    value: 0.004
+    source: model
+    note: 4 mm walls and floor

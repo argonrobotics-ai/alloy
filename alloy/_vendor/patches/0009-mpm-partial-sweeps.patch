@@ -1,0 +1,98 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+index 1f546f4ba..a3efe499c 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+@@ -1223,6 +1223,7 @@ def make_gs_solve_kernel(
+         launch_dim: int,
+         color_offsets: wp.array[int],
+         color_blocks: wp.array2d[int],
++        block_active: wp.array[wp.int32],  # Alloy (S5, partial sweeps): blocks still moving; empty: every block
+         rows: Any,
+         colors_per_batch: int,
+         yield_params: wp.array[YieldParamVec],
+@@ -1251,6 +1252,9 @@ def make_gs_solve_kernel(
+             # Batched rows read frozen velocities, so each thread solves a single row.
+             first, last = int(rows.block_offsets[first]), int(rows.block_offsets[last])
+         for block in range(first + wp.tid(), last, launch_dim):
++            if wp.static(not batched and not soa):  # Alloy (S5): a partial sweep skips the blocks not flagged
++                if block_active.shape[0] > 0 and block_active[block] == 0:
++                    continue
+             beg, end = int(0), int(0)
+             if wp.static(batched):
+                 beg, end = block, block + 1
+@@ -1290,6 +1294,30 @@ def make_gs_solve_kernel(
+     return gs_solve_kernel_impl
+ 
+ 
++@wp.kernel
++def mark_active_blocks(
++    color_blocks: wp.array2d[int],
++    strain_residual: wp.array[float],
++    threshold2: float,
++    world_offsets: wp.array[int],
++    block_active: wp.array[wp.int32],
++):
++    """Alloy (S5, partial sweeps): a colour block stays active while any of its rows moved more than the threshold in
++    the last full sweep (``strain_residual`` holds each row's squared update, ``evaluate_strain_residual``), and
++    always when its rows span worlds (``world_offsets``, WP8's review: else one world's sweep would follow another's
++    rows; nothing pins Newton's blocking to worlds)."""
++    b = wp.tid()
++    beg, end = color_blocks[0, b], color_blocks[1, b]
++    active = wp.int32(0)
++    if world_offsets.shape[0] > 1 and end > beg:
++        if _world_of(world_offsets, beg) != _world_of(world_offsets, end - 1):
++            active = wp.int32(1)
++    for i in range(beg, end):
++        if strain_residual[i] > threshold2:
++            active = wp.int32(1)
++    block_active[b] = active
++
++
+ # ── Reordered (SoA) GS solver ───────────────────────────────────────────────
+ #
+ # Entry-major SoA reordering of the BSR strain matrix for coalesced memory
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+index a5311ff27..c7f2f189b 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+@@ -30,6 +30,7 @@ from .contact_solver_kernels import (
+     solve_subgrid_friction,
+ )
+ from .rheology_solver_kernels import (
++    mark_active_blocks,
+     StrainMatrixRows,
+     StrainMatrixRowsSoA,
+     YieldParamVec,
+@@ -853,6 +854,7 @@ class _RheologySolver:
+                 launch_dim,
+                 self.rheology.color_offsets,
+                 self.rheology.color_blocks,
++                self._no_skip,  # Alloy (S5): block_active, empty = a full sweep
+                 rows,
+                 colors_per_batch,
+                 self.rheology.yield_params,
+@@ -971,6 +973,24 @@ class _GaussSeidelSolver(_RheologySolver):
+     def solve_granularity(self):
+         return 25
+ 
++    def skip_blocks(self, block_active: wp.array | None) -> bool:
++        """Alloy (S5, partial sweeps): sweep only the colour blocks flagged in ``block_active`` (int32 per block,
++        ``mark_active_blocks``), or every block with None. False for the reordered / batched sweeps."""
++        if not self.skips_converged:
++            return False
++        active = self._no_skip if block_active is None else block_active
++        self.solve_local_launch.set_param_by_name("block_active", active)
++        return True
++
++    def mark_active_blocks(self, block_active: wp.array, threshold: float, evaluate: bool = True) -> None:
++        """Alloy (S5): after a full sweep, flag the blocks whose rows moved more than ``threshold`` in it, or whose
++        rows span worlds; ``evaluate=False`` when ``eval_residual`` has just read that sweep."""
++        if evaluate:
++            self._evaluate_strain_residual_launch.launch()
++        wp.launch(mark_active_blocks, dim=block_active.shape[0], inputs=[self.rheology.color_blocks,
++                  self.strain_residual, threshold * threshold, self._world_offsets], outputs=[block_active],
++                  device=self.device)
++
+     def apply_initial_guess(self):
+         for color in range(self.color_count):
+             self.apply_stress_launch.set_param_at_index(0, color)

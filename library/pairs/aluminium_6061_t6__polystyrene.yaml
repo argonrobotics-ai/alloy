@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: aluminium_6061_t6
+b: polystyrene
+mu_static:
+  value: 0.33
+  source: model
+  unc: [0.3, 0.35]
+  note: Engineering ToolBox friction-coefficients-d_778 polystyrene/steel 0.3-0.35 as closest match
+mu_dynamic:
+  value: 0.33
+  source: model
+  unc: [0.3, 0.35]
+  note: Engineering ToolBox friction-coefficients-d_778 polystyrene/steel 0.3-0.35 as closest match

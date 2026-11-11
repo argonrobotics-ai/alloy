@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: block_bore_d8_1
+shape:
+  mesh:
+    path: meshes/block_bore_d8_1.obj
+    sha256: 36377f56a1e40d9290ef230ae446c7c8eb8eb9f3958644a9b516b7bebe15b301
+    collision: sdf
+material: pmma_cast
+motion: static
+features:
+  precision_anchor: [0.0, 0.0, 0.0]
+precision_partners:
+- peg_d8:shaft
+precision_features:
+- name: bore
+  crop:
+  - [-0.006, -0.006, -0.005]
+  - [0.006, 0.006, 0.005]
+  clearance:
+    value: 0.0001
+    source: catalog
+    note: D8 peg in a 8.1 mm hole, 0.1 mm diametral clearance

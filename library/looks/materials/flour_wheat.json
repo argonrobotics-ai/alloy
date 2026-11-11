@@ -1,0 +1,12 @@
+{
+ "schema": "alloy.look/1",
+ "material": "flour_wheat",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.92,
+  0.89,
+  0.83
+ ],
+ "roughness": 1.0,
+ "note": "wheat flour: off-white (a faint cream), fully matte powder"
+}

@@ -1,0 +1,817 @@
+{
+ "licence": "Apache-2.0 AND MIT",
+ "provenance": "the T12 pack (t12.json, scene.xml, meshes/) converted from task_t12 by scene_pack.py; its meshes are task_t12's, as OBJ",
+ "source": {
+  "url": "https://github.com/i2rt-robotics/i2rt",
+  "licence": "MIT",
+  "licence_file": "LICENSE.0",
+  "copyright": "Copyright (c) I2RT Robotics",
+  "commits": {
+   "arm links (robot_models/yam/assets, in v1.1)": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3",
+   "gripper, fingertips and D405 mount (v1.4.0)": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "provenance_list": "OSS-1's per-file match (SCR-OSS1-13, 2026-11-07): sha256, then geometry"
+ },
+ "files": {
+  "bench/xbench/ours/packs/t12/meshes/hull_d405_wrist_mount_0_p0.obj": {
+   "sha256": "81d66b4fb6b410e9160da68d2eee03a56e4ab627c40a26594899b0651e3cdb49",
+   "licence": "MIT",
+   "kind": "same vertices as hull_d405_wrist_mount_0_p0-74235f1995c7.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_d405_wrist_mount_1_p0.obj": {
+   "sha256": "8604e3f178e7afbe058ac22a029f385a6e2b6ab9b75fbd29e52d89fb1991e010",
+   "licence": "MIT",
+   "kind": "same vertices as hull_d405_wrist_mount_1_p0-a2ef7b80598e.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_d405_wrist_mount_2_p0.obj": {
+   "sha256": "0446aef1f3e4a116845a8821d80e8cb493125a33b3a0d41b35b8f818dea08d96",
+   "licence": "MIT",
+   "kind": "same vertices as hull_d405_wrist_mount_2_p0-4dfe98adc122.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_d405_wrist_mount_3_p0.obj": {
+   "sha256": "519fcf53c7ccaa5ee73bef932874e9374faff9a1a166f5e2ed7c9afa8483cc43",
+   "licence": "MIT",
+   "kind": "same vertices as hull_d405_wrist_mount_3_p0-d0cff13558c4.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/station/assets/d405_wrist_linear_4310.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_0_p0.obj": {
+   "sha256": "448bf286c34c01118cc02087e83a9ab23a126b122fb46ae69c6019588c9063bd",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_0_p0-cda9c759ea4c.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_0_p1.obj": {
+   "sha256": "2673b4f1be7e727a00ccfb0c8d41f86ce32b546f8e0682973943baa57da0da9c",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_0_p1-072744cd3fa5.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_1_p0.obj": {
+   "sha256": "4d891e036dfe4608a63b9628a6b9618cbd367c3ea0c6701fce69f057a36de6c4",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_1_p0-9e04ebd4dc06.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_2_p0.obj": {
+   "sha256": "7a11f5930081b5f923c330f23e3d8ef6359aeddd1e5c5ffa86ff6f277711f33f",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_2_p0-796c9e9a9071.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_3_p0.obj": {
+   "sha256": "8457714e1112f55ae936ba181725c7d418792608d296e9841644d8e84ef63fe9",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_3_p0-bf9ed125b4cf.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_3_p1.obj": {
+   "sha256": "81eef42d5a2c77c2921f96999a41298ec522819d15072a47f39c9760d59b1595",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_3_p1-8e74b81bcba9.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_gripper_4_p0.obj": {
+   "sha256": "e0d64a3843688629078d8bf60eb8a850df886c572c00da98c1acf400e8641603",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_gripper_4_p0-f8d83b897852.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/arm/yam/v1/assets/gripper.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_0_p0.obj": {
+   "sha256": "3a40a80917257248f1eaf89c3838522d19957255cb3ac8430c9cbde5be3e9032",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_0_p0-152d1488aa0a.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_1_p0.obj": {
+   "sha256": "60f4b227d340d218169190c02a5ebf4d79b85ae41bbc38582e9d0ef15ba33714",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_1_p0-1852ff305717.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_2.obj": {
+   "sha256": "fcad16308e4f2705be435807c21bb43611913f0f95c055fc46c5022d9b3b90c6",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_2-b9696bbeca73.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_3_p0.obj": {
+   "sha256": "ff4aa95d5fc9cee73c94b78a3785d19da54142408e0b4b23d87ed8f56631f7cb",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_3_p0-5229ad32355b.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_4_p0.obj": {
+   "sha256": "4b092a9989d582942ea806d10cde7c56f63bd58d9056a9d76e366557c4bb271b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_4_p0-44b8f0b9c1d5.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_5.obj": {
+   "sha256": "930fbec8f8fe86b3acc3fa2b579b44345e9edb2db8f9a8c86794ac63ed51b2a9",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_5-fd02a1a600a5.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_6.obj": {
+   "sha256": "4fed364fb561aeedc39084319c9ff9d4e1418d53d05cf325572fcd42c08df2e4",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_6-2057d335dff3.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_7.obj": {
+   "sha256": "31557ee0fde7e6fc225eda60a11ff74270804b4ec3ec546fa0c4f8a81c1adf38",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_7-558924d6f59e.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_8.obj": {
+   "sha256": "6329d53314fcaf20e1da0297920ac2452e0be8deae0a0567560abf8cd0dd818b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_8-3d3b6db8c840.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_left_9_p0.obj": {
+   "sha256": "9594aa209af8c5c84b1bf40ca9b3cb5f3a799e749a89bf1cb6736f611dd780fc",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_left_9_p0-5211a0129468.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_0.obj": {
+   "sha256": "710f377e67645e275397ecce64c83dbdade4ade330423d1dd48664231e592781",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_0-7d5926e21844.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_1_p0.obj": {
+   "sha256": "4170ad992ece3b4e5e8710f8a12f4574703d74f6db52f19d63f8b3f700ab9e4d",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_1_p0-856cf5540b0f.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_2_p0.obj": {
+   "sha256": "703866c7479c9f8dd3e503c855f0866454260b121681e3657573b72daa6a66aa",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_2_p0-cadda8dce73a.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_3_p0.obj": {
+   "sha256": "33b417eb0a66b897f636884f265c2ca11452b6f5559f47b6b4f6c666bb9a77ad",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_3_p0-f0221eebecf4.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_4_p0.obj": {
+   "sha256": "9e5be5eb62c1facc6da06d610b2df45290725c7d2116acfb3097ba7bcb04b3ca",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_4_p0-82e3a526c01e.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_5_p0.obj": {
+   "sha256": "3b35d353a48c14d37d57e554f9040a7e18a9def7214fb8a5231308d1c0328e65",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_5_p0-7d178dd4c9ef.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_6_p0.obj": {
+   "sha256": "ee5a888c5b63b7c67a2f9558827325cc5f73c97a36067ce26a37ac5858cdeba5",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_6_p0-964a1f55b0ec.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_7_p0.obj": {
+   "sha256": "1e8f1f7a3ac7d8bd90485268037c65fd74ab9ad9ea335025a50b732ba751300c",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_7_p0-daab6ad5923a.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_8_p0.obj": {
+   "sha256": "b359625317e0edabee625ad9a253129e03c72dd4e38acfe9f533ce650d06a1a1",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_8_p0-9ecc7d9d1adc.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_linear_tip_right_9_p0.obj": {
+   "sha256": "5444b62e564facf572e40d63e12b83c57a782f1519f34569c470c624fafb84ce",
+   "licence": "MIT",
+   "kind": "same vertices as hull_linear_tip_right_9_p0-5e2c52c54a0f.msh",
+   "match": "geometry: decimated to 12000 faces",
+   "upstream": "i2rt/robot_models/arm/big_yam/v1/assets/tip_left.stl",
+   "commit": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_0_p0.obj": {
+   "sha256": "261765390400a7b17aeacbff624898ea5e7518cba9e4fee37b02cb52c2882aa7",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_0_p0-caca0e8ab803.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_1_p0.obj": {
+   "sha256": "712ff7977a000b618893210606b9be8b16b3ed3cb36eae01f4a0b9bb4754ef39",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_1_p0-cab82852e5f0.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_2_p0.obj": {
+   "sha256": "4386c873308f090a027d416140682258f0b332c1290f71aafc58de0b62d1c46c",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_2_p0-bf8a9a5b74a4.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_2_p1.obj": {
+   "sha256": "02b64e4971d8978089a6db1c973d4030c334278fea981531a0ccf99dacd159ac",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_2_p1-5c7329c123bd.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_2_p2.obj": {
+   "sha256": "a9e9913e5874d4f7deef140a2ed01a289b162c1db4a38359f608ac1f2a34c2ce",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_2_p2-167269697214.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_2_p3.obj": {
+   "sha256": "8b93fc2772276ab39a9a3391633ec6df7600a156091cb0a68b287359b939fd49",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_2_p3-668e73f8ef75.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_3_p0.obj": {
+   "sha256": "7258a3cfecacd576ebf68d15bc5d6245579c065a3f4b54ffa6d98e30e8514151",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_3_p0-7c6d7e9c61d3.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2_4_p0.obj": {
+   "sha256": "d1b0dc0e9f30814c5122e9f1b54669ec47899a4fcee3bedde7ac0f8f4ccfd0ba",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2_4_p0-fb536f5466c1.msh",
+   "match": "geometry: surface (99.9 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/yam/assets/base_link_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__10_0_p0.obj": {
+   "sha256": "b2f49919de883fc460511a35b6a71d87b7ea4f66bdd958d3c5feded400f67ad1",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__10_0_p0-7364b7fdea47.msh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__10_1_p0.obj": {
+   "sha256": "093384591f145f2b50a3c2c04c9e24b11e5bccd377de6c52b8a41b5f1be2413f",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__10_1_p0-dae54a772c08.msh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__10_2_p0.obj": {
+   "sha256": "e4fc9b41be9acf80a4661c214f04e92d5f2afc4d59b8c51509812ef15db7afcb",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__10_2_p0-5291f89e8472.msh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__10_3_p0.obj": {
+   "sha256": "365d2971633ac7ba0ab6f90606b0db89404f2b8c4bba90e34f74b01cff1477b1",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__10_3_p0-d4fc72a0acec.msh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__10_4_p0.obj": {
+   "sha256": "1ebaca8627ad8d893a75df0df4e4ff7cf19dc03ddf966c106ab887a0fc5b8648",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__10_4_p0-836a370f3816.msh",
+   "match": "geometry: surface (100.0 % of vertices within 0.5 mm)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_4_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_0_p0.obj": {
+   "sha256": "eedaac353c01dc272457c39cf162e94fb6a294e1a6d5af915dcec5fe7a69f5b8",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_0_p0-3765cb1afc2a.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_1_p0.obj": {
+   "sha256": "752d1559ddf52493277f9192518f1d7bbb84a77aa30acc1107ed2a80c7267c2c",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_1_p0-453de747d2be.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_2_p0.obj": {
+   "sha256": "23e4ebd508b85afa58ab4642fa0e21430f2e7a4258e3c27a81d042a383b003d1",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_2_p0-d12408f3a316.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_3_p0.obj": {
+   "sha256": "3cb8bc6c850eaeb6a09470d662df164fc0d4d045a0a46a4c1a759c47be173c68",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_3_p0-ba1b44f8dbcc.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_3_p1.obj": {
+   "sha256": "099b0d2c8557ad13ba50d858ad3c49cd1b8a8708dc7743c0e409841341fa940c",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_3_p1-535eac9a142d.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_3_p2.obj": {
+   "sha256": "a75e4c05681b8e17c8af82ee6dfbd0d816396b042aa37b44b17ad2886465ba16",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_3_p2-2c7e3bbdcf78.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__11_4_p0.obj": {
+   "sha256": "f674383d4ad8afcc5d2dc1acc57edb19ffc99e9be296ca1c05e780fd3a009ce7",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__11_4_p0-75c47aa6a498.msh",
+   "match": "geometry: same vertex set",
+   "upstream": "i2rt/robot_models/yam/assets/link_5_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__2_0_p0.obj": {
+   "sha256": "5bfad913f5e53f64bd699039e25dfbe8126b6fe2e053021dce34f4e602f7d85d",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__2_0_p0-d19ae910f9c0.msh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__2_1_p0.obj": {
+   "sha256": "446338def5dc45ab10bab388ebf98cf5e905452457f2f1df6d4e893cf705e566",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__2_1_p0-56d546cc6bee.msh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__2_2_p0.obj": {
+   "sha256": "f8451748c50c7ba2a155c9182ce7b9930d046f4fc707349c281dc2dc216bdbb0",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__2_2_p0-fd3bc4f73b98.msh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__2_3_p0.obj": {
+   "sha256": "5be36cf2202e70335510bc05ad98efb1fbb0b3c6ac3a9a41151e572a684f3e48",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__2_3_p0-1d68c027a387.msh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__2_4_p0.obj": {
+   "sha256": "adf97534ef8165d980a6a93b7b339a3bd091775b38f5f831457c08c6bc574c28",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__2_4_p0-d66911622a6e.msh",
+   "match": "geometry: surface, assembled link_1 (100.0 % of vertices within 0.5 mm of I2RT's link_1_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_1_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_0_p0.obj": {
+   "sha256": "5408c3f3e87258c333ce670338f8d19f1250cc04732e617017f980068863809b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_0_p0-5e9e48c439d0.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_0_p1.obj": {
+   "sha256": "22069a62bec8bbf2cd5c8271ceb7844f078b0ba27fcc5e415746e8e8f2a50ef0",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_0_p1-778feb3c0d6e.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_1_p0.obj": {
+   "sha256": "24998c5d47711fa749ce9bb01f355ad2d4645b601c3f10b26f6ea0bcb888653f",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_1_p0-e2bba5aa72ca.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_1_p1.obj": {
+   "sha256": "aa405e2f8119e33000b20f237bc0f4b0f766a252d62f2a478ccd4071e1b2fafc",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_1_p1-ea30344bf1da.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_2_p0.obj": {
+   "sha256": "5e8a8d8607c2d1d2c9739816f5023205bd2c1a9feae02d1666e571245dfa52eb",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_2_p0-62c6afa40cdb.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_3_p0.obj": {
+   "sha256": "23051b99d2e7cc3559ff338d6914e0ef7317797b2cd61bce22c941388225b466",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_3_p0-dad4890808a1.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__3_4_p0.obj": {
+   "sha256": "d62f6df50f0349a595e0d466c132c61ecb599c51384ec1da70166fdb55d78d79",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__3_4_p0-7cbf556716b9.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_0_p0.obj": {
+   "sha256": "b45d398ea33797f01a4ea7a34f64c28feb95276ec240f97467a1867cef59c9ea",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_0_p0-07f3b98915da.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_0_p1.obj": {
+   "sha256": "9faf3c9ea5b4a167d33aaa4c30a5f2f04bfb85062e269fcb8ca8943ef0bd680b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_0_p1-0cbd37893c7d.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_1_p0.obj": {
+   "sha256": "599dd0523a70dd2c345ed70a280e346880c8b59412e887a21a494b43758974d2",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_1_p0-45abf61a1fe2.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_1_p1.obj": {
+   "sha256": "1af1baa76e68ee0c7ae31461dad08f9ec5fe183566a8ab4386257aaf43199835",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_1_p1-9745a5867c44.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_2_p0.obj": {
+   "sha256": "85d69bac3060b1f39d86a66ee4d80e5491a603ba59ac7aabc4bb6cd46d581d1a",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_2_p0-8fbbda9fa1b7.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_3_p0.obj": {
+   "sha256": "ec12fb06aecb5b7f8b46687ab3c66efd3c6418dbf6841f35bcc9fb81983826ec",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_3_p0-8af70a5dc74c.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__4_4_p0.obj": {
+   "sha256": "cd8f3febe22aad1064a05b55ae32576c98cae6895b9c9cc960aa316801507f3b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__4_4_p0-845ce2aa7932.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_0_p0.obj": {
+   "sha256": "54904c41051966f8835f962b74113099283cf89c281e5976b8bbbcb7ecee2f52",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_0_p0-1b80c11b322e.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_0_p1.obj": {
+   "sha256": "a1b12829557203a71fafcf207ec5ae862300d3134bfc54c025578646ccfc5bdb",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_0_p1-eda18f003cf1.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_1_p0.obj": {
+   "sha256": "5362e9745a0a4eec0242aea0e69d2df47797e27b044f75db05d61b545afe55b9",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_1_p0-ea1480a8a958.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_2_p0.obj": {
+   "sha256": "dd7a6a43a4aab4f05e2f87b9e6c026fe51eb9dce4a2ba7284c5c63622d490033",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_2_p0-e815015967f8.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_3_p0.obj": {
+   "sha256": "b2c57fefb292a9eeb6f591180310b90ee25546b42c6f09f42e2a2c0d4e0a72c2",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_3_p0-ce50fd35d4fb.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__5_3_p1.obj": {
+   "sha256": "29de199cedbc29e6ae8564b8838b2150d9f4727a6c8f93afe3489297f7e5f045",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__5_3_p1-adcb8dfe729f.msh",
+   "match": "geometry: surface, assembled link_2 (99.7 % of vertices within 0.5 mm of I2RT's link_2_collision.stl)",
+   "upstream": "i2rt/robot_models/arm/yam/assets/link_2_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_0_p0.obj": {
+   "sha256": "ff48b343e98219fc9780b8570eb21780f1779172743d7762d063d69f98d32ecd",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_0_p0-df027ef8caf5.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_0_p1.obj": {
+   "sha256": "9a2d9bc400500feeb1510161abfc36963e56f80e040eed7ebaa6f9fde46bd2ea",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_0_p1-536cbcc7fb62.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_1_p0.obj": {
+   "sha256": "04d4319a7fe99291f6008502abed8e7e5a00b0a0f106929ead5e53ff141c7d72",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_1_p0-da6009e3903b.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_1_p1.obj": {
+   "sha256": "e2b5497fe1c6ca607fb96f2867bbb8c00e97721b9620b6e0ba1847e2fe467134",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_1_p1-9571c5584907.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_2_p0.obj": {
+   "sha256": "3afaa12d2de4d3f9e48f09a1a24af254c40ebc0f9f0b2b9214201be4e9c55c3b",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_2_p0-c6d746772b6f.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_3_p0.obj": {
+   "sha256": "a508802cf7871737c061c133726b8dabec75c540af1fbcf6625e5152d1e21f2e",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_3_p0-79ae434adad6.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__6_4_p0.obj": {
+   "sha256": "16960a5ae6d32dc3155281dadd1f62dbaf2d0f623c9728dd46c769cc4602f167",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__6_4_p0-db7ea61efb40.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__7_0_p0.obj": {
+   "sha256": "b9ae4cd089c0114e860a7b853396a729a2bd97deb674c548d3c50afb9e03ea25",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__7_0_p0-99c97ba8b284.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__7_1_p0.obj": {
+   "sha256": "208aa30e2006d6ff10dfc0485750ee902de5a271b8282f51e18b0d25260a6659",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__7_1_p0-32982da785f0.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__7_2_p0.obj": {
+   "sha256": "cebdffd66cb4f1c92440fac94e87c9eb1e9e3ce098df4f804f00f562edc9270a",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__7_2_p0-876c8ccf9b34.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__7_3_p0.obj": {
+   "sha256": "93fc352a9daf596dff80e75e7fef901af116bc36228f3ab0862ff9fc8aca0f7a",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__7_3_p0-b8270ecb0f4f.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__7_3_p1.obj": {
+   "sha256": "a8da20ce954e5f7b678d135a647cdec58b241c5feb58523097dac2b3ad647975",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__7_3_p1-10179a275029.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_0_p0.obj": {
+   "sha256": "9b0d0bc520d1eb5be896736707f4fde35fb6dc25cd2ac12c1e6b16b5c2ad16da",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_0_p0-7c56f9cb7bae.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_1_p0.obj": {
+   "sha256": "32998b1ee1690020f2a12595c764ba1074f27265c771e970123f7fca5ca20c36",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_1_p0-7ca2c80c14b6.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_2_p0.obj": {
+   "sha256": "ded6e40a0d3232cb923b62180f456d28677afecd26d9720fdeb87175dea84f01",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_2_p0-a971a1b666e8.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_2_p1.obj": {
+   "sha256": "66c74b8a73629a00581585d6519407061854c67b4794516640f3fd9ab0093eb7",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_2_p1-a3254724e947.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_3_p0.obj": {
+   "sha256": "34916a6c2cc132aee33c50ffad620432f753bbe17b469e94e73bdc3db2f6be90",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_3_p0-3a9c05d7ac98.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_3_p1.obj": {
+   "sha256": "1e45a400cc29bb2c78697bf24eba74053cfb8206d289130ed205c1185727c031",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_3_p1-b377a112cc76.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__8_4_p0.obj": {
+   "sha256": "4980494c11c80002e46a94d78086b79d8964a437ff78a79e9d467984346d9025",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__8_4_p0-081be9ac43f2.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__9_0_p0.obj": {
+   "sha256": "28ccd96b1471b567690f237c36c03de80569dad1a2445480bb8ee8146fb81616",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__9_0_p0-1bf4fc2870f9.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__9_0_p1.obj": {
+   "sha256": "ba2902f05b01c00ade2ef611c722af57c3e7de2b2c412cbc5b6bfea0fa83bf49",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__9_0_p1-faa6a4c3be48.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__9_1_p0.obj": {
+   "sha256": "40b60b1b286ff0fcd395e22ae4e274d4821e9d20e671780c5bbfe759574aac7f",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__9_1_p0-a57ec139a083.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__9_2.obj": {
+   "sha256": "bfa84f2689425b6a99560254aa2206fb12c42f8f0b5ef82e588b46087431bf68",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__9_2-a0fbc70f55e8.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  },
+  "bench/xbench/ours/packs/t12/meshes/hull_model2__9_3_p0.obj": {
+   "sha256": "e391ed27f24d9afa050033a4f24790e01c029b1f861d5c149bc51d3299df83aa",
+   "licence": "MIT",
+   "kind": "same vertices as hull_model2__9_3_p0-20665831afcd.msh",
+   "match": "geometry: surface, assembled link_3 (99.8 % of vertices within 0.5 mm of I2RT's link_3_collision.stl)",
+   "upstream": "i2rt/robot_models/yam/assets/link_3_collision.stl",
+   "commit": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3"
+  }
+ }
+}

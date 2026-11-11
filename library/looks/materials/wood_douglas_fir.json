@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "wood_douglas_fir",
+ "preset": "wood_oak",
+ "texture": "ambientcg:Wood096",
+ "scale_m": 0.5,
+ "note": "Douglas-fir lumber: pale unfinished softwood with knots (ambientCG 'Wood 096' scan, 0.5 m tile)",
+ "licence": "textures: ambientCG (ambientcg.com) 'Wood 096' by Lennart Demes, CC0-1.0"
+}

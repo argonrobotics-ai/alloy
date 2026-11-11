@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: cable_harness_composite
+density:
+  value: 3740.0
+  source: model
+  unc: [3500.0, 4000.0]
+  note: 'effective: linear mass 0.0132 kg/m (datasheet) over a 2.12 mm circle'
+surface:
+  mu_static:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: PVC jacket on plastic 0.4-0.6; mid value
+  mu_dynamic:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.6]
+    note: PVC jacket on plastic 0.4-0.6; mid value
+  restitution:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.5]
+    note: jacketed cables are strongly damped (model)
+elastic:
+  youngs:
+    value: 30000000.0
+    source: model
+    unc: [10000000.0, 100000000.0]
+    note: effective bending modulus of a stranded copper + PVC lead, 1e7-1e8 Pa (no direct source); calibrate
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.45]
+    note: effective bending modulus of a stranded copper + PVC lead, 1e7-1e8 Pa (no direct source); calibrate

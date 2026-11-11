@@ -1,0 +1,314 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py b/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
+index 4d9ae6fc2..ac423b649 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
+@@ -1418,8 +1418,10 @@ def reset_particle_state(
+     model_particle_qd: wp.array[wp.vec3],
+     particle_q: wp.array[wp.vec3],
+     particle_qd: wp.array[wp.vec3],
++    particle_q_lo: wp.array[wp.vec3],
+ ):
+-    """Copy model-default particle state into selected worlds' particles.
++    """Copy model-default particle state into selected worlds' particles (Alloy, SCR-WP11-F32: a reset position
++    has no sub-ulp remainder, so ``particle_q_lo`` is zeroed with it).
+ 
+     A non-null ``particle_q`` / ``particle_qd`` output is the caller's request to
+     reset that field. The shared ``_reset_world_selected()`` predicate applies
+@@ -1431,6 +1433,8 @@ def reset_particle_state(
+         return
+     if particle_q:
+         particle_q[tid] = model_particle_q[tid]
++        if particle_q_lo:
++            particle_q_lo[tid] = wp.vec3(0.0)
+     if particle_qd:
+         particle_qd[tid] = model_particle_qd[tid]
+ 
+@@ -1449,29 +1453,42 @@ def forward_step(
+     pinned_piece_start: int,
+     particle_piece: wp.array[wp.int32],
+     piece_pinned: wp.array[wp.int32],
++    pos_lo: wp.array[wp.vec3],
+     inertia_out: wp.array[wp.vec3],
+     displacements_out: wp.array[wp.vec3],
++    inertia_disp_out: wp.array[wp.vec3],
++    lo_in_out: wp.array[wp.vec3],
+ ):
+     particle = wp.tid()
+ 
+     pos_prev[particle] = pos[particle]
+     if not particle_flags[particle] & ParticleFlags.ACTIVE or inv_mass[particle] == 0:
+         inertia_out[particle] = pos_prev[particle]
++        inertia_disp_out[particle] = wp.vec3(0.0, 0.0, 0.0)
++        lo_in_out[particle] = wp.vec3(0.0, 0.0, 0.0)
+         if displacements_out:
+             displacements_out[particle] = wp.vec3(0.0, 0.0, 0.0)
+         return
++    # Alloy (SCR-WP11-F32): the true position is pos + pos_lo, the input state's sub-ulp remainder (update_velocity
++    # wrote it at the last step's end; a State without it starts from pos, stock). The inertia target and the start
++    # are displacements from pos, in small numbers; lo_in_out keeps the input remainder for update_velocity.
++    lo = wp.vec3(0.0)
++    if pos_lo:
++        lo = float32_remainder_guard(pos_lo[particle], pos[particle])
++    lo_in_out[particle] = lo
+     world_idx = particle_world[particle]
+     world_g = gravity[world_idx]
+     vel_new = vel[particle] + (world_g + external_force[particle] * inv_mass[particle]) * dt
+     inertia = pos[particle] + vel_new * dt
+     inertia_out[particle] = inertia
++    inertia_disp_out[particle] = lo + vel_new * dt
+     if displacements_out:
+         start = vel_new * dt
+         if pinned_piece_start != 0:
+             piece = particle_piece[particle]
+             if piece_pinned[piece] != 0:
+                 start = vel[particle] * dt  # a pinned piece starts from x + h·v
+-        displacements_out[particle] = start
++        displacements_out[particle] = lo + start
+ 
+ 
+ @wp.kernel
+@@ -1577,10 +1594,57 @@ def apply_conservative_bound_truncation(
+         return pos_new
+ 
+ 
++F32_REMAINDER_REL = wp.constant(2.384185791015625e-07)  # 2^-22: two ulps of the position, per axis
++F32_REMAINDER_ABS = wp.constant(1.0e-12)
++
++
++@wp.func
++def float32_remainder_guard(r: wp.vec3, x: wp.vec3):
++    """Alloy (SCR-WP11-F32): ``r`` if it can be the rounding remainder of the float32 position ``x`` (per axis
++    |r| <= 2^-22 |x| + 1e-12 m), else zero: a position written by someone else (a teleport, a kinematic particle)
++    has no remainder."""
++    if wp.abs(r[0]) > F32_REMAINDER_REL * wp.abs(x[0]) + F32_REMAINDER_ABS:
++        return wp.vec3(0.0)
++    if wp.abs(r[1]) > F32_REMAINDER_REL * wp.abs(x[1]) + F32_REMAINDER_ABS:
++        return wp.vec3(0.0)
++    if wp.abs(r[2]) > F32_REMAINDER_REL * wp.abs(x[2]) + F32_REMAINDER_ABS:
++        return wp.vec3(0.0)
++    return r
++
++
+ @wp.kernel
+-def update_velocity(dt: float, pos_prev: wp.array[wp.vec3], pos: wp.array[wp.vec3], vel: wp.array[wp.vec3]):
++def update_velocity(
++    dt: float,
++    pos_prev: wp.array[wp.vec3],
++    pos: wp.array[wp.vec3],
++    vel: wp.array[wp.vec3],
++    pos_ref: wp.array[wp.vec3],
++    displacement: wp.array[wp.vec3],
++    lo_in: wp.array[wp.vec3],
++    pos_lo: wp.array[wp.vec3],
++):
++    """Alloy (SCR-WP11-F32): v from the step's displacement in small numbers. The iterate is pos_ref +
++    displacement; float32 rounds pos to whole ulps, and (pos - pos_prev) / dt then quantises every velocity change
++    to ulp(x) / dt (a cloth at z 2 m fell at 0, g or 2 g by substep). The remainder (pos_ref - pos) + displacement
++    goes into the output state's particle_q_lo (when it has one) for the next step; lo_in is this step's input
++    remainder (forward_step)."""
+     particle = wp.tid()
+-    vel[particle] = (pos[particle] - pos_prev[particle]) / dt
++    r = float32_remainder_guard((pos_ref[particle] - pos[particle]) + displacement[particle], pos[particle])
++    vel[particle] = ((pos[particle] - pos_prev[particle]) + (r - lo_in[particle])) / dt
++    if pos_lo:
++        pos_lo[particle] = r
++
++
++@wp.kernel
++def rebase_displacement_reference(
++    pos: wp.array[wp.vec3], pos_ref: wp.array[wp.vec3], displacement: wp.array[wp.vec3]
++):
++    """Alloy (SCR-WP11-F32): move the displacement reference to ``pos`` at a collision checkpoint, keeping the
++    iterate's sub-ulp remainder as the new displacement (it was zeroed, losing it)."""
++    i = wp.tid()
++    r = float32_remainder_guard((pos_ref[i] - pos[i]) + displacement[i], pos[i])
++    pos_ref[i] = pos[i]
++    displacement[i] = r
+ 
+ 
+ @wp.kernel
+@@ -2820,7 +2884,8 @@ def make_solve_elasticity_tile(include_triangles: bool, include_tets: bool, two_
+         pos_prev: wp.array[wp.vec3],
+         pos: wp.array[wp.vec3],
+         mass: wp.array[float],
+-        inertia: wp.array[wp.vec3],
++        inertia_disp: wp.array[wp.vec3],
++        pos_ref: wp.array[wp.vec3],
+         particle_flags: wp.array[wp.int32],
+         tri_indices: wp.array2d[wp.int32],
+         tri_poses: wp.array[wp.mat22],
+@@ -3016,9 +3081,15 @@ def make_solve_elasticity_tile(include_triangles: bool, include_tets: bool, two_
+             )
+             if abs(wp.determinant(h_total)) > 1e-8:
+                 h_inv = wp.inverse(h_total)
++                # Alloy (SCR-WP11-F32): y - x as displacements from pos_prev, x = pos plus its sub-ulp remainder
++                # (none when something wrote pos without the displacement: then stock's x - x_prev)
++                alloy_dx = (pos[particle_index] - pos_prev[particle_index]) + float32_remainder_guard(
++                    (pos_ref[particle_index] - pos[particle_index]) + particle_displacements[particle_index],
++                    pos[particle_index],
++                )
+                 f_total = (
+                     f_total
+-                    + mass[particle_index] * (inertia[particle_index] - pos[particle_index]) * dt_sqr_reciprocal
++                    + mass[particle_index] * (inertia_disp[particle_index] - alloy_dx) * dt_sqr_reciprocal
+                     + particle_forces[particle_index]
+                 )
+                 particle_displacements[particle_index] = particle_displacements[particle_index] + h_inv * f_total
+@@ -3089,7 +3160,8 @@ def solve_elasticity(
+     pos_prev: wp.array[wp.vec3],
+     pos: wp.array[wp.vec3],
+     mass: wp.array[float],
+-    inertia: wp.array[wp.vec3],
++    inertia_disp: wp.array[wp.vec3],
++    pos_ref: wp.array[wp.vec3],
+     particle_flags: wp.array[wp.int32],
+     tri_indices: wp.array2d[wp.int32],
+     tri_poses: wp.array[wp.mat22],
+@@ -3122,7 +3194,12 @@ def solve_elasticity(
+     dt_sqr_reciprocal = 1.0 / (dt * dt)
+ 
+     # inertia force and hessian
+-    f = mass[particle_index] * (inertia[particle_index] - pos[particle_index]) * (dt_sqr_reciprocal)
++    # Alloy (SCR-WP11-F32): y - x as displacements from pos_prev, x = pos plus its sub-ulp remainder (none when
++    # something wrote pos without the displacement: then stock's x - x_prev)
++    dx = (pos[particle_index] - pos_prev[particle_index]) + float32_remainder_guard(
++        (pos_ref[particle_index] - pos[particle_index]) + particle_displacements[particle_index], pos[particle_index]
++    )
++    f = mass[particle_index] * (inertia_disp[particle_index] - dx) * (dt_sqr_reciprocal)
+     h = mass[particle_index] * dt_sqr_reciprocal * wp.identity(n=3, dtype=float)
+ 
+     # fmt: off
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+index e9a102550..da3b44194 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+@@ -62,6 +62,7 @@ from .particle_vbd_kernels import (
+     make_solve_elasticity_tile,
+     mark_pieces_in_body_contact,
+     mark_pieces_near_self_contact,
++    rebase_displacement_reference,
+     reset_particle_state,
+     scatter_particle_body_contact_force_and_hessian,
+     solve_elasticity,
+@@ -1275,6 +1276,13 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+         # ``_coupling_body_q_prev_snapshot`` by the coupling harvest hooks.
+         self._coupling_particle_q_prev_snapshot = wp.clone(model.particle_q, device=self.device)
+         self.inertia = wp.zeros_like(model.particle_q, device=self.device)  # inertial target positions
++        # Alloy (SCR-WP11-F32): the inertial target as a displacement from the step's start, and this step's input
++        # remainder (the true position is State.particle_q + State.particle_q_lo), so float32 positions do not
++        # quantise velocities (particle_vbd_kernels.update_velocity). Scratch, rewritten every step: the solver keeps
++        # no memory across steps; the remainder lives on the State (Model.state()).
++        self.inertia_disp = wp.zeros_like(model.particle_q, device=self.device)
++        self._f32_lo_in = wp.zeros_like(model.particle_q, device=self.device)   # this step's input remainder
++        self._f32_lo_warned = False
+ 
+         # Particle adjacency info: reuse the shared device copy built once at finalize (the VBD
+         # solver and the collision pipeline both use it, so it is uploaded only once).
+@@ -3268,7 +3276,11 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                         model.particle_q,
+                         model.particle_qd,
+                     ],
+-                    outputs=[particle_q, particle_qd],
++                    outputs=[
++                        particle_q,
++                        particle_qd,
++                        getattr(state, "particle_q_lo", None) if particle_q is not None else None,
++                    ],
+                     device=self.device,
+                 )
+ 
+@@ -3567,8 +3579,30 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+         if reset_rigid_soft and self.model.body_count > 0:
+             self.body_q_prev_collision_detection.assign(state.body_q)
+         if reset_particles and self.model.particle_count > 0:
+-            self.pos_prev_collision_detection.assign(state.particle_q)
+-            self.particle_displacements.zero_()
++            self._rebase_particle_reference(state.particle_q)
++
++    def _f32_remainder(self, state: State) -> wp.array | None:
++        """Alloy (SCR-WP11-F32): ``state.particle_q_lo`` (every Model.state() has it), or None for a hand-built
++        State: then positions start from particle_q with no remainder (stock). Logged once, so a State copier that
++        drops it shows up."""
++        lo = getattr(state, "particle_q_lo", None)
++        if lo is None and not self._f32_lo_warned:
++            self._f32_lo_warned = True
++            logging.getLogger(__name__).warning(
++                "SolverVBD: a State without particle_q_lo (not from Model.state()): its positions carry no sub-ulp "
++                "remainder, so small velocity changes round to ulp(x) / dt (SCR-WP11-F32)"
++            )
++        return lo
++
++    def _rebase_particle_reference(self, particle_q: wp.array) -> None:
++        """Alloy (SCR-WP11-F32): the collision reference moves to ``particle_q``; the displacement keeps the
++        iterate's sub-ulp remainder instead of restarting at zero."""
++        wp.launch(
++            kernel=rebase_displacement_reference,
++            dim=self.model.particle_count,
++            inputs=[particle_q, self.pos_prev_collision_detection, self.particle_displacements],
++            device=self.device,
++        )
+ 
+     def _refresh_collision_sets(
+         self,
+@@ -3831,10 +3865,13 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                 int(self.particle_pinned_piece_start),
+                 self.particle_cloth_piece,
+                 self.piece_pinned,
++                self._f32_remainder(state_in),
+             ],
+             outputs=[
+                 self.inertia,
+                 self.particle_displacements,
++                self.inertia_disp,
++                self._f32_lo_in,
+             ],
+             dim=self.model.particle_count,
+             device=self.device,
+@@ -4572,7 +4609,8 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                         self.particle_q_prev,
+                         state_in.particle_q,
+                         self.model.particle_mass,
+-                        self.inertia,
++                        self.inertia_disp,
++                        self.pos_prev_collision_detection,
+                         self.model.particle_flags,
+                         self.model.tri_indices,
+                         self.model.tri_poses,
+@@ -4607,7 +4645,8 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                         self.particle_q_prev,
+                         state_in.particle_q,
+                         self.model.particle_mass,
+-                        self.inertia,
++                        self.inertia_disp,
++                        self.pos_prev_collision_detection,
+                         self.model.particle_flags,
+                         self.model.tri_indices,
+                         self.model.tri_poses,
+@@ -5469,7 +5508,16 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+ 
+         wp.launch(
+             kernel=update_velocity,
+-            inputs=[dt, self.particle_q_prev, state_out.particle_q, state_out.particle_qd],
++            inputs=[
++                dt,
++                self.particle_q_prev,
++                state_out.particle_q,
++                state_out.particle_qd,
++                self.pos_prev_collision_detection,
++                self.particle_displacements,
++                self._f32_lo_in,
++                self._f32_remainder(state_out),
++            ],
+             dim=self.model.particle_count,
+             device=self.device,
+         )
+@@ -5673,8 +5721,7 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+         # particle_displacements is based on pos_prev_collision_detection
+         # so reset them every time we do collision detection
+         if reset_reference:
+-            self.pos_prev_collision_detection.assign(current_state.particle_q)
+-            self.particle_displacements.zero_()
++            self._rebase_particle_reference(current_state.particle_q)
+ 
+         if self.collision_pipeline is not None:
+             self.collision_pipeline._detect_soft_self_contact(current_state.particle_q, self._pipeline_contacts)

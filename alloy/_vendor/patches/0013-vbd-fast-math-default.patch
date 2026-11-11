@@ -1,0 +1,24 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+index 05e2fb904..6c0c3856c 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+@@ -526,7 +526,7 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+         rigid_soft_enable_dat: bool = False,  # Truncate rigid pose updates against per-contact division planes
+         rigid_soft_dat_use_interval_arithmetic: bool = False,  # Experimental interval verification of rigid trajectories
+         deterministic: wp.DeterministicMode | None = None,
+-        enable_fast_math: bool = True,
++        enable_fast_math: bool = False,  # Alloy (vbd-fast-math-default): upstream's default is True
+         collision_pipeline: CollisionPipeline | None = None,
+         collision_frequency: Mapping[SolverBase.CollisionSlot, int] | None = None,
+         collision_frequency_type: Mapping[SolverBase.CollisionSlot, SolverBase.CollisionFrequencyType] | None = None,
+@@ -803,7 +803,9 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+             enable_fast_math: Compile the particle kernels, the rigid body
+                 solve, and the joint dual update with Warp's ``fast_math``
+                 (approximate division and square root). Results change at the
+-                floating-point rounding level. Ignored on CPU.
++                floating-point rounding level. Ignored on CPU. Alloy
++                (vbd-fast-math-default): off unless asked for, so CUDA
++                results keep the bits of the builds before it existed.
+             tendon_max_sweeps: Maximum capstan material-relaxation sweeps per VBD iteration.
+             tendon_settle_tol: Relative tension-change tolerance for stopping capstan material relaxation.
+             tendon_activation_tol: Relative radius gap that inactive dynamic rollers must cross before activation.

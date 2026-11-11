@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: rubber_ball_40mm
+shape:
+  primitive:
+    kind: sphere
+    size: [0.02]
+material: silicone_40a

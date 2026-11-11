@@ -1,0 +1,64 @@
+{
+ "law": "A3.contact_energy",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "metrics": {
+  "step_gain": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "SPEC \u00a75.3 A3 amendment: per-step unexplained gain <= 1e-2\u00b7E_scale (D20)"
+  },
+  "cum_gain": {
+   "abs": 0.5,
+   "rel": 0.0,
+   "source": "SPEC \u00a74.3 ENERGY_JUMP S1: cumulative unexplained gain <= 0.5\u00b7E_scale"
+  }
+ },
+ "stat": {
+  "step_gain": "mean",
+  "cum_gain": "mean"
+ },
+ "conditions": [
+  {
+   "id": "rest",
+   "params": {
+    "h": 0.0,
+    "vx": 0.0,
+    "vy": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "drop2cm",
+   "params": {
+    "h": 0.02,
+    "vx": 0.0,
+    "vy": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "slide",
+   "params": {
+    "h": 0.0,
+    "vx": 0.5,
+    "vy": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "drop5cm_slide",
+   "params": {
+    "h": 0.05,
+    "vx": 0.5,
+    "vy": 0.3
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

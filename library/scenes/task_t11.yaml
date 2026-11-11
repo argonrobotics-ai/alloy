@@ -1,0 +1,9 @@
+# T11 tight pegs (reference-task, 4 steel pegs into an acrylic-on-ply board, 0.1 mm radial clearance on the 12 mm peg), converted from r3_t11/model.mjb; trace t11. Replay tier: the whole recorded model as one MJCF robot (alloy.tasks.scenes).
+schema: alloy.scene/1
+robots:
+- path: robots/task_t11/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: task_t11
+objects: []
+control_dt: 0.0001

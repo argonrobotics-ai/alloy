@@ -1,0 +1,8 @@
+{
+  "name": "template",
+  "module": "alloy.factory.template",
+  "routes": ["contrib:template"],
+  "laws": ["FAC.template.freefall"],
+  "bully_scenes": ["template_drop"],
+  "author": "alloy-dev (template)"
+}

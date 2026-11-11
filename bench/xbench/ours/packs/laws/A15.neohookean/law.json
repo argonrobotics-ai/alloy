@@ -1,0 +1,28 @@
+{
+ "law": "A15.neohookean",
+ "dt": 0.001,
+ "duration_s": 1.0,
+ "metrics": {
+  "stress_rel_err": {
+   "abs": 0.05,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A15: P = mu(lambda - lambda^-2) within 5 % at lambda = 0.8 (compressible form, SCENARIOS D06)"
+  }
+ },
+ "conditions": [
+  {
+   "id": "stretch0.8",
+   "params": {
+    "stretch": 0.8,
+    "p_applied": -7234.375
+   }
+  },
+  {
+   "id": "stretch0.9",
+   "params": {
+    "stretch": 0.9,
+    "p_applied": -3208.504801097393
+   }
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+# Catalogue weights for CARD-10 (mass from card vs catalogue, <= 2 %). Each entry is a Q in kg.
+# Only objects whose card geometry is meant to be complete are compared; `excluded` lists the others and why,
+# so a failing comparison is never hidden by dropping the object.
+schema: alloy.catalog/1
+masses:
+  nut_m10:
+    value: 0.0116
+    source: catalog
+    unc: [0.01102, 0.01218]
+    note: DIN 934 M10 hex nut
+  washer_m10:
+    value: 0.00357
+    source: catalog
+    unc: [0.00339, 0.00375]
+    note: DIN 125-A M10 washer
+  bolt_m10x60:
+    value: 0.0412
+    source: catalog
+    unc: [0.03914, 0.04326]
+    note: DIN 933 M10x60 hex bolt
+  bolt_m10x40:
+    value: 0.0311
+    source: catalog
+    unc: [0.02955, 0.03266]
+    note: M10x40 hex bolt
+  nut_m6:
+    value: 0.0025
+    source: catalog
+    unc: [0.002375, 0.002625]
+    note: DIN 934 M6 hex nut
+  bolt_m6x30:
+    value: 0.00751
+    source: catalog
+    unc: [0.00713, 0.00789]
+    note: DIN 933 M6x30 hex bolt
+excluded:
+  aa_cell: density is fitted from the 23 g datasheet mass (circular)
+  toy_car_diecast: density is fitted from the 36.25 g weighed average (circular)
+  mug_stoneware: handle not modelled (catalogue 0.404 kg)
+  jar_glass_8oz: wall and base thickness are ours, not catalogue (catalogue 0.2002 kg)
+  lid_tinplate_70: solid-cylinder primitive stands in for a 0.25 mm shell (catalogue 0.01244 kg)
+  screwdriver_pz2: grip shape is ours (catalogue 0.06 kg)
+  spoon_wood_oxo: ellipsoid stands in for bowl and handle (catalogue 0.0227 kg)
+  fish_turner_blade: blade only; catalogue 0.0907 kg includes the handle
+  bin_pp: wall thickness derived from the catalogue mass (circular)
+  gear_pom_40t: face width and hub not on the card (catalogue 0.00839 kg)

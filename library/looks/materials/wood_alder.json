@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "wood_alder",
+ "preset": "wood_oak",
+ "texture": "polyhaven:okoume_veneer",
+ "scale_m": 0.6,
+ "note": "red alder: light reddish brown (okoume veneer scan, closest CC0 match)",
+ "licence": "textures: Poly Haven (polyhaven.com) 'okoume_veneer', CC0"
+}

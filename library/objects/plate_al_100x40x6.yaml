@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: plate_al_100x40x6
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.02, 0.003]
+material: aluminium_6061_t6

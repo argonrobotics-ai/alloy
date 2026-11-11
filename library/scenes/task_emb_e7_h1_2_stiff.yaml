@@ -1,0 +1,9 @@
+# P3-2b embodiment e7_h1_2_stiff: Unitree H1-2 with Inspire hands (39 actuators), contact variant solref 0.005 s. Built by alloy.tasks.emb_scene from https://github.com/unitreerobotics/unitree_ros@5994d4faef0a (BSD-3-Clause (unitreerobotics/unitree_ros h1_2_description; gains: gym-anything/robotics h1_2, MIT)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e7_h1_2_stiff/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e7_h1_2_stiff
+objects: []
+control_dt: 0.002

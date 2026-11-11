@@ -1,0 +1,58 @@
+schema: alloy.material/1
+name: paper_80gsm
+density:
+  value: 800.0
+  source: catalog
+  unc: [700.0, 850.0]
+  note: 'copier paper: 80 g/m^2 (ISO 536 grammage) at 0.10 mm caliper'
+surface:
+  mu_static:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.6]
+    note: paper on paper 0.3-0.6 (TAPPI T549 range); lower-mid value
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.5]
+    note: paper on paper 0.3-0.6 (TAPPI T549 range); lower-mid value
+  restitution:
+    value: 0.0
+    source: model
+    note: fabric impacts are fully damped (model)
+elastic:
+  youngs:
+    value: 4000000000.0
+    source: model
+    unc: [2000000000.0, 7000000000.0]
+    note: copy paper MD 5-7 GPa, CD 2-3 GPa; isotropic mean (paper physics texts)
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.15, 0.4]
+    note: copy paper MD 5-7 GPa, CD 2-3 GPa; isotropic mean (paper physics texts)
+plastic:
+  yield_stress:
+    value: 35000000.0
+    source: catalog
+    unc: [23500000.0, 47000000.0]
+    note: 'DOC: The Navigator Company "Office Standard Cut-Size" 80 g/m2 technical data sheet (FTP-PAP-0046 rev 006): "Tensile
+      MD, kN/m ISO 1924-2 ... 4.7" (a lower bound) at "Thickness, um ISO 534 107" (102-112) https://media.offix.ch/datasheets/5609927079714_01_owiba_en.pdf
+      ; no CD tensile listed: ESTIMATE CD = MD / 2 (the GS520 kraft sheets read MD 11.6 / CD 5.8 kN/m; this sheet''s bending
+      stiffness reads MD 100 / CD 35 mN, ISO 2493-1). Mean 3.5 kN/m over the card''s 0.10 mm = 35 MPa (CD only 23.5, MD only
+      47); the film route caps in-plane strain at yield / E = 0.9 %'
+film:
+  dead_fold_yield:
+    value: 0.63
+    source: model
+    unc: [0.6, 1.05]
+    note: 'ESTIMATE: a sheet folded flat and released opens to its fold memory angle; printing paper "minimum angle ... ~36
+      ... degrees in the case of printing paper" (K. Farain, arXiv 1905.09220) https://arxiv.org/pdf/1905.09220 ; 36 deg =
+      0.63 rad under a firm press, wider (to ~60 deg) under a light one'
+  crease_ratio:
+    value: 200.0
+    source: model
+    unc: [50.0, 800.0]
+    note: 'ESTIMATE: a fold line bends like L* = 200 h of plate, kappa = B / L*; measured on Mylar creases "kappa, scales
+      as B/h ... L*~200h" (Lechenault, Thiria & Adda-Bedia 2014, PRL 112, 244301) https://arxiv.org/pdf/1404.1243 ; no paper
+      crease stiffness found: 0.018 N·m/rad per m at 0.10 mm and E 4 GPa'

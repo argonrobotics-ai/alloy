@@ -1,0 +1,251 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""IMU Sensor - measures accelerations and angular velocities at sensor sites."""
+
+import logging
+import re
+import warnings
+
+import warp as wp
+
+from ..exceptions import NewtonDeprecationWarning
+from ..geometry.flags import ShapeFlags
+from ..sim.model import Model
+from ..sim.state import State
+from ..solvers.solver import SolverBase
+from ..utils.selection import match_labels
+
+logger = logging.getLogger(__name__)
+
+
+@wp.kernel
+def compute_sensor_imu_kernel(
+    gravity: wp.array[wp.vec3],
+    body_world: wp.array[wp.int32],
+    body_com: wp.array[wp.vec3],
+    shape_body: wp.array[int],
+    shape_world: wp.array[wp.int32],
+    shape_transform: wp.array[wp.transform],
+    sensor_sites: wp.array[int],
+    body_q: wp.array[wp.transform],
+    body_qd: wp.array[wp.spatial_vector],
+    body_qdd: wp.array[wp.spatial_vector],
+    # output
+    accelerometer: wp.array[wp.vec3],
+    gyroscope: wp.array[wp.vec3],
+):
+    """Compute accelerations and angular velocities at sensor sites."""
+    sensor_idx = wp.tid()
+
+    if sensor_idx >= len(sensor_sites):
+        return
+
+    site_idx = sensor_sites[sensor_idx]
+    body_idx = shape_body[site_idx]
+
+    site_transform = shape_transform[site_idx]
+
+    if body_idx < 0:
+        world_idx = shape_world[site_idx]
+        world_g = gravity[world_idx]
+        accelerometer[sensor_idx] = wp.quat_rotate_inv(site_transform.q, -world_g)
+        gyroscope[sensor_idx] = wp.vec3(0.0)
+        return
+
+    world_idx = body_world[body_idx]
+    world_g = gravity[world_idx]
+
+    body_acc = body_qdd[body_idx]
+
+    body_quat = body_q[body_idx].q
+    r = wp.quat_rotate(body_quat, site_transform.p - body_com[body_idx])
+
+    vel_ang = wp.spatial_bottom(body_qd[body_idx])
+
+    acc_lin = (
+        wp.spatial_top(body_acc)
+        - world_g
+        + wp.cross(wp.spatial_bottom(body_acc), r)
+        + wp.cross(vel_ang, wp.cross(vel_ang, r))
+    )
+
+    q = body_quat * site_transform.q
+    accelerometer[sensor_idx] = wp.quat_rotate_inv(q, acc_lin)
+    gyroscope[sensor_idx] = wp.quat_rotate_inv(q, vel_ang)
+
+
+class SensorIMU:
+    """Inertial Measurement Unit sensor.
+
+    Measures linear acceleration (specific force) and angular velocity at the
+    given sites. Each site defines an IMU frame; outputs are expressed in that
+    frame.
+
+    This sensor requires the :attr:`~newton.solvers.SolverBase.ObservableKind.BODY_QDD`
+    solver observable. The solver must support computing ``body_qdd``
+    (e.g. :class:`~newton.solvers.SolverKamino` or
+    :class:`~newton.solvers.SolverMuJoCo`). The extended
+    :attr:`newton.State.body_qdd` attribute remains supported during migration.
+
+    .. experimental::
+
+        The :attr:`solver_observable_kinds` attribute and the ``observables`` argument
+        to :meth:`update` may change with the solver observable API.
+
+    The ``sites`` parameter accepts label patterns -- see :ref:`label-matching`.
+
+    Example:
+
+        .. testcode::
+
+            import warp as wp
+            import newton
+            from newton.sensors import SensorIMU
+
+            builder = newton.ModelBuilder()
+            builder.add_ground_plane()
+            body = builder.add_body(xform=wp.transform((0, 0, 1), wp.quat_identity()))
+            builder.add_shape_sphere(body, radius=0.1)
+            builder.add_site(body, label="imu_0")
+            model = builder.finalize()
+
+            imu = SensorIMU(model, sites="imu_*", request_state_attributes=False)
+            solver = newton.solvers.SolverMuJoCo(model)
+            observables = solver.observables(kinds=imu.solver_observable_kinds)
+            state = model.state()
+
+            # after solver step
+            solver.step(state, state, None, None, dt=1.0 / 60.0, observables=observables)
+            imu.update(state, observables=observables)
+            acc = imu.accelerometer.numpy()
+            gyro = imu.gyroscope.numpy()
+    """
+
+    accelerometer: wp.array[wp.vec3]
+    """Linear acceleration readings [m/s²] in sensor frame, shape ``(n_sensors,)``."""
+
+    gyroscope: wp.array[wp.vec3]
+    """Angular velocity readings [rad/s] in sensor frame, shape ``(n_sensors,)``."""
+
+    solver_observable_kinds = frozenset({SolverBase.ObservableKind.BODY_QDD})
+    """Solver observables required to update this sensor."""
+
+    def __init__(
+        self,
+        model: Model,
+        sites: str | list[str] | re.Pattern[str] | list[int],
+        *,
+        verbose: bool | None = None,
+        request_state_attributes: bool = True,
+    ):
+        """Initialize SensorIMU.
+
+        The legacy ``State.body_qdd`` allocation path remains the default during
+        the deprecation period. Set ``request_state_attributes=False`` and
+        allocate :attr:`solver_observable_kinds` through the solver instead.
+
+        Args:
+            model: The model to use.
+            sites: Glob pattern, list of glob patterns, compiled regular-expression
+                pattern to match against site labels, or list of site indices. Regular
+                expressions use full matching.
+            verbose: If True, log details. If False, suppress details. If None, log details when
+                ``wp.config.log_level`` is configured for debug logging.
+            request_state_attributes: If True, request the deprecated extended
+                state attribute ``body_qdd`` from the model. Defaults to True for
+                backward compatibility. If False, :meth:`update` must receive
+                solver observables containing ``body_qdd`` or a state allocated
+                through a separate legacy request.
+
+                .. deprecated:: 1.7
+                    Passing True (including the default) is deprecated. Pass False,
+                    allocate :attr:`solver_observable_kinds` through the solver and
+                    pass :class:`~newton.solvers.SolverBase.Observables` to :meth:`update` instead.
+        Raises:
+            ValueError: If no labels match or invalid sites are passed.
+        """
+
+        self.model = model
+        self.verbose = verbose if verbose is not None else wp.config.log_level <= wp.LOG_DEBUG
+
+        original_sites = sites
+        sites = match_labels(model.shape_label, sites)
+        if not sites:
+            if isinstance(original_sites, list) and len(original_sites) == 0:
+                raise ValueError("'sites' must not be empty")
+            raise ValueError(f"No sites matched the given pattern {original_sites!r}")
+
+        self._validate_sensor_sites(sites)
+
+        # Preserve legacy callers throughout the deprecation period.
+        if request_state_attributes:
+            warnings.warn(
+                "SensorIMU(request_state_attributes=True) is deprecated in Newton 1.7; "
+                "pass request_state_attributes=False, allocate SolverBase.Observables with "
+                "solver.observables(kinds=sensor.solver_observable_kinds), pass them to solver.step(observables=...), "
+                "and pass them to update(..., observables=...).",
+                NewtonDeprecationWarning,
+                stacklevel=2,
+            )
+            self.model._request_state_attributes("body_qdd")
+
+        self.sensor_sites_arr = wp.array(sites, dtype=int, device=model.device)
+        self.n_sensors: int = len(sites)
+        self.accelerometer = wp.zeros(self.n_sensors, dtype=wp.vec3, device=model.device)
+        self.gyroscope = wp.zeros(self.n_sensors, dtype=wp.vec3, device=model.device)
+
+        if self.verbose:
+            logger.info("SensorIMU initialized:\n  Sites: %s", len(set(sites)))
+            # TODO: body per site
+
+    def _validate_sensor_sites(self, sensor_sites: list[int]):
+        """Validate the sensor sites."""
+        shape_flags = self.model.shape_flags.numpy()
+        for site_idx in sensor_sites:
+            if site_idx < 0 or site_idx >= self.model.shape_count:
+                raise ValueError(f"sensor site index {site_idx} is out of range")
+            if not (shape_flags[site_idx] & ShapeFlags.SITE):
+                raise ValueError(f"sensor site index {site_idx} is not a site")
+
+    def update(self, state: State, *, observables: SolverBase.Observables | None = None):
+        """Update the IMU sensor.
+
+        Args:
+            state: The state to update the sensor from.
+            observables: Solver observables containing rigid-body accelerations. If
+                ``None``, use the legacy ``state.body_qdd`` attribute. Must be allocated
+                by a solver for this sensor's model.
+
+        Raises:
+            ValueError: If solver observables belong to a different model or the
+                required body acceleration array is missing.
+        """
+        if observables is not None and observables.model is not self.model:
+            raise ValueError("Solver observables must belong to the sensor's model.")
+        body_qdd = observables.body_qdd if observables is not None else state.body_qdd
+        if body_qdd is None:
+            raise ValueError(
+                "SensorIMU requires SolverBase.Observables with BODY_QDD allocated. "
+                "Call solver.observables(kinds=sensor.solver_observable_kinds) and pass the result to solver.step() and sensor.update()."
+            )
+
+        wp.launch(
+            compute_sensor_imu_kernel,
+            dim=self.n_sensors,
+            inputs=[
+                self.model.gravity,
+                self.model.body_world,
+                self.model.body_com,
+                self.model.shape_body,
+                self.model.shape_world,
+                self.model.shape_transform,
+                self.sensor_sites_arr,
+                state.body_q,
+                state.body_qd,
+                body_qdd,
+            ],
+            outputs=[self.accelerometer, self.gyroscope],
+            device=self.model.device,
+        )

@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_cotton_jersey",
+ "family": "fabric",
+ "preset": "linen",
+ "texture": "polyhaven:cotton_jersey",
+ "res": "1k",
+ "scale_m": 0.26,
+ "bump_m": 0.0004,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/cotton_jersey",
+ "author": "colormass, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.429,
+ "note": "cotton jersey: Poly Haven 'Cotton Jersey', 0.26 m tile, 1k maps"
+}

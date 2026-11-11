@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal046a",
+ "family": "metal",
+ "preset": "steel_black_oxide",
+ "texture": "ambientcg:Metal046A",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal046A",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.108,
+ "note": "clean dark metal (cast iron, black oxide): ambientCG 'Metal 046 A', 0.4 m tile, 1k maps"
+}

@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: dough_ball
+shape:
+  primitive:
+    kind: sphere
+    size: [0.04]
+material: dough_wheat

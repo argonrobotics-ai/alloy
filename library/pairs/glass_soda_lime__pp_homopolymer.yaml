@@ -1,0 +1,18 @@
+schema: alloy.pair/1
+a: glass_soda_lime
+b: pp_homopolymer
+mu_static:
+  value: 0.3
+  source: model
+  unc: [0.18, 0.44]
+  note: glass beads on polymer 0.18-0.44, Pongo et al. 2021 arXiv 2104.08186
+mu_dynamic:
+  value: 0.3
+  source: model
+  unc: [0.18, 0.44]
+  note: glass beads on polymer 0.18-0.44, Pongo et al. 2021 arXiv 2104.08186
+restitution:
+  value: 0.87
+  source: catalog
+  unc: [0.83, 0.93]
+  note: PP 4.00 mm spheres e 0.87 +-0.06 (Cornell impact table, Louge group)

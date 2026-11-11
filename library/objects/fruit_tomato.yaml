@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: fruit_tomato
+shape:
+  primitive:
+    kind: sphere
+    size: [0.031]
+material: fruit_tomato_whole

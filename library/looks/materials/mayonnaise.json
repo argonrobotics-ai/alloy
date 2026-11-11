@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "mayonnaise",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.86,
+  0.8,
+  0.58
+ ],
+ "roughness": 0.3,
+ "subsurface": 0.3,
+ "note": "mayonnaise: opaque glossy pale cream"
+}

@@ -1,0 +1,27 @@
+{
+ "dataset_id": "synthetic-v1",
+ "environment": {},
+ "holder": {},
+ "instruments": {
+  "creep": {
+   "u95": 1e-06,
+   "what": "dial"
+  },
+  "mu_kinetic": {
+   "u95": 0.005,
+   "what": "240 fps video track"
+  },
+  "slip_angle": {
+   "u95": 0.0008726646259971648,
+   "what": "inclinometer 0.05 deg"
+  }
+ },
+ "law_id": "R3.incline_friction",
+ "objects": {
+  "box": {
+   "half_extent_m": 0.025,
+   "mass_kg": 0.125
+  }
+ },
+ "protocol_version": "synthetic/1"
+}

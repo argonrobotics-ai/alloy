@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: aa_cell
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.00725, 0.02525]
+material: aa_cell_effective

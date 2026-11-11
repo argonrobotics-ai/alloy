@@ -1,0 +1,23 @@
+schema: alloy.object/1
+name: sample_tube_13x75
+shape:
+  mesh:
+    path: meshes/sample_tube_13x75.obj
+    sha256: dffdbebfe6b8dc0dbf46b55c1d5d068c39f4f29ff70bb63c5365e7124d377a4d
+    collision: decompose
+    max_parts: 15
+material: pp_homopolymer
+loads:
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'barcode_route: tube into a rack hole with 0.5 mm clearance'
+features:
+  thickness:
+    value: 0.0008
+    source: model
+    note: 13x75 mm tube wall ~0.8 mm (lab-ware catalogues)
+  min_wall:
+    value: 0.0008
+    source: model
+    note: 13x75 mm tube wall ~0.8 mm (lab-ware catalogues)

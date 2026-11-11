@@ -1,0 +1,33 @@
+{
+ "embodiment": "e7_h1_2",
+ "title": "Unitree H1-2 with Inspire hands (39 actuators)",
+ "source": {
+  "url": "https://github.com/unitreerobotics/unitree_ros",
+  "commit": "5994d4faef0a9cadd3287f8de0199a67eeb2a259",
+  "files": {
+   "robots/h1_2_description/h1_2.urdf": "504b0cc9ea5311044876f4be4e3148fbc285aa1439e33b19d93c357a7468066c",
+   "LICENSE": "84aac59fd3246e3ddc49d1387644e8fcf43b0def4f0b9fe687f372e90446df2d"
+  }
+ },
+ "licence": "BSD-3-Clause (unitreerobotics/unitree_ros h1_2_description; gains: gym-anything/robotics h1_2, MIT)",
+ "world": "floor z = 0; box obstacle 0.3 x 0.3 x 0.1 m at x = 1 m",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
+  "H1-2 leg and torso servos (hips, knees, ankles, torso: 13): kp and kd x 16 (ankle pitch 60 -> 960 N m/rad, knee 300 -> 4800). The forklift profile's gains hold a seated operator; standing, two ankles at kp 60 give 120 N m/rad against the 590 that keep it from tipping, so it lay flat by 2 s and landed 20-33 mm deep in the floor. It now stands (deepest contact 0.33 mm). Force limits and the arm, hand and head servos are the profile's (alloy.tasks.emb_robots.STAND_GAIN)"
+ ],
+ "hull_split": 0.00019998346872364718,
+ "init": {
+  "nq": 58,
+  "nv": 57,
+  "nu": 39,
+  "nbody": 53,
+  "ngeom": 350,
+  "init_contacts": 0,
+  "init_deepest_mm": 0.0,
+  "ok": true
+ }
+}

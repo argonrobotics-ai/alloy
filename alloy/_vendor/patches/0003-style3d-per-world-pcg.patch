@@ -1,0 +1,207 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/style3d/linear_solver.py b/alloy/_vendor/newton/_src/solvers/style3d/linear_solver.py
+index 6373f39e2..3e19aeb64 100644
+--- a/alloy/_vendor/newton/_src/solvers/style3d/linear_solver.py
++++ b/alloy/_vendor/newton/_src/solvers/style3d/linear_solver.py
+@@ -5,6 +5,7 @@
+ from collections.abc import Callable
+ from typing import Any
+ 
++import numpy as np  # Alloy (SCR-WP0-S3D-WORLDS)
+ import warp as wp
+ 
+ 
+@@ -141,15 +142,20 @@ def update_cg_direction_kernel(
+     z: wp.array[wp.vec3],
+     rTz: wp.array[float],
+     p_prev: wp.array[wp.vec3],
++    worlds: int,  # Alloy (SCR-WP0-S3D-WORLDS): rTz holds one value per (iteration, world)
++    world: wp.array[wp.int32],
+     # outputs
+     p: wp.array[wp.vec3],
+ ):
+     # p = r + (rz_new / rz_old) * p;
+     i = wp.tid()
++    w = wp.int32(0)  # Alloy (SCR-WP0-S3D-WORLDS)
++    if worlds > 1:
++        w = world[i]
+     new_p = z[i]
+     if iter > 0:
+-        num = rTz[iter]
+-        denom = rTz[iter - 1]
++        num = rTz[iter * worlds + w]
++        denom = rTz[(iter - 1) * worlds + w]
+         beta = wp.float32(0.0)
+         if (wp.abs(denom) > 1.0e-30) and (not wp.isnan(denom)) and (not wp.isnan(num)):
+             beta = num / denom
+@@ -164,13 +170,18 @@ def step_cg_kernel(
+     pTAp: wp.array[float],
+     p: wp.array[wp.vec3],
+     Ap: wp.array[wp.vec3],
++    worlds: int,  # Alloy (SCR-WP0-S3D-WORLDS): rTz / pTAp hold one value per (iteration, world)
++    world: wp.array[wp.int32],
+     # outputs
+     x: wp.array[wp.vec3],
+     r: wp.array[wp.vec3],
+ ):
+     i = wp.tid()
+-    num = rTz[iter]
+-    denom = pTAp[iter]
++    w = wp.int32(0)  # Alloy (SCR-WP0-S3D-WORLDS)
++    if worlds > 1:
++        w = world[i]
++    num = rTz[iter * worlds + w]
++    denom = pTAp[iter * worlds + w]
+     alpha = wp.float32(0.0)
+     if (wp.abs(denom) > 1.0e-30) and (not wp.isnan(denom)) and (not wp.isnan(num)):
+         alpha = num / denom
+@@ -178,6 +189,64 @@ def step_cg_kernel(
+     x[i] = x[i] + alpha * p[i]
+ 
+ 
++# Alloy (SCR-WP0-S3D-WORLDS): per-world inner products, deterministic (fixed chunks that never cross a world
++# boundary, then each world's chunks in order). Upstream summed over every world's particles, so every world shared one
++# alpha and one beta and a world's solve depended on the other worlds' state.
++@wp.kernel
++def chunk_inner_kernel(
++    a: wp.array[wp.vec3],
++    b: wp.array[wp.vec3],
++    chunk_start: wp.array[wp.int32],
++    chunk_end: wp.array[wp.int32],
++    # outputs
++    partial: wp.array[float],
++):
++    c = wp.tid()
++    s = float(0.0)
++    for i in range(chunk_start[c], chunk_end[c]):
++        s += wp.dot(a[i], b[i])
++    partial[c] = s
++
++
++@wp.kernel
++def world_inner_kernel(
++    partial: wp.array[float],
++    world_chunk_start: wp.array[wp.int32],
++    iter: int,
++    worlds: int,
++    # outputs
++    out: wp.array[float],
++):
++    w = wp.tid()
++    s = float(0.0)
++    for c in range(world_chunk_start[w], world_chunk_start[w + 1]):
++        s += partial[c]
++    out[iter * worlds + w] = s
++
++
++def world_tables(particle_world: wp.array | None, chunk: int = 256):
++    """Alloy (SCR-WP0-S3D-WORLDS): (worlds, dense world per particle, chunk starts, chunk ends, first chunk per
++    world) when there is more than one world and each world's particles are contiguous; None otherwise (upstream's
++    global sums, as for one world)."""
++    if particle_world is None:
++        return None
++    pw = particle_world.numpy()
++    if pw.size == 0 or pw.min() < 0 or (np.diff(pw) < 0).any():
++        return None
++    ids, dense = np.unique(pw, return_inverse=True)
++    if len(ids) < 2:
++        return None
++    bounds = np.flatnonzero(np.diff(dense)) + 1
++    starts, ends = np.r_[0, bounds], np.r_[bounds, len(pw)]
++    cs, ce, first = [], [], [0]
++    for s, e in zip(starts, ends, strict=True):
++        for c in range(int(s), int(e), chunk):
++            cs.append(c)
++            ce.append(min(c + chunk, int(e)))
++        first.append(len(cs))
++    return len(ids), dense.astype(np.int32), np.array(cs, np.int32), np.array(ce, np.int32), np.array(first, np.int32)
++
++
+ @wp.kernel
+ def generate_test_data_kernel(
+     dim: int,
+@@ -249,7 +318,7 @@ class PcgSolver:
+             3. Matrix-free diagonals: wp.array(wp.mat3x3)
+     """
+ 
+-    def __init__(self, dim: int, device, maxIter: int = 999):
++    def __init__(self, dim: int, device, maxIter: int = 999, particle_world: wp.array | None = None):
+         self.dim = dim  # pre-allocation
+         self.device = device
+         self.maxIter = maxIter
+@@ -257,8 +326,27 @@ class PcgSolver:
+         self.z = wp.array(shape=dim, dtype=wp.vec3, device=device)
+         self.p = wp.array(shape=dim, dtype=wp.vec3, device=device)
+         self.Ap = wp.array(shape=dim, dtype=wp.vec3, device=device)
+-        self.pTAp = wp.array(shape=maxIter, dtype=float, device=device)
+-        self.rTz = wp.array(shape=maxIter, dtype=float, device=device)
++        # Alloy (SCR-WP0-S3D-WORLDS): with several worlds, one rTz / pTAp value per (iteration, world)
++        tables = world_tables(particle_world)
++        self.worlds = 1 if tables is None else tables[0]
++        self.world = wp.zeros(1, dtype=wp.int32, device=device)
++        if tables is not None:
++            self.world, self.chunk_start, self.chunk_end, self.world_chunk_start = (
++                wp.array(t, dtype=wp.int32, device=device) for t in tables[1:]
++            )
++            self.partial = wp.zeros(len(tables[2]), dtype=float, device=device)
++        self.pTAp = wp.array(shape=maxIter * self.worlds, dtype=float, device=device)
++        self.rTz = wp.array(shape=maxIter * self.worlds, dtype=float, device=device)
++
++    def _inner(self, a: wp.array[wp.vec3], b: wp.array[wp.vec3], out: wp.array[float], iter: int):
++        # Alloy (SCR-WP0-S3D-WORLDS): upstream's global inner product for one world, else one per world
++        if self.worlds == 1:
++            array_inner(a, b, out.ptr + iter * out.strides[0])
++            return
++        wp.launch(chunk_inner_kernel, dim=self.partial.shape[0], inputs=[a, b, self.chunk_start, self.chunk_end],
++                  outputs=[self.partial], device=self.device)
++        wp.launch(world_inner_kernel, dim=self.worlds, inputs=[self.partial, self.world_chunk_start, iter, self.worlds],
++                  outputs=[out], device=self.device)
+ 
+     def step1_update_r(
+         self,
+@@ -292,13 +380,13 @@ class PcgSolver:
+         wp.launch(array_mul_kernel, dim=self.dim, inputs=[inv_M, self.r], outputs=[self.z], device=self.device)
+ 
+     def step3_update_rTz(self, iter: int):
+-        array_inner(self.r, self.z, self.rTz.ptr + iter * self.rTz.strides[0])
++        self._inner(self.r, self.z, self.rTz, iter)  # Alloy (SCR-WP0-S3D-WORLDS)
+ 
+     def step4_update_p(self, iter: int):
+         wp.launch(
+             update_cg_direction_kernel,
+             dim=self.dim,
+-            inputs=[iter, self.z, self.rTz, self.p],
++            inputs=[iter, self.z, self.rTz, self.p, self.worlds, self.world],  # Alloy (SCR-WP0-S3D-WORLDS)
+             outputs=[self.p],
+             device=self.device,
+         )
+@@ -327,13 +415,13 @@ class PcgSolver:
+             )
+ 
+     def step6_update_pTAp(self, iter: int):
+-        array_inner(self.p, self.Ap, self.pTAp.ptr + iter * self.pTAp.strides[0])
++        self._inner(self.p, self.Ap, self.pTAp, iter)  # Alloy (SCR-WP0-S3D-WORLDS)
+ 
+     def step7_update_x_r(self, x: wp.array[wp.vec3], iter: int):
+         wp.launch(
+             step_cg_kernel,
+             dim=self.dim,
+-            inputs=[iter, self.rTz, self.pTAp, self.p, self.Ap],
++            inputs=[iter, self.rTz, self.pTAp, self.p, self.Ap, self.worlds, self.world],  # Alloy (SCR-WP0-S3D-WORLDS)
+             outputs=[x, self.r],
+             device=self.device,
+         )
+diff --git a/alloy/_vendor/newton/_src/solvers/style3d/solver_style3d.py b/alloy/_vendor/newton/_src/solvers/style3d/solver_style3d.py
+index 87258dc14..54a3311d1 100644
+--- a/alloy/_vendor/newton/_src/solvers/style3d/solver_style3d.py
++++ b/alloy/_vendor/newton/_src/solvers/style3d/solver_style3d.py
+@@ -297,7 +297,9 @@ class SolverStyle3D(SolverBase):
+                 device=self.device,
+             )
+         self.collision: Collision | None = Collision(model)  # set None to disable
+-        self.linear_solver = PcgSolver(model.particle_count, self.device)
++        self.linear_solver = PcgSolver(  # Alloy (SCR-WP0-S3D-WORLDS): per-world alpha / beta
++            model.particle_count, self.device, particle_world=model.particle_world if model.world_count > 1 else None
++        )
+         self.config = config
+ 
+         # Fixed PD matrix

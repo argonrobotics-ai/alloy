@@ -1,0 +1,26 @@
+{
+  "cases": {
+    "box_drop27_fake": {
+      "periods": 8,
+      "sha256": "89192c1c59ca6d8980c7a350932d9a94dd0028bb8f12e9ac514fe0692fe57ab0",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    },
+    "box_drop27_steel_det": {
+      "periods": 8,
+      "sha256": "116c141ff31e22d5869b3a7e47f8a3e6ff47d3e8c879b3d6e39ba00cca0af18c",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    },
+    "box_drop27_xpbd_det": {
+      "periods": 8,
+      "sha256": "0e9eb6f1b139a49bb3b09eeba51ddba812248b79862f0937ba2640c07d565e8e",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    }
+  },
+  "cpu_model": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+  "key": "cuda-sm89-warp1.18.0-newton8f3466f9",
+  "reason": "Newton pin ac7f7830 -> 8f3466f9 (main 742db9dd, SCR-WP11-5; WP0 2026-11-05): no golden covered the pin",
+  "schema": "alloy.precision.golden/1"
+}

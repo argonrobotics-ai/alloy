@@ -1,0 +1,9 @@
+# P3-2b embodiment e5_fr3_duo_route: Franka Mobile FR3 Duo (TMR base, spine, two FR3 + hands), route contact variant solref 0.00125 s (Alloy's route step only). Built by alloy.tasks.emb_scene from https://github.com/frankarobotics/franka_description@7aeeddc449ed (Apache-2.0 (frankarobotics/franka_description; gains and pose: gym-anything/robotics mobile-fr3-duo, MIT)). Replay tier: the whole MJCF as one robot. Contact: solref 0.00125 s on every geom (source emb_e5_fr3_duo: 0.0025 s x 62 geoms, 0.005 s x 4 geoms, 0.02 s x 92 geoms); valid at Alloy's route step (0.000625 s) only: an engine at the sources' 2 ms step clamps the time constant to 4 ms (MuJoCo's 2 dt floor).
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e5_fr3_duo_route/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e5_fr3_duo_route
+objects: []
+control_dt: 0.002

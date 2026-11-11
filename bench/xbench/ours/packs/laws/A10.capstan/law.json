@@ -1,0 +1,34 @@
+{
+ "law": "A10.capstan",
+ "dt": 0.0005,
+ "substeps": 1,
+ "duration_s": 0.2,
+ "metrics": {
+  "ratio_rel_err": {
+   "abs": 0.02,
+   "rel": 0.0,
+   "source": "bench \u00a74 A10: capstan T_out/T_in = exp(\u03bc\u03b8) within 2 %"
+  }
+ },
+ "stat": {
+  "ratio_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "mu0.2",
+   "params": {
+    "mu": 0.2
+   },
+   "worlds": 6,
+   "drive": true
+  },
+  {
+   "id": "mu0.4",
+   "params": {
+    "mu": 0.4
+   },
+   "worlds": 6,
+   "drive": true
+  }
+ ]
+}

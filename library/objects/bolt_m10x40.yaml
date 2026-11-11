@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: bolt_m10x40
+shape:
+  mesh:
+    path: meshes/bolt_m10x40_din933.obj
+    sha256: 5e9034177ebe9fd31e5c609f92074213f768ad150adeb1ccaa8f13e8d2c478cf
+    collision: sdf
+material: steel_zinc_plated

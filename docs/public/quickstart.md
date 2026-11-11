@@ -1,0 +1,97 @@
+# Quickstart
+
+Drop a ball on a table, read where it went, and save a picture. About 10 minutes, most of it the first run's
+one-time compile.
+
+## 1. Install
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate     # Python 3.11 or 3.12
+pip install alloy-engine
+```
+
+Alloy uses an NVIDIA GPU when it finds one (driver 580 or newer) and the CPU otherwise. Nothing else to set up.
+
+## 2. Build a scene
+
+Sizes are full edge lengths in metres, masses in kilograms, and z points up.
+
+```python
+import alloy
+
+scene = alloy.Scene(dt=0.01)                 # one sim.step() advances 10 ms
+scene.add_ground()
+scene.add_box("table", size=(0.6, 0.6, 0.4), pos=(0, 0, 0.2), static=True)
+scene.add_sphere("ball", 0.03, pos=(0, 0, 0.8), restitution=0.6)
+sim = alloy.build(scene)                     # a GPU if there is one, else the CPU
+print(sim.names()["bodies"])
+```
+
+```text
+['ball']
+```
+
+The first build of a new kind of scene compiles for a while: under a minute on a CPU, 3 to 4 minutes on a GPU. The
+result is cached, so the next run starts in seconds.
+
+## 3. Run it and read the result
+
+```python
+traj = sim.run(1.0, record=["ball"])         # 1 simulated second, one frame per step
+z = traj.world(0)["ball.pos"][:, 2]
+print(traj["ball.pos"].shape, "lowest", z.min().round(3), "end", z[-1].round(3))
+```
+
+```text
+(101, 1, 3) lowest 0.427 end 0.432
+```
+
+A trajectory is a dict of NumPy arrays shaped `(frames, worlds, ...)`. The ball's centre comes down to 0.427 m, just
+under table top plus radius, and is still bouncing a little at the end.
+
+## 4. Save a picture
+
+```python
+sim.render(width=640, height=480, path="ball.png")
+```
+
+![The ball on the table](img/ball.png)
+
+## 5. Check the run
+
+```python
+print(sim.check()["ok"], sim.health()["worlds"][0]["severity"])
+```
+
+```text
+True OK
+```
+
+Read this after every run. A world that fails is frozen in place and looks calm, so the numbers alone do not show
+it. More in [World health](guides/health.md).
+
+## 6. Run many worlds at once
+
+```python
+import numpy as np
+
+many = alloy.Scene(worlds=4, dt=0.01)
+many.add_ground()
+drops = np.array([[0, 0, 0.2], [0, 0, 0.4], [0, 0, 0.6], [0, 0, 0.8]])
+many.add_sphere("ball", 0.03, pos=drops, restitution=0.6)     # one start per world
+sim = alloy.build(many)
+sim.run(0.1)
+print(sim.state(["ball"])["ball.pos"][:, 2].round(2))
+```
+
+```text
+[0.15 0.35 0.55 0.75]
+```
+
+Every array now has four rows, one per world: each ball fell the same 5 cm in 0.1 s.
+
+## Next
+
+- Add a robot: [Robots](guides/robots.md).
+- Train a policy: [Train with RL](guides/rl.md).
+- Pour water or drape a sheet: [Liquids](guides/liquids.md), [Cloth](guides/cloth.md).

@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: tube_rack_pp
+shape:
+  primitive:
+    kind: box
+    size: [0.1, 0.035, 0.025]
+material: pp_homopolymer
+motion: static

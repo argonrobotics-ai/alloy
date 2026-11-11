@@ -1,0 +1,8 @@
+{
+ "schema": "alloy.look/1",
+ "material": "film_ldpe",
+ "preset": "pp_clear",
+ "roughness": 0.15,
+ "detail": null,
+ "note": "LDPE film: clear with a light haze"
+}

@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: pbt
+b: pbt
+mu_static:
+  value: 0.19
+  source: catalog
+  unc: [0.18, 0.25]
+  note: Ensinger HYDEX 4101 static 0.19; the sheet's dynamic 0.25 at 40 psi/50 fpm exceeds static (different test) and is
+    not used
+mu_dynamic:
+  value: 0.19
+  source: catalog
+  unc: [0.18, 0.25]
+  note: Ensinger HYDEX 4101 static 0.19; the sheet's dynamic 0.25 at 40 psi/50 fpm exceeds static (different test) and is
+    not used

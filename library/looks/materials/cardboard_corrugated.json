@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cardboard_corrugated",
+ "preset": "cardboard_kraft",
+ "note": "brown kraft corrugated board",
+ "licence": "textures: ambientCG (ambientcg.com) 'Cardboard004', CC0"
+}

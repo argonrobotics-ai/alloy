@@ -1,0 +1,9 @@
+# P3-2b embodiment e9_leap: LEAP Hand (right). Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (MIT (mujoco_menagerie leap_hand)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e9_leap/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e9_leap
+objects: []
+control_dt: 0.002

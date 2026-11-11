@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: glass_soda_lime
+b: sand_silica_dry
+mu_static:
+  value: 0.7
+  source: model
+  unc: [0.6, 0.78]
+  note: friction angle 37.9 deg, Burns, Balmforth & Hewitt 'Rolling resistance on sand'
+mu_dynamic:
+  value: 0.7
+  source: model
+  unc: [0.6, 0.78]
+  note: friction angle 37.9 deg, Burns, Balmforth & Hewitt 'Rolling resistance on sand'

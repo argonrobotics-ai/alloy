@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: plywood_marine
+b: steel_zinc_plated
+mu_static:
+  value: 0.28
+  source: model
+  unc: [0.266, 0.294]
+  note: stainless on new plywood DCoF 0.28 (spatial std 0.024), Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. V;
+    static static not reported; set equal to the kinetic value
+mu_dynamic:
+  value: 0.28
+  source: model
+  unc: [0.266, 0.294]
+  note: stainless on new plywood DCoF 0.28 (spatial std 0.024), Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. V;
+    static static not reported; set equal to the kinetic value

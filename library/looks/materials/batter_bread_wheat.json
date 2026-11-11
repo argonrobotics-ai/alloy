@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "batter_bread_wheat",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.86,
+  0.79,
+  0.64
+ ],
+ "roughness": 0.5,
+ "subsurface": 0.2,
+ "note": "wheat batter: opaque matte pale beige"
+}

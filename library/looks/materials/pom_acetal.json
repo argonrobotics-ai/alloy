@@ -1,0 +1,12 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pom_acetal",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.92,
+  0.91,
+  0.88
+ ],
+ "roughness": 0.35,
+ "note": "natural POM: opaque off-white, slightly waxy"
+}

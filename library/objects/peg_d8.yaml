@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: peg_d8
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.004, 0.025]
+material: stainless_303
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+precision_partners:
+- block_bore_d8_1:bore
+precision_features:
+- name: shaft
+  crop:
+  - [-0.005, -0.005, -0.025500000000000002]
+  - [0.005, 0.005, -0.01]
+  clearance:
+    value: 0.0001
+    source: catalog
+    note: D8 peg in a 8.1 mm hole, 0.1 mm diametral clearance

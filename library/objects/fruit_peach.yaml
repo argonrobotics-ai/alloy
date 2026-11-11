@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: fruit_peach
+shape:
+  primitive:
+    kind: sphere
+    size: [0.029]
+material: fruit_peach_whole

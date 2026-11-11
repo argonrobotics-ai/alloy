@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "foam_pu_flexible",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.92,
+  0.88,
+  0.7
+ ],
+ "roughness": 0.95,
+ "subsurface": 0.3,
+ "note": "flexible PU foam: off-white, very matte"
+}

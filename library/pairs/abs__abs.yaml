@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: abs
+b: abs
+mu_static:
+  value: 0.69
+  source: catalog
+  unc: [0.2, 0.78]
+  note: 'Bayer ABS design guide Table 3 p.16: ABS on steel 0.50-0.65, x1.2 for like plastics; Ensinger TECARAN ABS gives static
+    0.2 (ASTM D3702): sources disagree 3x'
+mu_dynamic:
+  value: 0.575
+  source: catalog
+  unc: [0.35, 0.65]
+  note: 'Bayer ABS design guide Table 3 p.16: ABS on steel 0.50-0.65, x1.2 for like plastics; Ensinger TECARAN ABS gives static
+    0.2 (ASTM D3702): sources disagree 3x'

@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "wood_pine",
+ "preset": "wood_oak",
+ "texture": "polyhaven:coated_pine",
+ "scale_m": 0.6,
+ "note": "pine: pale yellow (coated pine scan)",
+ "licence": "textures: Poly Haven (polyhaven.com) 'coated_pine', CC0"
+}

@@ -1,0 +1,18 @@
+schema: alloy.object/1
+name: usb_cable_1m
+shape:
+  curve:
+    points:
+    - [0.0, 0.0, 0.0]
+    - [1.0, 0.0, 0.0]
+    radius: 0.00175
+material: cable_usb_composite
+features:
+  bend_stiffness:
+    value: 5.67e-05
+    source: model
+    note: composite EI, derived
+  twist_stiffness:
+    value: 9.29e-05
+    source: model
+    note: composite GJ, derived; GJ/EI 1.64

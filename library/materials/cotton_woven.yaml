@@ -1,0 +1,42 @@
+schema: alloy.material/1
+name: cotton_woven
+density:
+  value: 500.0
+  source: model
+  unc: [400.0, 650.0]
+  note: 'towel/woven cotton: 300 g/m^2 at 0.6 mm (effective bulk density of the fabric)'
+surface:
+  mu_static:
+    value: 0.6
+    source: model
+    unc: [0.4, 0.8]
+    note: cotton fabric on wood/plastic 0.4-0.8 (textile friction literature); mid value
+  mu_dynamic:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: cotton fabric on wood/plastic 0.4-0.8 (textile friction literature); mid value
+  restitution:
+    value: 0.0
+    source: model
+    note: fabric impacts are fully damped (model)
+elastic:
+  youngs:
+    value: 1000000.0
+    source: model
+    unc: [200000.0, 5000000.0]
+    note: 'effective isotropic membrane: E·h/(1-nu^2) = 660 N/m stretch, D = 2e-5 N·m bend at h 0.6 mm (real woven fabric
+      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate (WP11)'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'effective isotropic membrane: E·h/(1-nu^2) = 660 N/m stretch, D = 2e-5 N·m bend at h 0.6 mm (real woven fabric
+      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate (WP11)'
+  bending:
+    value: 1.9780219780219777e-05
+    source: model
+    unc: [3.956e-06, 9.89e-05]
+    note: 'ESTIMATE (derived): youngs'' plate value at h 0.6 mm (D = 2e-5 N·m as youngs states; 0.202 gf·cm²/cm, 2x above
+      the Kawabata 1e-6..1e-5 N·m range: a stiff cotton). add_cloth''s default material: its sheets bend like this at any
+      thickness, which is then the contact thickness (R2-E1: at 4 mm, E·h³ gave ~300x)'

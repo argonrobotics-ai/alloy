@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_bamboo_veneer",
+ "family": "wood",
+ "preset": "wood_oak",
+ "texture": "polyhaven:bamboo_veneer",
+ "res": "1k",
+ "scale_m": 1.0,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/bamboo_veneer",
+ "author": "Jenelle van Heerden",
+ "licence": "CC0-1.0",
+ "albedo": 0.454,
+ "note": "bamboo (cutting-board stock): Poly Haven 'Bamboo Veneer', 1 m tile, 1k maps"
+}

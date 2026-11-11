@@ -1,0 +1,50 @@
+schema: alloy.material/1
+name: fruit_peach_whole
+density:
+  value: 998.0
+  source: measured
+  unc: [950.0, 1010.0]
+  note: 'SNIPPET: ''sphericity (0.98), density (0.998 g cm super(-3)), bulk density (0.61 g cm super(-3)), porosity (0.38),
+    and packing coefficient (0.70).'' (abstract, cv Diamante), Perez-Lopez et al., J. Food Eng. 2014, https://bvbvf1.bib-bvb.de/vufind/PrimoRecord/cdi_proquest_miscellaneous_1770283156'
+surface:
+  mu_static:
+    value: 0.435
+    source: measured
+    unc: [0.43, 0.513]
+    note: 'DOC: Table 1 rows ''Plywood 0.434 (0.006) A 0.438 (0.005) A'', ''Rubber 0.511 (0.003) B 0.513 (0.004) B'', ''Steel
+      0.430 (0.005) A 0.436 (0.007) A'' (static, two cultivars), Tabatabaekoloor 2013, https://cigrjournal.org/index.php/Ejounral/article/download/2570/1815/9083'
+  mu_dynamic:
+    value: 0.35
+    source: model
+    unc: [0.25, 0.43]
+    note: 'ESTIMATE: below the measured static 0.43; no kinetic value found'
+  restitution:
+    value: 0.2
+    source: model
+    unc: [0.05, 0.4]
+    note: 'ESTIMATE: no measured value found'
+elastic:
+  youngs:
+    value: 890000.0
+    source: measured
+    unc: [300000.0, 1500000.0]
+    note: 'DOC (abstract): ''maximum force, Poisson''s ratio, specific deformation, modulus of elasticity, stress, and deformation
+      energy were found to be'' ''59.6 N, 0.29, 10.9%, 0.89 Nmm (2), 1.19 Nmm (2), and 162.2 Nmm, respectively.'', Kabas and
+      Vladut 2015, https://avesis.akdeniz.edu.tr/yayin/2dcdf938-0e89-45ac-a083-4e10e98af950/determination-of-drop-test-behavior-of-a-sample-peach-using-finite-element-method;
+      range for ripeness (E falls with harvest date)'
+  poisson:
+    value: 0.29
+    source: measured
+    unc: [0.25, 0.35]
+    note: 'DOC (abstract): same row, Poisson''s ratio 0.29, Kabas and Vladut 2015, https://avesis.akdeniz.edu.tr/yayin/2dcdf938-0e89-45ac-a083-4e10e98af950/determination-of-drop-test-behavior-of-a-sample-peach-using-finite-element-method'
+failure:
+  fracture_strain:
+    value: 0.109
+    source: measured
+    unc: [0.08, 0.14]
+    note: 'DOC (abstract): specific deformation ''10.9%'' at the maximum compression force, Kabas and Vladut 2015, https://avesis.akdeniz.edu.tr/yayin/2dcdf938-0e89-45ac-a083-4e10e98af950/determination-of-drop-test-behavior-of-a-sample-peach-using-finite-element-method'
+  fracture_stress:
+    value: 1190000.0
+    source: measured
+    unc: [800000.0, 1500000.0]
+    note: 'DOC (abstract): stress at the maximum compression force ''1.19 Nmm (2)'' (59.6 N), Kabas and Vladut 2015, https://avesis.akdeniz.edu.tr/yayin/2dcdf938-0e89-45ac-a083-4e10e98af950/determination-of-drop-test-behavior-of-a-sample-peach-using-finite-element-method'

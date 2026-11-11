@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_gingham_check",
+ "family": "fabric",
+ "preset": "linen",
+ "texture": "polyhaven:gingham_check",
+ "res": "1k",
+ "scale_m": 0.28,
+ "bump_m": 0.0004,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/gingham_check",
+ "author": "colormass, Rico Cilliers",
+ "licence": "CC0-1.0",
+ "albedo": 0.339,
+ "note": "gingham check (tablecloth): Poly Haven 'Gingham Check', 0.28 m tile, 1k maps"
+}

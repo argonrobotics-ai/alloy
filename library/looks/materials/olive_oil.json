@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "olive_oil",
+ "preset": "honey",
+ "ior": 1.47,
+ "absorption_color": [
+  0.8,
+  0.78,
+  0.28
+ ],
+ "absorption_m": 0.05,
+ "note": "olive oil: clear golden-green liquid (honey's liquid preset, oil IOR and tint)"
+}

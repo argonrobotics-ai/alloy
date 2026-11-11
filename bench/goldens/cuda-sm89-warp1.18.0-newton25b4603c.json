@@ -1,0 +1,44 @@
+{
+  "cases": {
+    "box_drop27_fake": {
+      "periods": 8,
+      "sha256": "89192c1c59ca6d8980c7a350932d9a94dd0028bb8f12e9ac514fe0692fe57ab0",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    },
+    "box_drop27_steel_det": {
+      "periods": 8,
+      "sha256": "2dafadc57be2a1753c45aed182bd28753148f16f87fe8b47ae0bc3fc699ae2f7",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    },
+    "box_drop27_xpbd_det": {
+      "periods": 8,
+      "sha256": "0e9eb6f1b139a49bb3b09eeba51ddba812248b79862f0937ba2640c07d565e8e",
+      "worlds": 64,
+      "worlds_equal_at_end": true
+    },
+    "feat_camera": {
+      "periods": 4,
+      "sha256": "797884a9fc304e182664eb3e60cf7d80985e287bbcdff3178c53294e8d7fff44",
+      "worlds": 16,
+      "worlds_equal_at_end": false
+    },
+    "feat_robot_randomize": {
+      "periods": 8,
+      "sha256": "65d1fb714ab4cc06d38a3beee02817a1ea50213c4fe5a4dc3c09bfd7f0453362",
+      "worlds": 64,
+      "worlds_equal_at_end": false
+    },
+    "feat_vectorenv_reset": {
+      "periods": 8,
+      "sha256": "8e2946a922ff8692839e2ab0ff2bea9aab550fe1bec9199423917fb058a8f569",
+      "worlds": 16,
+      "worlds_equal_at_end": false
+    }
+  },
+  "cpu_model": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+  "key": "cuda-sm89-warp1.18.0-newton25b4603c",
+  "reason": "rc1-1110 snapshot ec7a47cb2: FEAT rows (robot randomize, VectorEnv reset, camera) added on an L4",
+  "schema": "alloy.precision.golden/1"
+}

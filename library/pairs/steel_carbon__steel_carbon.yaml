@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: steel_carbon
+b: steel_carbon
+mu_static:
+  value: 0.74
+  source: catalog
+  unc: [0.5, 0.8]
+  note: dry clean steel on steel, Serway & Jewett 9e Table 5.1
+mu_dynamic:
+  value: 0.57
+  source: catalog
+  unc: [0.4, 0.6]
+  note: dry clean steel on steel, Serway & Jewett 9e Table 5.1

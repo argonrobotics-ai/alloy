@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_marble012",
+ "family": "stone",
+ "preset": "marble_white",
+ "texture": "ambientcg:Marble012",
+ "res": "1k",
+ "scale_m": 0.8,
+ "bump_m": 0.0001,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Marble012",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.427,
+ "note": "glossy bathroom marble: ambientCG 'Marble 012', 0.8 m tile, 1k maps"
+}

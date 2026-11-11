@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: fish_turner_blade
+shape:
+  primitive:
+    kind: box
+    size: [0.038, 0.019, 0.00015]
+material: stainless_304
+features:
+  thickness:
+    value: 0.0003
+    source: catalog
+    note: blade 0.3 mm
+  min_wall:
+    value: 0.0003
+    source: catalog
+    note: blade 0.3 mm

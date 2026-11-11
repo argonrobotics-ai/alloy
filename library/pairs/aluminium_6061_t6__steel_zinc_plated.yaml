@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: aluminium_6061_t6
+b: steel_zinc_plated
+mu_static:
+  value: 0.61
+  source: catalog
+  unc: [0.58, 0.64]
+  note: Engineering ToolBox friction-coefficients-d_778 Al/mild steel clean dry 0.61/0.47
+mu_dynamic:
+  value: 0.47
+  source: catalog
+  unc: [0.44, 0.5]
+  note: Engineering ToolBox friction-coefficients-d_778 Al/mild steel clean dry 0.61/0.47

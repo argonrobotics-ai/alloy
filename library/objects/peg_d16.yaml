@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: peg_d16
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.008, 0.025]
+material: stainless_303
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+precision_partners:
+- block_bore_d16_5:bore
+precision_features:
+- name: shaft
+  crop:
+  - [-0.009000000000000001, -0.009000000000000001, -0.025500000000000002]
+  - [0.009000000000000001, 0.009000000000000001, -0.01]
+  clearance:
+    value: 0.0005
+    source: catalog
+    note: D16 peg in a 16.5 mm hole, 0.5 mm diametral clearance

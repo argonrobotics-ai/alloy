@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: mug_stoneware
+shape:
+  mesh:
+    path: meshes/mug_stoneware_body.obj
+    sha256: d05a20fcdb396859bf439336a5bde6d89aed788c0a9fbb44301e0e0a10e1893a
+    collision: sdf
+material: stoneware_glazed

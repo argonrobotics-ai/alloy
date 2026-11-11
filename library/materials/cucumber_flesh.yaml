@@ -1,0 +1,54 @@
+schema: alloy.material/1
+name: cucumber_flesh
+density:
+  value: 990.0
+  source: measured
+  unc: [956.0, 1042.0]
+  note: 'SNIPPET: ''The density determined from the measurement of mass and volume for Shahab, Shahin, and Nagin varieties
+    were calculated as 956, 1042, and 990 kg m-3.'' Moradi et al., J. Food Process Eng. 2020 (abstract), https://doi.org/10.1111/jfpe.13323'
+surface:
+  mu_static:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.42]
+    note: 'ESTIMATE: no cucumber value found; proxy fresh fruit on plywood, ''Plywood 0.33 ± 0.09'' and ''Plywood 0.28 ± 0.08''
+      (myrtle fruit, Table 6), https://pmc.ncbi.nlm.nih.gov/articles/PMC3550880/'
+  mu_dynamic:
+    value: 0.25
+    source: model
+    unc: [0.15, 0.35]
+    note: 'ESTIMATE: kinetic friction below the static proxy (0.28-0.33 on plywood, 0.20-0.26 on galvanized steel for myrtle
+      fruit), https://pmc.ncbi.nlm.nih.gov/articles/PMC3550880/'
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.3]
+    note: 'ESTIMATE: watery produce impacts are highly dissipative; no measured cucumber rebound found'
+elastic:
+  youngs:
+    value: 1100000.0
+    source: measured
+    unc: [850000.0, 1390000.0]
+    note: 'DOC: ''The maximum and minimum values of modulus of elasticity were 1.39 MPa and 0.85 MPa'' and ''modulus of elasticity
+      values for the three positions of cucumber fruit were in the range of 1.00 MPa to 1.21 MPa'' (uniaxial compression of
+      15 mm slices). Jahangiri et al., CIGR Journal 18(2):324-330, 2016, https://cigrjournal.org/index.php/Ejounral/article/download/3615/2368'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'ESTIMATE: no cucumber value found; proxy apple flesh ''the Poisson''s ration ... of the apple flesh optimized by
+      the developed FEM algorithm were ... 0.29'', Kim et al., ASAE Paper 056074 (2005), https://phtnet.agri.cmu.ac.th/research/download/pdf/wt383.pdf'
+failure:
+  fracture_strain:
+    value: 0.3
+    source: measured
+    unc: [0.25, 0.35]
+    note: 'DOC: ''the fracture point (around 0.3 strain)'' (uniaxial compression of cucumber cross-sections). Dan and Kohyama,
+      JARQ 41(2):115, 2007, https://www.jircas.go.jp/publication/jarq/41/2/115'
+  fracture_stress:
+    value: 700000.0
+    source: measured
+    unc: [530000.0, 850000.0]
+    note: 'DOC: ''The failure stress values at the difference test positions of fruit were ranged from 0.61 MPa to 0.78 MPa''
+      and ''decreased significantly (P<0.01) from 0.85 MPa to 0.53 MPa (38% decrease) during 9 d of storage''. Jahangiri et
+      al., CIGR Journal 18(2):324-330, 2016, https://cigrjournal.org/index.php/Ejounral/article/download/3615/2368'

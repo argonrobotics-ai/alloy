@@ -1,0 +1,39 @@
+{
+ "schema": "alloy.render_gates.matrix_spec/1",
+ "scenes": {
+  "c2": {"title": "C2 water + glass", "frames": ["100", "300", "500", "700", "900"], "camera": "wide",
+         "needs": ["transmission", "liquid surface"],
+         "claims": {"128x128": {"spp": 32, "den": "on", "denoiser": "learned, tta 2"},
+                    "640x480": {"spp": 32, "den": "on", "denoiser": "learned c2_640, tta 1", "weights": "c2_640"},
+                    "1280x720": {"spp": 32, "den": "on", "denoiser": "learned c2_1280, tta 1", "weights": "c2_1280"}}},
+  "c3": {"title": "C3 opaque latch", "frames": ["420", "4400", "8800", "11439", "15500"], "camera": "wide",
+         "needs": ["textures", "bevel"],
+         "claims": {"1280x720": {"spp": 16, "den": "on", "denoiser": "learned c3_1280, tta 1", "weights": "c3_1280"}}},
+  "c4": {"title": "C4 clear lid", "frames": ["1500", "4500", "8400", "12000", "15500"], "camera": "wide",
+         "needs": ["transmission", "thin clear plastic"],
+         "claims": {"128x128": {"spp": 8, "den": "on", "denoiser": "learned c4_128, tta 2", "weights": "c4_128"},
+                    "640x480": {"spp": 32, "den": "on", "denoiser": "learned c4_640, tta 1", "weights": "c4_640"},
+                    "1280x720": {"spp": 32, "den": "on", "denoiser": "learned c4_1280, tta 1", "weights": "c4_1280"}}},
+  "dc5": {"title": "DC5 1,024-world grid", "frames": ["100", "400", "1300"], "camera": "horizontal",
+          "needs": ["1,024 worlds in one image", "cables"]},
+  "t12": {"title": "T12 diffuse benchmark", "frames": ["0"], "camera": "fixed", "needs": ["diffuse only"],
+          "claims": {"128x128": {"spp": 40, "den": "on", "denoiser": "learned t12_128, tta 1", "weights": "t12_128"},
+                     "640x480": {"spp": 64, "den": "on", "denoiser": "OIDN"},
+                     "1280x720": {"spp": 64, "den": "on", "denoiser": "OIDN"}}}
+ },
+ "sizes": ["128x128", "640x480", "1280x720"],
+ "gpus": {"l4": "NVIDIA L4", "rtx_pro_6000": "NVIDIA RTX PRO 6000"},
+ "engines": {"raw": "alloy", "e2e": "alloy_e2e"},
+ "claims_note": "size defaults; scenes.<scene>.claims.<res> overrides: the fastest setting that passes every gate for that scene",
+ "claims": {
+  "128x128": {"spp": 5, "den": "on", "denoiser": "learned, tta 2"},
+  "640x480": {"spp": 12, "den": "on", "denoiser": "learned 640 model, tta 1"},
+  "1280x720": {"spp": 12, "den": "on", "denoiser": "learned 640 model, tta 1 (provisional)"}
+ },
+ "speed": [
+  {"name": "1,000 images/s at 128 px, 1,024 worlds, one RTX PRO 6000 alone", "gpu": "rtx_pro_6000", "res": "128x128",
+   "scenes": ["c3", "t12"], "match": {"worlds": 1024, "shared_gpu": false, "setting": "claim"},
+   "min_images_per_s": 1000},
+  {"name": "reported", "match": {"worlds": 1024, "setting": "claim"}}
+ ]
+}

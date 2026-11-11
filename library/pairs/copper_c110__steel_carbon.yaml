@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: copper_c110
+b: steel_carbon
+mu_static:
+  value: 0.53
+  source: catalog
+  unc: [0.48, 0.58]
+  note: copper on steel (dry), Serway & Jewett 9e Table 5.1
+mu_dynamic:
+  value: 0.36
+  source: catalog
+  unc: [0.32, 0.4]
+  note: copper on steel (dry), Serway & Jewett 9e Table 5.1

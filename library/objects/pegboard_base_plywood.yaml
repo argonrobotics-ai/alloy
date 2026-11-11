@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: pegboard_base_plywood
+shape:
+  primitive:
+    kind: box
+    size: [0.075, 0.075, 0.00635]
+material: plywood_marine
+motion: static

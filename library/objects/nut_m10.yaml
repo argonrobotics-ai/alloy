@@ -1,0 +1,26 @@
+schema: alloy.object/1
+name: nut_m10
+shape:
+  mesh:
+    path: meshes/nut_m10_din934.obj
+    sha256: 273502fd60e71c35f442ac48ee8cc31afe201388aa03d57740982b519361acae
+    collision: sdf
+material: steel_zinc_plated
+loads:
+  contact_speed:
+    value: 0.05
+    source: model
+    note: 'insertion/threading approach <= 5 cm/s (SPEC §3.5 L2: slow-approach precision cards source a lower contact_speed;
+      CT-3 inserts at 1-5 mm/s)'
+precision_partners:
+- bolt_m10x60:thread
+precision_features:
+- name: thread
+  crop:
+  - [-0.006, -0.006, -0.0045000000000000005]
+  - [0.006, 0.006, 0.0045000000000000005]
+  analytic_id: iso_thread:M10x1.5:6H
+  clearance:
+    value: 3.2e-05
+    source: catalog
+    note: 'ISO 965-1 M10x1.5 6H/6g: es = -32 um, EI = 0, so min pitch-diameter (diametral) clearance 32 um (SPEC D2)'

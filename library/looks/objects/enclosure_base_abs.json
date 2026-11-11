@@ -1,0 +1,18 @@
+{
+ "schema": "alloy.look/1",
+ "object": "enclosure_base_abs",
+ "materials": {
+  "body": {
+   "preset": "plastic_matte",
+   "base_color": [
+    0.72,
+    0.72,
+    0.7
+   ],
+   "roughness": 0.5
+  }
+ },
+ "assign": [],
+ "default": "body",
+ "note": "project enclosure: light grey ABS (RAL 7035 class)"
+}

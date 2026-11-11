@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "peanut_butter",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.55,
+  0.36,
+  0.17
+ ],
+ "roughness": 0.45,
+ "subsurface": 0.15,
+ "note": "peanut butter: opaque satin tan brown"
+}

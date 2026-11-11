@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""Shared constants for Newton's MuJoCo solver integration."""
+
+from __future__ import annotations
+
+DEFAULT_LIMIT_SOLREF = (0.02, 1.0)
+"""MuJoCo's implicit default joint-limit solref pair."""
+
+DEFAULT_LIMIT_SOLREF_DAMPRATIO = DEFAULT_LIMIT_SOLREF[1]
+"""MuJoCo's implicit default joint-limit solref damping ratio component."""
+
+DEFAULT_LIMIT_SOLREF_TIMECONST = DEFAULT_LIMIT_SOLREF[0]
+"""MuJoCo's implicit default joint-limit solref time-constant component."""
+
+HINGE_CONNECT_HALF_SPAN = 0.05
+"""Distance [m] along the hinge axis from a revolute loop joint's anchor to each of its two CONNECT points."""
+
+KINEMATIC_LOCK_INERTIA_RATIO = 1.0e4
+"""Armature, relative to a DOF's own inertia (``dof_M0``), that locks kinematic root DOFs while MuJoCo computes its
+constants.
+
+Larger ratios make kinematic roots more rigid but slow the convergence of iterative solvers on their weld and
+contact rows."""
+
+MJ_MINMU = 1.0e-5
+"""MuJoCo's minimum friction coefficient clamp."""
+
+MJ_MINVAL = 2.220446049250313e-16
+"""MuJoCo's minimum positive scalar guard value."""
+
+SOLREF_MODE_FORCE_SPACE = 0
+"""Interpret joint-limit gains as Newton force-space ``joint_limit_ke``/``joint_limit_kd``."""
+
+SOLREF_MODE_RAW = 1
+"""Interpret ``mujoco.solreflimit`` as a raw MuJoCo-authored solref value."""
+
+SOLREF_MODE_MJCF_DEFAULT = 2
+"""Preserve MuJoCo's implicit joint-limit solref until Newton's generic gains are edited."""

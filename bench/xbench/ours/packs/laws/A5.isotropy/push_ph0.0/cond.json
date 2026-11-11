@@ -1,0 +1,280 @@
+{
+ "schema": "alloy.xbench.ours.law/1",
+ "law": "A5.isotropy",
+ "condition": "push_ph0.0",
+ "params": {
+  "tilted": 0.0,
+  "theta": 0.0,
+  "phi": 0.0
+ },
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "steps": 800,
+ "record_every": 1,
+ "gravity": [
+  -0.0,
+  -0.0,
+  -9.8100004196167
+ ],
+ "bodies": [
+  {
+   "name": "box",
+   "parent": "world",
+   "mass": 0.125,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.20833e-05,
+    5.20833e-05,
+    5.20833e-05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.025
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.0,
+    0.0,
+    0.025
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "name": "box_free_joint",
+   "type": "free",
+   "body": "box",
+   "qposadr": 0,
+   "dofadr": 0,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  }
+ ],
+ "geoms": [
+  {
+   "name": "ground_plane_0",
+   "body": "world",
+   "type": "plane",
+   "size": [
+    5.0,
+    5.0,
+    5.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.5,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    -5000000000.0,
+    10000000000.0,
+    10000000000.0,
+    5000000000.0
+   ],
+   "rbound": 0.0,
+   "xpos0": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "shape_1_1",
+   "body": "box",
+   "type": "box",
+   "size": [
+    0.025,
+    0.025,
+    0.025
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.5,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.025,
+    0.025,
+    0.025
+   ],
+   "rbound": 0.04330127018922194,
+   "xpos0": [
+    0.0,
+    0.0,
+    0.025
+   ]
+  }
+ ],
+ "contact_body_pairs": [
+  {
+   "body1": "box",
+   "body2": "world",
+   "mu": {
+    "0.5": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  }
+ ],
+ "worlds": 1,
+ "samples": [
+  {}
+ ],
+ "materials": {
+  "ground_plane_0": {
+   "mu": 0.5,
+   "restitution": 0.0
+  },
+  "shape_1_1": {
+   "mu": 0.5,
+   "restitution": 0.0
+  }
+ },
+ "initial": [
+  {
+   "bodies": {
+    "box": {
+     "q": [
+      0.0,
+      0.0,
+      0.02500000037252903,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "joints": {
+    "box_free_joint": {
+     "q": [
+      0.0,
+      0.0,
+      0.02500000037252903,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "note": "Newton coordinates: body q = x y z qx qy qz qw; free joint q = x y z qx qy qz qw; qd = COM linear then angular velocity, world frame"
+  }
+ ],
+ "drive": "drive.npz",
+ "extras": {},
+ "alloy_settings": {
+  "solver": "mujoco",
+  "kwargs": {
+   "cone": "elliptic",
+   "impratio": 300.0,
+   "iterations": 100,
+   "ls_iterations": 50
+  },
+  "mujoco_solimp": [
+   0.99,
+   0.99,
+   0.001,
+   0.5,
+   2.0
+  ],
+  "newton_contacts": false
+ }
+}

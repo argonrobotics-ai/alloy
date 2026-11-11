@@ -1,0 +1,16 @@
+schema: alloy.object/1
+name: soil_bed_damp
+shape:
+  particles:
+    region:
+    - [-0.05, -0.04, 0.004]
+    - [0.05, 0.04, 0.044]
+    spacing: 0.0025
+    grain_diameter: 0.0003
+material: soil_sand_damp
+features:
+  passage_width:
+    value: 0.08
+    source: model
+    note: a 100 x 80 x 40 mm bed of damp sand filling a tray of that inner size (4 mm floor) placed at the same pos; MPM continuum
+      at 5 mm voxels (the dig-and-pour task, docs/notes/soil-design.md)

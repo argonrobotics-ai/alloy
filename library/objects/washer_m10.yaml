@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: washer_m10
+shape:
+  mesh:
+    path: meshes/washer_m10_din125a.obj
+    sha256: f547fe2a11da98f9beda951fbb27588476af34b085b28b5c05c5198a75339ca9
+    collision: sdf
+material: steel_zinc_plated

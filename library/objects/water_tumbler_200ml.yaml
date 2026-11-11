@@ -1,0 +1,15 @@
+schema: alloy.object/1
+name: water_tumbler_200ml
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.0388, 0.021144]
+material: water
+features:
+  passage_width:
+    value: 0.0776
+    source: model
+    note: '200 ml of water filling the library cup tumbler_pp (inner radius 38.8 mm, floor top 1.5 mm): a cylinder 42.3 mm
+      deep; place it at the cup''s pos + (0, 0, 0.0232), its centre with the bottom 0.5 mm above the floor. A round fill starts
+      at rest in a round cup (a square one splashes on start); the 77.6 mm inner diameter sets the SPH particle size, min(2
+      mm, width / 16)'

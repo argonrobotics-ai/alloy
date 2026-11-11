@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: gift_bag_board
+shape:
+  primitive:
+    kind: box
+    size: [0.1, 0.05, 0.000255]
+material: paper_board
+features:
+  thickness:
+    value: 0.00051
+    source: catalog
+    note: 'DOC: Smurfit Kappa Hansaboard 350 g/m2 "350 510" (substance g/m2, caliper um) https://smurfitkappa.com/ch/-/m/files/product-downloads/white-lined-chipboard-documents/hansaboard_-datenblaetter_skhoya_2021.pdf?rev=-1
+      ; the gift bag''s bottom board (gift_bag_kraft: 350 g/m2 chipboard, 20 x 10 cm, inside the 203 x 114 mm bottom), at
+      about 20 mm cells: board this stiff bends as a plate at coarse cells, and a carton on it touches tens of vertices, not
+      hundreds'
+  min_wall:
+    value: 0.00051
+    source: catalog
+    note: 'DOC: the same row, caliper "510" um (contact uses the film route particle radius)'
+budget:
+  particles: 66
+route:
+  route: cloth_film
+  reason: 'a gift bag''s chipboard bottom board: strain-capped membrane, stiff hinge bending with fold memory'

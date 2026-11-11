@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_white_maple_veneer",
+ "family": "wood",
+ "preset": "wood_oak",
+ "texture": "polyhaven:white_maple_veneer",
+ "res": "1k",
+ "scale_m": 1.0,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/white_maple_veneer",
+ "author": "Jenelle van Heerden",
+ "licence": "CC0-1.0",
+ "albedo": 0.669,
+ "note": "white maple veneer: Poly Haven 'White Maple Veneer', 1 m tile, 1k maps"
+}

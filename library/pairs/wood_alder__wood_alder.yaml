@@ -1,0 +1,17 @@
+schema: alloy.pair/1
+a: wood_alder
+b: wood_alder
+mu_static:
+  value: 0.375
+  source: catalog
+  unc: [0.356, 0.394]
+  note: Engineering ToolBox friction-coefficients-d_778 wood clean dry 0.25-0.5
+mu_dynamic:
+  value: 0.375
+  source: catalog
+  unc: [0.356, 0.394]
+  note: Engineering ToolBox friction-coefficients-d_778 wood clean dry 0.25-0.5
+torsional_lever:
+  value: 0.0001
+  source: model
+  note: model, 0-2e-4 m

@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_interior_tiles",
+ "family": "tile",
+ "preset": "ceramic_white",
+ "texture": "polyhaven:interior_tiles",
+ "res": "1k",
+ "scale_m": 1.9,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://polyhaven.com/a/interior_tiles",
+ "author": "Charlotte Baglioni",
+ "licence": "CC0-1.0",
+ "albedo": 0.334,
+ "note": "interior wall tiles: Poly Haven 'Interior Tiles', 1.9 m tile, 1k maps"
+}

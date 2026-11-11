@@ -1,0 +1,28 @@
+{
+ "schema": "alloy.wheelhouse/1",
+ "built": "2026-11-09",
+ "route": "vendored",
+ "note": "Measured on the Newton release-1.8 / MuJoCo Warp v3.17.0 branch plus tools/deps (an integration build from a git archive of that branch, so the +g label names the archive's snapshot, not a repository commit; the merged commit gets its own label). Newton and MuJoCo Warp ship inside the one alloy-engine wheel (alloy/_vendor); every other dependency comes from PyPI. release_check.py passed on it: the smoke in a clean venv, beside PyPI newton 1.8.0rc1 and mujoco-warp 3.17.0 (both import orders in one process), and after a plain pip install of a git archive. No engine wheels, nothing in any bucket, nothing published.",
+ "version": "0.1.0+g9e2531d3",
+ "reproducible": "SOURCE_DATE_EPOCH = source commit time",
+ "vendored": [
+  {
+   "name": "newton",
+   "path": "alloy/_vendor/newton",
+   "pin": "25b4603c"
+  },
+  {
+   "name": "mujoco-warp",
+   "path": "alloy/_vendor/mujoco_warp",
+   "pin": "f34c6dd5"
+  }
+ ],
+ "wheels": [
+  {
+   "file": "alloy_engine-0.1.0+g9e2531d3-py3-none-any.whl",
+   "bytes": 23833086,
+   "sha256": "757538e749143d0ceaba53442f7b1c5dd06e6edc34e531d3c85cd6e0293f6dda"
+  }
+ ],
+ "superseded": "the 2026-11-07 wheel 0.1.0+g40579c01 (Newton d15a836c, MuJoCo Warp 86e2fae0, mujoco 3.16.0) and the 2026-11-06 wheelhouse 0.1.0+g15266551 (separate newton and mujoco-warp wheels): do not publish either"
+}

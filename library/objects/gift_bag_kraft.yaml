@@ -1,0 +1,24 @@
+schema: alloy.object/1
+name: gift_bag_kraft
+shape:
+  mesh:
+    path: meshes/paper_gift_bag_kraft.obj
+    sha256: 7abcfb644fe349f6f6fdb8a902e6366a541aa5d04bb6432fee36c4d81ae9f204
+material: paper_kraft
+features:
+  thickness:
+    value: 0.000135
+    source: catalog
+    note: 'DOC: Nordic Paper GS520 MG Plain Kraft Paper, unbleached, 100 g/m2 "Thickness (um) 135" https://www.lyreco.no/objectstore/TS_Blankett_NP_BBA%20MG%20GS520%20100%20GSM.pdf
+      ; the bag (Uline S-7098 "Kraft Paper Shopping Bags, Cub", 8 x 4 1/2 x 10 1/4 in, 60 lb = 98 g/m2, square bottom, https://www.uline.com/Product/Detail/S-7098/Paper-Shopping-Bags/Kraft-Paper-Shopping-Bags-8-x-4-1-2-x-10-1-4-Cub)
+      opened and squared, one ply, no handles or turned-in top; fold lines (side folds, gusset centres, bottom perimeter,
+      gusset feet) are the mesh''s OBJ lines'
+  min_wall:
+    value: 0.000135
+    source: catalog
+    note: 'DOC: the same sheet "Thickness (um) 135" (contact uses the film route particle radius)'
+budget:
+  particles: 1227
+route:
+  route: cloth_film
+  reason: 'an open paper bag: strain-capped membrane, hinge bending with fold memory, weaker crease hinges on its fold lines'

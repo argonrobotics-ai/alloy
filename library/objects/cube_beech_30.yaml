@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: cube_beech_30
+shape:
+  primitive:
+    kind: box
+    size: [0.015, 0.015, 0.015]
+material: wood_beech

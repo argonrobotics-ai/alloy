@@ -1,0 +1,15 @@
+<mujoco model="MuJoCo Model">
+  <compiler angle="radian"/>
+
+  <option ls_tolerance="0.01" ccd_tolerance="1e-06" sleep_tolerance="0.001" gravity="0 0 -9.81" integrator="implicitfast">
+    <flag multiccd="disable"/>
+  </option>
+
+  <worldbody>
+    <body name="bob" pos="0 0 -1" simple="false">
+      <inertial pos="0 0 0" mass="0.0335103" diaginertia="1.34041e-06 1.34041e-06 1.34041e-06"/>
+      <joint name="joint_1" solimplimit="0.9 0.95 0.001" solreffriction="0.02" solimpfriction="0.9 0.95 0.001" range="-5.72958e+11 5.72958e+11" actuatorfrcrange="-1000000 1000000" pos="0 0 1" axis="0 1 0" limited="false" actuatorfrclimited="true"/>
+      <geom name="shape_0_0" size="0.01" contype="0" conaffinity="0" friction="1 0.005 0.0001" solref="0.02" solimp="0.9 0.95 0.001" gap="0.005"/>
+    </body>
+  </worldbody>
+</mujoco>

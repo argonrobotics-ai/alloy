@@ -1,0 +1,200 @@
+{
+ "law": "A5.onset",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 2.0,
+ "metrics": {
+  "onset_err_deg": {
+   "abs": 0.1,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A5 (+ SPEC \u00a75.3 amendment): |theta_s - atan mu| <= 0.1 deg"
+  },
+  "creep": {
+   "abs": 9.999999999999999e-06,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A5 (+ SPEC \u00a75.3 amendment): creep <= CREEP_PRECISION x 10 s"
+  }
+ },
+ "stat": {
+  "onset_err_deg": "mean",
+  "creep": "mean"
+ },
+ "conditions": [
+  {
+   "id": "tilt-2.00deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4287410239609195,
+    "phi": 0.0,
+    "offset_deg": -2.0
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-1.00deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4461943164808628,
+    "phi": 0.0,
+    "offset_deg": -1.0
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.65deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.45230296886284294,
+    "phi": 0.0,
+    "offset_deg": -0.6500000000000001
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.55deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.45404829811483727,
+    "phi": 0.0,
+    "offset_deg": -0.55
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.45deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4557936273668316,
+    "phi": 0.0,
+    "offset_deg": -0.45
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.35deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.45753895661882593,
+    "phi": 0.0,
+    "offset_deg": -0.35000000000000003
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.25deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.45928428587082026,
+    "phi": 0.0,
+    "offset_deg": -0.25
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.15deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4610296151228146,
+    "phi": 0.0,
+    "offset_deg": -0.15000000000000002
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt-0.05deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4627749443748089,
+    "phi": 0.0,
+    "offset_deg": -0.05
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.05deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.46452027362680326,
+    "phi": 0.0,
+    "offset_deg": 0.05
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.15deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4662656028787976,
+    "phi": 0.0,
+    "offset_deg": 0.15000000000000002
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.25deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4680109321307919,
+    "phi": 0.0,
+    "offset_deg": 0.25
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.35deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.46975626138278626,
+    "phi": 0.0,
+    "offset_deg": 0.35000000000000003
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.45deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4715015906347806,
+    "phi": 0.0,
+    "offset_deg": 0.45
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.55deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.4732469198867749,
+    "phi": 0.0,
+    "offset_deg": 0.55
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "tilt+0.65deg",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.47499224913876925,
+    "phi": 0.0,
+    "offset_deg": 0.6500000000000001
+   },
+   "worlds": 1,
+   "drive": true
+  }
+ ]
+}

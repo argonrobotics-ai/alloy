@@ -1,0 +1,58 @@
+schema: alloy.material/1
+name: soil_hardpan
+density:
+  value: 2650.0
+  source: catalog
+  unc: [2600.0, 2750.0]
+  note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06): 1590 kg/m3 here. Mineral soil particle density 2.60-2.75 g/cm3, 2.65 the standard value.
+    A plough pan is denser than the fill: 1.54 Mg/m3 at the Pacolet pan depth (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/raper_09d.pdf,
+    Table 2), 1.76 Mg/m3 in a soil-bin hardpan (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/tekeste_06b.pdf,
+    Table 1)'
+surface:
+  mu_static:
+    value: 0.4040262258351568
+    source: catalog
+    unc: [0.2679491924311227, 0.4040262258351568]
+    note: 'sandy loam on steel: ASABE suggested default delta 22 deg, 20-22 deg, 15 deg on polished steel (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf)'
+  mu_dynamic:
+    value: 0.3636236032516411
+    source: model
+    note: 'sandy loam on steel: ASABE suggested default delta 22 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf);
+      dynamic 0.9 x static (model)'
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: soil impacts are almost fully plastic (model)
+elastic:
+  youngs:
+    value: 50000000.0
+    source: model
+    unc: [20000000.0, 100000000.0]
+    note: 'continuum stiffness for implicit MPM: a compacted pan is stiffer than loose top soil (5-50 MPa typical, no single
+      source opened); 50 MPa is the value the cone fit used (cohesion note)'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM: a compacted pan is stiffer than loose top soil (5-50 MPa typical, no single
+      source opened); 50 MPa is the value the cone fit used (cohesion note)'
+plastic:
+  friction_angle:
+    value: 0.6108652381980153
+    source: catalog
+    unc: [0.5235987755982988, 0.6981317007977318]
+    note: no measured hardpan phi found; ASABE suggested default for sandy loam phi 35 deg (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf);
+      the Pacolet pan is a sandy loam. Range model
+  cohesion:
+    value: 100000.0
+    source: fit
+    unc: [85000.0, 130000.0]
+    note: 'fitted to the plough pan''s cone index (no measured hardpan cohesion found): peak cone index 3.29 MPa (wet date,
+      11.25 % d.b.) and 4.12 MPa (dry date, 9.83 %), Pacolet sandy loam, ASAE S313.3 cone (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/raper_09d.pdf,
+      Table 3). Alloy''s cone ([internal note] notes/soil/cone.py: rigid 30 deg ASABE-angle cone, R 20 mm, pushed at 0.1 m/s,
+      tip force from the MPM collider impulses; quarter domain) in this card at c 30 kPa reads q_c 1.07-1.14 MPa at base depth
+      2-5 R (CPU, 5 mm voxel, 2026-11-07); scaling c to the field''s 3.29-4.12 MPa gives 90-125 kPa (lower end: q_c in proportion
+      to c; upper: 0.15 MPa of it from overburden). GPU sweep 10-120 kPa in the Nov 8 reconciliation pass. A free column stands
+      to H_c ~ 25 m: the pan is rigid under gravity and a tool must exceed ~0.1 MPa to cut it'

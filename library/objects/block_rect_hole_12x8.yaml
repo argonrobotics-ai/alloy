@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: block_rect_hole_12x8
+shape:
+  mesh:
+    path: meshes/block_rect_hole_12x8.obj
+    sha256: 4dafc8ba3a68f596cd4b6a4259655fb4632c98bc93631ff9626818439538565e
+    collision: sdf
+material: pmma_cast
+motion: static
+features:
+  precision_anchor: [0.0, 0.0, 0.0]
+precision_partners:
+- peg_rect_12x8:shaft
+precision_features:
+- name: bore
+  crop:
+  - [-0.008, -0.006, -0.005]
+  - [0.008, 0.006, 0.005]
+  clearance:
+    value: 0.0002
+    source: catalog
+    note: 12 x 8 mm peg in a 12.2 x 8.2 mm hole, 0.2 mm clearance

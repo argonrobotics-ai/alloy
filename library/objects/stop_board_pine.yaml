@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: stop_board_pine
+shape:
+  primitive:
+    kind: box
+    size: [0.0825, 0.092, 0.019]
+material: wood_pine
+motion: static

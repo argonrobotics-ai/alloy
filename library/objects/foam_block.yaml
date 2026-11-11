@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: foam_block
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.05, 0.05]
+material: pu_foam_sponge

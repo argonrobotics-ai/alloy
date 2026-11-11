@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: paper_a4
+shape:
+  primitive:
+    kind: box
+    size: [0.105, 0.1485, 5.0e-05]
+material: paper_80gsm
+features:
+  thickness:
+    value: 0.0001
+    source: model
+    note: 80 g/m^2 copier paper, 0.10 mm caliper
+  min_wall:
+    value: 0.0001
+    source: model
+    note: 80 g/m^2 copier paper, 0.10 mm caliper
+budget:
+  particles: 280
+route:
+  route: cloth_film
+  reason: 'paper: strain-capped membrane (paper barely stretches), hinge bending with fold memory and air drag (~15 mm cells:
+    stiff paper freezes on fine film cells)'

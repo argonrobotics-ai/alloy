@@ -1,0 +1,102 @@
+{
+ "schema": "alloy.bench.fabric_drape/1",
+ "id": "fabric_drape_petrak2021",
+ "what": "Cusick drape of published woven fabrics: KES-FB inputs and the measured drape coefficient of the same fabric",
+ "source": "S. Petrak, M. Mahnic Naglic, D. Rogale, J. Gersak, 'Analysis of Polygonal Computer Model Parameters and Influence on Fabric Drape Simulation', Materials 2021, 14(21), 6259, doi:10.3390/ma14216259 (CC BY)",
+ "source_notes": [
+  "Mechanics (Table 2, KES-FB part, p. 6): EM at Fm = 490.35 cN per unit width; B warp (-1) and weft (-2); one shear rigidity G per fabric; T0 at 0.49 cN cm-2.",
+  "Units as printed: B 'cNcm' read as the KES unit cN cm^2/cm (1e-4 N m); G 'cN/(cm°)-1' read as cN/(cm deg) (the paper's FAST G agrees: F1 23 N/m vs 23.5 here).",
+  "Drape (section 2.3, p. 6): Cusick drape meter, 30 cm samples, horizontal disk radius 90 mm, 5 samples per fabric, Kd = (A - pi R1^2) / (pi (R2^2 - R1^2)). Node counts not reported.",
+  "Picked: no elastane, KES B not flagged (DC5, notes/wp2-fabric/sources.md)."
+ ],
+ "rig": {
+  "specimen_diameter_m": 0.3,
+  "support_diameter_m": 0.18,
+  "clamped": "between two discs of the support diameter",
+  "gravity_m_s2": 9.81,
+  "dc": "(A_shadow - A_support) / (A_specimen - A_support), shadow seen from above"
+ },
+ "fabrics": [
+  {
+   "id": "petrak2021_F1",
+   "fabric": "100% polyester fiber, twill 3/1",
+   "areal_mass_kg_m2": 0.1352,
+   "thickness_T0_m": 0.00040500000000000003,
+   "bending_warp_N_m": 1.9500000000000004e-06,
+   "bending_weft_N_m": 6.100000000000002e-07,
+   "shear_G_N_m": 23.49126960036375,
+   "tensile_strain_warp": 0.0275,
+   "tensile_strain_weft": 0.0692,
+   "tensile_load_N_m": 490.35,
+   "dc_measured": 0.222,
+   "dc_specimens": 5,
+   "nodes_measured": null,
+   "verbatim": {
+    "Weight [g/m2] (Table 1)": 135.2,
+    "EM-1 [%]": 2.75,
+    "EM-2 [%]": 6.92,
+    "B-1 [cNcm]": 0.0195,
+    "B-2 [cNcm]": 0.0061,
+    "G [cN/(cm°)−1]": 0.41,
+    "T0 [mm]": 0.405,
+    "Kd (Table 3)": 0.222
+   }
+  },
+  {
+   "id": "petrak2021_F4",
+   "fabric": "100% wool, plane 1/1",
+   "areal_mass_kg_m2": 0.16180000000000003,
+   "thickness_T0_m": 0.000439,
+   "bending_warp_N_m": 3.2400000000000003e-06,
+   "bending_weft_N_m": 1.6100000000000003e-06,
+   "shear_G_N_m": 41.8259190445501,
+   "tensile_strain_warp": 0.0302,
+   "tensile_strain_weft": 0.0958,
+   "tensile_load_N_m": 490.35,
+   "dc_measured": 0.319,
+   "dc_specimens": 5,
+   "nodes_measured": null,
+   "verbatim": {
+    "Weight [g/m2] (Table 1)": 161.8,
+    "EM-1 [%]": 3.02,
+    "EM-2 [%]": 9.58,
+    "B-1 [cNcm]": 0.0324,
+    "B-2 [cNcm]": 0.0161,
+    "G [cN/(cm°)−1]": 0.73,
+    "T0 [mm]": 0.439,
+    "Kd (Table 3)": 0.319
+   }
+  },
+  {
+   "id": "petrak2021_F9",
+   "fabric": "65% polyester fiber, 35% viscose fiber, plane 1/1",
+   "areal_mass_kg_m2": 0.3668,
+   "thickness_T0_m": 0.00242,
+   "bending_warp_N_m": 3.354e-05,
+   "bending_weft_N_m": 9.890000000000002e-06,
+   "shear_G_N_m": 65.89014644004466,
+   "tensile_strain_warp": 0.0397,
+   "tensile_strain_weft": 0.06269999999999999,
+   "tensile_load_N_m": 490.35,
+   "dc_measured": 0.647,
+   "dc_specimens": 5,
+   "nodes_measured": null,
+   "verbatim": {
+    "Weight [g/m2] (Table 1)": 366.8,
+    "EM-1 [%]": 3.97,
+    "EM-2 [%]": 6.27,
+    "B-1 [cNcm]": 0.3354,
+    "B-2 [cNcm]": 0.0989,
+    "G [cN/(cm°)−1]": 1.15,
+    "T0 [mm]": 2.42,
+    "Kd (Table 3)": 0.647
+   }
+  }
+ ],
+ "conversions": {
+  "B": "cN cm^2/cm x 1e-4 = N m",
+  "G": "cN/(cm deg) x 57.30 = N/m per rad",
+  "W": "g/m^2 x 1e-3 = kg/m^2",
+  "tensile": "secant stiffness = tensile_load_N_m / tensile_strain"
+ }
+}

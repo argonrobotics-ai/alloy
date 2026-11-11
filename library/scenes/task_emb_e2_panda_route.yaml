@@ -1,0 +1,9 @@
+# P3-2b embodiment e2_panda_route: Franka Panda + Franka Hand, route contact variant solref 0.00125 s (Alloy's route step only). Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (Apache-2.0 (mujoco_menagerie franka_emika_panda)). Replay tier: the whole MJCF as one robot. Contact: solref 0.00125 s on every geom (source emb_e2_panda: 0.0025 s x 148 geoms); valid at Alloy's route step (0.000625 s) only: an engine at the sources' 2 ms step clamps the time constant to 4 ms (MuJoCo's 2 dt floor).
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e2_panda_route/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e2_panda_route
+objects: []
+control_dt: 0.002

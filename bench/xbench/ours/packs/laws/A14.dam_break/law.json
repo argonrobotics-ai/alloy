@@ -1,0 +1,27 @@
+{
+ "law": "A14.dam_break",
+ "dt": 7.8125e-05,
+ "duration_s": 0.22,
+ "quick": false,
+ "stat": {
+  "ritter_excess": "mean"
+ },
+ "metrics": {
+  "ritter_excess": {
+   "abs": 0.025,
+   "rel": 0.0,
+   "source": "bench \u00a74 A14: no front faster than Ritter 2 sqrt(g h0); allowance r/a at a = 20 spacings"
+  }
+ },
+ "conditions": [
+  {
+   "id": "a50_r1mm",
+   "params": {
+    "a": 50,
+    "depth": 8,
+    "r": 0.001
+   },
+   "particles": 40000
+  }
+ ]
+}

@@ -1,0 +1,196 @@
+# Vendored engines
+
+Alloy's physics core is built on **Newton** and **MuJoCo Warp** (both Apache-2.0), bundled inside Alloy with our
+fixes. They live here under their own names, with their licences, file headers and credits kept:
+
+| Directory | Upstream | Pinned commit | Licence |
+|---|---|---|---|
+| `alloy/_vendor/newton` | https://github.com/newton-physics/newton | `25b4603c` (25b4603cfb37dfa250d8b9e1727b39514ab6e8a0) = public release-1.8 `db915e1c` + 12 commits of ours | Apache-2.0 (`newton/LICENSE.md`, third-party notices in `newton/licenses/`) |
+| `alloy/_vendor/mujoco_warp` | https://github.com/google-deepmind/mujoco_warp | `f34c6dd5` (f34c6dd52813852d0f1a2ab6d1f4d21ef1f0829f), release v3.17.0 (Newton release-1.8 needs MuJoCo 3.17: `eq_data` is 12 wide); files unchanged. Alloy patches it at run time (the EPA of the unmerged mujoco_warp#1845 and the ordered route, both listed below) | Apache-2.0 (`mujoco_warp/LICENSE`, `mujoco_warp/AUTHORS`) |
+
+Alloy imports only these copies (`from alloy._vendor import newton`), so installing Alloy never touches a `newton` or
+`mujoco_warp` package of your own. `alloy.core.newton_compat.NEWTON_PIN` / `MJWARP_PIN` name the same commits, and
+`alloy._vendor.VERSIONS` the versions the packages report.
+
+## One Warp function replaced at run time
+
+Warp itself (`warp-lang==1.18.0`, Apache-2.0, NVIDIA) comes from PyPI and is not vendored. Alloy replaces one of its
+functions while it runs, only once a scene with MPM material is built:
+`warp._src.fem.geometry.nanogrid.NanogridBase.make_filtered_cell_lookup`, by a copy in
+`alloy/integration/nanogrid_lookup.py`. The copy keeps NVIDIA's header and licence, and differs only in the lines
+marked "Alloy": a particle's cell in a grid of several environments is `floor(local index) + offset` in integers,
+where Warp floors the float32 sum. Warp's sum loses precision as the world's offset grows, and at 64 GPU worlds MPM
+grains sank into bodies they touched (docs/known_gaps/mpm-moving-container-many-worlds.md). The copy also uses cache
+keys of its own. It is installed only when Warp is 1.18.0 and its function's source hashes to the recorded
+`SOURCE_SHA256`; otherwise the build logs a warning and keeps Warp's. `tests/integration/test_nanogrid_lookup.py`
+fails on any other Warp, so a Warp bump re-checks the copy.
+
+## Our Newton commits on release-1.8 `db915e1c`
+
+`25b4603c` is public release-1.8 `db915e1c` (2026-11-09, "Backport the Steel PRs on the 1.8 milestone", #5208; it
+contains v1.8.0rc1 `91fb115d`) plus the 12 commits below, rebased on 2026-11-09 onto public release-1.8 from the
+previous pin `d15a836c` (public `ac7f7830` + 13). The 13th, `5db5889f` (PR #5146, attachment forces in the deterministic VBD
+contact gather), is upstream as `99374901c` and was dropped.
+
+| Commit | Was | Topic | Why | Upstream |
+|---|---|---|---|---|
+| `1b927539` | `5721809f` | VBD bending degeneracy test scale-free | Hinges with triangles under ~1 mm lost their dihedral bending force | issue #5130, PR #5131 |
+| `1c4c9440` | `00199c60` | Test: hinge with a near-degenerate triangle | Covers the fix above | PR #5131 |
+| `11b06386` | `a30fc1e4` | Test: hinge just above the relative threshold | Covers the fix above | PR #5131 |
+| `762c75c9` | `6a4c1483` | Lumped per-corner Hessian for VBD edge and face soft contacts | Barycentric-squared weights under-stiffened corner contacts | not posted (on hold) |
+| `4e578c41` | `65b7c92e` | Test: lumped corner Hessian in the full-surface contact tests | Covers the fix above | not posted |
+| `28b23602` | `55a6cdd4` | VBD self-contact starts smoothly at the contact distance | A force step at onset made contact chatter | not posted (on hold) |
+| `0017063a` | `47afecd7` | Test: contact tests aligned with the lumped corner Hessian | Covers the two fixes above (the attachment test is upstream's rewrite, #5146) | not posted |
+| `217d9a77` | `4629ac08` | Out-of-plane stiffness of the VBD membrane Hessian | Flat, unstretched cloth converged very slowly out of plane | not posted (on hold) |
+| `948b257c` | `8f3466f9` | Keep the clamped membrane normal stiffness for cloth in contact | The fix above must not soften cloth in contact. Rebased onto upstream's `accumulate_elasticity_force_and_hessian` (an `exact_normal` argument: the solve passes the free-piece test, upstream's attachment setup the clamped value) | not posted (on hold) |
+| `3cfcde2e` | `4c8869b7` | Start pinned VBD pieces from x + h*v (`particle_pinned_piece_start`, default off) | Pinned pieces started from rest positions | not posted (on hold) |
+| `4be4c821` | `4f3b41ef` | Wrap the VBD bending angle difference at pi | Folds resting near +-pi flipped across the atan2 branch | not posted (on hold) |
+| `25b4603c` | `d15a836c` | Couple more than two solvers over an acyclic proxy graph (`SolverCoupledProxy`) | Robot -> soft body -> liquid chains | not posted (on hold) |
+
+Each commit's changelog fragment is in Newton's `changelog/` directory at that commit. Upstream posting is on hold by
+user decision (2026-11-07).
+
+## Changes the vendoring made (all by `scripts/vendor_engines.py`, rerunnable)
+
+1. **Imports.** Newton's and MuJoCo Warp's own absolute imports (`import newton`, `from mujoco_warp._src import ...`)
+   point at `alloy._vendor.*`. Each statement stays on its own line.
+2. **Module-name strings.** Strings that name a module (`sys.modules` filters, `wp.load_module`, deprecation frames,
+   the examples map) are rewritten from a reviewed table in the script. Data namespaces stay as upstream: USD and
+   MJCF `newton:` attributes, recording type tags (`newton.geometry.Mesh`), the cache directory and the logger names.
+3. **`__version__`.** It is static (`1.8.0rc1`, `3.17.0`, what pip reports for the pins), because a vendored
+   package has no distribution metadata.
+4. **Notice line.** Every `.py` file gets one line under its licence header (Apache-2.0 4(b)): "Vendored in Alloy:
+   alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included." Vendored line numbers are
+   therefore upstream's + 1.
+5. **Not vendored:** each package's own tests and test data (`newton/tests/`, MuJoCo Warp's `*_test.py`,
+   `conftest.py` and `test_data/`). Alloy never imports them.
+6. **Copied in:** the repository-root licence and credit files (`LICENSE.md` and `CITATION.cff` for Newton,
+   `LICENSE` and `AUTHORS` for MuJoCo Warp).
+7. **Warp kernels under names of their own**. A `newton` or `mujoco_warp` of your own now runs in
+   the same process as Alloy, imported before or after it.
+   - Why: Warp keeps `module="unique"` kernels by key and content hash, and named modules by name, not by Python
+     module. Without new names, a user's copy shares those kernels and modules with Alloy's: a launch from one copy
+     then fails on the other's struct types, or silently runs the other copy's code.
+   - The rewrite, edited in place: every `wp.kernel(...)` that passes `module=` or `**options` (Newton 217, MuJoCo
+     Warp 178) becomes `_alloy_warp.kernel(...)`; every `wp.func(..., module=X)` (Newton 2) and `wp.get_module(X)`
+     (Newton 3) reads `_alloy_warp.module_name(X)`. The file's `import warp as wp` line gains
+     `; from alloy._vendor import _warp as _alloy_warp`, so line numbers stay.
+   - The wrappers (`alloy/_vendor/_warp.py`): a unique kernel's key and a named module's name get the prefix
+     `alloy_vendor__` (names built from `__name__`, `alloy._vendor.*`, are Alloy's already); a kernel given a Warp
+     Module object of another name raises.
+   - What you see: kernel names in Warp errors, the profiler and the kernel cache carry `alloy_vendor__`, and the
+     first run after updating compiles those kernels once. The compiled code is the same. `wp` is warp itself
+     everywhere (Warp's code generator needs that).
+   - `--check` fails on a site left unwrapped, and on forms the rewrite cannot see into (`*args`, `**kwargs` on
+     `func` / `get_module`, `from warp import kernel`). MuJoCo Warp's `collision_convex` and `collision_flex` change
+     bytes, so `alloy.contact.mjw_epa`'s keys follow them (`rekey_epa`).
+
+Alloy's own files import only these copies. The exception is engine-under-test benchmark scripts, which keep their
+top-level `import newton` / `import mujoco_warp`: `bench/xbench/scenes/` (except `engine_shim.py`), `bench/xbench/xb4/`
+and `bench/xbench/results/`. They run against whichever engine a benchmark provides: stock Newton on its VM, or
+Alloy's copy through the shim's alias, or another framework's own install (Isaac Lab's Newton, MuJoCo 4.0's
+MuJoCo Warp). `tools/deps/` keeps them too: its coexistence probe imports a user's own newton beside Alloy.
+
+Code is otherwise byte-identical to the pinned commits (item 7's call rewrite aside). `scripts/vendor_engines.py
+--check` fails when an Alloy file still imports the top-level packages. Before/after runs are bitwise identical
+(`scripts/vendor_bitwise.py`: model digests, per-world state digests and trajectories, on CPU and on one GPU smoke).
+
+Alloy's runtime patches stay where they were, in Alloy's own modules: the MuJoCo Warp EPA from
+google-deepmind/mujoco_warp#1845 (`alloy/contact/vendor/mjw_pr1845_*.py`, keyed on the sha256 of the vendored stock
+files), the ordered MuJoCo Warp route (`alloy/precision/mjw_*`) and the coordinate carry
+(`alloy/scene/coordinate_carry.py`). `alloy.build(scene, contact_capacity=n)` without `constraint_rows` swaps
+`alloy._vendor.mujoco_warp.put_data` for the engine build only (`alloy/api/_capacity.py` `rows_from_contacts`: a
+context manager, restored after a failing build too; it only passes another `njmax` and `njmax_nnz`), never otherwise.
+`alloy._vendor.alias_top_level_names()` is an opt-in alias, so unchanged
+third-party scripts' `import newton` gets these copies. Only `alloy.xbench`'s engine shim uses it.
+
+## Alloy's edits in the vendored copy
+
+Each edit we make to the vendored code is a patch file in `alloy/_vendor/patches/`, named `NNNN-<topic>.patch` (the
+`git diff` of the edited vendored files, paths from the repo root). The commit carries both the edited file and the patch.
+`scripts/vendor_engines.py` re-applies the patches after every copy, so a pin update keeps them or fails loudly where
+one no longer applies; `--check` (tests/core/test_vendored.py) fails when one is not applied. Mark the edit in the file
+with an `Alloy (<SCR>)` comment and add a row here.
+
+One row per patch: the upstream file, our reason, and the law that covers it.
+
+| Patch | Upstream file | What | Why | Law | Upstream status |
+|---|---|---|---|---|---|
+| `0001-vbd-cuda-contact-lanes.patch` | `newton/_src/solvers/vbd/solver_vbd.py` (`SolverVBD.__init__`: `_body_particle_contact_threads`) | 128 lanes per rigid body for `accumulate_body_particle_contacts_per_body` on CUDA, whatever the particle/body ratio (upstream: 128 only at >= 4,096 particles per body, else 4). The CPU keeps 4. | A cloth draped on a robot link overflows the 256-entry per-body list (485-835 contacts), and then each of the body's lanes scans every soft contact of the model: 61-78 % of robot+cloth kernel time on the L4. | `tests/solvers/vbd/test_body_contact_lanes.py` (`test_an_overflowing_body_gets_the_same_wrench_at_4_and_128_lanes`, `test_the_lane_count_is_128_on_cuda_and_4_on_the_cpu`). CPU: bitwise before/after (4 lanes; box on cloth and robot + towel, both CPU routes). L4, 4 worlds: towel within the run-to-run floor (robot_cloth, robot_cloth_drop), robot_cloth 2.6x at 64 worlds. On CUDA the sum is float `atomic_add`, at 4 lanes as at 128: VBD with a body on cloth was not bitwise run to run before the patch either, in Warp's ordered mode too | not posted (on hold) |
+| `0002-style3d-world-groups.patch` | `newton/_src/solvers/style3d/collision/collision.py`, `collision/bvh/bvh.py`, `collision/bvh/kernels.py` (`Collision._group_by_world`; `aabb_vs_aabb_kernel`, `triangle_vs_point_kernel`, `edge_vs_edge_kernel`) | With more than one world, the triangle and edge BVHs are grouped by their particles' world, and each vertex-face, edge-edge and edge-face query starts at its own world's group root (`wp.bvh_get_group_root`). One world, or a sheet with global particles (world -1), keeps the ungrouped tree. `aabb_vs_line` (unused by `Collision`) is unchanged. | Upstream queried one tree over every world's sheet, so overlaid worlds collided with each other and took each other's 32 candidate slots: every world of a 2- or 4-world Style3D scene went INVALID at the first physics step (PEN_FAIL, SPEED_FAIL 22-33 m/s on the L4; found 2026-11-08). | `tests/core/test_vendored_style3d.py` (`test_two_worlds_step_like_one`: healthy, worlds identical, world 0 within 1e-6 m of the 1-world run, 0 cross-world candidates; `test_one_world_keeps_the_ungrouped_tree`). CPU, a sheet over a ridge, 60 periods: unpatched 2 worlds 31,580 cross-world candidates and both INVALID; patched 2 / 4 worlds 0 and healthy; 1 world bitwise before/after. | not posted (on hold) |
+| `0003-style3d-per-world-pcg.patch` (refitted for release-1.8, whose solver keeps its options in `self.config`) | `newton/_src/solvers/style3d/linear_solver.py`, `solver_style3d.py` (`PcgSolver`, `update_cg_direction_kernel`, `step_cg_kernel`; new `chunk_inner_kernel`, `world_inner_kernel`, `world_tables`) | With more than one world (each world's particles contiguous), the PCG keeps one rTz and one pTAp per (iteration, world), so every world gets its own alpha and beta. The sums are deterministic: fixed chunks of up to 256 particles that never cross a world boundary, then each world's chunks in order. One world (or non-contiguous worlds) keeps upstream's global `array_inner`. | Upstream's inner products ran over every world's particles, so all worlds shared one alpha and one beta and a world's solve depended on the others. CPU, a sheet on a table, world 1 starting 5 cm higher: world 0 was 21 um off its 1-world twin after 3 periods and 123 um after 10 (rounding floor 0.06-0.18 um). | `tests/core/test_vendored_style3d.py` (`test_a_world_does_not_depend_on_the_others`: world 0 bit for bit the same whatever world 1 does). CPU, 3 / 10 / 30 periods: world 0 bitwise independent of world 1, within 0.6 um of the 1-world run; 1 world bitwise before/after. | not posted (on hold) |
+| `0004-model-view-memo.patch` (refitted for release-1.8: upstream's cached namespace view for attribute groups with deprecated aliases returns before the memo) | `newton/_src/solvers/coupled/model_view.py` (`ModelView.__getattr__`, `__setattr__`, `__delattr__`, `_count_limited_color_groups`; new `_MEMO_COUNT_FIELDS`, `_COLOR_GROUP_LISTS`) | A view memoises each name's count-limited value together with the raw object it came from (the override, else the parent's attribute), and reuses it only while that raw object is the same one: a rebound attribute, a new or swapped override, a temporary state override, or a property that builds a new object resolves afresh. Aliases are never memoised. The memo clears when a view count changes (`*_count`, `shape_contact_pairs`, `custom_frequency_counts`, `contact_max`, `rigid_contact_max`, `soft_contact_max`) and on any delete, not on other sets (SolverVBDRod swaps `body_color_groups` twice per iteration). Not seen: a parent's count rebound while its arrays stay the same (upstream's `example_cloth_franka` toggles `model.particle_count`; Alloy never rebinds a count after finalize), and an in-place edit of a `world_start` array that changes its clipping. A view that holds a prefix of the parent's bodies (an ADMM entry's) filters colour groups to its ids and kept one filtered result per name and count, so a swapped `body_color_groups` override read as the first list; the filtered groups are now kept per raw list (the newest 4), and a clamped rod beside a chain rod steps (it raised IndexError in the VBD sweep). | A solver on a view reads its model attributes in every kernel launch, and each read resolved the attribute spec, the frequency count and the slice: about 1/3 of a VBD rod entry's step on the CPU beside a robot (`docs/notes/wp9-results-rod.md`, F2). | `tests/api/test_rods_model_view_memo.py` (`test_a_rod_beside_a_robot_steps_bit_for_bit_with_and_without_the_memo`: a cable squeezed by pads on a MuJoCo wrist, rod_vbd, j = 6, MuJoCo C, 4 periods bit for bit with every view's memo switched off; the unit test covers a rebind, an override, a delete and a count change, plus `custom_frequency_counts` and `rigid_contact_max`, and fails with a mutant that has no identity check or the old clear rule). `test_a_swapped_colour_group_override_reaches_a_prefix_limited_view` and `tests/api/test_rods_mixed.py` (a chain rod and a clamped rod in one scene, either order, each as alone) cover the colour groups. CPU, that scene: 2,262 to 1,588 ms per control period (1.43x). | not posted (on hold; a candidate: plain Python, raise the two limits) |
+| `0005-contact-match.patch` | `newton/_src/geometry/contact_match.py` (`_replay_matched_kernel`, and the sticky-mode note above it) | Sticky replay no longer copies the previous frame's normal: a matched contact keeps the fresh frame's normal with the replayed body-frame points and offsets. Only `contact_matching="sticky"` runs this kernel; in Alloy, only a rod entry's proxy pipeline is sticky (`alloy/integration/stepper.py`, `_steps_a_rod`), and every other pipeline keeps "disabled" or "latest" and is unchanged. | The replayed normal is world-frame, so it did not turn with the bodies: a gripped rod rolled 0.3 rad by its pads kept its first-contact normal, and the tilted normal force pushed the wrist back with 125x the rod's torque. | `tests/solvers/rod/test_sticky_normal.py` (`test_a_sticky_contact_turns_its_normal_with_the_bodies[cpu, cuda:0]`: two boxes turned 0.3 rad over 30 matched steps report the turned normal; fails unpatched). `tests/api/test_rods_grip.py`, the R4 grip law (welded pads, MuJoCo C): ramp end 1.0000, run-on +0.0000, torque 0.976. L4, 1 / 64 worlds: same, check ok, no cost. | not posted (on hold; an upstream bug candidate: a body-frame normal that turns with the bodies would keep sticky's steady frame) |
+| `0006-mpm-skip-converged.patch` | `newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py` (`make_gs_solve_kernel`: `world_offsets`, `world_done`; new `_world_of`), `implicit_mpm/solve_rheology.py` (`_RheologySolver` tables, `_make_gs_solve_launch`, `_GaussSeidelSolver.skip_converged` / `skips_converged`) | The coloured Gauss-Seidel rheology sweep skips the rows of worlds flagged in a device array (`skip_converged(done)`; an empty array skips none, the default). Only the plain coloured sweep skips (the reordered and batched ones keep the extra parameters and sweep everything). Alloy's per-world stop (`alloy.integration.mpm_worlds`) hands it the flags of the worlds it has frozen. | That loop sweeps every world until the slowest stops, then restores each world to its own converged state, so a solve cost the slowest world's sweeps times every world (L4, 256 dough worlds at 3e-4: the strain solve is 4.9 of 8.6 s per period, Newton's timers; the loop averages 130 sweeps per solve). A frozen world's rows are restored after the loop anyway, so skipping them changes no result. It saves time only where worlds stop at different sweeps: L4, 256 dough worlds with the press height spread 1.5 cm over the worlds, 3e-4, 7.87 against 10.10 s per period (strain solve 4.16 against 6.39 s; Newton's timers); 256 identical worlds 7.68 against 7.62 s (no change). | `tests/core/test_vendored_mpm_skip.py`: 2 CPU dough worlds converging after different sweeps, every state array bit for bit the same with the skip on and off (`mpm_worlds.SKIP_CONVERGED`), and every per-world solve hands its flags over. CUDA (L4, 4 dough worlds as graphs, 6 periods): every state array bit for bit the same on and off, and deterministic. | not posted (on hold; upstream would take it with a per-world stop of its own) |
+| `0007-vbd-f32-velocity.patch` | `newton/_src/solvers/vbd/particle_vbd_kernels.py`, `solver_vbd.py` (`forward_step`, `update_velocity`, `reset_particle_state`, `solve_elasticity` and the tiled solve's inertia term; new `float32_remainder_guard`, `rebase_displacement_reference`; `SolverVBD.inertia_disp`, `_f32_lo_in`, `_f32_remainder`, `_rebase_particle_reference`) | The inertia target and the velocity are displacements from the step's start in small numbers: y - x = inertia_disp - ((x - x_prev) + r), v = ((x - x_prev) + (r - lo_in)) / dt, with r = (x_cd - x) + d the iterate's sub-ulp remainder (the solve already accumulates `particle_displacements` d from x_cd), carried through collision checkpoints instead of zeroed. The input remainder lo_in is `state_in.particle_q_lo` and the end remainder goes into `state_out.particle_q_lo` (patch 0008), so the solver keeps no memory across steps: a re-step or a rerun from a restored State repeats bit for bit; a reset position has none. A State without the array (hand-built) steps as stock (logged once). A remainder larger than two ulps of its position (a particle written without its displacement: a teleport, a kinematic or plug-in write) counts as none: stock's x - x_prev. | float32 positions round each step's displacement to whole ulps, and (x - x_prev) / dt quantised every velocity change to ulp(x) / dt: a coupled cloth at z 2 m fell at 9.77, 19.5 and 0 m/s^2 on rungs 1, 4, 8 (39-312 us substeps); at table height beside 0.2 kg pads gravity was +-12 % (closes the known gap cloth-vbd-float32-velocity, removed with this patch). Reviewed 2026-11-08/09. | `tests/solvers/vbd/test_f32_free_fall.py`: VBD alone at 39-312 us and z 0.05-2 m gains g dt per step within 0.1 % (11 of 12 failed before); a write to particle_q that skips the displacement is what the solve sees; a State snapshot carries the remainder and reruns bit for bit; the coupled exchange carries it to the scene state; a hand-built State without it steps (warned once) as with it zeroed every step; slow: the coupled sheet on rungs 1-8 at z 2 and 0.75 m falls at g within 0.1 %. `tests/solvers/vbd/test_vbd_accel.py`: a re-step from the same input is bit for bit. | Not proposed (Alloy only) |
+| `0008-state-particle-q-lo.patch` | `newton/_src/sim/model.py`, `newton/_src/solvers/coupled/solver_coupled.py` (`Model.state`, `attribute_specs`, `get_requested_state_attributes`; `_copy_state`; new `_copy_mapped_particle_vec3`, `_scatter_mapped_particle_vec3`, `_copy_particle_remainder`, `_scatter_particle_remainder`, `_copy_remainder_prefix`) | Every `Model.state()` with particles gets `particle_q_lo` (zeros, vec3 per particle; frequency PARTICLE), the sub-ulp position remainder VBD carries (patch 0007); the coupled solver copies it with `particle_q` into each entry, between an entry's own states (`_copy_state`, so a substepped entry's first substep starts from it, not from the remainder its `state_1` kept from the last exchange) and back into the scene state (from a State without it, the destination's is zeroed). State.assign and Alloy's WorldSnapshot (the `vars(state)` walk; the particle_ prefix maps it per world) take it with no change. 12 B per particle per State; nothing outside VBD reads it, so other routes step as before. | The remainder must ride the State, not the solver: rollbacks that snapshot the State alone (tests/topology) reran differently while it was solver memory. | `tests/solvers/vbd/test_f32_free_fall.py` (the snapshot, coupled-exchange and substepped reset-rerun laws); `tests/coupling/test_rollback_bitwise.py`; `tests/topology/test_cut_damage.py`, `test_vnode_state.py`. | Not proposed (Alloy only) |
+| `0009-mpm-partial-sweeps.patch` (SPEED-NOW S5) | `newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py` (`make_gs_solve_kernel`: `block_active`; new `mark_active_blocks`), `implicit_mpm/solve_rheology.py` (`_make_gs_solve_launch`, `_GaussSeidelSolver.skip_blocks` / `mark_active_blocks`) | The coloured Gauss-Seidel rheology sweep skips the colour blocks not flagged in a device array (`skip_blocks(active)`; an empty array sweeps every block, the default), and `mark_active_blocks` flags the blocks with a row whose last full-sweep update (`strain_residual`) is over a threshold, and every block whose rows span worlds (then no world's sweep follows another's rows). Only the plain coloured sweep skips. Alloy's per-world loop (`alloy.integration.mpm_worlds`, opt-in `alloy.build(mpm_sweeps="partial")`) runs, in each group of 5 sweeps, 4 partial sweeps over the blocks that moved more than 0.3 x tolerance and a full one, and the stop test reads only full sweeps. | The solve stops when the largest row update is under tolerance: the scaled L2 residual is met after ~23 sweeps and a few rows hold it to ~103 (CPU, 1 dough world, residual read every sweep; 90-100 % of the remaining update in 10 of ~2,500 rows), so most of each sweep moved rows that had settled. SOR (omega 1.3-1.9), gs-soa, gs-batched and jacobi -> gs were all slower than plain GS on the L4. L4, 256 dough worlds, 3e-4, eager: 7,795 against 6,021 ms per period (-23 %); presses at spread heights 7,957 against 6,379. | `tests/core/test_vendored_mpm_partial.py`: 2 CPU dough worlds and 1, partial vs full sweeps within half the band 3e-4 was ruled on (0.035 mm mean / 0.26 mm max; measured 0.002-0.003 / 0.02-0.06 at 2 worlds, 0.017 / 0.12 at 1 world against Newton's own loop), most sweeps partial, and the stop test never reads a partial sweep; with partial sweeps on, world 0 bit for bit the same whatever world 1 does; `mark_active_blocks` flags a block by its largest row and always across worlds; the setting is checked and named in `sim.routes()`. Off (the default): the empty array sweeps every block, and `tests/core/test_vendored_mpm_skip.py` stays bit for bit. L4: the dough within 0.006 mm mean / 0.04 mm max of full sweeps, and as close to a 1e-5 reference (0.148 against 0.150 mm mean). | not posted (on hold; upstream would take it with a per-row stop of its own) |
+| `0010-vendored-version-check.patch` | `newton/_src/solvers/mujoco/solver_mujoco.py` (`_warn_if_mujoco_versions_mismatch`) | Inside Alloy the check returns at once: it no longer reads the `newton` distribution's metadata. | That metadata is a user's own pip `newton`, if any, not this copy: with an older one installed, every MuJoCo build warned "mujoco==3.17.0 (requires ~=3.16.0)". Alloy pins mujoco in its own pyproject. | `tests/core/test_vendored.py::test_the_vendored_mujoco_version_check_reads_no_distribution` | not posted (Alloy-only) |
+| `0011-box-triangle-plane-exit.patch` | `newton/_src/geometry/penetration.py` (`_box_triangle_depth`) | For a one-sided mesh triangle, a box-separating direction that leans behind the triangle's front side is projected onto the triangle's plane, at the travel that clears the same axis, instead of being discarded; a separating axis is kept on either side. Directions on the front side are unchanged. | Newton 1.8 (upstream 536a3dd7, PR #4974) restricts a box's exits from a mesh triangle to its front side. A triangle slightly inside a box face can have its shallow exit lean a little the other way; discarding it left an exit across the whole box, so `CollisionPipeline` reported 62-65 mm contacts for a 0.5-0.9 mm dip (a mesh resting tilted on a box, a fingertip hull on a ledge). On the pick-and-place benchmark scene 193 of 512 worlds had such a contact, against 0 of 512 on the pin before and with this patch. Routes on MuJoCo's own contacts never ran this code. | `tests/core/test_vendored_penetration.py` (a 2 cm cube mesh tilted 0.02 rad, 0.5 mm into a wide box, three tilt axes: every triangle inside the face reports its own dip to 0.1 mm with a normal within the tilt of the face's; unpatched, two triangles report 65 mm). Upstream's seam test of #4974 still passes with the change. | not posted (on hold) |
+| `0012-vbd-self-contact-world-order.patch` (audit AGENTS-15) | `newton/_src/solvers/vbd/particle_vbd_kernels.py` (`accumulate_self_contact_force_and_hessian`), `newton/_src/solvers/vbd/solver_vbd.py` (new `_identical_world_counts`; `SolverVBD.__init__`; the kernel's launch in `_solve_particle_iteration`) | When every world holds the same number of edges and of particles, world after world (a replicated template), a kernel thread takes the edge and the vertex at one index inside one world. The launch size is the same. One world, uneven worlds and models with global particles keep upstream's order (the kernel gets 0, 0), so a one-world run and world 0 of a many-world run step bit for bit as before. | Upstream's thread i takes edge i and vertex i of the whole model and adds both into per-particle sums. World w's edges and vertices start at different offsets, so on the CPU each world past the first added a particle's edge-edge and vertex-triangle terms in another order: identical worlds differed in the last bit and then drifted apart (AGENTS.md's cloth scene, 2 worlds, CPU: 19 mm apart after 0.8 s at `cloth_accuracy="fast"`; the audit read 65-80 mm after 1.5 s at every setting). Colours were the same in every world, and without self-contact the worlds matched. | `tests/scene/test_cloth_identical_worlds.py` (`test_identical_worlds_of_a_sheet_that_touches_itself_match_bit_for_bit`: 3 worlds of a pleating drape, CPU, fails with upstream's order; `test_world_0_is_the_one_world_run_bit_for_bit`; `test_only_a_replicated_template_gets_the_per_world_order`). On the bump tree (CPU): AGENTS.md's scene, 2 worlds, 1 s at the default accuracy, bit for bit (slow law); with upstream's order the drape and fold laws fail. tests/solvers/vbd 93 passed, tests/scene cloth 62, tests/api cloth 14, fabric drape 9. One L4: the 7 VBD GPU laws pass; the drape's 3 GPU worlds end 17-27 mm apart with the patch and 22-29 mm with upstream's order (2 runs each: the GPU's atomic adds, not this order, set that). Cost: none measured (60 periods of the fold: 12.5 s, upstream's order 12.9 s). Not covered: a cloth coupled to a robot through the proxy; `_harvest_vbd_proxy_particle_self_contact_forces_kernel` (`vbd_coupling_kernels.py`) has the same edge i + vertex i thread, and identical worlds of such a cloth in self-contact are not checked. | not posted (on hold; an upstream candidate) |
+| `0013-vbd-fast-math-default.patch` | `newton/_src/solvers/vbd/solver_vbd.py` (`SolverVBD.__init__`: `enable_fast_math`) | The default is False (upstream: True). `enable_fast_math=True` still turns it on. | Release-1.8 compiles the VBD particle kernels, the rigid solve and the joint dual update with Warp's fast math on CUDA. That alone moved GPU cloth off the previous pin's bits. The bench drape (64 worlds, one L4, default accuracy): previous pin peak strain 0.364 %, drape coefficient 0.7279, 1.82 simulated s per wall s; release-1.8 as shipped 0.543 %, 0.7273, 1.95 (7 % faster), no world equal to the previous pin's; with fast math off 0.364 %, 0.7279, 1.83, and 64 of 64 worlds equal to the previous pin's bit for bit. A second round of each repeats its bits. At "super" accuracy: 0.336 %, 0.7315, 1.26; as shipped 0.320 %, 0.7288, 1.36 (8 % faster), no world equal; off 0.336 %, 0.7315, 1.26, 64 of 64 equal. Off keeps every GPU cloth and rod number measured before the update; the speed is there for whoever asks for it. | `tests/core/test_vendored_vbd_fast_math.py` | not posted (a default, Alloy-only) |
+| `0014-proxy-mass-tensor.patch` | `newton/_src/solvers/vbd/rigid_vbd_kernels.py` (new `integrate_rigid_body_tensor`, `forward_step_rigid_bodies_tensor`; `create_solve_rigid_body(has_tendons, mass_tensor=False)`), `vbd/solver_vbd.py` (new `SolverVBD.set_proxy_mass_tensors`, `body_inv_mass_tensor`, `body_mass_tensor`, `proxy_mass_tensor_enabled`; the forward-step and body-solve launches) | Opt-in: after `set_proxy_mass_tensors(Minv, M)` (per body, 3x3, body frame) the forward step's force term uses `R Minv R^T` (R: the pose the step starts from) and the body solve's inertial force and linear Hessian block use the full `R M R^T / dt^2` (R from `body_q_prev`). Gravity enters that force term as the weight `gravity / inv_mass` (an identity tensor falls with g as before; a coupling proxy's `-m g` input from the coupler cancels it in every direction). The kinematic gate and every seed keep the scalar mass. Off (the default, and after `set_proxy_mass_tensors(None, None)`), the solver launches the same kernels with the same inputs as before; the default solve kernel's generated code differs from upstream's only by two unused `const bool` constants of the static branches. | A coupling proxy moved with one scalar mass in every direction, though the robot behind it answers a push along a slider or a jaw far more easily than across it (`docs/known_gaps/coupling-proxy-isotropic-mass.md`). | `tests/coupling/test_proxy_tensor_kernels.py` (identity tensors equal the scalar path; off is bitwise; dv = dt R Minv R^T F in the forward step and after the solve; a spring moves the heavy direction 94x less; gravity is the weight through the tensor). Measured on the CPU only: not yet run on a GPU or under CUDA graphs. A model with tendons keeps the scalar kernels (the tendon variant of the tensor solve is not built). Default path: `tests/precision/test_golden.py` passes with no golden update, and a hinged arm beside cloth (0.4 s, CPU, switch off) ends bit for bit as on main `cab14fe03` | not posted (Alloy-only) |
+
+## Known differences from the previous pins
+
+What moved when Alloy went from Newton `d15a836c` (public `ac7f7830` + 13), MuJoCo Warp `86e2fae0` and MuJoCo 3.16.0 to
+the pins above. Measured on the CPU: every library scene at one world for 20 control periods on both CPU routes, the
+`scripts/vendor_bitwise.py` cases, and the laws named below; on one L4 for the GPU rows.
+
+Solver and model:
+- MuJoCo 3.17 scales the solvers' stop test by 1 / trace(M) at the current configuration (3.16: mean inertia times
+  the dof count, at the reference pose), in C and in Warp. Results move at the convergence level: robot scenes by
+  0 to 0.015 mm (Warp route) and 0 to 4e-6 mm (C route). Alloy's noslip passes use the same scale.
+- MuJoCo 3.17 orders a mesh hull's polygons differently and runs multi-CCD for pairs closer than their margin. A hull
+  that rested 41.6 mm deep under MuJoCo Warp 3.16 rests at 0.05 mm (`tests/tasks/test_bul0002_mjwarp_hull.py`).
+  A free beaker seats 2.8 um to the side as it lands, where 3.16 left it on its start; it does not move after.
+- Newton 1.8 holds kinematic roots with welds and by default gives every movable root an inactive one. Alloy passes
+  `kinematic_switchable_roots=False` (it never switches a root at run time), so models keep the welds they had.
+  Kinematic fixtures show no yield: a 1 kg box dropped 5 cm into one leaves it at its pose.
+- Newton 1.8 keeps joint springs in `Model.joint_stiffness` / `joint_rest_q` (a rod's rest shape too) and validates
+  inertia at finalize. Alloy reads the new arrays, and its spring, rod and energy laws pass unchanged.
+- Newton 1.8's implicit MPM adds `particle_f` itself. Alloy keeps its own liquid-on-paste force path and hides
+  `particle_f` from that step, so liquid-paste rows are bit for bit the previous ones.
+- `SolverMuJoCo` now exports contact forces on its own MuJoCo C backend, where it steps only world 0 of a multi-world
+  model. Alloy's CPU route (one MuJoCo C model per world) is not that backend; plug-ins that need contacts are refused
+  on it for more than one world.
+
+Contacts:
+- Newton 1.8 turned the contact reduction's normal bins (upstream `351b9d9f5`). A seated peg pushed sideways along
+  +x keeps one or two more rows on the bore's rim and leans 4.9-5.5 % past its geometric limit, against 2.6 %
+  before. Over six push directions the lean past the limit is 2.3-5.5 % now and was 2.5-4.5 %. Wall penetration
+  stays at 13-20 um, under its 50 um bound.
+- Newton 1.8 restricts a box's exits from a mesh triangle to the triangle's front side (upstream `536a3dd7`), which
+  reported contacts across the box for a triangle slightly inside a face. Patch `0011` below fixes that; on the
+  pick-and-place benchmark scene 1 of 512 worlds still has a deep contact (0 on the previous pin, 2 with the upstream
+  change reverted, 193 unpatched).
+- Newton 1.8's Steel solver, which no default route uses, lets a robot arm's contacts through far more often than
+  the copy before (`docs/known_gaps/rigid-steel-pile-backend.md`).
+
+Rows that differ more than the convergence level, each with its control:
+- A swinging cord amplifies any difference about 2x per control period. `task_dc_show_service`'s stub cord ends
+  18.2 mm from the previous pin's on the Warp route (1.0 mm on the C route) after 0.4 s; the previous pin's own two
+  CPU routes end 16.8 mm apart, and the new Warp route is 4.8 mm from both C results. Other cords: 0.004-1.6 mm.
+- `demo_peg_d12`'s peg comes to rest leaning in the bore mouth at the same tilt (0.057-0.059 rad) and height (within
+  0.03 mm) but another direction around the bore, 0.24 mm away. Tightening the solver tolerance on either pin alone
+  moves that rest pose 0.12-0.58 mm.
+- `task_job_bottle`'s water particles differ 3.1 mm rms with the same bulk (centroid within 0.01 mm). The previous
+  pin with its beaker moved 1-2.6 um reads 2.9 mm rms.
+- Cloth and poured liquid keep their state bit for bit on both CPU routes (`cloth_drop`, `demo_pour`). Box stacks
+  do on the MuJoCo C route and differ by 1e-9 m/s on the Warp route.
+- Every scene's `check()` verdict is the one it had.
+
+GPU:
+- Upstream `4cae5cca` compiles the VBD kernels with fast math on CUDA (the CPU ignores the setting). Alloy turns
+  it off by default (patch 0013), and the GPU cloth drape is then bit-equal with the previous pin's.
+- The pick-and-place benchmark scene reads 0 glitches in 1,024 episodes on both pins, at the same warm speed (86 s
+  per 1,024-world batch against 89 s on one L4).
+
+## Updating a pin
+
+1. Check out the new commit and run `python scripts/vendor_engines.py --newton-src <newton checkout> --mjw-src
+   <mujoco_warp checkout>`. First set `NEWTON_SHA` / `MJW_SHA` in the script and the pins in
+   `alloy/core/newton_compat.py`.
+2. Review any string the script refuses as unreviewed, adding it to its table.
+3. Update this file's tables.
+4. Run the bitwise harness only when the pin was not meant to change physics; otherwise re-run the affected goldens.

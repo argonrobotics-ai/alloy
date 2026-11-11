@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_terrazzo013",
+ "family": "stone",
+ "preset": "marble_white",
+ "texture": "ambientcg:Terrazzo013",
+ "res": "1k",
+ "scale_m": 0.8,
+ "bump_m": 0.0001,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Terrazzo013",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.675,
+ "note": "white terrazzo: ambientCG 'Terrazzo 013', 0.8 m tile, 1k maps"
+}

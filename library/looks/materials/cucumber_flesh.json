@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cucumber_flesh",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.78,
+  0.86,
+  0.58
+ ],
+ "roughness": 0.45,
+ "subsurface": 0.5,
+ "note": "cucumber flesh: pale translucent green (cut faces)"
+}

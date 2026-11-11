@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "tomato_concentrate",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.42,
+  0.05,
+  0.02
+ ],
+ "roughness": 0.3,
+ "subsurface": 0.15,
+ "note": "tomato concentrate: opaque deep brick red"
+}

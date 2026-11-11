@@ -1,0 +1,15 @@
+schema: alloy.object/1
+name: sand_fill
+shape:
+  particles:
+    region:
+    - [-0.035, -0.035, 0.0]
+    - [0.035, 0.035, 0.0577]
+    spacing: 0.002
+    grain_diameter: 0.0003
+material: sand_silica_dry
+features:
+  passage_width:
+    value: 0.0172
+    source: catalog
+    note: funnel stem 17.2 mm

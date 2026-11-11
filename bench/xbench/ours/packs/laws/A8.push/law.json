@@ -1,0 +1,39 @@
+{
+ "law": "A8.push",
+ "schema": "alloy.xbench.ours.sdf/1",
+ "dt": 0.0003125,
+ "substeps": 1,
+ "duration_s": 0.7,
+ "steps": 2240,
+ "metrics": {
+  "pen_max_m": {
+   "abs": 5e-05,
+   "rel": 0.0,
+   "source": "bench \u00a74 A8 + SPEC \u00a75.3 amendment: the 50 N ramp leaves <= the pair's max_penetration (D2), measured by GapMonitor"
+  }
+ },
+ "stat": {
+  "pen_max_m": "mean"
+ },
+ "conditions": [
+  {
+   "id": "push50N",
+   "params": {
+    "force": 50.0
+   },
+   "worlds": 16
+  }
+ ],
+ "export": {
+  "body_names": [
+   "peg"
+  ],
+  "frames": "a frame every physics step (record_every 1), frame 0 the initial state; W axis = cond.json worlds",
+  "channels": {
+   "body_q": "[T, W, B, 7] float32: body origin + quaternion x y z w, world frame (contract)",
+   "body_qd": "[T, W, B, 6] float32: COM linear + angular velocity, world frame (contract)"
+  },
+  "scored_by": "Alloy's GapMonitor on the peg's poses: peg surface samples every 0.5 mm against the hole mesh (exact point-mesh distance), max penetration from the ramp start (t = 0.1 s) on"
+ },
+ "score": "python bench/xbench/ours/sdf_pack.py score RUN_DIR --laws A8.push --device cuda:0 reads RUN_DIR/A8.push/<condition>.npz -> RUN_DIR/A8.push.scored.json"
+}

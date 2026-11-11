@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "default": {
+    "128": "v3",
+    "640x480": "v3"
+  },
+  "weights": {
+    "v0_128": {
+      "file": "dn_v0_lp40_128.pt",
+      "sha256": "9313b4956f63cbd651cd70e4474d68afd10cb633822dfec45ac3542c1243f366",
+      "bytes": 18061669,
+      "train_res": "128",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "v0 (research round): KPN U-Net 4.4M params, kpnd head; trained on ~5.5k Cycles 4.5 teacher frames of opaque tabletop and rack scenes, LPIPS-weighted fine-tune; use tta=2 at 4-5 spp. Not trained on glass or water."
+    },
+    "v0_128_r2": {
+      "file": "dn_v0_r2h_128.pt",
+      "sha256": "f688584020aae266db26212eaca36e5bc8c08d22dfb6212432672c5933dd9896",
+      "bytes": 18061625,
+      "train_res": "128",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "v0 alternative 128 px model (same data, earlier fine-tune)."
+    },
+    "v0_640": {
+      "file": "dn_v0_640.pt",
+      "sha256": "a74bd34753942b1626417686c65a874150abc03db5183538b160abbeb17b388e",
+      "bytes": 18061449,
+      "train_res": "640x480",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "v0 640x480 model, trained with 640x480 crops and 8/16 spp inputs; use at 12 spp, tta=1."
+    },
+    "t12_128": {
+      "file": "dn_t12_128.pt",
+      "sha256": "2f640e7f886c34eb2c925a078bdc72246007016701c308a08e58674f1c7bbc73",
+      "bytes": 18061493,
+      "train_res": "128",
+      "spp": [
+        32,
+        64
+      ],
+      "notes": "Per-scene fine-tune for the render-gates T12 scene (diffuse outdoor tabletop), 128 px, from 4,000 Cycles variants of it with 4-64 spp inputs. G1 (FLIP and LPIPS within 2x of Cycles 128 spp + OIDN) on the gate frame, tta=1: passes from 40 spp on 3 path-tracer seeds (worst 0.89) and 8 Cycles seeds (worst 0.99); 48 spp worst 0.80. A scene-specific model: not for other scenes."
+    },
+    "v2": {
+      "file": "dn_v2.pt",
+      "sha256": "be8ef4a5d3b53bc4c5b1d3478bd3d6657d3b152b70c977fecb481ec491957161",
+      "bytes": 18058969,
+      "train_res": "any",
+      "spp": [
+        1,
+        128
+      ],
+      "notes": "The previous default generalist: KPN U-Net with albedo demodulation (kernels filter rgb / albedo), trained on Cycles 4.5 teacher frames of production scenes plus about 100 scenes composed from the object library under random materials, HDRIs, lights and cameras, at 128 px and 640x480. On composed scenes it never trained on, at 128 px it passes G1 as often as Cycles' OIDN at the same spp (32: 6 of 12 views, OIDN 5; 64: 10 vs 11; 128: 12 vs 12); at 640x480 OIDN is still better. Use tta=1."
+    },
+    "c3_128": {
+      "file": "dn_v0_lp40_128.pt",
+      "sha256": "9313b4956f63cbd651cd70e4474d68afd10cb633822dfec45ac3542c1243f366",
+      "bytes": 18061669,
+      "train_res": "128",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates C3 scene's weights at this size (the same file as v0_128): G1 from 8 spp there, where the v2 default needs 32."
+    },
+    "c3_640": {
+      "file": "dn_v0_640.pt",
+      "sha256": "a74bd34753942b1626417686c65a874150abc03db5183538b160abbeb17b388e",
+      "bytes": 18061449,
+      "train_res": "640x480",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates C3 scene's weights at this size (the same file as v0_640): G1 from 16 spp there, where the v2 default needs 32."
+    },
+    "c4_128": {
+      "file": "dn_v0_lp40_128.pt",
+      "sha256": "9313b4956f63cbd651cd70e4474d68afd10cb633822dfec45ac3542c1243f366",
+      "bytes": 18061669,
+      "train_res": "128",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates C4 scene's weights at this size (the same file as v0_128): G1 from 8 spp there, where the v2 default needs 32."
+    },
+    "c4_640": {
+      "file": "dn_v0_640.pt",
+      "sha256": "a74bd34753942b1626417686c65a874150abc03db5183538b160abbeb17b388e",
+      "bytes": 18061449,
+      "train_res": "640x480",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates C4 scene's weights at this size (the same file as v0_640): G1 from 16 spp there, where the v2 default needs 32."
+    },
+    "c4_1280": {
+      "file": "dn_c4_1280.pt",
+      "sha256": "7b3aad744bdf9b7ab4f82de637e2d99c393517e27433aae52a23856fa290485c",
+      "bytes": 18061493,
+      "train_res": "1280x720",
+      "spp": [
+        16,
+        64
+      ],
+      "notes": "Per-scene fine-tune for the render-gates C4 scene (clear plastic lid) at 1280x720: 120 frames of the C4 take rendered at 1280x720 (8-64 spp inputs, 2,048 spp + OIDN targets, at least 200 frames from every gate frame) plus 60 of its 128 px / 640x480 teacher jobs, from v3, 8,000 steps (4 minutes on one RTX PRO 6000). G1 on the 5 gate frames, tta=1: passes from 16 spp on the Alloy camera's inputs (worst 0.96; 32 spp 0.71) and on the gate set's control inputs (worst 0.98); OIDN needs 64 spp. Not for other scenes."
+    },
+    "dc5_128": {
+      "file": "dn_v0_lp40_128.pt",
+      "sha256": "9313b4956f63cbd651cd70e4474d68afd10cb633822dfec45ac3542c1243f366",
+      "bytes": 18061669,
+      "train_res": "128",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates DC5 grid's weights at this size (the same file as v0_128): what its gate claims were measured with; kept when the default moved to v2."
+    },
+    "dc5_640": {
+      "file": "dn_v0_640.pt",
+      "sha256": "a74bd34753942b1626417686c65a874150abc03db5183538b160abbeb17b388e",
+      "bytes": 18061449,
+      "train_res": "640x480",
+      "spp": [
+        1,
+        16
+      ],
+      "notes": "The render-gates DC5 grid's weights at this size (the same file as v0_640): what its gate claims were measured with; kept when the default moved to v2."
+    },
+    "c3_1280": {
+      "file": "dn_c3_1280.pt",
+      "sha256": "39f3ade03d74585a88a89487fb179f70747059faea76c02d526df6d64a2517f8",
+      "bytes": 18061493,
+      "train_res": "1280x720",
+      "spp": [
+        8,
+        64
+      ],
+      "notes": "Per-scene fine-tune for the render-gates C3 scene at 1280x720: 120 frames of the C3 take rendered at 1280x720 (8-64 spp inputs, 2,048 spp + OIDN targets, at least 200 frames from every gate frame) plus its 128 px / 640x480 teacher jobs, 8,000 steps (under 5 minutes on one H100). G1 on the 5 gate frames, tta=1: passes from 16 spp (worst 0.82 on own renders, 0.77 on the gate set's control inputs); 8 spp worst 1.13. Not for other scenes."
+    },
+    "v3": {
+      "file": "dn_v3.pt",
+      "sha256": "56df72207c1f9bbea87781d3836552c2b84d7091f806ee979f5820e0f245955d",
+      "bytes": 18058969,
+      "train_res": "any",
+      "spp": [
+        1,
+        128
+      ],
+      "notes": "Generalist for new scenes (the default): v2 continued on about 100 composed library scenes rendered with Cycles' blue-noise sampling (a fresh session per size and seed). On composed scenes it never trained on, blue-noise inputs, 128 px, views passing G1 at 16 / 32 / 64 / 128 spp: 1 / 9 / 12 / 12 of 12 (Cycles OIDN: 2 / 9 / 11 / 12); 640x480: 1 / 5 / 6 / 9 (OIDN 0 / 2 / 12 / 12). Use tta=1."
+    },
+    "v4": {
+      "file": "dn_v4.pt",
+      "sha256": "da6c6d4166f7a9698f4414fb304cdfd9f0c40dcfc6611910c767a8925e988987",
+      "bytes": 18058969,
+      "train_res": "any",
+      "spp": [
+        1,
+        128
+      ],
+      "notes": "Optional generalist: v3 continued on the whole teacher set (1,972 production-scene jobs and 984 composed-scene jobs). On composed scenes it never trained on, blue-noise inputs, views passing G1 at 16 / 32 / 64 / 128 spp: 128 px 2 / 11 / 11 / 12 of 12 (v3 1 / 9 / 12 / 12); 640x480 3 / 6 / 7 / 8 (v3 1 / 5 / 6 / 9). Not the default: it needs more spp than v3 on C2 at 1280x720 and on C2 / C4 at 128 px for some inputs. Use tta=1."
+    },
+    "c2_640": {
+      "file": "dn_c2_640.pt",
+      "sha256": "75744e11a53b35483cfa8d6ca2702a8a84094f2694567b66d42145fde1ff55a3",
+      "bytes": 18061449,
+      "train_res": "640x480",
+      "spp": [
+        16,
+        64
+      ],
+      "notes": "Per-scene fine-tune for the render-gates C2 scene (water poured into a glass) at 640x480: 80 C2 frames rendered at 640x480 and 1280x720 (8-64 spp, blue noise, every gate frame +-60 held out) plus the C2 fine-tune set, from v2. G1 on the 5 gate frames, blue-noise inputs, tta=1: passes from 32 spp (worst 0.79; OIDN needs 64)."
+    },
+    "c2_1280": {
+      "file": "dn_c2_1280.pt",
+      "sha256": "5fe3822e379606010d0cf02b66e4e188ccb21401c6eb607bffa401dbe2c89b0f",
+      "bytes": 18061493,
+      "train_res": "1280x720",
+      "spp": [
+        16,
+        64
+      ],
+      "notes": "Per-scene fine-tune for the render-gates C2 scene at 1280x720 (same data as c2_640, trained on 1280x720 crops). G1 on the 5 gate frames, blue-noise inputs, tta=1: passes from 32 spp (worst 0.83; OIDN needs 64)."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+schema: alloy.material/1
+name: batter_bread_wheat
+density:
+  value: 1100.0
+  source: model
+  unc: [1000.0, 1184.0]
+  note: 'ESTIMATE: no batter density in the rheology source; flour:water 1:1 by mass with flour solids about 1450 kg/m^3 and
+    no air gives 1 / (0.5 / 1450 + 0.5 / 1000) = 1184 kg/m^3; mixed batters hold some air'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction, wall drag comes from viscosity'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'paste: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'paste: inelastic'
+plastic:
+  yield_stress:
+    value: 16.12
+    source: fit
+    unc: [4.44, 30.0]
+    note: 'Herschel-Bulkley fit of a wheat-flour bread batter (flour:water 1:1, 25 C, HAAKE VT 550): ''Wheat 16.12 Pa, K 46.300
+      Pa·s^n, n 0.600, R2 0.9990'' (control of the gluten-free series; sweet potato 4.44 Pa), Zsivanovits et al., Bulgarian
+      J. Sci. Educ. 27(5) (https://journals.azbuki.bg/science/rheological-properties-of-batter-for-gluten-free-bread/pdf)'
+fluid:
+  viscosity:
+    value: 18.43
+    source: fit
+    unc: [12.0, 25.0]
+    note: 'Bingham plastic viscosity at 10 1/s from the same fit: K 10^n / 10 = 46.3 x 3.981 / 10 = 18.43 Pa s (the starting
+      value; the solve sets each particle''s viscosity from K and n); fit: https://journals.azbuki.bg/science/rheological-properties-of-batter-for-gluten-free-bread/pdf'
+  consistency:
+    value: 46.3
+    source: fit
+    note: Herschel-Bulkley K of the same fit ('K 46.300 Pa·s^n'), https://journals.azbuki.bg/science/rheological-properties-of-batter-for-gluten-free-bread/pdf
+  flow_index:
+    value: 0.6
+    source: fit
+    note: Herschel-Bulkley n of the same fit ('n 0.600'), https://journals.azbuki.bg/science/rheological-properties-of-batter-for-gluten-free-bread/pdf

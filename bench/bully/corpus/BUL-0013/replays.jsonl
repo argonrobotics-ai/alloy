@@ -1,0 +1,2 @@
+{"counts": true, "date": "2026-11-03T03:30:53+00:00", "device": "cpu", "finding": "BUL-0013", "runs": 10, "trips": 10}
+{"counts": true, "date": "2026-11-03T04:46:04+00:00", "device": "cpu", "finding": "BUL-0013", "runs": 10, "trips": 10}

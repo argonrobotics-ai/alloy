@@ -1,0 +1,42 @@
+{
+ "law": "A11.hanging_chain",
+ "dt": 0.002,
+ "substeps": 1,
+ "duration_s": 4.5,
+ "metrics": {
+  "omega1_rel_err": {
+   "abs": 0.02,
+   "rel": 0.0,
+   "source": "bench \u00a74 A11: hanging chain \u03c9\u2081 within 2 % at \u2265 40 segments"
+  }
+ },
+ "stat": {
+  "omega1_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "L30cm",
+   "params": {
+    "length": 0.3
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "L50cm",
+   "params": {
+    "length": 0.5
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "L80cm",
+   "params": {
+    "length": 0.8
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

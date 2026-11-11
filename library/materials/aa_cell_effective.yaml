@@ -1,0 +1,34 @@
+schema: alloy.material/1
+name: aa_cell_effective
+density:
+  value: 2758.0
+  source: fit
+  unc: [2700.0, 2820.0]
+  note: 'effective: Energizer E91 23 g (datasheet) over a 14.5 x 50.5 mm cylinder; FIT, so not a CARD-10 check'
+surface:
+  mu_static:
+    value: 0.4
+    source: model
+    unc: [0.3, 0.6]
+    note: nickel-plated can on PP/spring steel 0.3-0.5 (model)
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.2, 0.5]
+    note: nickel-plated can on PP/spring steel 0.3-0.5 (model)
+  restitution:
+    value: 0.4
+    source: model
+    unc: [0.2, 0.6]
+    note: steel can on plastic (model)
+elastic:
+  youngs:
+    value: 200000000000.0
+    source: catalog
+    unc: [190000000000.0, 210000000000.0]
+    note: steel can (the cell is rigid at grip loads)
+  poisson:
+    value: 0.29
+    source: catalog
+    unc: [0.27, 0.3]
+    note: steel can (the cell is rigid at grip loads)

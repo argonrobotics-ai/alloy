@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""GPU-accelerated actuator models for physics simulations.
+
+This module provides a modular library of actuator components — drives,
+clamping, and delay — that compute joint effort from simulation state and
+control targets. Components are composed into an :class:`Actuator` instance
+and registered with :meth:`~newton.ModelBuilder.add_actuator` during model
+construction.
+
+.. experimental::
+
+    The actuator API may change without prior notice. Feedback is welcome —
+    please file issues or discussion threads.
+"""
+
+from ._src.actuators import (
+    Actuator,
+    ActuatorParsed,
+    ClampingBase,
+    ClampingDCMotor,
+    ClampingMaxEffort,
+    ClampingPositionBased,
+    ComponentKind,
+    Delay,
+    DriveBase,
+    DriveNeuralGRU,
+    DriveNeuralLSTM,
+    DriveNeuralMLP,
+    DrivePD,
+    DrivePID,
+    JointSpaceResponse,
+    SchemaNames,
+    parse_actuator_prim,
+    register_actuator_component,
+)
+
+__all__ = [
+    "Actuator",
+    "ActuatorParsed",
+    "ClampingBase",
+    "ClampingDCMotor",
+    "ClampingMaxEffort",
+    "ClampingPositionBased",
+    "ComponentKind",
+    "Delay",
+    "DriveBase",
+    "DriveNeuralGRU",
+    "DriveNeuralLSTM",
+    "DriveNeuralMLP",
+    "DrivePD",
+    "DrivePID",
+    "JointSpaceResponse",
+    "SchemaNames",
+    "parse_actuator_prim",
+    "register_actuator_component",
+]

@@ -1,0 +1,9 @@
+schema: alloy.object/1
+name: sponge_kitchen
+shape:
+  mesh:
+    path: meshes/sponge_kitchen.obj
+    sha256: 9011376d516e853b1f2ed3bad1f049a2d0c0b5aeef87ce03a745a36abb5fe314
+    collision: decompose
+    max_parts: 4
+material: pu_foam_sponge

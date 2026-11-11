@@ -1,0 +1,9 @@
+# P3-2b embodiment e8_go2_stiff: Unitree Go2 quadruped (go2.xml + go2_mjx.xml's position actuators), contact variant solref 0.005 s. Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (BSD-3-Clause (mujoco_menagerie unitree_go2, Unitree Robotics)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e8_go2_stiff/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e8_go2_stiff
+objects: []
+control_dt: 0.002

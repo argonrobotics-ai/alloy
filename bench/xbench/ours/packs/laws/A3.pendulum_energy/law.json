@@ -1,0 +1,42 @@
+{
+ "law": "A3.pendulum_energy",
+ "dt": 0.001,
+ "substeps": 1,
+ "duration_s": 2.0,
+ "metrics": {
+  "energy_drift": {
+   "abs": 0.005,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A3: drift <= 0.5 %; scale per SPEC D20"
+  }
+ },
+ "stat": {
+  "energy_drift": "mean"
+ },
+ "conditions": [
+  {
+   "id": "amp5deg",
+   "params": {
+    "theta0": 0.08726646259971647
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "amp57.3deg",
+   "params": {
+    "theta0": 1.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "amp90deg",
+   "params": {
+    "theta0": 1.5707963267948966
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}

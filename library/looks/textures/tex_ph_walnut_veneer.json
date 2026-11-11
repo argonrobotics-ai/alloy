@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_ph_walnut_veneer",
+ "family": "wood",
+ "preset": "wood_walnut_oiled",
+ "texture": "polyhaven:walnut_veneer",
+ "res": "1k",
+ "scale_m": 1.8,
+ "bump_m": 0.0002,
+ "source": "https://polyhaven.com/a/walnut_veneer",
+ "author": "Jenelle van Heerden",
+ "licence": "CC0-1.0",
+ "albedo": 0.163,
+ "note": "walnut veneer, oiled: Poly Haven 'Walnut Veneer', 1.8 m tile, 1k maps"
+}

@@ -1,0 +1,7 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pbt",
+ "preset": "abs_black",
+ "roughness": 0.5,
+ "note": "PBT connector housings: black"
+}

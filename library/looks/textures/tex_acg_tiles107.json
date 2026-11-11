@@ -1,0 +1,16 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_tiles107",
+ "family": "tile",
+ "preset": "ceramic_white",
+ "texture": "ambientcg:Tiles107",
+ "res": "1k",
+ "scale_m": 1.0,
+ "bump_m": 0.0005,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Tiles107",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.935,
+ "note": "white square tiles: ambientCG 'Tiles 107', 1 m tile, 1k maps"
+}

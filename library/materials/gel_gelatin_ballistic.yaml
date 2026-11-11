@@ -1,0 +1,42 @@
+schema: alloy.material/1
+name: gel_gelatin_ballistic
+density:
+  value: 1030.0
+  source: measured
+  unc: [1010.0, 1060.0]
+  note: 'DOC: Table 2, gelatin (10% at 4 C): ''Values of material parameters for the gelatin. r (kg/m3) E (kPa) Et (kPa) s0
+    (kPa) ... 1030 850 10 220'', https://batra.me.vt.edu/content/dam/batra_me_vt_edu/publications/impact2013(142-151).pdf;
+    5 % gel ''The density of gelatin at 5% wt. is 1,010 kg/m3'', https://arxiv.org/pdf/2207.03900'
+surface:
+  mu_static:
+    value: 0.4
+    source: model
+    unc: [0.1, 0.8]
+    note: 'ESTIMATE: no measured gelatin friction found; a wet hydrogel surface, lower on wet glass or steel and higher on
+      dry wood'
+  mu_dynamic:
+    value: 0.3
+    source: model
+    unc: [0.05, 0.7]
+    note: 'ESTIMATE: below mu_static; no measured value found'
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.3]
+    note: 'ESTIMATE: no measured value found; gelatin is strongly viscoelastic (a Maxwell-Weichert fit in https://arxiv.org/pdf/2512.20502)'
+elastic:
+  youngs:
+    value: 20000.0
+    source: measured
+    unc: [3000.0, 30000.0]
+    note: 'DOC: ''Ballistic Gelatin is generally made in a ratio of 8 < RH2O < 10 in order to simulate human flesh'' and ''using
+      the power law relationship with parameters in table 3 results in instantaneous stiffnesses ranging from 20 to 29 kPa''
+      (texture-analyzer compression at 19.9 C), https://arxiv.org/pdf/2512.20502; a 9:1 gel at 27 C reads 2.64 kPa (same paper,
+      secondary). The 850 kPa of the Batra table is a large-strain secant modulus, not used'
+  poisson:
+    value: 0.45
+    source: model
+    unc: [0.4, 0.49]
+    note: 'ESTIMATE: no measured small-strain value found; ''Due to the nearly incompressible properties of gelatin at small
+      strains, its Poisson Ratio is taken in this study as v = 0.49'', https://arxiv.org/pdf/2207.03900; 0.45 keeps the tetrahedral
+      soft-solid route well conditioned'

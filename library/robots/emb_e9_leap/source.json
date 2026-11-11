@@ -1,0 +1,42 @@
+{
+ "embodiment": "e9_leap",
+ "title": "LEAP Hand (right)",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "files": {
+   "leap_hand/right_hand.xml": "9d8f25c38bdb60617f378c07b7e71f97306471353c81bf281eb9943f3f2340d8",
+   "leap_hand/LICENSE": "5a91c3d709c2ee3a71f166b46e3208cebd83c0c7a870746c729b31a01f156984"
+  }
+ },
+ "licence": "MIT (mujoco_menagerie leap_hand)",
+ "world": "hand as shipped (palm up, base welded); floor z = 0; a 40 mm cube of 0.05 kg lowered onto the palm until it just touches",
+ "changes": [
+  "visual-only geoms and their meshes, materials and textures dropped",
+  "source keyframes dropped; keyframe 'init' = start state (robot start pose, ctrl = its joint targets, objects at rest), both clipped into the joint ranges; free-floating robots lifted so the deepest floor contact just touches",
+  "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
+  "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
+  "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
+  "LEAP joint and servo dynamics from MuJoCo Playground (dynamics_source; LICENSE.1): every hand joint damping 0.03 -> 0.2 N m s/rad, armature 0 -> 0.00149376 kg m^2, frictionloss 0.001 -> 0.02 N m, every position servo's torque capped at +-0.2196 N m (none before). As shipped, random finger targets flung a 7 cm cube in 66 % of worlds (TA-4 F3). Kp 3 and kv 0.01 are menagerie's (alloy.tasks.emb_robots.playground_dynamics)"
+ ],
+ "dynamics_source": {
+  "url": "https://github.com/google-deepmind/mujoco_playground",
+  "tag": "v0.2.0",
+  "commit": "124a73fa3303f75a62f8fe04d329b829ed0ebdfb",
+  "file": "mujoco_playground/_src/manipulation/leap_hand/xmls/leap_rh_mjx.xml",
+  "sha256": "335cb3e2906067f02b49d62753e38a55dc4059f090c5adb9c8a62826749782a1",
+  "licence": "Apache-2.0",
+  "licence_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+ },
+ "hull_split": 0.0,
+ "init": {
+  "nq": 23,
+  "nv": 22,
+  "nu": 16,
+  "nbody": 19,
+  "ngeom": 73,
+  "init_contacts": 1,
+  "init_deepest_mm": -0.0,
+  "ok": true
+ }
+}

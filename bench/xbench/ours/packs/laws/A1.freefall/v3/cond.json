@@ -1,0 +1,164 @@
+{
+ "schema": "alloy.xbench.ours.law/1",
+ "law": "A1.freefall",
+ "condition": "v3",
+ "params": {
+  "vx": 0.5,
+  "vy": -2.0,
+  "vz": 0.0
+ },
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "steps": 800,
+ "record_every": 1,
+ "gravity": [
+  -0.0,
+  -0.0,
+  -9.8100004196167
+ ],
+ "bodies": [
+  {
+   "name": "ball",
+   "parent": "world",
+   "mass": 0.523599,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.000523599,
+    0.000523599,
+    0.000523599
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "name": "ball_free_joint",
+   "type": "free",
+   "body": "ball",
+   "qposadr": 0,
+   "dofadr": 0,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  }
+ ],
+ "geoms": [],
+ "contact_body_pairs": [],
+ "worlds": 1,
+ "samples": [
+  {}
+ ],
+ "materials": {
+  "shape_0_0": {
+   "mu": 1.0,
+   "restitution": 0.0
+  }
+ },
+ "initial": [
+  {
+   "bodies": {
+    "ball": {
+     "q": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.5,
+      -2.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "joints": {
+    "ball_free_joint": {
+     "q": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.5,
+      -2.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "note": "Newton coordinates: body q = x y z qx qy qz qw; free joint q = x y z qx qy qz qw; qd = COM linear then angular velocity, world frame"
+  }
+ ],
+ "drive": null,
+ "extras": {},
+ "alloy_settings": {
+  "solver": "mujoco",
+  "kwargs": {
+   "solver": "newton",
+   "integrator": "rk4",
+   "cone": "elliptic"
+  },
+  "mujoco_solimp": null,
+  "newton_contacts": false
+ }
+}

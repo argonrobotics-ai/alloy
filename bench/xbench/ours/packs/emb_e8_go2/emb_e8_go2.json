@@ -1,0 +1,3531 @@
+{
+ "schema": "alloy.xbench.ours.scene/1",
+ "source": "library/robots/emb_e8_go2/scene.xml",
+ "licence": "BSD-3-Clause (mujoco_menagerie unitree_go2, Unitree Robotics)",
+ "option": {
+  "timestep": 0.002,
+  "gravity": [
+   0.0,
+   0.0,
+   -9.81
+  ],
+  "integrator": 0,
+  "cone": 1,
+  "impratio": 100.0
+ },
+ "bodies": [
+  {
+   "name": "base",
+   "parent": "world",
+   "mass": 6.921,
+   "ipos": [
+    0.021112,
+    0.0,
+    -0.005366
+   ],
+   "iquat_wxyz": [
+    -0.0005434710187189727,
+    0.7134350245731056,
+    -0.0017376900598518993,
+    0.7007190241351237
+   ],
+   "inertia_principal": [
+    0.107027,
+    0.0980771,
+    0.0244531
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.288372500302558
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.0,
+    0.0,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "FL_hip",
+   "parent": "base",
+   "mass": 0.678,
+   "ipos": [
+    -0.0054,
+    0.00194,
+    -0.000105
+   ],
+   "iquat_wxyz": [
+    0.49701389368029036,
+    0.49924489320304166,
+    0.5054618918731201,
+    0.4982368934186699
+   ],
+   "inertia_principal": [
+    0.00088403,
+    0.000596003,
+    0.000479967
+   ],
+   "pos": [
+    0.1934,
+    0.0465,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.1934,
+    0.0465,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "FL_thigh",
+   "parent": "FL_hip",
+   "mass": 1.152,
+   "ipos": [
+    -0.00374,
+    -0.0223,
+    -0.0327
+   ],
+   "iquat_wxyz": [
+    0.8295328692886538,
+    0.08476348664362818,
+    -0.02006319683859728,
+    0.551622913079546
+   ],
+   "inertia_principal": [
+    0.00594973,
+    0.00584149,
+    0.000878787
+   ],
+   "pos": [
+    0.0,
+    0.0955,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.1934,
+    0.14200000000000002,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "FL_calf",
+   "parent": "FL_thigh",
+   "mass": 0.241352,
+   "ipos": [
+    0.00629595,
+    -0.000622121,
+    -0.141417
+   ],
+   "iquat_wxyz": [
+    0.7106717050254876,
+    0.0015409893603902027,
+    -0.004500868131849948,
+    0.7035077079990076
+   ],
+   "inertia_principal": [
+    0.0014901,
+    0.00146356,
+    5.31397e-05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.026551368249346036,
+    0.14200000000000002,
+    0.1559695770609065
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    -0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "FR_hip",
+   "parent": "base",
+   "mass": 0.678,
+   "ipos": [
+    -0.0054,
+    -0.00194,
+    -0.000105
+   ],
+   "iquat_wxyz": [
+    0.4982368934186699,
+    0.5054618918731201,
+    0.49924489320304166,
+    0.49701389368029036
+   ],
+   "inertia_principal": [
+    0.00088403,
+    0.000596003,
+    0.000479967
+   ],
+   "pos": [
+    0.1934,
+    -0.0465,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.1934,
+    -0.0465,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "FR_thigh",
+   "parent": "FR_hip",
+   "mass": 1.152,
+   "ipos": [
+    -0.00374,
+    0.0223,
+    -0.0327
+   ],
+   "iquat_wxyz": [
+    0.551622913079546,
+    -0.02006319683859728,
+    0.08476348664362818,
+    0.8295328692886538
+   ],
+   "inertia_principal": [
+    0.00594973,
+    0.00584149,
+    0.000878787
+   ],
+   "pos": [
+    0.0,
+    -0.0955,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.1934,
+    -0.14200000000000002,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "FR_calf",
+   "parent": "FR_thigh",
+   "mass": 0.241352,
+   "ipos": [
+    0.00629595,
+    0.000622121,
+    -0.141417
+   ],
+   "iquat_wxyz": [
+    0.7035077079990076,
+    -0.004500868131849948,
+    0.0015409893603902027,
+    0.7106717050254876
+   ],
+   "inertia_principal": [
+    0.0014901,
+    0.00146356,
+    5.31397e-05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.026551368249346036,
+    -0.14200000000000002,
+    0.1559695770609065
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    -0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "RL_hip",
+   "parent": "base",
+   "mass": 0.678,
+   "ipos": [
+    0.0054,
+    0.00194,
+    -0.000105
+   ],
+   "iquat_wxyz": [
+    0.5054618918731201,
+    0.4982368934186699,
+    0.49701389368029036,
+    0.49924489320304166
+   ],
+   "inertia_principal": [
+    0.00088403,
+    0.000596003,
+    0.000479967
+   ],
+   "pos": [
+    -0.1934,
+    0.0465,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.1934,
+    0.0465,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "RL_thigh",
+   "parent": "RL_hip",
+   "mass": 1.152,
+   "ipos": [
+    -0.00374,
+    -0.0223,
+    -0.0327
+   ],
+   "iquat_wxyz": [
+    0.8295328692886538,
+    0.08476348664362818,
+    -0.02006319683859728,
+    0.551622913079546
+   ],
+   "inertia_principal": [
+    0.00594973,
+    0.00584149,
+    0.000878787
+   ],
+   "pos": [
+    0.0,
+    0.0955,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.1934,
+    0.14200000000000002,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "RL_calf",
+   "parent": "RL_thigh",
+   "mass": 0.241352,
+   "ipos": [
+    0.00629595,
+    -0.000622121,
+    -0.141417
+   ],
+   "iquat_wxyz": [
+    0.7106717050254876,
+    0.0015409893603902027,
+    -0.004500868131849948,
+    0.7035077079990076
+   ],
+   "inertia_principal": [
+    0.0014901,
+    0.00146356,
+    5.31397e-05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.3602486317506539,
+    0.14200000000000002,
+    0.1559695770609065
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    -0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "RR_hip",
+   "parent": "base",
+   "mass": 0.678,
+   "ipos": [
+    0.0054,
+    -0.00194,
+    -0.000105
+   ],
+   "iquat_wxyz": [
+    0.49924489320304166,
+    0.49701389368029036,
+    0.4982368934186699,
+    0.5054618918731201
+   ],
+   "inertia_principal": [
+    0.00088403,
+    0.000596003,
+    0.000479967
+   ],
+   "pos": [
+    -0.1934,
+    -0.0465,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.1934,
+    -0.0465,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "RR_thigh",
+   "parent": "RR_hip",
+   "mass": 1.152,
+   "ipos": [
+    -0.00374,
+    0.0223,
+    -0.0327
+   ],
+   "iquat_wxyz": [
+    0.551622913079546,
+    -0.02006319683859728,
+    0.08476348664362818,
+    0.8295328692886538
+   ],
+   "inertia_principal": [
+    0.00594973,
+    0.00584149,
+    0.000878787
+   ],
+   "pos": [
+    0.0,
+    -0.0955,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.1934,
+    -0.14200000000000002,
+    0.288372500302558
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "RR_calf",
+   "parent": "RR_thigh",
+   "mass": 0.241352,
+   "ipos": [
+    0.00629595,
+    0.000622121,
+    -0.141417
+   ],
+   "iquat_wxyz": [
+    0.7035077079990076,
+    -0.004500868131849948,
+    0.0015409893603902027,
+    0.7106717050254876
+   ],
+   "inertia_principal": [
+    0.0014901,
+    0.00146356,
+    5.31397e-05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    -0.3602486317506539,
+    -0.14200000000000002,
+    0.1559695770609065
+   ],
+   "xquat0_wxyz": [
+    0.9004471023526769,
+    0.0,
+    -0.43496553411123023,
+    0.0
+   ]
+  },
+  {
+   "name": "obstacle",
+   "parent": "world",
+   "mass": 9.0,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    0.075,
+    0.075,
+    0.13499999999999998
+   ],
+   "pos": [
+    1.0,
+    0.0,
+    0.05
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    1.0,
+    0.0,
+    0.05
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "name": "joint0",
+   "type": "free",
+   "body": "base",
+   "qposadr": 0,
+   "dofadr": 0,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    0.0,
+    0.0
+   ],
+   "armature": 0.0,
+   "damping": 0.0,
+   "frictionloss": 0.0,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FL_hip_joint",
+   "type": "hinge",
+   "body": "FL_hip",
+   "qposadr": 7,
+   "dofadr": 6,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.0472,
+    1.0472
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FL_thigh_joint",
+   "type": "hinge",
+   "body": "FL_thigh",
+   "qposadr": 8,
+   "dofadr": 7,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.5708,
+    3.4907
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FL_calf_joint",
+   "type": "hinge",
+   "body": "FL_calf",
+   "qposadr": 9,
+   "dofadr": 8,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -2.7227,
+    -0.83776
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FR_hip_joint",
+   "type": "hinge",
+   "body": "FR_hip",
+   "qposadr": 10,
+   "dofadr": 9,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.0472,
+    1.0472
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FR_thigh_joint",
+   "type": "hinge",
+   "body": "FR_thigh",
+   "qposadr": 11,
+   "dofadr": 10,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.5708,
+    3.4907
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "FR_calf_joint",
+   "type": "hinge",
+   "body": "FR_calf",
+   "qposadr": 12,
+   "dofadr": 11,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -2.7227,
+    -0.83776
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RL_hip_joint",
+   "type": "hinge",
+   "body": "RL_hip",
+   "qposadr": 13,
+   "dofadr": 12,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.0472,
+    1.0472
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RL_thigh_joint",
+   "type": "hinge",
+   "body": "RL_thigh",
+   "qposadr": 14,
+   "dofadr": 13,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -0.5236,
+    4.5379
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RL_calf_joint",
+   "type": "hinge",
+   "body": "RL_calf",
+   "qposadr": 15,
+   "dofadr": 14,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -2.7227,
+    -0.83776
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RR_hip_joint",
+   "type": "hinge",
+   "body": "RR_hip",
+   "qposadr": 16,
+   "dofadr": 15,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -1.0472,
+    1.0472
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RR_thigh_joint",
+   "type": "hinge",
+   "body": "RR_thigh",
+   "qposadr": 17,
+   "dofadr": 16,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -0.5236,
+    4.5379
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  },
+  {
+   "name": "RR_calf_joint",
+   "type": "hinge",
+   "body": "RR_calf",
+   "qposadr": 18,
+   "dofadr": 17,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "limited": true,
+   "range": [
+    -2.7227,
+    -0.83776
+   ],
+   "armature": 0.01,
+   "damping": 2.0,
+   "frictionloss": 0.2,
+   "stiffness": 0.0
+  }
+ ],
+ "geoms": [
+  {
+   "name": "floor",
+   "body": "world",
+   "type": "plane",
+   "size": [
+    0.0,
+    0.0,
+    0.05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    -5000000000.0,
+    10000000000.0,
+    10000000000.0,
+    5000000000.0
+   ],
+   "rbound": 0.0,
+   "xpos0": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "geom1",
+   "body": "base",
+   "type": "box",
+   "size": [
+    0.1881,
+    0.04675,
+    0.057
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.1881,
+    0.04675,
+    0.057
+   ],
+   "rbound": 0.202030127703766,
+   "xpos0": [
+    0.0,
+    0.0,
+    0.288372500302558
+   ]
+  },
+  {
+   "name": "geom2",
+   "body": "base",
+   "type": "cylinder",
+   "size": [
+    0.05,
+    0.045,
+    0.0
+   ],
+   "pos": [
+    0.285,
+    0.0,
+    0.01
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.045
+   ],
+   "rbound": 0.06726812023536856,
+   "xpos0": [
+    0.285,
+    0.0,
+    0.298372500302558
+   ]
+  },
+  {
+   "name": "geom3",
+   "body": "base",
+   "type": "sphere",
+   "size": [
+    0.047,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    0.293,
+    0.0,
+    -0.06
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.047,
+    0.047,
+    0.047
+   ],
+   "rbound": 0.047,
+   "xpos0": [
+    0.293,
+    0.0,
+    0.228372500302558
+   ]
+  },
+  {
+   "name": "geom4",
+   "body": "FL_hip",
+   "type": "cylinder",
+   "size": [
+    0.046,
+    0.02,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.08,
+    0.0
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.7071067811865475,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.046,
+    0.046,
+    0.02
+   ],
+   "rbound": 0.05015974481593781,
+   "xpos0": [
+    0.1934,
+    0.1265,
+    0.288372500302558
+   ]
+  },
+  {
+   "name": "geom5",
+   "body": "FL_thigh",
+   "type": "box",
+   "size": [
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.1065
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.0,
+    0.7071067811865475,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "rbound": 0.10854175463848002,
+   "xpos0": [
+    0.10997568412467301,
+    0.14200000000000002,
+    0.22217103868173227
+   ]
+  },
+  {
+   "name": "geom6",
+   "body": "FL_calf",
+   "type": "cylinder",
+   "size": [
+    0.012,
+    0.06,
+    0.0
+   ],
+   "pos": [
+    0.008,
+    0.0,
+    -0.06
+   ],
+   "quat_wxyz": [
+    0.9944925851484991,
+    0.0,
+    -0.10480695627989212,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.012,
+    0.012,
+    0.06
+   ],
+   "rbound": 0.06118823416311342,
+   "xpos0": [
+    0.07852386257316035,
+    0.14200000000000002,
+    0.1249395942416865
+   ]
+  },
+  {
+   "name": "geom7",
+   "body": "FL_calf",
+   "type": "cylinder",
+   "size": [
+    0.011,
+    0.0325,
+    0.0
+   ],
+   "pos": [
+    0.02,
+    0.0,
+    -0.148
+   ],
+   "quat_wxyz": [
+    0.9996875164758776,
+    0.0,
+    0.02499738790938183,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.011,
+    0.011,
+    0.0325
+   ],
+   "rbound": 0.03431107692859552,
+   "xpos0": [
+    0.15491595023962687,
+    0.14200000000000002,
+    0.07963783994939784
+   ]
+  },
+  {
+   "name": "FL",
+   "body": "FL_calf",
+   "type": "sphere",
+   "size": [
+    0.022,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.002,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.8,
+    0.02,
+    0.01
+   ],
+   "condim": 6,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 1,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.022,
+    0.022,
+    0.022
+   ],
+   "rbound": 0.022,
+   "xpos0": [
+    0.19215678006345865,
+    0.14200000000000002,
+    0.02200000000000002
+   ]
+  },
+  {
+   "name": "geom9",
+   "body": "FR_hip",
+   "type": "cylinder",
+   "size": [
+    0.046,
+    0.02,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    -0.08,
+    0.0
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.7071067811865475,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.046,
+    0.046,
+    0.02
+   ],
+   "rbound": 0.05015974481593781,
+   "xpos0": [
+    0.1934,
+    -0.1265,
+    0.288372500302558
+   ]
+  },
+  {
+   "name": "geom10",
+   "body": "FR_thigh",
+   "type": "box",
+   "size": [
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.1065
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.0,
+    0.7071067811865475,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "rbound": 0.10854175463848002,
+   "xpos0": [
+    0.10997568412467301,
+    -0.14200000000000002,
+    0.22217103868173227
+   ]
+  },
+  {
+   "name": "geom11",
+   "body": "FR_calf",
+   "type": "cylinder",
+   "size": [
+    0.013,
+    0.06,
+    0.0
+   ],
+   "pos": [
+    0.01,
+    0.0,
+    -0.06
+   ],
+   "quat_wxyz": [
+    0.9950041652843545,
+    0.0,
+    -0.09983341658375151,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.013,
+    0.013,
+    0.06
+   ],
+   "rbound": 0.06139218191268331,
+   "xpos0": [
+    0.07976708250970169,
+    -0.14200000000000002,
+    0.12650624806094146
+   ]
+  },
+  {
+   "name": "geom12",
+   "body": "FR_calf",
+   "type": "cylinder",
+   "size": [
+    0.011,
+    0.0325,
+    0.0
+   ],
+   "pos": [
+    0.02,
+    0.0,
+    -0.148
+   ],
+   "quat_wxyz": [
+    0.9996875164758776,
+    0.0,
+    0.02499738790938183,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.011,
+    0.011,
+    0.0325
+   ],
+   "rbound": 0.03431107692859552,
+   "xpos0": [
+    0.15491595023962687,
+    -0.14200000000000002,
+    0.07963783994939784
+   ]
+  },
+  {
+   "name": "FR",
+   "body": "FR_calf",
+   "type": "sphere",
+   "size": [
+    0.022,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.002,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.8,
+    0.02,
+    0.01
+   ],
+   "condim": 6,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 1,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.022,
+    0.022,
+    0.022
+   ],
+   "rbound": 0.022,
+   "xpos0": [
+    0.19215678006345865,
+    -0.14200000000000002,
+    0.02200000000000002
+   ]
+  },
+  {
+   "name": "geom14",
+   "body": "RL_hip",
+   "type": "cylinder",
+   "size": [
+    0.046,
+    0.02,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    0.08,
+    0.0
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.7071067811865475,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.046,
+    0.046,
+    0.02
+   ],
+   "rbound": 0.05015974481593781,
+   "xpos0": [
+    -0.1934,
+    0.1265,
+    0.288372500302558
+   ]
+  },
+  {
+   "name": "geom15",
+   "body": "RL_thigh",
+   "type": "box",
+   "size": [
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.1065
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.0,
+    0.7071067811865475,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "rbound": 0.10854175463848002,
+   "xpos0": [
+    -0.27682431587532697,
+    0.14200000000000002,
+    0.22217103868173227
+   ]
+  },
+  {
+   "name": "geom16",
+   "body": "RL_calf",
+   "type": "cylinder",
+   "size": [
+    0.013,
+    0.06,
+    0.0
+   ],
+   "pos": [
+    0.01,
+    0.0,
+    -0.06
+   ],
+   "quat_wxyz": [
+    0.9950041652843545,
+    0.0,
+    -0.09983341658375151,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.013,
+    0.013,
+    0.06
+   ],
+   "rbound": 0.06139218191268331,
+   "xpos0": [
+    -0.30703291749029826,
+    0.14200000000000002,
+    0.12650624806094146
+   ]
+  },
+  {
+   "name": "geom17",
+   "body": "RL_calf",
+   "type": "cylinder",
+   "size": [
+    0.011,
+    0.0325,
+    0.0
+   ],
+   "pos": [
+    0.02,
+    0.0,
+    -0.148
+   ],
+   "quat_wxyz": [
+    0.9996875164758776,
+    0.0,
+    0.02499738790938183,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.011,
+    0.011,
+    0.0325
+   ],
+   "rbound": 0.03431107692859552,
+   "xpos0": [
+    -0.23188404976037308,
+    0.14200000000000002,
+    0.07963783994939784
+   ]
+  },
+  {
+   "name": "RL",
+   "body": "RL_calf",
+   "type": "sphere",
+   "size": [
+    0.022,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.002,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.8,
+    0.02,
+    0.01
+   ],
+   "condim": 6,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 1,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.022,
+    0.022,
+    0.022
+   ],
+   "rbound": 0.022,
+   "xpos0": [
+    -0.1946432199365413,
+    0.14200000000000002,
+    0.02200000000000002
+   ]
+  },
+  {
+   "name": "geom19",
+   "body": "RR_hip",
+   "type": "cylinder",
+   "size": [
+    0.046,
+    0.02,
+    0.0
+   ],
+   "pos": [
+    0.0,
+    -0.08,
+    0.0
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.7071067811865475,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.046,
+    0.046,
+    0.02
+   ],
+   "rbound": 0.05015974481593781,
+   "xpos0": [
+    -0.1934,
+    -0.1265,
+    0.288372500302558
+   ]
+  },
+  {
+   "name": "geom20",
+   "body": "RR_thigh",
+   "type": "box",
+   "size": [
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    -0.1065
+   ],
+   "quat_wxyz": [
+    0.7071067811865475,
+    0.0,
+    0.7071067811865475,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.1065,
+    0.01225,
+    0.017
+   ],
+   "rbound": 0.10854175463848002,
+   "xpos0": [
+    -0.27682431587532697,
+    -0.14200000000000002,
+    0.22217103868173227
+   ]
+  },
+  {
+   "name": "geom21",
+   "body": "RR_calf",
+   "type": "cylinder",
+   "size": [
+    0.013,
+    0.06,
+    0.0
+   ],
+   "pos": [
+    0.01,
+    0.0,
+    -0.06
+   ],
+   "quat_wxyz": [
+    0.9950041652843545,
+    0.0,
+    -0.09983341658375151,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.013,
+    0.013,
+    0.06
+   ],
+   "rbound": 0.06139218191268331,
+   "xpos0": [
+    -0.30703291749029826,
+    -0.14200000000000002,
+    0.12650624806094146
+   ]
+  },
+  {
+   "name": "geom22",
+   "body": "RR_calf",
+   "type": "cylinder",
+   "size": [
+    0.011,
+    0.0325,
+    0.0
+   ],
+   "pos": [
+    0.02,
+    0.0,
+    -0.148
+   ],
+   "quat_wxyz": [
+    0.9996875164758776,
+    0.0,
+    0.02499738790938183,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.6,
+    0.005,
+    0.0001
+   ],
+   "condim": 1,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.011,
+    0.011,
+    0.0325
+   ],
+   "rbound": 0.03431107692859552,
+   "xpos0": [
+    -0.23188404976037308,
+    -0.14200000000000002,
+    0.07963783994939784
+   ]
+  },
+  {
+   "name": "RR",
+   "body": "RR_calf",
+   "type": "sphere",
+   "size": [
+    0.022,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.002,
+    0.0,
+    -0.213
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    0.8,
+    0.02,
+    0.01
+   ],
+   "condim": 6,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.001,
+   "priority": 1,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.022,
+    0.022,
+    0.022
+   ],
+   "rbound": 0.022,
+   "xpos0": [
+    -0.1946432199365413,
+    -0.14200000000000002,
+    0.02200000000000002
+   ]
+  },
+  {
+   "name": "obstacle",
+   "body": "obstacle",
+   "type": "box",
+   "size": [
+    0.15,
+    0.15,
+    0.05
+   ],
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mesh_obj": null,
+   "hull_verts": null,
+   "friction": [
+    1.0,
+    0.005,
+    0.0001
+   ],
+   "condim": 3,
+   "contype": 1,
+   "conaffinity": 1,
+   "margin": 0.0,
+   "priority": 0,
+   "aabb_local": [
+    0.0,
+    0.0,
+    0.0,
+    0.15,
+    0.15,
+    0.05
+   ],
+   "rbound": 0.21794494717703367,
+   "xpos0": [
+    1.0,
+    0.0,
+    0.05
+   ]
+  }
+ ],
+ "contact_body_pairs": [
+  {
+   "body1": "FL_calf",
+   "body2": "FL_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "FR_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "FR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "FR_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "base",
+   "mu": {
+    "0.6": 6,
+    "0.8": 3
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_calf",
+   "body2": "world",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "FR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "FR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "FR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_hip",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "FR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "FR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "FR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "base",
+   "mu": {
+    "0.6": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FL_thigh",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "FR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "base",
+   "mu": {
+    "0.6": 6,
+    "0.8": 3
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_calf",
+   "body2": "world",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_hip",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RL_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RL_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "base",
+   "mu": {
+    "0.6": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "FR_thigh",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "RL_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 4,
+    "0.8": 5
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "base",
+   "mu": {
+    "0.6": 6,
+    "0.8": 3
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_calf",
+   "body2": "world",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_hip",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_hip",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_hip",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_hip",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_hip",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "RR_calf",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "RR_thigh",
+   "mu": {
+    "0.6": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "base",
+   "mu": {
+    "0.6": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RL_thigh",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_calf",
+   "body2": "RR_hip",
+   "mu": {
+    "0.6": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_calf",
+   "body2": "base",
+   "mu": {
+    "0.6": 6,
+    "0.8": 3
+   },
+   "geom_pairs": 9,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_calf",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_calf",
+   "body2": "world",
+   "mu": {
+    "1.0": 2,
+    "0.8": 1
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_hip",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_hip",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_thigh",
+   "body2": "base",
+   "mu": {
+    "0.6": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_thigh",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "RR_thigh",
+   "body2": "world",
+   "mu": {
+    "1.0": 1
+   },
+   "geom_pairs": 1,
+   "explicit": 0
+  },
+  {
+   "body1": "base",
+   "body2": "obstacle",
+   "mu": {
+    "1.0": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  },
+  {
+   "body1": "base",
+   "body2": "world",
+   "mu": {
+    "1.0": 3
+   },
+   "geom_pairs": 3,
+   "explicit": 0
+  }
+ ],
+ "equality": [],
+ "actuators": [
+  {
+   "name": "FL_hip",
+   "joint": "FL_hip_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.9472,
+    0.9472
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "FL_thigh",
+   "joint": "FL_thigh_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -1.4,
+    2.5
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "FL_calf",
+   "joint": "FL_calf_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -45.43,
+    45.43
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -2.6227,
+    -0.84776
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -45.43,
+    45.43
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "FR_hip",
+   "joint": "FR_hip_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.9472,
+    0.9472
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "FR_thigh",
+   "joint": "FR_thigh_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -1.4,
+    2.5
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "FR_calf",
+   "joint": "FR_calf_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -45.43,
+    45.43
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -2.6227,
+    -0.84776
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -45.43,
+    45.43
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RL_hip",
+   "joint": "RL_hip_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.9472,
+    0.9472
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RL_thigh",
+   "joint": "RL_thigh_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.4236,
+    2.5
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RL_calf",
+   "joint": "RL_calf_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -45.43,
+    45.43
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -2.6227,
+    -0.84776
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -45.43,
+    45.43
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RR_hip",
+   "joint": "RR_hip_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.9472,
+    0.9472
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RR_thigh",
+   "joint": "RR_thigh_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -23.7,
+    23.7
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -0.4236,
+    2.5
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -23.7,
+    23.7
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  },
+  {
+   "name": "RR_calf",
+   "joint": "RR_calf_joint",
+   "kp": 50.0,
+   "kv": 0.5,
+   "bias_kp": 50.0,
+   "gear": 1.0,
+   "forcelimited": true,
+   "forcerange": [
+    -45.43,
+    45.43
+   ],
+   "ctrllimited": true,
+   "ctrlrange": [
+    -2.6227,
+    -0.84776
+   ],
+   "joint_actfrclimited": false,
+   "joint_actfrcrange": [
+    0.0,
+    0.0
+   ],
+   "force_clamp": [
+    -45.43,
+    45.43
+   ],
+   "law": "force = clip(gear * (kp * ctrl - bias_kp * q - kv * qdot), *force_clamp) (no clip when null)"
+  }
+ ],
+ "initial": {
+  "qpos": [
+   0.0,
+   0.0,
+   0.288372500302558,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8
+  ],
+  "qvel": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "source": "keyframe:init (MuJoCo order)"
+ },
+ "alloy_target": "emb_e8_go2",
+ "action_space": {
+  "actuators": [
+   "FL_hip",
+   "FL_thigh",
+   "FL_calf",
+   "FR_hip",
+   "FR_thigh",
+   "FR_calf",
+   "RL_hip",
+   "RL_thigh",
+   "RL_calf",
+   "RR_hip",
+   "RR_thigh",
+   "RR_calf"
+  ],
+  "kind": "mujoco.ctrl",
+  "index": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11
+  ],
+  "low": [
+   -0.9472,
+   -1.4,
+   -2.6227,
+   -0.9472,
+   -1.4,
+   -2.6227,
+   -0.9472,
+   -0.4236,
+   -2.6227,
+   -0.9472,
+   -0.4236,
+   -2.6227
+  ],
+  "high": [
+   0.9472,
+   2.5,
+   -0.84776,
+   0.9472,
+   2.5,
+   -0.84776,
+   0.9472,
+   2.5,
+   -0.84776,
+   0.9472,
+   2.5,
+   -0.84776
+  ],
+  "rate_hz": 50.0,
+  "max_delta_per_tick": [
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.04
+  ],
+  "initial": [
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8,
+   0.0,
+   0.9,
+   -1.8
+  ],
+  "hold": "zero-order hold: command = trace[world, tick] for the whole tick"
+ },
+ "roles": {
+  "robot": [
+   "base",
+   "FL_hip",
+   "FL_thigh",
+   "FL_calf",
+   "FR_hip",
+   "FR_thigh",
+   "FR_calf",
+   "RL_hip",
+   "RL_thigh",
+   "RL_calf",
+   "RR_hip",
+   "RR_thigh",
+   "RR_calf"
+  ],
+  "free": [],
+  "static": [
+   "obstacle"
+  ],
+  "thin_parts": {},
+  "non_target": []
+ },
+ "limits": {
+  "v_max": 10.0,
+  "pen_limit": 0.001,
+  "e_gain_s2_rel": 0.01,
+  "e_gain_s1_rel": 0.5,
+  "rest_disp_max": 5e-05,
+  "joint_sep_s2": 0.001,
+  "pen_s1": 0.01,
+  "speed_fail": 20.0,
+  "flight_margin": 0.5
+ },
+ "alloy_route": {
+  "dt": 0.000625,
+  "control_dt": 0.02,
+  "substeps": 32,
+  "solver": "SolverMuJoCo"
+ },
+ "conventions": {
+  "quat": "w x y z in this file; trajectory npz use x y z w (Newton)",
+  "body_q": "body frame origin, world frame",
+  "body_qd": "COM linear velocity, angular velocity, both world frame (Newton State.body_qd)"
+ }
+}

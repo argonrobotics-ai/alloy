@@ -1,0 +1,15 @@
+schema: alloy.pair/1
+a: aluminium_6061_t6
+b: plywood_marine
+mu_static:
+  value: 0.28
+  source: model
+  unc: [0.2, 0.6]
+  note: Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. V stainless-on-plywood applied; static static not reported;
+    set equal to the kinetic value
+mu_dynamic:
+  value: 0.28
+  source: model
+  unc: [0.2, 0.6]
+  note: Yu, Bauza, Fazeli, Rodriguez 2016, arXiv 1604.04038 sec. V stainless-on-plywood applied; static static not reported;
+    set equal to the kinetic value

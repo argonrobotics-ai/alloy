@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: spoon_wood_oxo
+shape:
+  primitive:
+    kind: ellipsoid
+    size: [0.103, 0.0205, 0.0055]
+material: wood_beech

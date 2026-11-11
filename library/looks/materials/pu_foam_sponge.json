@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "pu_foam_sponge",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.93,
+  0.8,
+  0.3
+ ],
+ "roughness": 0.95,
+ "subsurface": 0.3,
+ "note": "kitchen sponge foam: yellow, very matte"
+}

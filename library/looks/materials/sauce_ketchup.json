@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "sauce_ketchup",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.5,
+  0.04,
+  0.02
+ ],
+ "roughness": 0.15,
+ "subsurface": 0.2,
+ "note": "ketchup: opaque glossy deep red"
+}

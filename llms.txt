@@ -1,0 +1,73 @@
+# Alloy
+
+> Alloy is a GPU physics engine for robotics, built on Newton, MuJoCo Warp and Warp (Python, `pip install alloy-engine`, import name `alloy`). One scene holds rigid robots (sub-millimetre contact for declared precision fits), cloth, liquids and other materials; Alloy routes each object to a suitable solver (MuJoCo Warp for rigid bodies and robots, Newton's VBD for cloth and soft bodies, Newton's MPM for sand and pastes, its own DFSPH for liquids), steps them together in parallel worlds on one GPU (thousands for free rigid bodies, hundreds for a robot arm, tens to hundreds with cloth or liquid), checks the physics as it runs, and names everything so you read state by name.
+
+Start with AGENTS.md: it is the complete quick start and every snippet in it runs as shown. The public API is `alloy.Scene`, `alloy.build`, `alloy.load`, `alloy.Sim` (`step`, `run`, `state`, `set_targets`, `health`, `check`), `alloy.estimate`, `alloy.materials`, `alloy.scenes` and the error classes; everything else is engine internals. Conventions: SI units, z up, sizes are full edge lengths, quaternion keys name their order (`quat_xyzw`, `quat_wxyz`). Without an NVIDIA GPU it runs on the CPU, slowly; the first build of a new scene compiles kernels (a few minutes on a GPU, more with cloth or liquid), cached afterwards.
+
+## Short pages (the public docs set)
+
+Each page is one idea with code that runs as written and the output it prints. Install is `pip install alloy-engine`.
+
+- [Home](docs/public/index.md): what Alloy is, the install line, a 10-line example and its image
+- [Quickstart](docs/public/quickstart.md): a first simulation, its result, an image, a health check, many worlds
+- [Use Alloy with your coding agent](docs/public/agents.md): one prompt to paste, and what to ask an agent to do
+- [Robots](docs/public/guides/robots.md): add a robot, drive a joint with a ramp, read its angle
+- [Train with RL](docs/public/guides/rl.md): Gym-style environments, your own task, the one-command trainer
+- [Imitation learning](docs/public/guides/imitation.md): record demonstrations, evaluate a policy
+- [Camera](docs/public/guides/camera.md): render an image, place a camera, read depth
+- [Liquids](docs/public/guides/liquids.md): water in a container, its volume, how much stays inside
+- [Cloth](docs/public/guides/cloth.md): drape a sheet over an object and read its vertices
+- [Cables](docs/public/guides/cables.md): lay a cable and read its centre line
+- [World health](docs/public/guides/health.md): `sim.check()`, a failed world, every health flag with its fix
+- [Errors and fixes](docs/public/errors.md): the error classes, `e.message` / `e.fix`, a symptom and fix table
+- [Known limits](docs/public/limits.md): one line per measured limit, linking its page
+
+## Start here
+
+- [Known limits](docs/guide/known_limits.md): read first: the engine limits we have measured, one file each in [docs/known_gaps/](docs/known_gaps/), with its size, the workaround and the planned fix; other limits are stated on the guide page where you meet them
+- [AGENTS.md](AGENTS.md): install, a short quick start, names and trajectories, robots, many worlds, cloth, liquid and heat, precision and health, errors, camera, checks, files, plug-ins
+- [Guide index](docs/guide/README.md): one page per topic, deeper than AGENTS.md
+- [Examples](examples/README.md): runnable scripts by topic (api, basics, camera, check, cli, compose, create, envs, export, il, io, plugins, soft, tactile, topology, viewer), each prints its results
+
+## Guide
+
+- [Install and devices](docs/guide/install.md): pip install, optional extras, GPU or CPU (with CPU costs: one core per process for liquid and cloth; many worlds split over processes with `processes=`), kernel compile cache, quiet logs
+- [Scenes](docs/guide/scenes.md): shapes, meshes, materials, friction, library objects (where `pos` puts them: `anchor=`), loading and saving scenes
+- [Robots](docs/guide/robots.md): MJCF / URDF / USD robots, the shipped arms (Panda, FR3, UR10e) and others, joint names, targets, ramps, grasping (friction only; carrying a container)
+- [Cloth and liquid](docs/guide/deformables.md): add_cloth (flat sheets only: fabric, paper, plastic film, metal), add_liquid, containers, volumes, routes, CPU cost, cloth accuracy (40 accelerated VBD iterations by default; "super" 60, about 1.4x; "fast" 10, about 0.4x), metal sheets that dent (`"<sheet>.plastic_strain"`) and liquid accuracy (4 mm default, 2 mm "super")
+- [Rods](docs/guide/rods.md): add_rod (cables, wires, cords: bend, twist, rolling, gripping), apply_wrench, points and twist, accuracy, cost, limits
+- [Randomizing robots](docs/guide/randomize_robots.md): per-world masses, centre of mass, friction, servo gains, armature and gravity of a robot (opt-in), once or at every reset, `sim.randomized()`, a random start at every reset and timed pushes (`scene.add_push`; both checked on the CPU only), what is not covered
+- [Many worlds and speed](docs/guide/worlds.md): per-world starts, randomize, seeds and determinism, timing, estimate, profiles, build options for speed (rerun_worlds, mpm_coupling, mpm_sweeps), the rigid step (chosen per scene for rigid-only scenes; an opt-in fast mode for rigid stacks)
+- [Health, checks and errors](docs/guide/health.md): health flags and fixes, per-world counts (retired particles, refined coupling periods), check(), precision contact, error classes
+- [Cards and engine layers](docs/guide/cards.md): YAML cards, the card library, SceneAssembler and build_simulation
+- [Camera](docs/guide/camera.md): sim.render quick look, a Camera over every world, numpy or torch images; scanned objects with their photo textures; depth (metres), segmentation / body-id / world-id, instance-id, class and optical-flow images from the fast camera (flow for rigid motion only: NaN on cloth, liquid and soft bodies), with what they do not cover
+- [Frame export](docs/guide/frame-export.md): hand frames of picked worlds to a viewer you write (Alloy's own viewer: viewer.md) (alloy.export: FrameExporter, frame_export): body poses, cloth and soft-body vertices, particle subsets and rod lines as numpy arrays, without changing the run
+- [Viewer](docs/guide/viewer.md): watch a running sim in a browser tab, a desktop window, Rerun or a USD file (alloy.viewer: launch, contacts, backends): pause, step, pick worlds, rigid contact points and forces; read-only unless you opt in to joint sliders or mouse dragging (CPU-tested; dragging robot links not tested); optional packages
+- [Scene checks](docs/guide/check.md): alloy.check findings with fixes, expect_rest, the JSON command line
+- [Import and export](docs/guide/import_export.md): MJCF / URDF / USD robots and scenes in and out of cards
+- [Plug-ins](docs/guide/plugins.md): new forces, sensors, objects and solvers; template, test harness (plug-ins run as ordinary Python with your permissions; only the opt-in check has a sandbox)
+- [Heat](docs/guide/heat.md): temperature on liquid and paste particles (scene API, then the plug-in): heaters, air, melting, boiling, cooking, energy checks
+- [Cutting](docs/guide/cutting.md): soft objects cut by a kinematic knife, set up in cards (`topology:` on the object, `blade:` on the knife); two cut models; limits
+- [Command line and MCP](docs/guide/cli.md): `alloy` JSON command line and `alloy mcp` tool server, no Python needed
+- [Gym environments](docs/guide/envs.md): VectorEnv over parallel worlds, torch tensors, ready-made tasks
+- [Imitation learning](docs/guide/imitation.md): record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation, replay, policy evaluation (no training code)
+- [RL libraries](docs/guide/rl.md): wrappers for rsl_rl, Stable-Baselines3 and skrl, a one-command PPO train, an arm pick env (PickCube-v0, not yet reliable), observation groups, task-space actions, noise / delay / history layers, actuator models
+- [Legged locomotion](docs/guide/locomotion.md): the Go2 velocity environment on flat ground or on rough terrain tiles with a level curriculum (commands, pushes, gravity / accelerometer / foot-contact observations), `python -m alloy.envs.loco.train` (a blind policy: no height scan, no stairs or gaps; no actuator model; one rough-terrain training run measured)
+- [System identification](docs/guide/sysid.md): fit a simulated robot's joint gains, damping, friction and delay to a recording of your real robot (opt-in), report, apply, what is not covered
+- [Scene builder](docs/guide/compose.md): a sentence in, a physics-checked scene and variations out
+- [Scene variants](docs/guide/variants.md): alloy.vary / `alloy vary`: n copies of a scene with free objects moved and textures swapped within a family, JSON in and out
+- [Fetching objects](docs/guide/fetch.md): `alloy fetch` downloads library objects from the Hugging Face Hub into the local cache (public, no login needed), JSON in and out
+- [Your own objects](docs/guide/create.md): alloy.create turns a mesh, photo or text into a checked object card; alloy.audit stress-tests a scene
+
+## API reference
+
+- [alloy.api](alloy/api/__init__.py): module docstrings with examples; `help(alloy.Scene)` in Python shows the same
+- [Scene](alloy/api/scene.py): every add_* method and its keywords
+- [Sim](alloy/api/sim.py): step, run, state, set_targets, apply_wrench, faces, liquid_volume, routes, health, check, render
+- [Errors](alloy/api/errors.py): SceneError, BuildError, SimulationError, UnknownNameError, FeatureUnavailableError
+
+## Optional
+
+- [Library](library/): shipped materials (each value with its source, measured to estimated, and an uncertainty range), objects, scenes and robots as YAML cards
+- [Plug-in guide](alloy/plugins/GUIDE.md): writing a plug-in in full
+- [Engine layers example](examples/basics/09_engine_layers.py): cards, CardLibrary, SceneAssembler and build_simulation without the API

@@ -1,0 +1,17 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_fabric036",
+ "family": "fabric",
+ "preset": "linen",
+ "texture": "ambientcg:Fabric036",
+ "res": "1k",
+ "scale_m": 0.27,
+ "bump_m": 0.0004,
+ "tex_tint": false,
+ "subsurface": 0.0,
+ "source": "https://ambientcg.com/a/Fabric036",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.492,
+ "note": "clean woven cloth: ambientCG 'Fabric 036', 0.27 m tile, 1k maps"
+}

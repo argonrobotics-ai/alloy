@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: glass_soda_lime
+b: steel_tinplate
+mu_static:
+  value: 0.6
+  source: catalog
+  unc: [0.5, 0.7]
+  note: Engineering ToolBox friction-coefficients-d_778 glass/metal clean dry 0.5-0.7; jar thread mu 0.6
+mu_dynamic:
+  value: 0.6
+  source: catalog
+  unc: [0.5, 0.7]
+  note: Engineering ToolBox friction-coefficients-d_778 glass/metal clean dry 0.5-0.7; jar thread mu 0.6

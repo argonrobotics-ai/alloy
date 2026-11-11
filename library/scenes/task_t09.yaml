@@ -1,0 +1,18 @@
+# T09 USB-A plug into a port with a 1 m USB cable, authored from WP1 cards (usb_a_plug, usb_a_receptacle, usb_cable_1m) and the [internal reference] layout; no recorded trace (alloy.tasks.scenes.t09_card).
+schema: alloy.scene/1
+robots:
+- path: robots/yam_bench/robot.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: yam_bench
+objects:
+- object: usb_a_receptacle
+  pose: [0.46, -0.31, 0.01, 0.0, -0.7071067811865476, 0.0, 0.7071067811865476]
+- object: usb_a_plug
+  pose: [0.3, -0.31, 0.00415, 0.5, 0.5, 0.5, 0.5]
+- object: usb_cable_1m
+  pose: [0.28, -0.31, 0.00225, 0.0, 0.0, 0.7071067811865476, 0.7071067811865476]
+attachments:
+- a: usb_a_plug
+  b: usb_cable_1m
+  anchor: [0.0, -0.0019, -0.02, 0.0, 0.0, 0.0, 1.0]

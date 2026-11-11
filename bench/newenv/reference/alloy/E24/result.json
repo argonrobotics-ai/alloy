@@ -1,0 +1,244 @@
+{
+ "driver_version": 1,
+ "id": "E24",
+ "supported": true,
+ "quick": false,
+ "seed": 0,
+ "num_envs": 16,
+ "phase_order": [
+  "rest",
+  "act_joint",
+  "act_gripper",
+  "random",
+  "policy"
+ ],
+ "phases": {
+  "rest": {
+   "steps": 100,
+   "steps_done": 100,
+   "reset": false,
+   "kind": "zero",
+   "stride": 1,
+   "error": null,
+   "traceback": null,
+   "wall_s": 159.45121039199967,
+   "done_count": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "nonfinite": {
+    "obs": 0,
+    "reward": 0
+   }
+  },
+  "act_joint": {
+   "steps": 50,
+   "steps_done": 50,
+   "reset": true,
+   "kind": "script",
+   "stride": 1,
+   "error": null,
+   "traceback": null,
+   "wall_s": 88.02803284400034,
+   "done_count": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "nonfinite": {
+    "obs": 0,
+    "reward": 0
+   }
+  },
+  "act_gripper": {
+   "steps": 150,
+   "steps_done": 150,
+   "reset": true,
+   "kind": "script",
+   "stride": 1,
+   "error": null,
+   "traceback": null,
+   "wall_s": 232.19167137099976,
+   "done_count": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "nonfinite": {
+    "obs": 0,
+    "reward": 0
+   }
+  },
+  "random": {
+   "steps": 420,
+   "steps_done": 420,
+   "reset": true,
+   "kind": "random",
+   "stride": 1,
+   "error": null,
+   "traceback": null,
+   "wall_s": 2286.8115186709992,
+   "done_count": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "nonfinite": {
+    "obs": 0,
+    "reward": 0
+   }
+  },
+  "policy": {
+   "steps": 210,
+   "steps_done": 210,
+   "reset": true,
+   "kind": "policy",
+   "stride": 1,
+   "error": null,
+   "traceback": null,
+   "wall_s": 1310.3308888689999,
+   "done_count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "nonfinite": {
+    "obs": 0,
+    "reward": 0
+   }
+  }
+ },
+ "violations": [],
+ "obs_dim": 31,
+ "act_dim": 8,
+ "dt": 0.02,
+ "episode_steps": 210,
+ "policy": {
+  "success": [
+   false,
+   false,
+   false,
+   true,
+   true,
+   false,
+   true,
+   false,
+   true,
+   false,
+   false,
+   false,
+   false,
+   false,
+   true,
+   true
+  ],
+  "success_rate": 0.375
+ },
+ "probe_counts": {
+  "cloth_points": 225
+ },
+ "seeds": {
+  "tolerance": 0.001,
+  "missing": [],
+  "start_world_spread": 0.020153246819972992,
+  "seed0_repeat_max_err": 0.035443298518657684,
+  "seed0_repeat_ok": false,
+  "seed1_max_diff": 0.0573275089263916,
+  "seed1_differs": true
+ },
+ "timing": {
+  "small": {
+   "num_envs": 16,
+   "seed": 0,
+   "error": null,
+   "traceback": null,
+   "make_s": 135.65358968200053,
+   "reset_s": 0.008707728999070241,
+   "steps": 200,
+   "wall_s": 796.0289440819997,
+   "steps_per_s": 0.25124714558042227,
+   "world_steps_per_s": 4.019954329286756,
+   "realtime_factor": 0.08039908658573512
+  },
+  "large": {
+   "error": "stage 'large' wrote no result (exit: timeout after 600 s)",
+   "traceback": null
+  }
+ },
+ "errors": [
+  {
+   "stage": "large",
+   "phase": null,
+   "error": "stage 'large' wrote no result (exit: timeout after 600 s)",
+   "traceback": null
+  }
+ ],
+ "traceback": null,
+ "completed": true
+}

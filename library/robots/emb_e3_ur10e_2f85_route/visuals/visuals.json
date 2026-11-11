@@ -1,0 +1,8 @@
+{
+ "schema": "alloy.robot_visuals/1",
+ "pack": "emb_e3_ur10e_2f85_route",
+ "same_as": "emb_e3_ur10e_2f85",
+ "prefixes": [
+  ""
+ ]
+}

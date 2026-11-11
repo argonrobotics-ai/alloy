@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: battery_holder_pp
+shape:
+  primitive:
+    kind: box
+    size: [0.02975, 0.0155, 0.0075]
+material: pp_homopolymer
+motion: static

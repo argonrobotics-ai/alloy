@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_metal032",
+ "family": "metal",
+ "preset": "steel_polished",
+ "texture": "ambientcg:Metal032",
+ "res": "1k",
+ "scale_m": 0.4,
+ "bump_m": 0.0001,
+ "source": "https://ambientcg.com/a/Metal032",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.243,
+ "note": "smooth grey steel: ambientCG 'Metal 032', 0.4 m tile, 1k maps"
+}

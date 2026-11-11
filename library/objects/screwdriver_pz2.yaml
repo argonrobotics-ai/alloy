@@ -1,0 +1,11 @@
+schema: alloy.object/1
+name: screwdriver_pz2
+shape:
+  mesh:
+    path: meshes/screwdriver_pz2_100.obj
+    sha256: d3bc5c9e3a3f5507de0ab28692967d64e85c63c13520ff9956c68a7de48c22c9
+    collision: sdf
+material: steel_crv
+part_materials:
+  grip: pp_homopolymer
+  shaft: steel_crv

@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: steel_silver
+b: steel_silver
+mu_static:
+  value: 0.5
+  source: catalog
+  unc: [0.5, 0.8]
+  note: Engineering ToolBox friction-coefficients-d_778 steel-steel clean dry static 0.5-0.8, kinetic 0.42
+mu_dynamic:
+  value: 0.42
+  source: catalog
+  unc: [0.4, 0.44]
+  note: Engineering ToolBox friction-coefficients-d_778 steel-steel clean dry static 0.5-0.8, kinetic 0.42

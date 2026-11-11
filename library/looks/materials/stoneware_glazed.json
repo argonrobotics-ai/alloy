@@ -1,0 +1,11 @@
+{
+ "schema": "alloy.look/1",
+ "material": "stoneware_glazed",
+ "preset": "ceramic_white",
+ "base_color": [
+  0.85,
+  0.82,
+  0.76
+ ],
+ "note": "glazed stoneware: warm off-white glaze"
+}

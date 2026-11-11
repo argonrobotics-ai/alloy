@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: plywood_marine
+b: wood_alder
+mu_static:
+  value: 0.375
+  source: catalog
+  unc: [0.25, 0.5]
+  note: Engineering ToolBox friction-coefficients-d_778 wood clean dry 0.25-0.5
+mu_dynamic:
+  value: 0.375
+  source: catalog
+  unc: [0.25, 0.5]
+  note: Engineering ToolBox friction-coefficients-d_778 wood clean dry 0.25-0.5

@@ -1,0 +1,8 @@
+{
+ "schema": "alloy.look/1",
+ "material": "towel_cotton_terry",
+ "preset": "cotton_terry",
+ "tex_tint": false,
+ "note": "cotton terry towel: the blue terry scan in its own colour (no tex_tint, which the path tracer lacks)",
+ "licence": "textures: Poly Haven (polyhaven.com) 'terry_cloth', CC0"
+}

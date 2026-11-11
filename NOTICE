@@ -1,0 +1,135 @@
+Alloy
+Copyright 2026 The Alloy Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes or is derived from the third-party works listed below. Each keeps its own licence; the
+licence texts are reproduced here or shipped next to the files they cover.
+
+--------------------------------------------------------------------------------------------------------------------
+Code
+--------------------------------------------------------------------------------------------------------------------
+
+Newton (https://github.com/newton-physics/newton)
+  Licence: Apache-2.0. Copyright The Newton Developers.
+  Alloy's physics core is built on Newton. alloy/_vendor/newton is a copy of Newton's newton package at an
+  upstream commit, with our fixes applied and its imports rewritten to alloy._vendor.newton; it is used under
+  Newton's licence (its LICENSE file is in that directory). alloy/_vendor/VENDORED.md names the upstream commit and
+  lists every change; each file keeps its upstream copyright and licence header and says it was vendored.
+
+MuJoCo Warp (https://github.com/google-deepmind/mujoco_warp)
+  Licence: Apache-2.0. Copyright The Newton Developers and the MuJoCo Warp authors (Google LLC, NVIDIA
+  Corporation; the AUTHORS file in alloy/_vendor/mujoco_warp).
+  alloy/_vendor/mujoco_warp is a copy of MuJoCo Warp's mujoco_warp package at an upstream commit, files unchanged
+  but for its imports, rewritten to alloy._vendor.mujoco_warp; some functions are replaced at run time
+  (alloy/_vendor/VENDORED.md); it is used under MuJoCo Warp's licence (its LICENSE file is in that directory).
+  alloy/_vendor/VENDORED.md names the upstream commit and lists every change.
+  alloy/precision/mjw_hessian.py contains a function body copied from mujoco_warp@86e2fae0 solver.py (lines
+  3092-3330), adapted; the file header says so.
+
+Warp (https://github.com/NVIDIA/warp)
+  Licence: Apache-2.0. Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+  Warp comes from PyPI (warp-lang 1.18.0) and is not vendored. alloy/integration/nanogrid_lookup.py holds a copy
+  of its NanogridBase.make_filtered_cell_lookup (warp/_src/fem/geometry/nanogrid.py), changed only in the lines
+  marked "Alloy", which Alloy puts in place of Warp's at run time when a scene with MPM material is built
+  (alloy/_vendor/VENDORED.md); the file keeps NVIDIA's copyright and licence header.
+
+SPlisHSPlasH (https://github.com/InteractiveComputerGraphics/SPlisHSPlasH)
+  Licence: MIT. Copyright (c) 2016 Jan Bender.
+  alloy/solvers/sph/wall_viscosity.py ports the volume-map boundary viscosity term of SPlisHSPlasH@dba6b26.
+  The DFSPH solver (alloy/solvers/sph) follows SPlisHSPlasH's step order and solves (DFSPH/TimeStepDFSPH.cpp).
+
+  MIT License
+
+  Copyright (c) 2016 Jan Bender
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+  the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+  THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+
+--------------------------------------------------------------------------------------------------------------------
+Robot models (library/robots/emb_*, yam_bench*, task_t12, task_squeeze_*; each directory ships the source licence
+files as LICENSE.<n> and a source.json naming the upstream repository, commit and the sha256 of every file used)
+--------------------------------------------------------------------------------------------------------------------
+
+MuJoCo Menagerie (https://github.com/google-deepmind/mujoco_menagerie), commit 98a70c56
+  - franka_fr3, franka_emika_panda: Apache-2.0 (Franka Robotics GmbH).
+    Used by emb_e1_fr3*, emb_e2_panda*, emb_e4_fr3_bimanual*. The inline Panda description in
+    bench/scenarios/rigid.py and alloy/parallel/rung_arm.py takes its kinematics and inertias from
+    franka_emika_panda (Apache-2.0).
+  - universal_robots_ur10e: BSD-3-Clause (Copyright 2018 ROS Industrial Consortium).
+  - robotiq_2f85: BSD-2-Clause (Copyright (c) 2013, ROS-Industrial).
+    Used by emb_e3_ur10e_2f85*.
+  - unitree_g1, unitree_go2: BSD-3-Clause (Copyright (c) 2016-2023 HangZhou YuShu TECHNOLOGY CO., LTD.,
+    "Unitree Robotics"). Used by emb_e6_g1*, emb_e8_go2*.
+  - leap_hand: MIT (Copyright 2023 Ananye Agarwal). Used by emb_e9_leap.
+
+MuJoCo Playground (https://github.com/google-deepmind/mujoco_playground), v0.2.0 commit 124a73fa
+  Licence: Apache-2.0. The joint and servo values of emb_e9_leap (its LICENSE.1).
+
+franka_description (https://github.com/frankarobotics/franka_description), commit 7aeeddc4
+  Licence: Apache-2.0 (Franka Robotics GmbH). Used by emb_e5_fr3_duo*.
+
+unitree_ros (https://github.com/unitreerobotics/unitree_ros), commit 5994d4fa, h1_2_description
+  Licence: BSD-3-Clause (Copyright (c) 2016-2022 HangZhou YuShu TECHNOLOGY CO., LTD., "Unitree Robotics").
+  Used by emb_e7_h1_2*.
+
+gym-anything robotics (MIT)
+  Actuator gains and start poses for emb_e5_fr3_duo* (mobile-fr3-duo) and emb_e7_h1_2* (h1_2).
+
+I2RT YAM (https://github.com/i2rt-robotics/i2rt), commits 25e78c2f (robot_models/yam/assets, in v1.1) and fe78bae6
+(v1.4.0)
+  Licence: MIT. Copyright (c) I2RT Robotics.
+  The YAM arm links, linear gripper, fingertips and D405 wrist mount of yam_bench*, task_t12 and task_squeeze_*
+  (meshes in library/robots/meshes; their convex pieces also in bench/xbench/ours/packs/t12), converted to MuJoCo
+  mesh files. Some links are split into parts, the fingertips are decimated to 12,000 faces, and the collision hulls
+  are convex decompositions of these meshes.
+
+  MIT License
+
+  Copyright (c) I2RT Robotics
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+  the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+  THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+
+--------------------------------------------------------------------------------------------------------------------
+Data
+--------------------------------------------------------------------------------------------------------------------
+
+Material and contact values in library/ (materials, pairs, objects) are facts taken from the handbooks, standards,
+data sheets and papers cited in each card's note and in library/SOURCES.md, or our own estimates, marked as such
+(source: model). Meshes in library/meshes are generated by alloy/cards/meshgen.py from those dimensions.
+
+The object library on the Hugging Face Hub (argonrobotics-ai/alloy-library) is not part of this distribution; its
+ATTRIBUTION.md credits each source. Its 1,900 kitchen objects and fixtures were made by Lightwheel (NVIDIA's
+PhysicalAI-Robotics-Manipulation-Objects-Kitchen-MJCF dataset, CC BY 4.0, as packaged by RoboCasa), with our
+collision hulls, estimated masses and materials.
+
+The scan-texture test fixture in tests/camera/data/scan_fixture is cut down from the 004_sugar_box scan of the YCB
+Object and Model Set (B. Calli, A. Walsman, A. Singh, S. Srinivasa, P. Abbeel, A. M. Dollar; ycbbenchmarks.com), CC BY
+4.0; the ATTRIBUTION.md beside it lists the source and our changes.
+
+The reference-task data (task scenes and their card values, materials, pairs and meshes, the yam_bench robot's
+scene, the T12 task pack in bench/xbench/ours/packs/t12) is Copyright Argon Robotics, licensed under Apache-2.0 like
+the rest of Alloy; the YAM robot meshes in it are I2RT's (above).

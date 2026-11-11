@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: tissue_pad_fat
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.04, 0.005]
+material: tissue_fat_silicone

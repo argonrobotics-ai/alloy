@@ -1,0 +1,41 @@
+schema: alloy.material/1
+name: paint_acrylic_fluid
+density:
+  value: 1300.0
+  source: model
+  unc: [1020.0, 1400.0]
+  note: 'ESTIMATE: Golden Fluid Acrylics give none (''Density: Not applicable'', https://assets.goldenartistcolors.com/v4/linked-files/5199-fluid-acrylics-sds.pdf);
+    another brand''s liquid acrylics ''relative density range of 1.02 - 1.40 (calculated)'' (Tri-Art, search snippet); pigments
+    1.27 and up (Golden pigment density chart)'
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'ESTIMATE: a liquid film: inelastic'
+plastic:
+  yield_stress:
+    value: 0.5
+    source: model
+    unc: [0.05, 2.0]
+    note: 'ESTIMATE: no measured yield stress found for artist fluid acrylic; a mild yield like a latex''s after shear (<
+      0.25 Pa) to at rest (> 1 Pa), https://www.azom.com/article.aspx?ArticleID=12120'
+fluid:
+  viscosity:
+    value: 0.7
+    source: catalog
+    unc: [0.2, 1.6]
+    note: 'DOC: Golden Fluid Acrylics, viscosity ''200 - 1600 cP'' (safety data sheet section 9, instrument not stated, https://assets.goldenartistcolors.com/v4/linked-files/5199-fluid-acrylics-sds.pdf);
+      retailers list 400-1000 cP; ''in a viscosity similar to heavy cream'''
+  surface_tension:
+    value: 0.035
+    source: model
+    unc: [0.025, 0.045]
+    note: 'ESTIMATE: no measured value found; waterborne acrylics with surfactants, near a latex paint''s 25-35 mN/m'

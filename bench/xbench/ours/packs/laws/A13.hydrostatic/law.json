@@ -1,0 +1,35 @@
+{
+ "law": "A13.hydrostatic",
+ "dt": 0.00125,
+ "duration_s": 5.0,
+ "quick": false,
+ "stat": {
+  "wall_force": "mean",
+  "volume_loss": "mean"
+ },
+ "metrics": {
+  "wall_force": {
+   "abs": 0.03,
+   "rel": 0.0,
+   "source": "SPEC \u00a75.3 A13 / \u00a75.2 LIQ-4: wall force within 3 % (relative)"
+  },
+  "volume_loss": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "SPEC \u00a75.3 A13: volume loss <= 1 % over 5 s"
+  }
+ },
+ "conditions": [
+  {
+   "id": "column_8x8x50_r1mm",
+   "params": {
+    "nx": 8,
+    "ny": 8,
+    "nz": 50,
+    "r": 0.001,
+    "headroom": 8
+   },
+   "particles": 3200
+  }
+ ]
+}

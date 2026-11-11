@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: bag_hdpe_tshirt
+shape:
+  mesh:
+    path: meshes/bag_hdpe_tshirt.obj
+    sha256: 323b8e19584d7e7689939be10fce43d6e7b20cacbd93b193e0f58e687e81fc5b
+material: film_hdpe
+features:
+  thickness:
+    value: 1.5e-05
+    source: catalog
+    unc: [1.25e-05, 1.5e-05]
+    note: 'SNIPPET: HDPE T-shirt bags are 12.5-15 um (retail listings "HDPE 15MIC White T-Sack", "12.5 MICRONS"); the HDPE
+      datasheet test films are 12.5-12.7 um'
+  self_contact: true
+  min_wall:
+    value: 1.5e-05
+    source: catalog
+    note: 'SNIPPET: the film itself (contact uses the film route particle radius, 0.5 mm)'
+route:
+  route: cloth_film
+  reason: 'thin plastic film bag: strain-capped membrane, hinge bending with crease memory and air drag, self contact'

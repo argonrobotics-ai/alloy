@@ -1,0 +1,16 @@
+{
+  "alloy_sha": "571c9d0ea397854fc74178bb171c2e6daf5a7e50",
+  "first_step": 64,
+  "id": "BUL-0005",
+  "monitor": "nontarget_disp",
+  "newton_sha": "ac7f7830b64e60c5fa74f57960eadcf11380a9d8",
+  "repeat_of": null,
+  "repro": "python -m alloy.bully replay BUL-0005 --device cuda:0",
+  "scene_hash": "9e4dae87d123631ad782f07165ecf6f96410eb155a61f96143698a5174237024",
+  "schema": "alloy.bully.finding/1",
+  "severity": 2,
+  "status": "closed",
+  "target": "xpbd_box_stack",
+  "threshold": 5e-05,
+  "value": 0.018534991890192032
+}

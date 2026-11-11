@@ -1,0 +1,679 @@
+{
+ "bodies": ".",
+ "config": {
+  "max_verts": 64,
+  "tol_m": 0.0002,
+  "max_pieces": 64
+ },
+ "max_bound_m": 0.00019996905716775193,
+ "max_piece_verts": 62,
+ "meshes": [
+  {
+   "mesh": "hull_model2_0",
+   "hull_verts": 285,
+   "piece_verts": [
+    54
+   ],
+   "bound_m": 0.00019022195730043865
+  },
+  {
+   "mesh": "hull_model2_1",
+   "hull_verts": 178,
+   "piece_verts": [
+    48
+   ],
+   "bound_m": 0.00015433855256370035
+  },
+  {
+   "mesh": "hull_model2_2",
+   "hull_verts": 306,
+   "piece_verts": [
+    55,
+    59,
+    47,
+    46
+   ],
+   "bound_m": 0.00019949177400551958
+  },
+  {
+   "mesh": "hull_model2_3",
+   "hull_verts": 174,
+   "piece_verts": [
+    46
+   ],
+   "bound_m": 0.00017416305054558418
+  },
+  {
+   "mesh": "hull_model2_4",
+   "hull_verts": 154,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.0001979774096165102
+  },
+  {
+   "mesh": "hull_model2__2_0",
+   "hull_verts": 201,
+   "piece_verts": [
+    41
+   ],
+   "bound_m": 0.00015950138347182232
+  },
+  {
+   "mesh": "hull_model2__2_1",
+   "hull_verts": 142,
+   "piece_verts": [
+    27
+   ],
+   "bound_m": 0.00017815577520351246
+  },
+  {
+   "mesh": "hull_model2__2_2",
+   "hull_verts": 139,
+   "piece_verts": [
+    25
+   ],
+   "bound_m": 0.00018845822068697192
+  },
+  {
+   "mesh": "hull_model2__2_3",
+   "hull_verts": 1355,
+   "piece_verts": [
+    32
+   ],
+   "bound_m": 0.00019730501745195546
+  },
+  {
+   "mesh": "hull_model2__2_4",
+   "hull_verts": 204,
+   "piece_verts": [
+    48
+   ],
+   "bound_m": 0.00016774914472761677
+  },
+  {
+   "mesh": "hull_model2__3_0",
+   "hull_verts": 239,
+   "piece_verts": [
+    48,
+    46
+   ],
+   "bound_m": 0.000169163618741551
+  },
+  {
+   "mesh": "hull_model2__3_1",
+   "hull_verts": 239,
+   "piece_verts": [
+    45,
+    41
+   ],
+   "bound_m": 0.00019761614009956483
+  },
+  {
+   "mesh": "hull_model2__3_2",
+   "hull_verts": 218,
+   "piece_verts": [
+    52
+   ],
+   "bound_m": 0.00014598299751618888
+  },
+  {
+   "mesh": "hull_model2__3_3",
+   "hull_verts": 185,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.00015029981500821226
+  },
+  {
+   "mesh": "hull_model2__3_4",
+   "hull_verts": 204,
+   "piece_verts": [
+    46
+   ],
+   "bound_m": 0.00019180041275468598
+  },
+  {
+   "mesh": "hull_model2__4_0",
+   "hull_verts": 233,
+   "piece_verts": [
+    45,
+    47
+   ],
+   "bound_m": 0.00019931614821494086
+  },
+  {
+   "mesh": "hull_model2__4_1",
+   "hull_verts": 234,
+   "piece_verts": [
+    41,
+    44
+   ],
+   "bound_m": 0.00019996905716775193
+  },
+  {
+   "mesh": "hull_model2__4_2",
+   "hull_verts": 191,
+   "piece_verts": [
+    48
+   ],
+   "bound_m": 0.00019485440849204938
+  },
+  {
+   "mesh": "hull_model2__4_3",
+   "hull_verts": 179,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.00017228564001151118
+  },
+  {
+   "mesh": "hull_model2__4_4",
+   "hull_verts": 215,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.00014099362384692877
+  },
+  {
+   "mesh": "hull_model2__5_0",
+   "hull_verts": 641,
+   "piece_verts": [
+    61,
+    61
+   ],
+   "bound_m": 0.0001837516732576655
+  },
+  {
+   "mesh": "hull_model2__5_1",
+   "hull_verts": 211,
+   "piece_verts": [
+    47
+   ],
+   "bound_m": 0.00018088256925312643
+  },
+  {
+   "mesh": "hull_model2__5_2",
+   "hull_verts": 210,
+   "piece_verts": [
+    43
+   ],
+   "bound_m": 0.0001830827647910924
+  },
+  {
+   "mesh": "hull_model2__5_3",
+   "hull_verts": 642,
+   "piece_verts": [
+    60,
+    60
+   ],
+   "bound_m": 0.00019823505137680152
+  },
+  {
+   "mesh": "hull_model2__6_0",
+   "hull_verts": 197,
+   "piece_verts": [
+    40,
+    35
+   ],
+   "bound_m": 0.00019731229865540983
+  },
+  {
+   "mesh": "hull_model2__6_1",
+   "hull_verts": 204,
+   "piece_verts": [
+    40,
+    35
+   ],
+   "bound_m": 0.0001877527224627179
+  },
+  {
+   "mesh": "hull_model2__6_2",
+   "hull_verts": 192,
+   "piece_verts": [
+    43
+   ],
+   "bound_m": 0.00011615051650924104
+  },
+  {
+   "mesh": "hull_model2__6_3",
+   "hull_verts": 140,
+   "piece_verts": [
+    36
+   ],
+   "bound_m": 0.00014882191779308897
+  },
+  {
+   "mesh": "hull_model2__6_4",
+   "hull_verts": 156,
+   "piece_verts": [
+    46
+   ],
+   "bound_m": 0.0001930325038287753
+  },
+  {
+   "mesh": "hull_model2__7_0",
+   "hull_verts": 85,
+   "piece_verts": [
+    23
+   ],
+   "bound_m": 0.00019247184543354925
+  },
+  {
+   "mesh": "hull_model2__7_1",
+   "hull_verts": 124,
+   "piece_verts": [
+    34
+   ],
+   "bound_m": 0.0001738023200722559
+  },
+  {
+   "mesh": "hull_model2__7_2",
+   "hull_verts": 144,
+   "piece_verts": [
+    55
+   ],
+   "bound_m": 0.00013476391092700284
+  },
+  {
+   "mesh": "hull_model2__7_3",
+   "hull_verts": 208,
+   "piece_verts": [
+    42,
+    40
+   ],
+   "bound_m": 0.0001433429698324139
+  },
+  {
+   "mesh": "hull_model2__8_0",
+   "hull_verts": 205,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.00018226728092487191
+  },
+  {
+   "mesh": "hull_model2__8_1",
+   "hull_verts": 144,
+   "piece_verts": [
+    20
+   ],
+   "bound_m": 0.0001878485500193682
+  },
+  {
+   "mesh": "hull_model2__8_2",
+   "hull_verts": 733,
+   "piece_verts": [
+    62,
+    60
+   ],
+   "bound_m": 0.00018308430327143569
+  },
+  {
+   "mesh": "hull_model2__8_3",
+   "hull_verts": 669,
+   "piece_verts": [
+    55,
+    61
+   ],
+   "bound_m": 0.0001978210133415542
+  },
+  {
+   "mesh": "hull_model2__8_4",
+   "hull_verts": 144,
+   "piece_verts": [
+    18
+   ],
+   "bound_m": 0.00018805024638804795
+  },
+  {
+   "mesh": "hull_model2__9_0",
+   "hull_verts": 208,
+   "piece_verts": [
+    43,
+    44
+   ],
+   "bound_m": 0.00019045770977800183
+  },
+  {
+   "mesh": "hull_model2__9_1",
+   "hull_verts": 128,
+   "piece_verts": [
+    30
+   ],
+   "bound_m": 0.00018771527753548575
+  },
+  {
+   "mesh": "hull_model2__9_2",
+   "hull_verts": 10,
+   "piece_verts": [
+    10
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_model2__9_3",
+   "hull_verts": 84,
+   "piece_verts": [
+    22
+   ],
+   "bound_m": 0.0001927596481774667
+  },
+  {
+   "mesh": "hull_model2__10_0",
+   "hull_verts": 373,
+   "piece_verts": [
+    38
+   ],
+   "bound_m": 0.0001979066741684324
+  },
+  {
+   "mesh": "hull_model2__10_1",
+   "hull_verts": 420,
+   "piece_verts": [
+    51
+   ],
+   "bound_m": 0.00019864762033440189
+  },
+  {
+   "mesh": "hull_model2__10_2",
+   "hull_verts": 433,
+   "piece_verts": [
+    54
+   ],
+   "bound_m": 0.00019177459314016486
+  },
+  {
+   "mesh": "hull_model2__10_3",
+   "hull_verts": 224,
+   "piece_verts": [
+    50
+   ],
+   "bound_m": 0.00019054658942150004
+  },
+  {
+   "mesh": "hull_model2__10_4",
+   "hull_verts": 154,
+   "piece_verts": [
+    42
+   ],
+   "bound_m": 0.00018207084419052407
+  },
+  {
+   "mesh": "hull_model2__11_0",
+   "hull_verts": 147,
+   "piece_verts": [
+    45
+   ],
+   "bound_m": 0.000196091071264566
+  },
+  {
+   "mesh": "hull_model2__11_1",
+   "hull_verts": 156,
+   "piece_verts": [
+    62
+   ],
+   "bound_m": 0.00017751301176938852
+  },
+  {
+   "mesh": "hull_model2__11_2",
+   "hull_verts": 272,
+   "piece_verts": [
+    28
+   ],
+   "bound_m": 0.00012923442395237265
+  },
+  {
+   "mesh": "hull_model2__11_3",
+   "hull_verts": 223,
+   "piece_verts": [
+    48,
+    37,
+    42
+   ],
+   "bound_m": 0.00019616622126323663
+  },
+  {
+   "mesh": "hull_model2__11_4",
+   "hull_verts": 317,
+   "piece_verts": [
+    62
+   ],
+   "bound_m": 0.0001812862888168622
+  },
+  {
+   "mesh": "hull_linear_gripper_0",
+   "hull_verts": 335,
+   "piece_verts": [
+    59,
+    53
+   ],
+   "bound_m": 0.00019570939671637518
+  },
+  {
+   "mesh": "hull_linear_gripper_1",
+   "hull_verts": 246,
+   "piece_verts": [
+    51
+   ],
+   "bound_m": 0.00019556469848890215
+  },
+  {
+   "mesh": "hull_linear_gripper_2",
+   "hull_verts": 155,
+   "piece_verts": [
+    55
+   ],
+   "bound_m": 0.00019797770655878897
+  },
+  {
+   "mesh": "hull_linear_gripper_3",
+   "hull_verts": 630,
+   "piece_verts": [
+    59,
+    56
+   ],
+   "bound_m": 0.00019923771358941589
+  },
+  {
+   "mesh": "hull_linear_gripper_4",
+   "hull_verts": 209,
+   "piece_verts": [
+    43
+   ],
+   "bound_m": 0.0001975144312275851
+  },
+  {
+   "mesh": "hull_linear_tip_left_0",
+   "hull_verts": 169,
+   "piece_verts": [
+    38
+   ],
+   "bound_m": 0.0001612298163964985
+  },
+  {
+   "mesh": "hull_linear_tip_left_1",
+   "hull_verts": 185,
+   "piece_verts": [
+    22
+   ],
+   "bound_m": 0.00018515550775284972
+  },
+  {
+   "mesh": "hull_linear_tip_left_2",
+   "hull_verts": 8,
+   "piece_verts": [
+    8
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_left_3",
+   "hull_verts": 993,
+   "piece_verts": [
+    36
+   ],
+   "bound_m": 0.00019660812579381303
+  },
+  {
+   "mesh": "hull_linear_tip_left_4",
+   "hull_verts": 443,
+   "piece_verts": [
+    29
+   ],
+   "bound_m": 0.00016412734261944347
+  },
+  {
+   "mesh": "hull_linear_tip_left_5",
+   "hull_verts": 8,
+   "piece_verts": [
+    8
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_left_6",
+   "hull_verts": 8,
+   "piece_verts": [
+    8
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_left_7",
+   "hull_verts": 8,
+   "piece_verts": [
+    8
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_left_8",
+   "hull_verts": 8,
+   "piece_verts": [
+    8
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_left_9",
+   "hull_verts": 1423,
+   "piece_verts": [
+    34
+   ],
+   "bound_m": 0.00019439924728532933
+  },
+  {
+   "mesh": "hull_linear_tip_right_0",
+   "hull_verts": 34,
+   "piece_verts": [
+    34
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "hull_linear_tip_right_1",
+   "hull_verts": 245,
+   "piece_verts": [
+    21
+   ],
+   "bound_m": 0.00017977366930320364
+  },
+  {
+   "mesh": "hull_linear_tip_right_2",
+   "hull_verts": 248,
+   "piece_verts": [
+    20
+   ],
+   "bound_m": 0.00014748708884600615
+  },
+  {
+   "mesh": "hull_linear_tip_right_3",
+   "hull_verts": 268,
+   "piece_verts": [
+    18
+   ],
+   "bound_m": 0.00019270400161356755
+  },
+  {
+   "mesh": "hull_linear_tip_right_4",
+   "hull_verts": 78,
+   "piece_verts": [
+    22
+   ],
+   "bound_m": 0.00019769216184363354
+  },
+  {
+   "mesh": "hull_linear_tip_right_5",
+   "hull_verts": 133,
+   "piece_verts": [
+    24
+   ],
+   "bound_m": 0.00019937072617936933
+  },
+  {
+   "mesh": "hull_linear_tip_right_6",
+   "hull_verts": 142,
+   "piece_verts": [
+    16
+   ],
+   "bound_m": 0.00019351299183611193
+  },
+  {
+   "mesh": "hull_linear_tip_right_7",
+   "hull_verts": 1072,
+   "piece_verts": [
+    35
+   ],
+   "bound_m": 0.00019635458931940278
+  },
+  {
+   "mesh": "hull_linear_tip_right_8",
+   "hull_verts": 1111,
+   "piece_verts": [
+    43
+   ],
+   "bound_m": 0.00019778396305098557
+  },
+  {
+   "mesh": "hull_linear_tip_right_9",
+   "hull_verts": 1391,
+   "piece_verts": [
+    34
+   ],
+   "bound_m": 0.00019554770002129567
+  },
+  {
+   "mesh": "hull_d405_wrist_mount_0",
+   "hull_verts": 376,
+   "piece_verts": [
+    60
+   ],
+   "bound_m": 0.00018941078481108937
+  },
+  {
+   "mesh": "hull_d405_wrist_mount_1",
+   "hull_verts": 196,
+   "piece_verts": [
+    51
+   ],
+   "bound_m": 0.0001923405025182737
+  },
+  {
+   "mesh": "hull_d405_wrist_mount_2",
+   "hull_verts": 355,
+   "piece_verts": [
+    57
+   ],
+   "bound_m": 0.0001979828630728082
+  },
+  {
+   "mesh": "hull_d405_wrist_mount_3",
+   "hull_verts": 333,
+   "piece_verts": [
+    59
+   ],
+   "bound_m": 0.00019835470486470226
+  }
+ ]
+}

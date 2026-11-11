@@ -1,0 +1,97 @@
+[project]
+name = "alloy-engine"   # the import name is `alloy`
+version = "0.1.0"
+description = "Alloy: a multi-material, parallel physics engine for robot learning, built on Newton and MuJoCo Warp"
+requires-python = ">=3.11,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+readme = "README.md"
+dependencies = [
+    # Newton and MuJoCo Warp are bundled inside Alloy (alloy/_vendor, VENDORED.md: Newton 25b4603c = release-1.8
+    # db915e1c + our patches, MuJoCo Warp v3.17.0 f34c6dd5), so installing Alloy never touches a newton or mujoco-warp of your own.
+    # Their runtime dependencies come from PyPI: Warp (Newton allows >=1.17, exact until a deliberate bump), MuJoCo
+    # (the 3.17 line both were built against), and MuJoCo Warp's absl-py and etils[epath].
+    "warp-lang==1.18.0",
+    "mujoco==3.17.0",
+    "absl-py",
+    "etils[epath]",
+    "numpy",
+    "scipy",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-timeout"]
+mesh = ["pytetwild==0.2.3", "coacd"]   # 0.3+ imports pyvista at import time (undeclared dependency)
+# Asset importers (alloy.importers). scikit-image: marching cubes for the importers' voxel remesh; 0.25.2 is the
+# newest with cp310 and aarch64 wheels (0.26 dropped 3.10). BSD-3-Clause.
+import = ["trimesh", "manifold3d", "coacd", "pillow", "huggingface_hub", "scikit-image==0.25.2"]
+# Barcode decoding for the camera-in-the-loop tasks (alloy.tasks.barcode_decode): zxing-cpp, Apache-2.0,
+# self-contained ~1 MB wheels (cp310/cp311, cp312 abi3; Linux x86_64 + aarch64, macOS arm64, Windows), no dependencies.
+barcode = ["zxing-cpp==3.1.1"]
+# Gym environments (alloy.envs): torch tensors for training, Hugging Face Hub downloads, and Gymnasium (MIT; its
+# vector API from 1.0 on: VectorEnv subclasses gymnasium.vector.VectorEnv and gym.make_vec builds the envs). Not in
+# the default install.
+envs = ["torch", "huggingface_hub", "gymnasium>=1.0,<2"]
+# USD files (alloy.load / add_robot of .usd, alloy.io.import_file): pxr and Newton's USD schemas, at the pins of the
+# bundled Newton 1.8's own importers. usd-core has no aarch64 wheels; usd-exchange carries pxr there. Writing USD
+# (alloy.io.export_scene) needs none of them. The schemas are capped below 0.7: they are pre-1.0, and 0.5 -> 0.6 already
+# broke the reader of the Newton before this one.
+usd = ["usd-core>=25.5,<26.9; platform_machine != 'aarch64'", "usd-exchange>=2.3.0,<4; platform_machine == 'aarch64'",
+       "newton-usd-schemas>=0.6.0,<0.7"]
+# Imitation-learning datasets (alloy.il): robomimic-layout HDF5 (HDF5Writer, load_hdf5). h5py: BSD-3-Clause.
+il = ["h5py"]
+# LeRobotDataset v3.0 export (alloy.il.LeRobotWriter): lerobot, Apache-2.0, tested with 0.7.0, which needs Python 3.12
+# (on 3.11 this extra adds nothing: only an untested lerobot 0.4 resolves there). lerobot brings its own numpy
+# (2.2 today, older than the default install's) and PyTorch, so it is an extra of its own, not part of `il`.
+lerobot = ["lerobot[dataset]>=0.7.0,<0.8; python_version >= '3.12'"]
+# Interactive viewer (alloy.viewer): the browser viewer (viser, Apache-2.0) and the desktop window (pyglet,
+# BSD-3-Clause; imgui_bundle, MIT), at the bundled Newton viewer's own ranges (it excludes pyglet 3). viser 1.1.1 is
+# the oldest that works with that viewer. The Rerun backend needs the user's own `pip install rerun-sdk`.
+viewer = ["viser>=1.1.1", "pyglet>=2.1.6,<3", "imgui_bundle>=1.92.0"]
+
+[project.scripts]
+alloy = "alloy.cli:main"   # JSON in and out
+
+# The docs site only: the repository stays private at launch (user rule 2026-11-11 17:10Z), so no Source or
+# Repository link until a GitHub launch.
+[project.urls]
+Homepage = "https://alloy.argonrobotics.ai"
+Documentation = "https://alloy.argonrobotics.ai/docs/"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+timeout = 60
+addopts = "--import-mode=importlib"
+# Delete a passing test's tmp_path as it finishes (a full run otherwise holds ~2 GB in /tmp/pytest-of-* until it
+# ends). Failed tests keep theirs for debugging.
+tmp_path_retention_policy = "failed"
+markers = [
+    "gpu: needs a CUDA device (skips cleanly without one)",
+    "slow: longer than 60 s",
+    "compile_heavy: cold kernel builds of MuJoCo/VBD/MPM/XPBD; 180 s timeout, still in the gate",
+    "law: analytic or rig law",
+    "det: determinism protocol",
+    "nightly: long GPU jobs",
+    "smoke: GPU smoke subset",
+    "integration: full Simulation integration",
+    "cpu_route: exercises the CPU route; release CI runs it with and without the compiled extension",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["alloy*"]
+
+# Non-Python files the camera needs at run time: Cycles' microfacet tables, and our OptiX sources that
+# `python -m alloy.camera.optix build` compiles on the user's machine (NVIDIA headers are fetched, never shipped).
+[tool.setuptools.package-data]
+# Every non-Python file under alloy/ ships (data, weights, notices, READMEs, the CPU route's C sources, the vendored
+# engines' assets and licences), as the release wheel always did (tools/deps/wheels.py); the card library joins it at
+# alloy/_data/library through setup.py. Built and cached files stay out (exclude-package-data).
+"alloy" = ["**/*"]
+
+[tool.setuptools.exclude-package-data]
+"alloy" = ["*.pyc", "*.so", "*.dylib", "*.dll", "*.o"]

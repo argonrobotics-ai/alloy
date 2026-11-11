@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: cucumber_slicing
+shape:
+  primitive:
+    kind: ellipsoid
+    size: [0.105, 0.02225, 0.02225]
+material: cucumber_flesh

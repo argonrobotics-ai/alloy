@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: steel_ball_25mm
+shape:
+  primitive:
+    kind: sphere
+    size: [0.0127]
+material: steel_carbon

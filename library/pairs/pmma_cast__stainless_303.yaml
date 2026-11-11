@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pmma_cast
+b: stainless_303
+mu_static:
+  value: 0.45
+  source: catalog
+  unc: [0.4, 0.5]
+  note: Engineering ToolBox friction-coefficients-d_778 Plexiglas/steel clean dry 0.4-0.5
+mu_dynamic:
+  value: 0.45
+  source: catalog
+  unc: [0.4, 0.5]
+  note: Engineering ToolBox friction-coefficients-d_778 Plexiglas/steel clean dry 0.4-0.5

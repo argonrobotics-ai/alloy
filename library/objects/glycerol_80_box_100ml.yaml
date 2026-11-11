@@ -1,0 +1,15 @@
+schema: alloy.object/1
+name: glycerol_80_box_100ml
+shape:
+  particles:
+    region:
+    - [-0.028, -0.028, 0.004]
+    - [0.028, 0.028, 0.0359]
+    spacing: 0.004
+material: glycerol_80
+features:
+  passage_width:
+    value: 0.056
+    source: model
+    note: 100 ml filling the open box card liquid_box_56 (56 x 56 mm inside, 80 mm deep, 4 mm floor) placed at the same pos;
+      SPH liquid; the 56 mm inner width sets the SPH particle size, min(2 mm, width / 16)

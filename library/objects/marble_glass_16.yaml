@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: marble_glass_16
+shape:
+  primitive:
+    kind: sphere
+    size: [0.008]
+material: glass_soda_lime

@@ -1,0 +1,278 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+"""Example Selection Cartpole
+
+Demonstrates batch control of multiple cartpole worlds using
+ArticulationView. This example spawns multiple cartpole robots and applies
+center-directed cart forces from randomized initial cart and pole states.
+
+To limit the number of worlds to render use the max-worlds argument.
+
+Success criteria:
+- The displayed setups consist of a double pendulum attached to a rail.
+- Each setup evolves from random initial cart and pole coordinates under a center-directed cart
+  force.
+
+Runs:
+- `python -m newton.examples selection_cartpole --world-count 8`
+  - 8 cartpole setups appear.
+- `python -m newton.examples selection_cartpole --world-count 16 --max-worlds 8`
+  - 16 worlds are simulated, but only 8 are displayed because of --max-worlds.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import warp as wp
+
+from alloy._vendor import newton
+import alloy._vendor.newton.examples; from alloy._vendor import newton
+from alloy._vendor.newton.selection import ArticulationView
+
+USE_TORCH = False
+COLLAPSE_FIXED_JOINTS = False
+
+
+@wp.kernel
+def randomize_states_kernel(joint_q: wp.array3d[float], seed: int):
+    tid = wp.tid()
+    rng = wp.rand_init(seed, tid)
+    joint_q[tid, 0, 0] = 2.0 - 4.0 * wp.randf(rng)
+    joint_q[tid, 0, 1] = wp.pi / 8.0 - wp.pi / 4.0 * wp.randf(rng)
+    joint_q[tid, 0, 2] = wp.pi / 8.0 - wp.pi / 4.0 * wp.randf(rng)
+
+
+@wp.kernel
+def apply_forces_kernel(joint_q: wp.array3d[float], joint_f: wp.array3d[float]):
+    tid = wp.tid()
+    if joint_q[tid, 0, 0] > 0.0:
+        joint_f[tid, 0, 0] = -20.0
+    else:
+        joint_f[tid, 0, 0] = 20.0
+
+
+class Example:
+    def __init__(self, viewer, args):
+        self.fps = 60
+        self.frame_dt = 1.0 / self.fps
+
+        self.sim_time = 0.0
+        self.sim_substeps = 10
+        self.sim_dt = self.frame_dt / self.sim_substeps
+
+        self.world_count = args.world_count
+        self.solver_type = args.solver
+        max_worlds = args.max_worlds
+        verbose = True
+
+        world = newton.ModelBuilder()
+        if self.solver_type == "kamino":
+            newton.solvers.SolverKamino.register_custom_attributes(world)
+        world.default_joint_cfg.armature = 0.1
+        world.add_usd(
+            newton.examples.get_asset("cartpole.usda"),
+            collapse_fixed_joints=COLLAPSE_FIXED_JOINTS,
+            enable_self_collisions=False,
+        )
+
+        scene = newton.ModelBuilder()
+        scene.replicate(world, copy_count=self.world_count)
+
+        # finalize model
+        self.model = scene.finalize()
+
+        if self.solver_type == "kamino":
+            solver_config = newton.solvers.SolverKamino.Config.from_model(
+                self.model, dynamics_solver="dvi", sparse_dynamics=True, sparse_jacobian=True
+            )
+            solver_config.dvi.max_alternating_iterations = 8
+            solver_config.dvi.bilateral_solve_interval = 8
+            self.solver = newton.solvers.SolverKamino(self.model, config=solver_config)
+        else:
+            self.solver = newton.solvers.SolverMuJoCo(self.model, disable_contacts=True)
+
+        self.viewer = viewer
+
+        self.state_0 = self.model.state()
+        self.state_1 = self.model.state()
+        self.control = self.model.control()
+
+        # =======================
+        # get cartpole view
+        # =======================
+        self.cartpoles = ArticulationView(self.model, "/cartPole", verbose=verbose)
+
+        # =========================
+        # randomize initial state
+        # =========================
+        if USE_TORCH:
+            import torch  # noqa: PLC0415
+
+            cart_positions = 2.0 - 4.0 * torch.rand(self.world_count)
+            pole1_angles = torch.pi / 8.0 - torch.pi / 4.0 * torch.rand(self.world_count)
+            pole2_angles = torch.pi / 8.0 - torch.pi / 4.0 * torch.rand(self.world_count)
+            joint_q = torch.stack([cart_positions, pole1_angles, pole2_angles], dim=1)
+        else:
+            joint_q = self.cartpoles.get_attribute("joint_q", self.state_0)
+            wp.launch(randomize_states_kernel, dim=self.world_count, inputs=[joint_q, 42])
+
+        self.cartpoles.set_attribute("joint_q", self.state_0, joint_q)
+
+        self._body_q_after_view_fk = None
+        if not isinstance(self.solver, newton.solvers.SolverMuJoCo):
+            self.cartpoles.eval_fk(self.state_0)
+            if args.test:
+                self._body_q_after_view_fk = wp.clone(self.state_0.body_q)
+
+        self.viewer.set_model(self.model)
+        if max_worlds is not None:
+            self.viewer.set_visible_worlds(range(max_worlds))
+        self.viewer.set_world_offsets((1.0, 0.0, 0.0))
+
+        # Set camera to view the scene
+        self.viewer.set_camera(
+            pos=wp.vec3(-15.0, 1.0, 3.0),
+            pitch=-15.0,
+            yaw=0.0,
+        )
+
+        self._body_q_before_capture = wp.clone(self.state_0.body_q) if self._body_q_after_view_fk is not None else None
+        self.capture()
+
+    def capture(self):
+        self.graph = None
+        with wp.ScopedCapture() as capture:
+            self.simulate()
+        self.graph = capture.graph
+
+    def simulate(self):
+        for _ in range(self.sim_substeps):
+            self.state_0.clear_forces()
+
+            # apply forces to the model for picking, wind, etc
+            self.viewer.apply_forces(self.state_0)
+
+            self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
+            self.state_0, self.state_1 = self.state_1, self.state_0
+
+    def step(self):
+        # ====================================
+        # get observations and apply controls
+        # ====================================
+        if USE_TORCH:
+            import torch  # noqa: PLC0415
+
+            joint_q = wp.to_torch(self.cartpoles.get_attribute("joint_q", self.state_0))
+            joint_f = wp.to_torch(self.cartpoles.get_attribute("joint_f", self.control))
+            joint_f[..., 0] = torch.where(joint_q[..., 0] > 0, -20, 20)
+        else:
+            joint_q = self.cartpoles.get_attribute("joint_q", self.state_0)
+            joint_f = self.cartpoles.get_attribute("joint_f", self.control)
+            wp.launch(
+                apply_forces_kernel,
+                dim=joint_f.shape[0],
+                inputs=[joint_q, joint_f],
+            )
+
+        self.cartpoles.set_attribute("joint_f", self.control, joint_f)
+
+        # simulate
+        if self.graph:
+            wp.capture_launch(self.graph)
+        else:
+            self.simulate()
+
+        self.sim_time += self.frame_dt
+
+    def render(self):
+        self.viewer.begin_frame(self.sim_time)
+        self.viewer.log_state(self.state_0)
+        self.viewer.end_frame()
+
+    def test_final(self):
+        """Validate the initialized state and constrained cartpole motion."""
+        if self._body_q_after_view_fk is not None:
+            np.testing.assert_array_equal(
+                self._body_q_after_view_fk.numpy(),
+                self._body_q_before_capture.numpy(),
+            )
+
+        constrained_atol = 1.0e-5 if self.solver_type == "kamino" else 1.0e-6
+        num_bodies_per_world = self.model.body_count // self.world_count
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "rail remains fixed",
+            lambda q, qd: wp.length_sq(qd) < constrained_atol * constrained_atol,
+            indices=[i * num_bodies_per_world for i in range(self.world_count)],
+        )
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "cart is at ground level and has correct orientation",
+            lambda q, qd: (
+                abs(q[2]) < constrained_atol
+                and newton.math.vec_allclose(q.q, wp.quat_identity(), atol=constrained_atol)
+            ),
+            indices=[i * num_bodies_per_world + 1 for i in range(self.world_count)],
+        )
+        # fmt: off
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "cart only moves along y direction",
+            lambda q, qd: abs(qd[0]) < constrained_atol
+            and abs(qd[1]) > 0.05
+            and abs(qd[2]) < constrained_atol
+            and wp.length_sq(wp.spatial_bottom(qd)) < constrained_atol * constrained_atol,
+            indices=[i * num_bodies_per_world + 1 for i in range(self.world_count)],
+        )
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "pole1 only has yz-plane linear velocity and x-axis angular velocity",
+            lambda q, qd: abs(qd[0]) < constrained_atol
+            and abs(qd[1]) > 0.05
+            and abs(qd[2]) > 0.05
+            and abs(qd[3]) > 0.3
+            and abs(qd[4]) < constrained_atol
+            and abs(qd[5]) < constrained_atol,
+            indices=[i * num_bodies_per_world + 2 for i in range(self.world_count)],
+        )
+        newton.examples.test_body_state(
+            self.model,
+            self.state_0,
+            "pole2 only has yz-plane linear velocity and x-axis angular velocity",
+            lambda q, qd: abs(qd[0]) < constrained_atol
+            and abs(qd[1]) > 0.05
+            and abs(qd[2]) > 0.05
+            and abs(qd[3]) > 0.2
+            and abs(qd[4]) < constrained_atol
+            and abs(qd[5]) < constrained_atol,
+            indices=[i * num_bodies_per_world + 3 for i in range(self.world_count)],
+        )
+        # fmt: on
+
+    @staticmethod
+    def create_parser():
+        parser = newton.examples.create_parser()
+        newton.examples.add_world_count_arg(parser)
+        newton.examples.add_max_worlds_arg(parser)
+        parser.add_argument("--solver", choices=["mujoco", "kamino"], default="mujoco")
+        parser.set_defaults(world_count=16)
+        return parser
+
+
+if __name__ == "__main__":
+    parser = Example.create_parser()
+
+    viewer, args = newton.examples.init(parser)
+
+    if USE_TORCH:
+        import torch
+
+        torch.set_default_device(args.device)
+
+    newton.examples.run(Example(viewer, args), args)

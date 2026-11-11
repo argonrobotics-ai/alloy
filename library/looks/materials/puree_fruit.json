@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "puree_fruit",
+ "preset": "plastic_matte",
+ "base_color": [
+  0.78,
+  0.6,
+  0.3
+ ],
+ "roughness": 0.45,
+ "subsurface": 0.25,
+ "note": "fruit puree: opaque matte golden"
+}

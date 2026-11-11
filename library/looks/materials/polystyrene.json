@@ -1,0 +1,11 @@
+{
+ "schema": "alloy.look/1",
+ "material": "polystyrene",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.93,
+  0.93,
+  0.92
+ ],
+ "note": "white general-purpose PS"
+}

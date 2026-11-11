@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pbt
+b: steel_nickel_plated
+mu_static:
+  value: 0.19
+  source: model
+  unc: [0.15, 0.25]
+  note: Ensinger HYDEX 4101 static 0.19, counterface not stated
+mu_dynamic:
+  value: 0.19
+  source: model
+  unc: [0.15, 0.25]
+  note: Ensinger HYDEX 4101 static 0.19, counterface not stated

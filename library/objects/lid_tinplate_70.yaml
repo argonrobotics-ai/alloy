@@ -1,0 +1,21 @@
+schema: alloy.object/1
+name: lid_tinplate_70
+shape:
+  primitive:
+    kind: cylinder
+    size: [0.035, 0.005]
+material: steel_tinplate
+loads:
+  tolerance:
+    value: 0.001
+    source: model
+    note: 'jar_unscrew: lid turned and lifted'
+features:
+  thickness:
+    value: 0.00025
+    source: model
+    note: tinplate 0.2-0.3 mm (closure catalogues)
+  min_wall:
+    value: 0.00025
+    source: model
+    note: tinplate 0.2-0.3 mm (closure catalogues)

@@ -1,0 +1,26 @@
+{
+ "law": "A12.buckling",
+ "dt": 0.001,
+ "substeps": 1,
+ "duration_s": 1.5,
+ "metrics": {
+  "pcr_rel_err": {
+   "abs": 0.05,
+   "rel": 0.0,
+   "source": "bench \u00a74 A12: Euler buckling within 5 %"
+  }
+ },
+ "stat": {
+  "pcr_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "clamped_free_30",
+   "params": {
+    "links": 30.0
+   },
+   "worlds": 9,
+   "drive": true
+  }
+ ]
+}

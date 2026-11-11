@@ -1,0 +1,46 @@
+schema: alloy.material/1
+name: cloth_cotton_plain
+density:
+  value: 179.5
+  source: catalog
+  unc: [170.0, 275.0]
+  note: 'DOC: plain-weave cotton "fabric weight 175 g/m2" at KES thickness "To 0.975" mm (Tm 0.637 mm at 50 gf/cm² -> 275
+    kg/m³) https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/'
+surface:
+  mu_static:
+    value: 0.25
+    source: model
+    unc: [0.2, 0.4]
+    note: 'ESTIMATE: above the measured kinetic value (KES MIU 0.20); no static value found'
+  mu_dynamic:
+    value: 0.2
+    source: catalog
+    unc: [0.188, 0.205]
+    note: 'DOC: KES-FB4 friction against the standard contactor, plain-weave cotton "MIU 0.20" https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.05]
+    note: 'ESTIMATE: fabric impacts are fully damped'
+elastic:
+  youngs:
+    value: 119000.0
+    source: model
+    unc: [31000.0, 144000.0]
+    note: 'ESTIMATE (back-calculated): one modulus for the cloth route, D = E·h³/(12(1-ν²)) at h 0.975 mm matched to the measured
+      "B (gf cm2/cm) 0.103" = 1.0e-5 N·m https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/ (range 0.027-0.125 gf·cm²/cm over
+      plain cotton weaves); membrane stretch is then 128 N/m, softer than the fabric (KES EMT 9.14 % at 490 N/m: ~5.4e3 N/m)'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'ESTIMATE: woven fabric effective in-plane value, used only in the plate formula above'
+  bending:
+    value: 1.0100390625e-05
+    source: catalog
+    unc: [2.648e-06, 1.226e-05]
+    note: 'DOC: KES-F bending rigidity of this plain-weave cotton "B (gf cm2/cm) 0.103" = 1.010e-5 N·m (Table 4, control)
+      https://pmc.ncbi.nlm.nih.gov/articles/PMC5452122/ (the value stored is youngs'' fit at the 0.975 mm model thickness,
+      0.005 % below). unc: ESTIMATE, the plain-cotton range 0.027-0.125 gf·cm²/cm that youngs'' note states (not in this paper:
+      its treated samples span 0.101-0.114). The cloth route uses it at any sheet thickness, which is then the contact thickness
+      (R2-E1)'

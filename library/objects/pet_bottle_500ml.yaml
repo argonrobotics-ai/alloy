@@ -1,0 +1,17 @@
+schema: alloy.object/1
+name: pet_bottle_500ml
+shape:
+  mesh:
+    path: meshes/pet_bottle_500ml.obj
+    sha256: 62ca8527aa6cd28907575c55b53b4e4cc36c204be61226d792cd5f21d7ec673c
+    collision: sdf
+material: pet
+features:
+  thickness:
+    value: 0.0003
+    source: model
+    note: 500 ml water bottle wall 0.25-0.35 mm
+  min_wall:
+    value: 0.0003
+    source: model
+    note: 500 ml water bottle wall 0.25-0.35 mm

@@ -1,0 +1,7 @@
+schema: alloy.object/1
+name: tissue_pad_skin
+shape:
+  primitive:
+    kind: box
+    size: [0.05, 0.04, 0.002]
+material: tissue_skin_silicone

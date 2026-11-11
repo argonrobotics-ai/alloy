@@ -1,0 +1,54 @@
+schema: alloy.material/1
+name: cotton_single_jersey
+density:
+  value: 136.0
+  source: catalog
+  unc: [125.0, 175.0]
+  note: 'DOC: 100 % cotton single jersey (unfinished), KES thickness "T 0.919" mm and weight "W 12.55" (mg/cm2 read as the
+    KES unit: 125.5 g/m2) -> 136.6 kg/m3 (Ramaiah, Radhalakshmi & Nachane, "Comparative Analysis of Low-Stress Mechanical
+    Properties of Woven and Knitted Apparel Fabrics", Table 3 fabric A, https://static.fibre2fashion.com/articleresources/PdfFiles/60/5963.pdf).
+    unc: ESTIMATE, T-shirt jerseys 125-160 g/m2'
+surface:
+  mu_static:
+    value: 0.25
+    source: model
+    unc: [0.2, 0.35]
+    note: 'ESTIMATE: above the measured kinetic value (KES MIU 0.205); no static value found'
+  mu_dynamic:
+    value: 0.205
+    source: catalog
+    unc: [0.19, 0.28]
+    note: 'DOC: KES-FB4 "MIU 0.205" (Ramaiah et al., Table 3 fabric A, URL above). unc: ESTIMATE, to their 95/5 cotton-elastane
+      jersey 0.280'
+  restitution:
+    value: 0.0
+    source: model
+    unc: [0.0, 0.05]
+    note: 'ESTIMATE: fabric impacts are fully damped'
+elastic:
+  youngs:
+    value: 119000.0
+    source: model
+    unc: [31000.0, 144000.0]
+    note: 'ESTIMATE: the plain-weave cotton card''s membrane modulus (cloth_cotton_plain), kept for the stretch; no KES EMT
+      found for single jersey (the source gives LT 0.632, WT 32.78 gf·cm/cm2, RT 19.76 %, not EMT). The cloth route takes
+      the bending from elastic.bending below, not from this modulus'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.1, 0.4]
+    note: 'ESTIMATE: an effective in-plane value, used only in the plate formula'
+  bending:
+    value: 6.472e-07
+    source: catalog
+    unc: [6.472e-07, 1.491e-06]
+    note: 'DOC: KES-FB2 bending rigidity "B 0.0066" gf·cm²/cm = 6.47e-7 N·m (Ramaiah et al., Table 3 fabric A, URL above;
+      direction not stated). unc: to the KES-FB range 0.0115-0.0152 gf·cm²/cm of cotton single jersey in aj.tubitak.gov.tr
+      muh-27-3-4 (cited in docs/known_gaps/cloth-sleeve-fold-springback.md; not re-read here)'
+  bending_hysteresis:
+    value: 7.943e-05
+    source: catalog
+    unc: [7.943e-05, 0.0004021]
+    note: 'DOC: KES-FB2 bending hysteresis "2HB 0.0081" gf·cm/cm = 7.94e-5 N·m/m (Ramaiah et al., Table 3 fabric A). The cloth
+      route''s hinges hold a fold by friction of HB = 2HB/2 (alloy/solvers/vbd/hysteresis.py): a released fold keeps the curvature
+      HB/B = 0.61 /cm. unc: to the 0.031-0.041 gf·cm/cm range of the Tubitak source above'

@@ -1,0 +1,361 @@
+schema: alloy.labels/1
+note: Expert routes for CARD-2 (SPEC §5.2), one per library object, written by the WP1 builder from the physics of each card's
+  load envelope and common simulation practice, not by running the router. reason gives the deciding number.
+labels:
+- object: bolt_m10x60
+  route: rigid
+  reason: steel bolt; thread is a precision feature, body rigid
+- object: nut_m10
+  route: rigid
+  reason: steel nut, rigid
+- object: washer_m10
+  route: rigid
+  reason: 2 mm steel washer, rigid (min member 2 mm > 1.25 mm)
+- object: bolt_m10x40
+  route: rigid
+  reason: steel bolt, rigid
+- object: bolt_m6x30
+  route: rigid
+  reason: steel bolt, rigid
+- object: nut_m6
+  route: rigid
+  reason: steel nut, rigid
+- object: plate_al_100x40x6
+  route: rigid
+  reason: 6 mm Al bar, rigid at its load envelope (6.5 mm hole not modelled)
+- object: wrench_17mm
+  route: rigid
+  reason: '190 x 24 x 5.8 mm Cr-V wrench: cantilever F L^3/(3EI) = 0.056 mm at 2 N, rigid'
+- object: stop_board_pine
+  route: static
+  reason: fixture board
+- object: peg_d8
+  route: rigid
+  reason: stainless peg, rigid
+- object: block_bore_d8_1
+  route: static
+  reason: fixed acrylic block with a through-bore
+- object: peg_d12
+  route: rigid
+  reason: stainless peg, rigid
+- object: block_bore_d12_2
+  route: static
+  reason: fixed acrylic block with a through-bore
+- object: peg_d16
+  route: rigid
+  reason: stainless peg, rigid
+- object: block_bore_d16_5
+  route: static
+  reason: fixed acrylic block with a through-bore
+- object: peg_rect_12x8
+  route: rigid
+  reason: stainless peg, rigid
+- object: block_rect_hole_12x8
+  route: static
+  reason: fixed acrylic block with a rectangular hole
+- object: pegboard_base_plywood
+  route: static
+  reason: fixture
+- object: usb_a_plug
+  route: rigid
+  reason: plug body is rigid; the latch springs are not modelled
+- object: usb_a_receptacle
+  route: static
+  reason: hub port, fixed
+- object: usb_cable_1m
+  route: chain
+  reason: '1 m x 3.5 mm cable: self-weight sag gamma = rho A g L^3/EI ~ 1.9e3 >> 0.01; a jointed chain at <= 40 links (D7)'
+- object: harness_lead
+  route: chain
+  reason: 150 mm x 2.12 mm lead, floppy
+- object: mx150_receptacle
+  route: rigid
+  reason: GF nylon connector housing, rigid (latch not modelled)
+- object: mx150_plug
+  route: rigid
+  reason: GF nylon plug housing, rigid
+- object: aa_cell
+  route: rigid
+  reason: steel can, rigid
+- object: battery_holder_pp
+  route: static
+  reason: holder fixed to the bench
+- object: block_alder_75x25x15
+  route: rigid
+  reason: hardwood block, rigid
+- object: ledge_plywood
+  route: static
+  reason: fixture
+- object: toy_car_diecast
+  route: rigid
+  reason: die-cast car, rigid (wheels not modelled)
+- object: fish_turner_blade
+  route: cloth_vbd
+  reason: '76 mm x 0.3 mm cantilevered blade: F L^3/(3EI) = 18 mm at 2 N; a fish turner is meant to flex (thin elastic shell)'
+- object: spatula_grill_blade
+  route: rigid
+  reason: '70 x 51 x 0.75 mm blade: cantilever 0.63 mm at 2 N, under the 1 mm task tolerance'
+- object: spoon_wood_oxo
+  route: rigid
+  reason: beech spoon, rigid (shape approximated by an ellipsoid)
+- object: rolling_pin_beech
+  route: rigid
+  reason: 45 mm beech pin, rigid
+- object: mug_stoneware
+  route: rigid
+  reason: 5 mm stoneware wall, rigid (handle not modelled)
+- object: bin_pp
+  route: rigid
+  reason: 'receiving bin: only a 36 g car lands in it; rigid at the task envelope'
+- object: gear_pom_40t
+  route: rigid
+  reason: module 1, 40 teeth POM gear, rigid (teeth not modelled)
+- object: gear_pom_20t
+  route: rigid
+  reason: module 1, 20 teeth POM gear, rigid
+- object: shaft_steel_8mm
+  route: static
+  reason: shaft fixed in the gear board
+- object: sample_tube_13x75
+  route: rigid
+  reason: 13 mm PP tube with cap, rigid under a tube grip
+- object: tube_rack_pp
+  route: static
+  reason: rack fixture
+- object: enclosure_base_abs
+  route: rigid
+  reason: 2 mm ABS box, rigid at the task envelope
+- object: enclosure_lid_abs
+  route: rigid
+  reason: 2 mm ABS lid; snap hooks are local springs, lid body rigid
+- object: pcb_80x50
+  route: rigid
+  reason: 1.6 mm FR4 board, rigid
+- object: jar_glass_8oz
+  route: rigid
+  reason: glass jar, rigid
+- object: lid_tinplate_70
+  route: rigid
+  reason: '70 mm tinplate cap: domed + skirt, rigid in hand'
+- object: cube_beech_30
+  route: rigid
+  reason: beech cube, rigid
+- object: marble_glass_16
+  route: rigid
+  reason: glass marble, rigid
+- object: tumbler_pp
+  route: cloth_vbd
+  reason: '1.2 mm PP wall: a 20 N grasp dents it by about a millimetre (thin shell)'
+- object: sand_fill
+  route: grain_mpm
+  reason: '0.3 mm sand, ~1e7 grains: continuum MPM'
+- object: towel_cotton
+  route: cloth_vbd
+  reason: woven towel drapes (bending length ~ 1-2 cm)
+- object: napkin_cotton_aniso
+  route: cloth_style3d
+  reason: 'woven napkin with warp/weft data, alone in its scene: Style3D (D16)'
+- object: paper_a4
+  route: cloth_film
+  reason: 'A4 copier paper, 80 g/m², 0.10 mm: strain cap 0.9 % (strength / E), fold memory 36 deg: the film plug-in'
+- object: cardboard_blank_creased
+  route: panels
+  reason: box blank folding on two creases
+- object: sponge_kitchen
+  route: soft_vbd
+  reason: '50 kPa foam: squeezed by centimetres'
+- object: sponge_cellulose
+  route: soft_vbd
+  reason: 'wet cellulose kitchen sponge, 114 x 64 x 25 mm (retail size), about 0.15 MPa: squeezed by millimetres to centimetres'
+- object: foam_block
+  route: soft_vbd
+  reason: foam cube, soft
+- object: cup_pp_disposable
+  route: cloth_vbd
+  reason: 0.35 mm PP cup crumples under a grasp (thin shell)
+- object: pet_bottle_500ml
+  route: cloth_vbd
+  reason: 0.3 mm empty PET bottle dents and crushes (thin shell)
+- object: rice_cup_fill
+  route: grain_mpm
+  reason: '~6800 long-grain kernels in a cup: too many for rigid grains (2000 cap), MPM continuum is the expert choice even
+    though the 5 mm voxel is under 3 grain diameters'
+- object: water_cup
+  route: liquid_sph
+  reason: water, DFSPH (D15)
+- object: olive_oil_cup
+  route: liquid_sph
+  reason: '0.084 Pa·s oil is a liquid below 1 Pa·s: DFSPH with weiler2018 viscosity'
+- object: honey_jar_fill
+  route: paste_mpm
+  reason: '6 Pa·s honey is above the 1 Pa·s liquid limit: paste MPM'
+- object: dough_ball
+  route: paste_mpm
+  reason: 'yield-stress dough: elastoplastic MPM'
+- object: cucumber_slicing
+  route: soft_vbd
+  reason: '1.1 MPa cucumber flesh: a soft solid that dents under a grip and a knife'
+- object: tissue_pad_skin
+  route: soft_vbd
+  reason: '260 kPa silicone skin layer: soft solid for needle and suture tasks'
+- object: tissue_pad_fat
+  route: soft_vbd
+  reason: '30 kPa silicone fat layer: very soft solid'
+- object: gel_block_ballistic
+  route: soft_vbd
+  reason: '20 kPa ballistic gelatin: soft solid, nearly incompressible'
+- object: foam_pad_pu
+  route: soft_vbd
+  reason: '35 kPa open-cell PU foam: squeezed by centimetres'
+- object: fruit_tomato
+  route: soft_vbd
+  reason: '0.2 MPa ripe tomato: soft solid that deforms in a grasp'
+- object: fruit_peach
+  route: soft_vbd
+  reason: '0.9 MPa peach: soft solid, bruises past about 11 % strain'
+- object: pencil_wood
+  route: rigid
+  reason: '7 x 170 mm pencil picked and placed: 0.1 N bend load, 1 mm tolerance -> 0.19 mm sag, rigid'
+- object: pencil_wood_untasked
+  route: rigid
+  reason: 'same pencil at the default 2 N / 0.1 mm envelope: experts still use a rigid pencil; the router''s chain here is
+    the documented default-envelope disagreement (SPEC revision notes, CARD-2)'
+- object: chopstick_bamboo
+  route: rigid
+  reason: '230 mm bamboo chopstick pinching food: 0.2 N, 1 mm -> 0.75 mm sag, rigid'
+- object: screwdriver_pz2
+  route: rigid
+  reason: '6 mm Cr-V shaft: 0.05 mm at 2 N, rigid'
+- object: spoon_steel
+  route: rigid
+  reason: 1.5 mm stainless table spoon, rigid in use
+- object: tray_aluminium
+  route: rigid
+  reason: '2 mm Al tray: plate deflection 7.6 um at 2 N (SPEC §3.3 sanity)'
+- object: lid_pp_food
+  route: cloth_vbd
+  reason: '1 mm PP container lid, 120 mm: ~1 mm sag at 2 N, floppy'
+- object: table_top_plywood
+  route: static
+  reason: bench sheet
+- object: steel_ball_25mm
+  route: rigid
+  reason: 1 in steel ball, rigid
+- object: shoelace_cotton
+  route: chain
+  reason: 1.2 m flat cotton lace (8 x 1.7 mm, area-equivalent r 2.08 mm),
+    floppy rope
+- object: silicone_mat
+  route: cloth_vbd
+  reason: 1 mm silicone baking mat drapes
+- object: rubber_ball_40mm
+  route: soft_vbd
+  reason: 'solid 40 Shore A ball: a 20 N grasp squashes it ~1 mm'
+- object: knife_blade_steel
+  route: rigid
+  reason: kitchen knife blade, rigid; its edge is a topology blade
+- object: hinged_box_plywood
+  route: rigid
+  reason: 'articulated wooden box (base + hinged lid): rigid links on MuJoCo'
+- object: liquid_box_56
+  route: rigid
+  reason: 'open PP box, 4 mm walls: stiff under a grasp; the container the box fills sit in'
+- object: water_box_200ml
+  route: liquid_sph
+  reason: 200 ml of water, DFSPH
+- object: glycerol_80_box_100ml
+  route: liquid_sph
+  reason: '80 % glycerol at 0.06 Pa·s, below the 1 Pa·s liquid limit: DFSPH'
+- object: oil_olive_box_150ml
+  route: liquid_sph
+  reason: 'olive oil at ~0.08 Pa·s: DFSPH'
+- object: honey_box_150ml
+  route: paste_mpm
+  reason: 'honey above the 1 Pa·s liquid limit: paste MPM'
+- object: sauce_ketchup_box_150ml
+  route: paste_mpm
+  reason: 'ketchup at ~4 Pa·s apparent viscosity (shear thinning, yield stress): paste MPM'
+- object: sand_box_200ml
+  route: grain_mpm
+  reason: '0.3 mm sand, ~1e7 grains: continuum MPM'
+- object: rice_box_200ml
+  route: grain_mpm
+  reason: '~8500 kernels in 200 ml: too many for rigid grains (2000 cap), MPM continuum'
+- object: film_hdpe_sheet
+  route: cloth_film
+  reason: '12.7 um HDPE film, 1 GPa: bending length 12 mm, strain cap 3.7 % (yield / E), crease memory: the film plug-in'
+- object: film_ldpe_sheet
+  route: cloth_film
+  reason: '50 um LDPE film, 340 MPa: bending length 21 mm, strain cap 4.7 % (yield / E): the film plug-in'
+- object: film_lldpe_sheet
+  route: cloth_film
+  reason: '25 um LLDPE film, 190 MPa: bending length 11 mm, strain cap 5.1 % (yield / E): the film plug-in'
+- object: cloth_cotton_sheet
+  route: cloth_vbd
+  reason: 'plain-weave cotton 175 g/m², bending 1.0e-5 N·m: bending length ~1.8 cm, drapes'
+- object: cloth_polyester_sheet
+  route: cloth_vbd
+  reason: 'woven polyester 158 g/m², bending ~3.4e-6 N·m: bending length ~1.3 cm, drapes'
+- object: towel_cotton_hand
+  route: cloth_vbd
+  reason: 'cotton terry hand towel 458 g/m², bending 17 uN·m: bending length ~1.6 cm, drapes'
+- object: bag_hdpe_tshirt
+  route: cloth_film
+  reason: '15 um HDPE two-layer T-shirt bag with handles, bending length 13 mm: the film plug-in with self contact'
+- object: paper_kraft_sheet
+  route: cloth_film
+  reason: '100 g/m² brown kraft paper, 135 um: bending length ~10 cm, strain cap 1.4 % (strength / E), fold memory 36 deg: the film plug-in'
+- object: paper_wrap_sheet
+  route: cloth_film
+  reason: '60 g/m² kraft wrapping paper, 82 um: bending length ~7 cm, strain cap 1.4 %, fold memory 36 deg: the film plug-in'
+- object: paper_wrap_tear_sheet
+  route: cloth_film
+  reason: '60 g/m² kraft wrapping paper, 82 um, with tear lines on a 5 cm grid: the film plug-in holds them shut and the topology controller breaks them (tear force 0.58 N at a tip or out-of-plane edge)'
+- object: paper_board_sheet
+  route: cloth_film
+  reason: '350 g/m² chipboard, 0.51 mm, bending stiffness 27 mN·m: bending length ~20 cm, strain cap 0.7 %: the film plug-in'
+- object: paper_kraft_scored_sheet
+  route: cloth_film
+  reason: '100 g/m² kraft with a score line: bending length ~10 cm, the crease 4x weaker than the sheet at 15 mm cells: the film plug-in'
+- object: gift_bag_kraft
+  route: cloth_film
+  reason: 'an open kraft gift bag (Uline Cub, 203 x 114 x 260 mm), 100 g/m² kraft, 135 um, square bottom: fold lines as crease hinges, fold memory 36 deg: the film plug-in'
+- object: gift_bag_board
+  route: cloth_film
+  reason: '350 g/m² chipboard bottom board for the gift bag, 0.51 mm, 20 x 10 cm at ~20 mm cells: bending length ~20 cm, strain cap 0.7 %: the film plug-in'
+- object: gift_wrapped_present
+  route: cloth_film
+  reason: '60 g/m² kraft wrapping paper, 82 um, folded round a 187 x 132 x 55 mm box (seam under it, ends folded): fold lines as crease hinges, fold memory 36 deg: the film plug-in'
+- object: gift_carton_tape
+  route: cloth_film
+  reason: '48 mm box-sealing tape (3M 371, 0.048 mm) over a carton''s top seam: a film strip that the Bonds plug-in bonds and peels: the film plug-in'
+- object: water_tumbler_200ml
+  route: liquid_sph
+  reason: 200 ml of water as a cylinder for a round cup, DFSPH
+- object: sauce_mayonnaise_box_150ml
+  route: paste_mpm
+  reason: 'mayonnaise, 96 Pa yield stress: paste MPM'
+- object: batter_bread_box_150ml
+  route: paste_mpm
+  reason: 'wheat bread batter, 16 Pa yield stress, shear-thinning (n 0.6): paste MPM'
+- object: batter_cake_box_150ml
+  route: paste_mpm
+  reason: 'cake batter, power law n 0.48, 2.1 Pa s at 10 1/s: thicker than 1 Pa s, paste MPM'
+- object: puree_fruit_box_150ml
+  route: paste_mpm
+  reason: 'fruit puree, power law n 0.45, 2.1 Pa s at 10 1/s: thicker than 1 Pa s, paste MPM'
+- object: tomato_concentrate_box_150ml
+  route: paste_mpm
+  reason: 'tomato concentrate, power law n 0.40, 4.7 Pa s at 10 1/s: paste MPM'
+- object: yogurt_box_150ml
+  route: paste_mpm
+  reason: 'plain yogurt, 12 Pa yield stress, shear-thinning (n 0.55): paste MPM'
+- object: peanut_butter_box_150ml
+  route: paste_mpm
+  reason: 'peanut butter, 374 Pa yield stress, shear-thinning (n 0.4): paste MPM'
+- object: soil_bed_damp
+  route: grain_mpm
+  reason: damp sand bed, continuum MPM
+- object: soil_bed_dry
+  route: grain_mpm
+  reason: dry sand bed, continuum MPM

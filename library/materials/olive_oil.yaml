@@ -1,0 +1,31 @@
+schema: alloy.material/1
+name: olive_oil
+density:
+  value: 911.0
+  source: catalog
+  unc: [905.0, 918.0]
+  note: olive oil at 20 C 0.91 g/cm3 (food property tables)
+surface:
+  mu_static:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction, wall drag comes from viscosity/adhesion'
+  mu_dynamic:
+    value: 0.0
+    source: model
+    note: 'liquid: no Coulomb friction'
+  restitution:
+    value: 0.0
+    source: model
+    note: 'liquid: inelastic'
+fluid:
+  viscosity:
+    value: 0.084
+    source: catalog
+    unc: [0.06, 0.1]
+    note: olive oil 20 C ~ 84 mPa·s (food rheology tables)
+  surface_tension:
+    value: 0.032
+    source: catalog
+    unc: [0.03, 0.034]
+    note: olive oil ~ 32 mN/m at 20 C

@@ -1,0 +1,933 @@
+{
+ "schema": "alloy.robot_visuals/1",
+ "pack": "emb_e3_ur10e_2f85",
+ "by": "alloy.tasks.emb_visuals",
+ "source": {
+  "url": "https://github.com/google-deepmind/mujoco_menagerie",
+  "commit": "98a70c569c4c1b6da467a20012f766ee1f8dc521",
+  "licence": "BSD-3-Clause (mujoco_menagerie universal_robots_ur10e, robotiq_2f85)",
+  "models": {
+   "universal_robots_ur10e/ur10e.xml": "50775329294a1ad999c663600ac57979bc23ee64f3f09e541ea3298341625658",
+   "robotiq_2f85/2f85.xml": "d48aca5f9151798ffd38111ce4e8b2081f3ec2d4f525161b33643451580010de"
+  },
+  "meshes": {
+   "universal_robots_ur10e/assets/base_0.obj": "bf32c8c773792ef5d77733faca78f76aac09253d1f27e5d6550d016de7c71805",
+   "universal_robots_ur10e/assets/base_1.obj": "849a788074d7670d9ba736f80b36622777d533eff883ccc973c916e1662a4fc1",
+   "universal_robots_ur10e/assets/shoulder_0.obj": "dc2cb7d3c9a89fd5a7cc954f72448e0b096b8a55bd2552fbb5012cb63a8665ad",
+   "universal_robots_ur10e/assets/shoulder_1.obj": "29300890574301e471272b609462df7ce4c740c94b28d5d397742344884034dd",
+   "universal_robots_ur10e/assets/shoulder_2.obj": "c9d28de31d417e478e807ac181ca713ae85cd3e2ec7e2ee59411ffa441a1ea7c",
+   "universal_robots_ur10e/assets/upperarm_0.obj": "443e65b87bd6494ce60e1020750b8d12d75fb647b15a0a20c46cf6bcdd367189",
+   "universal_robots_ur10e/assets/upperarm_1.obj": "1faf80f2049a7d5f423ee5cb64b3660ffe7a7268952e547e0c41b0d8a8381280",
+   "universal_robots_ur10e/assets/upperarm_2.obj": "6bcadcbab26e2c93b6e6d1148d9f1ec3afbaed601d4b1c33e3ac655cd2713fce",
+   "universal_robots_ur10e/assets/upperarm_3.obj": "19b05ed2b694965b8aae32495297223f03c2c0fa21db9baa5283f3225abcc311",
+   "universal_robots_ur10e/assets/forearm_0.obj": "7bdcfc8879ee27eedbcf9bda49133209a8988869ca810abed12510da52aec6ce",
+   "universal_robots_ur10e/assets/forearm_1.obj": "add3f9150c7a39f9619d7a13cb730f836b0f5bb0538d22998b2ef2531ccb231d",
+   "universal_robots_ur10e/assets/forearm_2.obj": "e7a4ef8ebc423dc89f3b709de5331e6546ba619515ab4e9f4173e1c4df50928c",
+   "universal_robots_ur10e/assets/forearm_3.obj": "7963bc45f0caa7891e16e0e3aaf1b8255ccb31c45eb2e7189ae41ab79d769c6c",
+   "universal_robots_ur10e/assets/wrist1_0.obj": "29c7986338deaaac9c08e178cae1f6a6b72d35baeab9e431e0c9e0c94ad098d9",
+   "universal_robots_ur10e/assets/wrist1_1.obj": "793966ed9435327bbf6321bf519b20b5a5fc224af7b6cc3d77c5aa55facd97a2",
+   "universal_robots_ur10e/assets/wrist1_2.obj": "9f4ee5635420d34e25a4daa776a5c2eb0b9b5b16e952b98f298eee77bf9755aa",
+   "universal_robots_ur10e/assets/wrist2_0.obj": "a0a095dcd76a4658124530de86c5fe578d7a82d0dd2843345f75f2c37951d4b5",
+   "universal_robots_ur10e/assets/wrist2_1.obj": "613d0933859d74cef3afce04023c7bec7e600fef8461bd5a8fa687fc73b5297c",
+   "universal_robots_ur10e/assets/wrist2_2.obj": "8c3a94f34998629636c0b947d6f0122dbb675e51fa8885502d20cc1d7fdb7a3c",
+   "universal_robots_ur10e/assets/wrist3.obj": "7d125e3585fe8a208042ea1dfd39e178efa946604e0e89c4f7dc1467a6354b22",
+   "robotiq_2f85/assets/base_mount.stl": "87971dfdd6e5311b5a723e7b73c4701ebf5c2364df671500f30dfc1c53c8e61a",
+   "robotiq_2f85/assets/base.stl": "1c7b9f2bd92d705fc4e897c94e905973a3c05f406845e942229433deb7041453",
+   "robotiq_2f85/assets/driver.stl": "bbd6e868b1778bead60d2516c7ede581d7ad4e431744b1828757d6ea5129c112",
+   "robotiq_2f85/assets/coupler.stl": "d5ee95e62f8415bf5b6e503c831a958f5fc1990bf9b2865329ec38a28932727c",
+   "robotiq_2f85/assets/spring_link.stl": "4fb74a8a0d76c0e471cf19fd48bc676fd5b19123798e7a39eb6aa56869354283",
+   "robotiq_2f85/assets/follower.stl": "633793332c081641ce200df27a40643cc293b29956e3cb5cb29cb811c33ef1c7",
+   "robotiq_2f85/assets/pad.stl": "4af1fa8d9bb285abecbf5dfc88e74cb30f059a7a074c2030dc35e9ee4316019d",
+   "robotiq_2f85/assets/silicone_pad.stl": "ca20c0fa61e6d3ce7b04bed25360e048e31dfd88ace04187aa6d9e8f4ca3fd0f"
+  }
+ },
+ "note": "display only: contype = conaffinity = 0, density 0, under the bodies' explicit inertials; meshes as .msh with exactly coincident vertices merged and zero-area faces dropped",
+ "geoms": [
+  {
+   "name": "base_vis0_black",
+   "body": "base",
+   "mesh": "vis_base_base_0",
+   "file": "universal_robots_ur10e_base_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "base_vis1_jointgray",
+   "body": "base",
+   "mesh": "vis_base_base_1",
+   "file": "universal_robots_ur10e_base_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "shoulder_link_vis0_urblue",
+   "body": "shoulder_link",
+   "mesh": "vis_shoulder_link_shoulder_0",
+   "file": "universal_robots_ur10e_shoulder_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.49000000953674316,
+    0.6779999732971191,
+    0.800000011920929,
+    1.0
+   ],
+   "material": "urblue"
+  },
+  {
+   "name": "shoulder_link_vis1_black",
+   "body": "shoulder_link",
+   "mesh": "vis_shoulder_link_shoulder_1",
+   "file": "universal_robots_ur10e_shoulder_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "shoulder_link_vis2_jointgray",
+   "body": "shoulder_link",
+   "mesh": "vis_shoulder_link_shoulder_2",
+   "file": "universal_robots_ur10e_shoulder_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "upper_arm_link_vis0_black",
+   "body": "upper_arm_link",
+   "mesh": "vis_upper_arm_link_upperarm_0",
+   "file": "universal_robots_ur10e_upperarm_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "upper_arm_link_vis1_jointgray",
+   "body": "upper_arm_link",
+   "mesh": "vis_upper_arm_link_upperarm_1",
+   "file": "universal_robots_ur10e_upperarm_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "upper_arm_link_vis2_urblue",
+   "body": "upper_arm_link",
+   "mesh": "vis_upper_arm_link_upperarm_2",
+   "file": "universal_robots_ur10e_upperarm_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.49000000953674316,
+    0.6779999732971191,
+    0.800000011920929,
+    1.0
+   ],
+   "material": "urblue"
+  },
+  {
+   "name": "upper_arm_link_vis3_linkgray",
+   "body": "upper_arm_link",
+   "mesh": "vis_upper_arm_link_upperarm_3",
+   "file": "universal_robots_ur10e_upperarm_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.8199999928474426,
+    0.8199999928474426,
+    0.8199999928474426,
+    1.0
+   ],
+   "material": "linkgray"
+  },
+  {
+   "name": "forearm_link_vis0_urblue",
+   "body": "forearm_link",
+   "mesh": "vis_forearm_link_forearm_0",
+   "file": "universal_robots_ur10e_forearm_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.49000000953674316,
+    0.6779999732971191,
+    0.800000011920929,
+    1.0
+   ],
+   "material": "urblue"
+  },
+  {
+   "name": "forearm_link_vis1_black",
+   "body": "forearm_link",
+   "mesh": "vis_forearm_link_forearm_1",
+   "file": "universal_robots_ur10e_forearm_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "forearm_link_vis2_jointgray",
+   "body": "forearm_link",
+   "mesh": "vis_forearm_link_forearm_2",
+   "file": "universal_robots_ur10e_forearm_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "forearm_link_vis3_linkgray",
+   "body": "forearm_link",
+   "mesh": "vis_forearm_link_forearm_3",
+   "file": "universal_robots_ur10e_forearm_3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.8199999928474426,
+    0.8199999928474426,
+    0.8199999928474426,
+    1.0
+   ],
+   "material": "linkgray"
+  },
+  {
+   "name": "wrist_1_link_vis0_black",
+   "body": "wrist_1_link",
+   "mesh": "vis_wrist_1_link_wrist1_0",
+   "file": "universal_robots_ur10e_wrist1_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "wrist_1_link_vis1_urblue",
+   "body": "wrist_1_link",
+   "mesh": "vis_wrist_1_link_wrist1_1",
+   "file": "universal_robots_ur10e_wrist1_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.49000000953674316,
+    0.6779999732971191,
+    0.800000011920929,
+    1.0
+   ],
+   "material": "urblue"
+  },
+  {
+   "name": "wrist_1_link_vis2_jointgray",
+   "body": "wrist_1_link",
+   "mesh": "vis_wrist_1_link_wrist1_2",
+   "file": "universal_robots_ur10e_wrist1_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "wrist_2_link_vis0_black",
+   "body": "wrist_2_link",
+   "mesh": "vis_wrist_2_link_wrist2_0",
+   "file": "universal_robots_ur10e_wrist2_0.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.032999999821186066,
+    0.032999999821186066,
+    0.032999999821186066,
+    1.0
+   ],
+   "material": "black"
+  },
+  {
+   "name": "wrist_2_link_vis1_urblue",
+   "body": "wrist_2_link",
+   "mesh": "vis_wrist_2_link_wrist2_1",
+   "file": "universal_robots_ur10e_wrist2_1.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.49000000953674316,
+    0.6779999732971191,
+    0.800000011920929,
+    1.0
+   ],
+   "material": "urblue"
+  },
+  {
+   "name": "wrist_2_link_vis2_jointgray",
+   "body": "wrist_2_link",
+   "mesh": "vis_wrist_2_link_wrist2_2",
+   "file": "universal_robots_ur10e_wrist2_2.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.27799999713897705,
+    0.27799999713897705,
+    0.27799999713897705,
+    1.0
+   ],
+   "material": "jointgray"
+  },
+  {
+   "name": "wrist_3_link_vis0_linkgray",
+   "body": "wrist_3_link",
+   "mesh": "vis_wrist_3_link_wrist3",
+   "file": "universal_robots_ur10e_wrist3.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.8199999928474426,
+    0.8199999928474426,
+    0.8199999928474426,
+    1.0
+   ],
+   "material": "linkgray"
+  },
+  {
+   "name": "gripper_base_mount_vis0_black",
+   "body": "gripper_base_mount",
+   "mesh": "vis_gripper_base_mount_base_mount",
+   "file": "robotiq_2f85_base_mount.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_base_vis0_black",
+   "body": "gripper_base",
+   "mesh": "vis_gripper_base_base",
+   "file": "robotiq_2f85_base.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_driver_vis0_gray",
+   "body": "gripper_right_driver",
+   "mesh": "vis_gripper_right_driver_driver",
+   "file": "robotiq_2f85_driver.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.4627000093460083,
+    0.4627000093460083,
+    0.4627000093460083,
+    1.0
+   ],
+   "material": "gray",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_coupler_vis0_black",
+   "body": "gripper_right_coupler",
+   "mesh": "vis_gripper_right_coupler_coupler",
+   "file": "robotiq_2f85_coupler.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_spring_link_vis0_black",
+   "body": "gripper_right_spring_link",
+   "mesh": "vis_gripper_right_spring_link_spring_link",
+   "file": "robotiq_2f85_spring_link.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_follower_vis0_black",
+   "body": "gripper_right_follower",
+   "mesh": "vis_gripper_right_follower_follower",
+   "file": "robotiq_2f85_follower.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_pad_vis0_plain",
+   "body": "gripper_right_pad",
+   "mesh": "vis_gripper_right_pad_pad",
+   "file": "robotiq_2f85_pad.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.5,
+    0.5,
+    0.5,
+    1.0
+   ],
+   "material": "",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_right_silicone_pad_vis0_black",
+   "body": "gripper_right_silicone_pad",
+   "mesh": "vis_gripper_right_silicone_pad_silicone_pad",
+   "file": "robotiq_2f85_silicone_pad.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_driver_vis0_gray",
+   "body": "gripper_left_driver",
+   "mesh": "vis_gripper_left_driver_driver",
+   "file": "robotiq_2f85_driver.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.4627000093460083,
+    0.4627000093460083,
+    0.4627000093460083,
+    1.0
+   ],
+   "material": "gray",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_coupler_vis0_black",
+   "body": "gripper_left_coupler",
+   "mesh": "vis_gripper_left_coupler_coupler",
+   "file": "robotiq_2f85_coupler.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_spring_link_vis0_black",
+   "body": "gripper_left_spring_link",
+   "mesh": "vis_gripper_left_spring_link_spring_link",
+   "file": "robotiq_2f85_spring_link.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_follower_vis0_black",
+   "body": "gripper_left_follower",
+   "mesh": "vis_gripper_left_follower_follower",
+   "file": "robotiq_2f85_follower.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_pad_vis0_plain",
+   "body": "gripper_left_pad",
+   "mesh": "vis_gripper_left_pad_pad",
+   "file": "robotiq_2f85_pad.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.5,
+    0.5,
+    0.5,
+    1.0
+   ],
+   "material": "",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  },
+  {
+   "name": "gripper_left_silicone_pad_vis0_black",
+   "body": "gripper_left_silicone_pad",
+   "mesh": "vis_gripper_left_silicone_pad_silicone_pad",
+   "file": "robotiq_2f85_silicone_pad.msh",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rgba": [
+    0.14900000393390656,
+    0.14900000393390656,
+    0.14900000393390656,
+    1.0
+   ],
+   "material": "black",
+   "scale": [
+    0.001,
+    0.001,
+    0.001
+   ]
+  }
+ ]
+}

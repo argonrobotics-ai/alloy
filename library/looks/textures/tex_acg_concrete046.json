@@ -1,0 +1,15 @@
+{
+ "schema": "alloy.look/1",
+ "look": "tex_acg_concrete046",
+ "family": "floor",
+ "preset": "plaster_paint",
+ "texture": "ambientcg:Concrete046",
+ "res": "2k",
+ "scale_m": 2.4,
+ "bump_m": 0.0005,
+ "source": "https://ambientcg.com/a/Concrete046",
+ "author": "Lennart Demes (ambientCG)",
+ "licence": "CC0-1.0",
+ "albedo": 0.606,
+ "note": "plain grey concrete floor: ambientCG 'Concrete 046', 2.4 m tile, 2k maps"
+}

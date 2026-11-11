@@ -1,0 +1,36 @@
+schema: alloy.material/1
+name: wood_douglas_fir
+density:
+  value: 538.0
+  source: catalog
+  unc: [480.0, 600.0]
+  note: Coast Douglas-fir SG 0.48 at 12 % MC (USDA FPL Wood Handbook GTR-190 (2010) Table 5-3a); 1000 x 0.48 x 1.12 for the
+    moisture
+surface:
+  mu_static:
+    value: 0.4
+    source: catalog
+    unc: [0.25, 0.5]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  mu_dynamic:
+    value: 0.3
+    source: catalog
+    unc: [0.2, 0.4]
+    note: wood on wood (dry) 0.25-0.5 static, ~0.2 dynamic, Serway & Jewett 9e Table 5.1
+  restitution:
+    value: 0.5
+    source: model
+    unc: [0.3, 0.7]
+    note: wood on wood/steel impacts 0.4-0.6; mid value
+elastic:
+  youngs:
+    value: 13400000000.0
+    source: catalog
+    unc: [10800000000.0, 14000000000.0]
+    note: Coast Douglas-fir MOE along the grain 13,400 MPa at 12 % MC (10,800 green), Wood Handbook GTR-190 Table 5-3a; ET/EL
+      0.050, ER/EL 0.068 (Table 5-1)
+  poisson:
+    value: 0.292
+    source: catalog
+    unc: [0.29, 0.45]
+    note: Douglas-fir muLR 0.292, muLT 0.449 at ~12 % MC, Wood Handbook GTR-190 Table 5-2

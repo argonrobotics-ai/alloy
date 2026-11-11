@@ -1,0 +1,13 @@
+{
+ "schema": "alloy.look/1",
+ "material": "vinyl_soft",
+ "preset": "plastic_gloss",
+ "base_color": [
+  0.88,
+  0.72,
+  0.6
+ ],
+ "roughness": 0.3,
+ "subsurface": 0.2,
+ "note": "soft toy vinyl: satin, light skin tone"
+}

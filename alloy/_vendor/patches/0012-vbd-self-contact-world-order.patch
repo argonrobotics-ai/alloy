@@ -1,0 +1,111 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py b/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
+index a087623cd..4d9ae6fc2 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/particle_vbd_kernels.py
+@@ -1625,6 +1625,8 @@ def accumulate_self_contact_force_and_hessian(
+     friction_mu: float,
+     friction_epsilon: float,
+     edge_edge_parallel_epsilon: float,
++    edges_per_world: int,
++    particles_per_world: int,
+     # outputs: particle force and hessian
+     particle_forces: wp.array[wp.vec3],
+     particle_hessians: wp.array[wp.mat33],
+@@ -1633,13 +1635,30 @@ def accumulate_self_contact_force_and_hessian(
+     primitive_id = t_id // NUM_THREADS_PER_COLLISION_PRIMITIVE
+     t_id_current_primitive = t_id % NUM_THREADS_PER_COLLISION_PRIMITIVE
+ 
++    # Alloy (AGENTS-15): a thread takes edge i and vertex i and adds both into particle sums. With identical worlds
++    # (edges_per_world > 0) i counts inside the thread's world, so every world adds a particle's contact terms in
++    # world 0's order. Upstream counted i over the whole model: worlds past the first interleaved their edges and
++    # vertices differently, and identical worlds drifted apart on the CPU.
++    edge_id = primitive_id
++    vertex_id = primitive_id
++    if edges_per_world > 0:
++        primitives_per_world = wp.max(edges_per_world, particles_per_world)
++        world = primitive_id // primitives_per_world
++        local = primitive_id - world * primitives_per_world
++        edge_id = collision_info.edge_colliding_edges_buffer_sizes.shape[0]
++        vertex_id = collision_info.vertex_colliding_triangles_buffer_sizes.shape[0]
++        if local < edges_per_world:
++            edge_id = world * edges_per_world + local
++        if local < particles_per_world:
++            vertex_id = world * particles_per_world + local
++
+     # process edge-edge collisions
+-    if primitive_id < collision_info.edge_colliding_edges_buffer_sizes.shape[0]:
+-        e1_idx = primitive_id
++    if edge_id < collision_info.edge_colliding_edges_buffer_sizes.shape[0]:
++        e1_idx = edge_id
+ 
+         collision_buffer_counter = t_id_current_primitive
+-        collision_buffer_offset = collision_info.edge_colliding_edges_offsets[primitive_id]
+-        collision_count = get_edge_colliding_edges_count(collision_info, primitive_id)
++        collision_buffer_offset = collision_info.edge_colliding_edges_offsets[edge_id]
++        collision_count = get_edge_colliding_edges_count(collision_info, edge_id)
+         while collision_buffer_counter < collision_count:
+             e2_idx = collision_info.edge_colliding_edges[2 * (collision_buffer_offset + collision_buffer_counter) + 1]
+ 
+@@ -1678,11 +1697,11 @@ def accumulate_self_contact_force_and_hessian(
+             collision_buffer_counter += NUM_THREADS_PER_COLLISION_PRIMITIVE
+ 
+     # process vertex-triangle collisions
+-    if primitive_id < collision_info.vertex_colliding_triangles_buffer_sizes.shape[0]:
+-        particle_idx = primitive_id
++    if vertex_id < collision_info.vertex_colliding_triangles_buffer_sizes.shape[0]:
++        particle_idx = vertex_id
+         collision_buffer_counter = t_id_current_primitive
+-        collision_buffer_offset = collision_info.vertex_colliding_triangles_offsets[primitive_id]
+-        collision_count = get_vertex_colliding_triangles_count(collision_info, primitive_id)
++        collision_buffer_offset = collision_info.vertex_colliding_triangles_offsets[vertex_id]
++        collision_count = get_vertex_colliding_triangles_count(collision_info, vertex_id)
+         while collision_buffer_counter < collision_count:
+             tri_idx = collision_info.vertex_colliding_triangles[
+                 (collision_buffer_offset + collision_buffer_counter) * 2 + 1
+diff --git a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+index 05e2fb904..80df5f09f 100644
+--- a/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
++++ b/alloy/_vendor/newton/_src/solvers/vbd/solver_vbd.py
+@@ -241,6 +241,25 @@ def triangle_mesh_pieces(
+     return pieces.astype(np.int32), int(pieces.max()) + 1
+ 
+ 
++def _identical_world_counts(model) -> tuple[int, int]:
++    """Alloy (AGENTS-15): (edges, particles) per world when every world holds the same number of each, world after
++    world (a replicated template); (0, 0) otherwise, which keeps upstream's thread order in the self-contact kernel."""
++    worlds = int(model.world_count)
++    if worlds < 2 or not model.edge_count or model.edge_count % worlds or model.particle_count % worlds:
++        return 0, 0
++    edges, particles = model.edge_count // worlds, model.particle_count // worlds
++    particle_world = model.particle_world.numpy()
++    edge_vertex = model.edge_indices.numpy()[:, 2]
++    by_world = np.arange(worlds)
++    if not np.array_equal(particle_world, np.repeat(by_world, particles)):
++        return 0, 0
++    if edge_vertex.shape[0] != model.edge_count or edge_vertex.min() < 0 or edge_vertex.max() >= particles * worlds:
++        return 0, 0
++    if not np.array_equal(particle_world[edge_vertex], np.repeat(by_world, edges)):
++        return 0, 0
++    return edges, particles
++
++
+ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+     """An implicit solver using Vertex Block Descent (VBD) for particles and Augmented VBD (AVBD) for rigid bodies.
+ 
+@@ -1312,6 +1331,8 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                 self.model.particle_count * NUM_THREADS_PER_COLLISION_PRIMITIVE,
+                 self.model.edge_count * NUM_THREADS_PER_COLLISION_PRIMITIVE,
+             )
++            # Alloy (AGENTS-15): identical worlds add a particle's self-contact terms in one order (the kernel's note)
++            self._self_contact_world_counts = _identical_world_counts(self.model)
+         else:
+             self.particle_self_contact_evaluation_kernel_launch_size = None
+ 
+@@ -4529,6 +4550,7 @@ class SolverVBD(TendonStateMixin, SolverBase, CouplingInterface):
+                         self.model.soft_contact_mu,
+                         self.friction_epsilon,
+                         self._self_contact_edge_edge_parallel_epsilon,
++                        *self._self_contact_world_counts,
+                     ],
+                     outputs=[self.particle_forces, self.particle_hessians],
+                     device=self.device,

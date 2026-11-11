@@ -1,0 +1,22 @@
+{
+ "dataset_id": "synthetic-v1",
+ "environment": {},
+ "holder": {},
+ "instruments": {
+  "rebound_height": {
+   "u95": 0.0005,
+   "what": "apex height"
+  },
+  "restitution": {
+   "u95": 0.005,
+   "what": "apex height, 240 fps + scale bar"
+  }
+ },
+ "law_id": "R4.drop_bounce",
+ "objects": {
+  "ball": {
+   "radius_m": 0.02
+  }
+ },
+ "protocol_version": "synthetic/1"
+}

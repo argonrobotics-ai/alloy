@@ -1,0 +1,332 @@
+{
+ "schema": "alloy.xbench.ours.sdf/1",
+ "law": "A9.thread_rundown",
+ "condition": "mu0.1",
+ "params": {
+  "mu": 0.1,
+  "F": 5.0,
+  "omega": 3.141592653589793
+ },
+ "dt": 0.000625,
+ "substeps": 1,
+ "duration_s": 2.3,
+ "steps": 3680,
+ "record_every": 1,
+ "gravity": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "worlds": 1,
+ "samples": [
+  {}
+ ],
+ "bodies": [
+  {
+   "name": "nut",
+   "mass_kg": 0.011699636466801167,
+   "com_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     5.851745186191692e-07,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     5.851745186191692e-07,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     5.851745186191692e-07
+    ]
+   ],
+   "note": "inertia about the COM in the body frame; explicit, never recomputed from the OBJ"
+  }
+ ],
+ "joints": [
+  {
+   "name": "nut_drive",
+   "type": "D6",
+   "parent": "world",
+   "child": "nut",
+   "X_p": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "X_c": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "dofs": [
+    {
+     "kind": "linear",
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "armature": 1.0,
+     "damping": 0.0,
+     "friction": 0.0,
+     "limit": [
+      -10000000000.0,
+      10000000000.0
+     ],
+     "drive": {
+      "mode": "NONE",
+      "ke": 0.0,
+      "kd": 0.0,
+      "effort_limit": 1000000.0
+     }
+    },
+    {
+     "kind": "angular",
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "armature": 0.009999999776482582,
+     "damping": 0.0,
+     "friction": 0.0,
+     "limit": [
+      -10000000000.0,
+      10000000000.0
+     ],
+     "drive": {
+      "mode": "VELOCITY",
+      "ke": 0.0,
+      "kd": 10.0,
+      "effort_limit": 1000000.0
+     }
+    }
+   ],
+   "note": "X_p / X_c = x y z qx qy qz qw; FREE: 6 undriven DOF; D6: the listed DOF only, all others locked"
+  }
+ ],
+ "initial": [
+  {
+   "bodies": {
+    "nut": {
+     "q": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "joints": {
+    "nut_drive": {
+     "q": [
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ ],
+ "drive": {
+  "kind": "joint drive on nut_drive (a D6: the axial slide and the spin about the bolt axis +z)",
+  "axial": "constant joint force -5 N on the slide from t = 0 (opposes the advance)",
+  "spin": "velocity drive, kd = 10 N m s/rad, target omega(t) = 3.14159265 rad/s * smoothstep(t / 0.1 s), smoothstep(s) = s^2 (3 - 2 s) on [0, 1]; t = k dt over step k; implicit (MuJoCo implicitfast velocity actuator), effort limit as in joints",
+  "file": "drive.npz",
+  "arrays": {
+   "joint_f": "[steps, W, 2] float32: feed-forward joint force (slide N, spin N m) over step k",
+   "target_qd": "[steps, W] float32: the spin drive's target velocity (rad/s) over step k"
+  }
+ },
+ "alloy_collision": {
+  "representation": "analytic: the bolt's ISO thread SDF (no voxels, no texture) against samples on the nut's thread flanks; the MuJoCo cylinders 'bolt' / 'nut' are filtered from collision",
+  "pair": {
+   "shape_a": 0,
+   "shape_b": 1,
+   "mode": "sdf",
+   "voxel_size": 5e-05,
+   "narrow_band": [
+    -0.0005,
+    0.0005
+   ],
+   "crop_a": null,
+   "crop_b": null,
+   "texture_format": "uint16",
+   "sampler": "software",
+   "margin": 0.0,
+   "gap": 2e-06,
+   "speculative_gap_max": 0.002,
+   "max_penetration": null,
+   "kh": 100000000000.0,
+   "pair_stiffness": 48561582.54765697,
+   "mj_imp": 0.99,
+   "mj_cone": "elliptic",
+   "mj_impratio": 300.0,
+   "ccd": "off",
+   "reduce": "moment_matched",
+   "match_threshold": null,
+   "mesh_chord_tol": 5e-06,
+   "clearance": 3.15e-05,
+   "wall_thickness": null,
+   "analytic_id": null,
+   "escalation": "flag"
+  },
+  "bolt": {
+   "analytic_id": "iso_thread:M10x1.5:6g",
+   "z0": -0.025,
+   "z1": 0.025,
+   "outer_radius": null,
+   "flank_band": 0.8
+  },
+  "nut": {
+   "analytic_id": "iso_thread:M10x1.5:6H",
+   "z0": -0.004,
+   "z1": 0.004,
+   "outer_radius": 0.0085,
+   "flank_band": 0.2
+  },
+  "row_stiffness_n_per_m": 48561582.54765697,
+  "nut_samples": "5e-05 m grid on the middle 20% of each flank, from 0.5 pitch inside each nut face, 12 sectors",
+  "pack_meshes": "thread_sdf.thread_mesh, 96 segments per turn; bolt cut to (-0.01, 0.01) m (Alloy's analytic bolt: (-0.025, 0.025) m)",
+  "solver_settings": {
+   "solver": "mujoco",
+   "kwargs": {
+    "cone": "elliptic",
+    "impratio": 300.0,
+    "iterations": 100,
+    "ls_iterations": 50,
+    "integrator": "implicitfast",
+    "nconmax": 256,
+    "njmax": 1024,
+    "use_speculative_contacts": false,
+    "use_mujoco_contacts": false
+   },
+   "mujoco_solimp": [
+    0.99,
+    0.99,
+    0.001,
+    0.5,
+    2.0
+   ],
+   "newton_contacts": true
+  }
+ },
+ "engine_collision": "Load each OBJ as a triangle mesh with the engine's own mesh-SDF collision at its documented recommended settings for the scene type; record the SDF resolution / spacing, contact offsets / margins and their sources in meta.settings. Do not re-hull, decimate or decompose. A static part may use the engine's static triangle-mesh path if its SDF contact needs that (say so). Only the listed contact pair collides.",
+ "export": {
+  "body_names": [
+   "nut"
+  ],
+  "frames": "a frame every physics step (record_every 1), frame 0 the initial state; W axis = cond.json worlds",
+  "channels": {
+   "body_q": "[T, W, B, 7] float32: body origin + quaternion x y z w, world frame (contract)",
+   "body_qd": "[T, W, B, 6] float32: COM linear + angular velocity, world frame (contract)",
+   "joint_q": "[T, W, 2] float64, optional: the nut's axial position z (m) and spin angle theta (rad) about the bolt axis +z, continuous (unwrapped; theta grows as the nut runs down). Without it, z and theta come from body_q (Newton eval_ik, theta unwrapped over frames)",
+   "drive_tau": "[T, W] float64, required: the torque (N m) the spin velocity drive applied to the nut about +z over the step that ends at the frame (frame 0: 0), i.e. the engine's applied joint drive torque. Alloy: kd (target - omega) with omega after the step (its implicit velocity actuator)"
+  },
+  "scored_by": "Alloy's ThreadA9Twin: record (z, theta), the torque channel from drive_tau, scalars (thread_metrics: advance per rev and mean drive torque over the run-down after 0.25 s)"
+ },
+ "shapes": [
+  {
+   "name": "bolt_thread",
+   "body": "world",
+   "obj": "meshes/bolt_thread.obj",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_xyzw": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mu": 0.10000000149011612,
+   "restitution": 0.0,
+   "alloy_shape": "bolt"
+  },
+  {
+   "name": "nut_thread",
+   "body": "nut",
+   "obj": "meshes/nut_thread.obj",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat_xyzw": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mu": 9.999999747378752e-05,
+   "restitution": 0.0,
+   "alloy_shape": "nut"
+  }
+ ],
+ "contact_pairs": [
+  {
+   "shapes": [
+    "bolt_thread",
+    "nut_thread"
+   ],
+   "mu": 0.10000000149011612,
+   "restitution": 0.0,
+   "note": "the friction Alloy's MuJoCo rows use (geom mu mixed by max); Coulomb, static = dynamic, elliptic cone, no torsional / rolling friction, no restitution (MuJoCo soft contact)"
+  }
+ ],
+ "checks": {
+  "initial_err": 0.0,
+  "threads": {
+   "bolt_thread": {
+    "surface_err_m": 6.1316871718952726e-12,
+    "facet_sag_m": 2.3720485924673407e-06,
+    "chord_bound_m": 2.668629870924337e-06
+   },
+   "nut_thread": {
+    "surface_err_m": 5.7519770196857396e-12,
+    "facet_sag_m": 4.045222336809817e-06,
+    "chord_bound_m": 4.551006450891681e-06
+   },
+   "fit": {
+    "clearance_diametral_m": 3.15e-05,
+    "flank_gap_expected_m": 7.875e-06,
+    "flank_gap_vertices_m": 7.862546225035928e-06,
+    "nut_vertices_to_bolt_obj_m": 7.870179615565576e-06,
+    "bolt_vertices_to_nut_obj_m": 7.857595846871845e-06,
+    "note": "6g/6H: the bolt's diameters sit `clearance` below the nut's; normal to a 60 deg flank that is clearance / 4. OBJ-to-OBJ gaps include the facet sag of the other mesh"
+   }
+  }
+ }
+}

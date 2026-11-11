@@ -1,0 +1,42 @@
+schema: alloy.material/1
+name: brass_c360
+density:
+  value: 8500.0
+  source: catalog
+  unc: [8470.0, 8530.0]
+  note: free-cutting brass C36000 8.50 g/cm3, Callister & Rethwisch 9e (2014) App. B B.1
+surface:
+  mu_static:
+    value: 0.51
+    source: catalog
+    unc: [0.35, 0.6]
+    note: brass on steel (dry), Engineering ToolBox, friction coefficients table
+  mu_dynamic:
+    value: 0.44
+    source: catalog
+    unc: [0.3, 0.5]
+    note: brass on steel (dry), Engineering ToolBox, friction coefficients table
+  restitution:
+    value: 0.6
+    source: model
+    unc: [0.4, 0.8]
+    note: metal-on-metal impacts e 0.5-0.9 depending on speed and hardness (Goldsmith, Impact, 1960); mid value
+elastic:
+  youngs:
+    value: 97000000000.0
+    source: catalog
+    unc: [95000000000.0, 100000000000.0]
+    note: C36000, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+  poisson:
+    value: 0.34
+    source: catalog
+    unc: [0.31, 0.35]
+    note: C36000, Callister & Rethwisch 9e (2014) App. B B.2/B.3
+plastic:
+  yield_stress:
+    value: 310000000.0
+    source: catalog
+    note: 'DOC: C36000 half hard (H02) typical yield at 0.5 % extension under load (the copper-alloy convention): "H02 0.25
+      11 TYP 68 56 45 - - 20 62", MPa "386 310 - - 20 62" https://www.nationalbronze.com/pdfs/C36000.pdf ; no uniform elongation
+      or n sourced, so no hardening_modulus (perfectly plastic)'
+  model: j2

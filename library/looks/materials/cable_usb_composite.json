@@ -1,0 +1,6 @@
+{
+ "schema": "alloy.look/1",
+ "material": "cable_usb_composite",
+ "preset": "pvc_cable_black",
+ "note": "USB cable: black PVC jacket"
+}

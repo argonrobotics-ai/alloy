@@ -1,0 +1,1326 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
+# SPDX-License-Identifier: Apache-2.0
+# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included.
+
+# This code is based on the multi-contact manifold generation from Jitter Physics 2
+# Original: https://github.com/notgiven688/jitterphysics2
+# Copyright (c) Thorben Linneweber (MIT License)
+# The code has been translated from C# to Python and modified for use in Newton.
+
+"""
+Multi-contact manifold generation for collision detection.
+
+This module implements contact manifold generation algorithms for computing
+multiple contact points between colliding shapes. It includes polygon clipping
+and contact point selection algorithms.
+"""
+
+import math
+from typing import Any
+
+import warp as wp
+
+from alloy._vendor.newton._src.geometry.support_function import GeoTypeEx, _has_verified_hull
+from alloy._vendor.newton._src.math import orthonormal_basis
+
+from .contact_data import ContactData
+from .mpr import create_support_map_function
+from .types import GeoType
+
+# Constants
+EPS = 0.00001
+# Upper bound [m], preserving the cleanup radius used before #4643.
+MAX_CLIP_VERTEX_MERGE_DISTANCE = 0.0031622776601683794
+# The tilt angle defines how much the search direction gets tilted while searching for
+# points on the contact manifold.
+TILT_ANGLE_RAD = wp.static(2.0 * math.pi / 180.0)
+SIN_TILT_ANGLE = wp.static(math.sin(TILT_ANGLE_RAD))
+COS_TILT_ANGLE = wp.static(math.cos(TILT_ANGLE_RAD))
+
+COS_DEEPEST_CONTACT_THRESHOLD_ANGLE = wp.static(math.cos(0.1 * math.pi / 180.0))
+
+# Sampled support points of one shape (one row per sample) and their contact distances.
+_SamplePoints = wp.types.matrix(shape=(5, 3), dtype=wp.float32)
+_SampleDistances = wp.types.vector(length=5, dtype=wp.float32)
+
+
+@wp.func
+def should_include_deepest_contact(normal_dot: float) -> bool:
+    return normal_dot < COS_DEEPEST_CONTACT_THRESHOLD_ANGLE
+
+
+@wp.func
+def excess_normal_deviation(dir_a: wp.vec3, dir_b: wp.vec3) -> bool:
+    """
+    Check if the angle between two direction vectors exceeds the tilt angle threshold.
+
+    This is used to detect when contact polygon normals deviate too much from the
+    collision normal, indicating that the contact manifold may be unreliable.
+
+    Args:
+        dir_a: First direction vector.
+        dir_b: Second direction vector.
+
+    Returns:
+        True if the angle between the vectors exceeds TILT_ANGLE_RAD (2 degrees).
+    """
+    dot = wp.abs(wp.dot(dir_a, dir_b))
+    return dot < COS_TILT_ANGLE
+
+
+@wp.func
+def signed_area(a: wp.vec2, b: wp.vec2, query_point: wp.vec2) -> float:
+    """
+    Calculates twice the signed area for the triangle (a, b, query_point).
+
+    The result's sign indicates the triangle's orientation and is a robust way
+    to check which side of a line a point is on.
+
+    Args:
+        a: The first vertex of the triangle and the start of the line segment.
+        b: The second vertex of the triangle and the end of the line segment.
+        query_point: The third vertex of the triangle, the point to test against the line a-b.
+
+    Returns:
+        The result's sign determines the orientation of the points:
+        - Positive (> 0): The points are in a counter-clockwise (CCW) order.
+          This means query_point is to the "left" of the directed line from a to b.
+        - Negative (< 0): The points are in a clockwise (CW) order.
+          This means query_point is to the "right" of the directed line from a to b.
+        - Zero (== 0): The points are collinear; query_point lies on the infinite line defined by a and b.
+    """
+    # It returns twice the signed area of the triangle
+    return (b[0] - a[0]) * (query_point[1] - a[1]) - (b[1] - a[1]) * (query_point[0] - a[0])
+
+
+@wp.func
+def ray_plane_intersection(
+    ray_origin: wp.vec3, ray_direction: wp.vec3, plane_d: float, plane_normal: wp.vec3
+) -> wp.vec3:
+    """
+    Compute intersection of a ray with a plane.
+
+    The plane is defined by the equation: dot(point, plane_normal) + plane_d = 0
+    where plane_d = -dot(point_on_plane, plane_normal).
+
+    Args:
+        ray_origin: Starting point of the ray.
+        ray_direction: Direction vector of the ray.
+        plane_d: Plane distance parameter (negative dot product of any point on plane with normal).
+        plane_normal: Normal vector of the plane.
+
+    Returns:
+        Intersection point of the ray with the plane.
+    """
+    denom = wp.dot(ray_direction, plane_normal)
+    # Avoid division by zero; if denom is near zero, return origin unchanged
+    if wp.abs(denom) < 1.0e-12:
+        return ray_origin
+    # Plane equation: dot(point, normal) + d = 0
+    # Solve for t: dot(ray_origin + t*ray_direction, normal) + d = 0
+    # t = -(dot(ray_origin, normal) + d) / dot(ray_direction, normal)
+    t = -(wp.dot(ray_origin, plane_normal) + plane_d) / denom
+    return ray_origin + ray_direction * t
+
+
+@wp.struct
+class BodyProjector:
+    """
+    Plane projector for back-projecting contact points onto shape surfaces.
+
+    The plane is defined by the equation: dot(point, normal) + plane_d = 0
+    where plane_d = -dot(point_on_plane, normal) for any point on the plane.
+
+    This representation uses a single float instead of storing a full point_on_plane vector,
+    saving 8 bytes per projector (2 floats on typical architectures with alignment).
+    """
+
+    plane_d: float
+    normal: wp.vec3
+
+
+@wp.struct
+class IncrementalPlaneTracker:
+    reference_point: wp.vec3
+    previous_point: wp.vec3
+    normal: wp.vec3
+    largest_area_sq: float
+    nonplanar: bool
+
+
+@wp.func
+def update_incremental_plane_tracker(
+    tracker: IncrementalPlaneTracker,
+    current_point: wp.vec3,
+    current_point_id: int,
+    check_planarity: bool = False,
+) -> IncrementalPlaneTracker:
+    """
+    Update the incremental plane tracker with a new point.
+    """
+    if current_point_id == 0:
+        tracker.reference_point = current_point
+        tracker.largest_area_sq = 0.0
+        tracker.normal = wp.vec3(0.0)
+        tracker.nonplanar = False
+    elif current_point_id == 1:
+        tracker.previous_point = current_point
+    else:
+        if check_planarity and tracker.largest_area_sq > 0.0:
+            offset = wp.dot(tracker.normal, current_point - tracker.reference_point)
+            if offset * offset > EPS * EPS * tracker.largest_area_sq:
+                tracker.nonplanar = True
+        edge1 = tracker.previous_point - tracker.reference_point
+        edge2 = current_point - tracker.reference_point
+        cross = wp.cross(edge1, edge2)
+        area_sq = wp.dot(cross, cross)
+        if area_sq > tracker.largest_area_sq:
+            tracker.largest_area_sq = area_sq
+            tracker.normal = cross
+        tracker.previous_point = current_point
+    return tracker
+
+
+@wp.func
+def has_planar_contact_feature(geom: Any) -> bool:
+    """Identify shapes whose sampled supporting features must lie on one plane."""
+    return (
+        geom.shape_type == int(GeoType.BOX)
+        or geom.shape_type == int(GeoType.CONVEX_MESH)
+        or geom.shape_type == int(GeoType.PLANE)
+        or geom.shape_type == int(GeoTypeEx.TRIANGLE)
+        or geom.shape_type == int(GeoTypeEx.TRIANGLE_PRISM)
+    )
+
+
+@wp.func
+def contact_feature_supports_anchor(tracker: IncrementalPlaneTracker, anchor: wp.vec3) -> bool:
+    """Require coplanar support samples and a witness on their fitted plane."""
+    offset = wp.dot(tracker.normal, anchor - tracker.reference_point)
+    return not tracker.nonplanar and offset * offset <= EPS * EPS * tracker.largest_area_sq
+
+
+@wp.func
+def compute_line_segment_projector_normal(
+    segment_dir: wp.vec3,
+    reference_normal: wp.vec3,
+) -> wp.vec3:
+    """
+    Compute a normal for a line segment projector that is perpendicular to the segment
+    and lies in the plane defined by the segment and the reference normal.
+
+    Args:
+        segment_dir: Direction vector of the line segment.
+        reference_normal: Normal from the other body to use as reference.
+
+    Returns:
+        Normalized normal vector for the line segment projector.
+    """
+    right = wp.cross(segment_dir, reference_normal)
+    normal = wp.cross(right, segment_dir)
+    length = wp.length(normal)
+    return normal * (1.0 / length) if length > 1.0e-12 else reference_normal
+
+
+@wp.func
+def create_body_projectors(
+    plane_tracker_a: IncrementalPlaneTracker,
+    anchor_point_a: wp.vec3,
+    plane_tracker_b: IncrementalPlaneTracker,
+    anchor_point_b: wp.vec3,
+    contact_normal: wp.vec3,
+) -> tuple[BodyProjector, BodyProjector]:
+    projector_a = BodyProjector()
+    projector_b = BodyProjector()
+
+    if plane_tracker_a.largest_area_sq == 0.0 and plane_tracker_b.largest_area_sq == 0.0:
+        # Both are line segments - compute normals using contact_normal as reference
+        dir_a = plane_tracker_a.previous_point - plane_tracker_a.reference_point
+        dir_b = plane_tracker_b.previous_point - plane_tracker_b.reference_point
+
+        point_on_plane_a = 0.5 * (plane_tracker_a.reference_point + plane_tracker_a.previous_point)
+        projector_a.normal = compute_line_segment_projector_normal(dir_a, contact_normal)
+        projector_a.plane_d = -wp.dot(point_on_plane_a, projector_a.normal)
+
+        point_on_plane_b = 0.5 * (plane_tracker_b.reference_point + plane_tracker_b.previous_point)
+        projector_b.normal = compute_line_segment_projector_normal(dir_b, contact_normal)
+        projector_b.plane_d = -wp.dot(point_on_plane_b, projector_b.normal)
+
+        return projector_a, projector_b
+
+    if plane_tracker_a.largest_area_sq > 0.0:
+        inv_len_n = 1.0 / wp.sqrt(wp.max(1.0e-12, plane_tracker_a.largest_area_sq))
+        projector_a.normal = plane_tracker_a.normal * inv_len_n
+        projector_a.plane_d = -wp.dot(anchor_point_a, projector_a.normal)
+    if plane_tracker_b.largest_area_sq > 0.0:
+        inv_len_n = 1.0 / wp.sqrt(wp.max(1.0e-12, plane_tracker_b.largest_area_sq))
+        projector_b.normal = plane_tracker_b.normal * inv_len_n
+        projector_b.plane_d = -wp.dot(anchor_point_b, projector_b.normal)
+
+    if plane_tracker_a.largest_area_sq == 0.0:
+        dir = plane_tracker_a.previous_point - plane_tracker_a.reference_point
+        point_on_plane_a = 0.5 * (plane_tracker_a.reference_point + plane_tracker_a.previous_point)
+        projector_a.normal = compute_line_segment_projector_normal(dir, projector_b.normal)
+        projector_a.plane_d = -wp.dot(point_on_plane_a, projector_a.normal)
+
+    if plane_tracker_b.largest_area_sq == 0.0:
+        dir = plane_tracker_b.previous_point - plane_tracker_b.reference_point
+        point_on_plane_b = 0.5 * (plane_tracker_b.reference_point + plane_tracker_b.previous_point)
+        projector_b.normal = compute_line_segment_projector_normal(dir, projector_a.normal)
+        projector_b.plane_d = -wp.dot(point_on_plane_b, projector_b.normal)
+
+    return projector_a, projector_b
+
+
+@wp.func
+def body_projector_project(
+    proj: BodyProjector,
+    input: wp.vec3,
+    contact_normal: wp.vec3,
+) -> wp.vec3:
+    """
+    Project a point back onto the original shape surface using a plane projector.
+
+    This function casts a ray from the input point along the contact normal and
+    finds where it intersects the projector's plane.
+
+    Args:
+        proj: Body projector defining the projection plane.
+        input: Point to project (typically in contact plane space).
+        contact_normal: Direction to cast the ray (typically the collision normal).
+
+    Returns:
+        Projected point on the shape's surface in world space.
+    """
+    # Only plane projection is supported
+    return ray_plane_intersection(input, contact_normal, proj.plane_d, proj.normal)
+
+
+@wp.func
+def intersection_point(trim_seg_start: wp.vec2, trim_seg_end: wp.vec2, a: wp.vec2, b: wp.vec2) -> wp.vec2:
+    """
+    Calculate the intersection point between a line segment and a polygon edge.
+
+    It is known that a and b lie on different sides of the trim segment.
+
+    Args:
+        trim_seg_start: Start point of the trimming segment.
+        trim_seg_end: End point of the trimming segment.
+        a: First point of the polygon edge.
+        b: Second point of the polygon edge.
+
+    Returns:
+        The intersection point as a vec2.
+    """
+    # Since a and b are on opposite sides, their signed areas have opposite signs
+    # We can optimize: abs(signed_a) + abs(signed_b) = abs(signed_a - signed_b)
+    signed_a = signed_area(trim_seg_start, trim_seg_end, a)
+    signed_b = signed_area(trim_seg_start, trim_seg_end, b)
+    interp_ab = wp.abs(signed_a) / wp.abs(signed_a - signed_b)
+
+    # Interpolate between a and b
+    return (1.0 - interp_ab) * a + interp_ab * b
+
+
+@wp.func
+def insert_vec2(arr: wp.array[wp.vec2], arr_count: int, index: int, element: wp.vec2):
+    """
+    Insert an element into an array at the specified index, shifting elements to the right.
+
+    Args:
+        arr: Array to insert into.
+        arr_count: Current number of elements in the array.
+        index: Index at which to insert the element.
+        element: Element to insert.
+    """
+    i = arr_count
+    while i > index:
+        arr[i] = arr[i - 1]
+        i -= 1
+    arr[index] = element
+
+
+@wp.func
+def trim_in_place(
+    trim_seg_start: wp.vec2,
+    trim_seg_end: wp.vec2,
+    loop: wp.array[wp.vec2],
+    loop_count: int,
+) -> int:
+    """
+    Trim a polygon in place using a line segment (Sutherland-Hodgman clip).
+
+    All points are in 2D contact plane space.
+
+    Args:
+        trim_seg_start: Start point of the trimming segment.
+        trim_seg_end: End point of the trimming segment.
+        loop: Array of loop vertices (2D).
+        loop_count: Number of vertices in the loop.
+
+    Returns:
+        New number of vertices in the trimmed loop.
+    """
+    if loop_count < 3:
+        return loop_count
+
+    intersection_a = wp.vec2(0.0, 0.0)
+    change_a = int(-1)
+    intersection_b = wp.vec2(0.0, 0.0)
+    change_b = int(-1)
+
+    keep = bool(False)
+
+    # Check first vertex
+    prev_outside = bool(signed_area(trim_seg_start, trim_seg_end, loop[0]) <= 0.0)
+
+    for i in range(loop_count):
+        next_idx = (i + 1) % loop_count
+        outside = signed_area(trim_seg_start, trim_seg_end, loop[next_idx]) <= 0.0
+
+        if outside != prev_outside:
+            intersection = intersection_point(trim_seg_start, trim_seg_end, loop[i], loop[next_idx])
+            if change_a < 0:
+                change_a = i
+                keep = not prev_outside
+                intersection_a = intersection
+            else:
+                change_b = i
+                intersection_b = intersection
+
+        prev_outside = outside
+
+    if change_a >= 0 and change_b >= 0:
+        loop_indexer = int(-1)
+        new_loop_count = int(loop_count)
+
+        i = int(0)
+        while i < loop_count:
+            # If the current vertex is on the side to be kept, copy it.
+            if keep:
+                loop_indexer += 1
+                loop[loop_indexer] = loop[i]
+
+            # If the current edge intersects the trim line, add the intersection point.
+            if i == change_a or i == change_b:
+                pt = intersection_a if i == change_a else intersection_b
+
+                # Handle special case: insertion needed when loop_indexer == i and not keep.
+                if loop_indexer == i and not keep:
+                    loop_indexer += 1
+                    insert_vec2(loop, new_loop_count, loop_indexer, pt)
+
+                    new_loop_count += 1
+                    i += 1
+                    change_b += 1
+                    loop_count += 1
+                else:
+                    loop_indexer += 1
+                    loop[loop_indexer] = pt
+
+                keep = not keep
+
+            i += 1
+
+        new_loop_count = loop_indexer + 1
+    elif prev_outside:
+        new_loop_count = 0
+    else:
+        new_loop_count = loop_count
+
+    return new_loop_count
+
+
+@wp.func
+def trim_all_in_place(
+    trim_poly: wp.array[wp.vec2],
+    trim_poly_count: int,
+    loop: wp.array[wp.vec2],
+    loop_count: int,
+) -> int:
+    """
+    Trim a polygon using all edges of another polygon (Sutherland-Hodgman clipping).
+
+    Both polygons (trim_poly and loop) are in 2D contact plane space and they are both convex.
+
+    Args:
+        trim_poly: Array of vertices defining the trimming polygon (2D).
+        trim_poly_count: Number of vertices in the trimming polygon.
+        loop: Array of vertices in the loop to be trimmed (2D).
+        loop_count: Number of vertices in the loop.
+
+    Returns:
+        New number of vertices in the trimmed loop.
+    """
+
+    if trim_poly_count <= 1:
+        return wp.min(1, loop_count)  # There is no trim polygon
+
+    if trim_poly_count == 2 or loop_count == 2:
+        # Clip the actual segment: widening it creates artificial contacts
+        # whose spacing grows as the crossing angle decreases.
+        start = loop[0]
+        end = loop[1]
+        if trim_poly_count == 2:
+            start = trim_poly[0]
+            end = trim_poly[1]
+        direction = end - start
+        length_sq = wp.length_sq(direction)
+        if length_sq <= EPS * EPS:
+            return 0
+        lo = float(0.0)
+        hi = float(1.0)
+        if trim_poly_count == 2 and loop_count == 2:
+            other_start = loop[0]
+            other_end = loop[1]
+            other_direction = other_end - other_start
+            cross = direction[0] * other_direction[1] - direction[1] * other_direction[0]
+            if wp.abs(cross) > 1.0e-6 * wp.sqrt(length_sq * wp.length_sq(other_direction)):
+                # Two nonparallel line features have at most one contact;
+                # the caller uses the deepest GJK/MPR witness in this case.
+                return 0
+            # The pair already has a GJK/MPR contact. Project parallel
+            # supporting lines onto a shared tangent to tolerate normal error.
+            t0 = wp.dot(other_start - start, direction) / length_sq
+            t1 = wp.dot(other_end - start, direction) / length_sq
+            lo = wp.max(lo, wp.min(t0, t1))
+            hi = wp.min(hi, wp.max(t0, t1))
+        else:
+            polygon = trim_poly
+            polygon_count = trim_poly_count
+            if trim_poly_count == 2:
+                polygon = loop
+                polygon_count = loop_count
+            for i in range(polygon_count):
+                edge_start = polygon[i]
+                edge_end = polygon[(i + 1) % polygon_count]
+                a = signed_area(edge_start, edge_end, start)
+                b = signed_area(edge_start, edge_end, end)
+                if a < 0.0 and b < 0.0:
+                    return 0
+                if a < 0.0:
+                    lo = wp.max(lo, a / (a - b))
+                elif b < 0.0:
+                    hi = wp.min(hi, a / (a - b))
+        if hi <= lo:
+            return 0
+        loop[0] = start + lo * direction
+        loop[1] = start + hi * direction
+        return 2
+
+    current_loop_count = loop_count
+
+    trim_poly_0 = trim_poly[0]  # This allows to do more memory aliasing
+    for i in range(trim_poly_count):
+        trim_seg_start = trim_poly[i]
+        trim_seg_end = trim_poly_0 if i == trim_poly_count - 1 else trim_poly[i + 1]
+        current_loop_count = trim_in_place(trim_seg_start, trim_seg_end, loop, current_loop_count)
+
+    return current_loop_count
+
+
+@wp.func
+def approx_max_quadrilateral_area_with_calipers(hull: wp.array[wp.vec2], hull_count: int) -> wp.vec4i:
+    """
+    Finds an approximate maximum area quadrilateral inside a convex hull in O(n) time
+    using the Rotating Calipers algorithm to find the hull's diameter.
+
+    Args:
+        hull: Array of hull vertices (2D).
+        hull_count: Number of vertices in the hull.
+
+    Returns:
+        vec4i containing (p1, p2, p3, p4) where p1, p2, p3, p4 are the indices
+        of the quadrilateral vertices that form the maximum area quadrilateral.
+    """
+    n = hull_count
+
+    # --- Step 1: Find the hull's diameter using Rotating Calipers in O(n) ---
+    p1 = int(0)
+    p3 = int(1)
+    hp1 = hull[p1]
+    hp3 = hull[p3]
+    diff = wp.vec2(hp1[0] - hp3[0], hp1[1] - hp3[1])
+    max_dist_sq = diff[0] * diff[0] + diff[1] * diff[1]
+
+    # Relative epsilon for tie-breaking: only update if new value is at least (1 + epsilon) times better
+    # This is scale-invariant and avoids catastrophic cancellation in floating-point comparisons
+    # Important for objects with circular geometry to ensure consistent point selection
+    tie_epsilon_rel = 1.0e-3
+
+    # Start with point j opposite point i=0
+    j = int(1)
+    for i in range(n):
+        # For the current point i, find its antipodal point j by advancing j
+        # while the area of the triangle formed by the edge (i, i+1) and point j increases.
+        # This is equivalent to finding the point j furthest from the edge (i, i+1).
+        hull_i = hull[i]
+        hull_i_plus_1 = hull[(i + 1) % n]
+
+        while True:
+            hull_j = hull[j]
+            hull_j_plus_1 = hull[(j + 1) % n]
+
+            area_j_plus_1 = signed_area(hull_i, hull_i_plus_1, hull_j_plus_1)
+            area_j = signed_area(hull_i, hull_i_plus_1, hull_j)
+
+            if area_j_plus_1 > area_j:
+                j = (j + 1) % n
+            else:
+                break
+
+        # Now, (i, j) is an antipodal pair. Check its distance (2D)
+        hi = hull[i]
+        hj = hull[j]
+        d1 = wp.vec2(hi[0] - hj[0], hi[1] - hj[1])
+        dist_sq_1 = d1[0] * d1[0] + d1[1] * d1[1]
+        # Use relative tie-breaking: only update if new distance is meaningfully larger
+        if dist_sq_1 > max_dist_sq * (1.0 + tie_epsilon_rel):
+            max_dist_sq = dist_sq_1
+            p1 = i
+            p3 = j
+
+        # The next point, (i+1, j), is also an antipodal pair. Check its distance too (2D)
+        hip1 = hull[(i + 1) % n]
+        d2 = wp.vec2(hip1[0] - hj[0], hip1[1] - hj[1])
+        dist_sq_2 = d2[0] * d2[0] + d2[1] * d2[1]
+        # Use relative tie-breaking: only update if new distance is meaningfully larger
+        if dist_sq_2 > max_dist_sq * (1.0 + tie_epsilon_rel):
+            max_dist_sq = dist_sq_2
+            p1 = (i + 1) % n
+            p3 = j
+
+    # --- Step 2: Find points p2 and p4 furthest from the diameter (p1, p3) ---
+    p2 = int(0)
+    p4 = int(0)
+    max_area_1 = float(0.0)
+    max_area_2 = float(0.0)
+
+    hull_p1 = hull[p1]
+    hull_p3 = hull[p3]
+
+    for i in range(n):
+        # Use the signed area to determine which side of the line the point is on.
+        hull_i = hull[i]
+        area = signed_area(hull_p1, hull_p3, hull_i)
+
+        # Use relative tie-breaking: only update if new area is meaningfully larger
+        if area > max_area_1 * (1.0 + tie_epsilon_rel):
+            max_area_1 = area
+            p2 = i
+        elif -area > max_area_2 * (1.0 + tie_epsilon_rel):  # Check the other side
+            max_area_2 = -area
+            p4 = i
+
+    return wp.vec4i(p1, p2, p3, p4)
+
+
+@wp.func
+def polygon_width(loop: wp.array[wp.vec2], loop_count: int) -> float:
+    """Estimate a convex polygon's narrowest width [m].
+
+    Area over the larger bounding extent is between half and sqrt(2) times
+    the true width. This linear-time estimate conservatively reduces merging
+    for triangular features instead of computing exact edge-normal spans.
+
+    Args:
+        loop: Convex polygon vertices [m].
+        loop_count: Number of vertices in the loop.
+
+    Returns:
+        Estimated width [m], or zero for points and segments.
+    """
+    if loop_count < 3:
+        return 0.0
+    lower = loop[0]
+    upper = loop[0]
+    twice_area = float(0.0)
+    for i in range(loop_count):
+        p = loop[i]
+        q = loop[(i + 1) % loop_count]
+        lower = wp.min(lower, p)
+        upper = wp.max(upper, p)
+        twice_area += p[0] * q[1] - q[0] * p[1]
+    extent = wp.max(upper[0] - lower[0], upper[1] - lower[1])
+    if extent <= 0.0:
+        return 0.0
+    return 0.5 * wp.abs(twice_area) / extent
+
+
+@wp.func
+def remove_zero_length_edges(loop: wp.array[wp.vec2], loop_count: int, eps: float) -> int:
+    """
+    Remove zero-length edges from a polygon loop.
+
+    Args:
+        loop: Array of loop vertices (2D).
+        loop_count: Number of vertices in the loop.
+        eps: Distance threshold for considering edges as zero-length [m].
+
+    Returns:
+        New number of vertices in the cleaned loop.
+    """
+    if loop_count < 2:
+        return 0
+
+    write_idx = int(0)
+
+    for read_idx in range(1, loop_count):
+        diff = loop[read_idx] - loop[write_idx]
+        if wp.length_sq(diff) > eps * eps:
+            write_idx += 1
+            loop[write_idx] = loop[read_idx]
+
+    # Handle loop closure
+    if write_idx > 0:
+        diff = loop[write_idx] - loop[0]
+        if wp.length_sq(diff) < eps * eps:
+            new_loop_count = write_idx
+        else:
+            new_loop_count = write_idx + 1
+    else:
+        new_loop_count = write_idx + 1
+
+    if new_loop_count < 2:
+        new_loop_count = 0
+
+    return new_loop_count
+
+
+@wp.func
+def add_avoid_duplicates_vec2(arr: wp.array[wp.vec2], arr_count: int, vec: wp.vec2, eps: float) -> tuple[int, bool]:
+    """
+    Add a vector to an array, avoiding duplicates.
+
+    Args:
+        arr: Array to add to.
+        arr_count: Current number of elements in the array.
+        vec: Vector to add.
+        eps: Distance threshold for duplicate detection [m].
+
+    Returns:
+        Tuple of (new_count, was_added) where was_added is True if point was added
+    """
+    # Check for duplicates. If the new vertex 'vec' is too close to the first or last existing vertex, ignore it.
+    # This is a simple reduction step to avoid redundant points.
+    if arr_count > 0:
+        if wp.length_sq(arr[0] - vec) < eps * eps:
+            return arr_count, False
+
+    if arr_count > 1:
+        if wp.length_sq(arr[arr_count - 1] - vec) < eps * eps:
+            return arr_count, False
+
+    arr[arr_count] = vec
+    return arr_count + 1, True
+
+
+def create_build_manifold(support_func: Any, writer_func: Any, post_process_contact: Any, _support_funcs: Any = None):
+    """
+    Factory function to create manifold generation functions with a specific support mapping function.
+
+    This factory creates two related functions for multi-contact manifold generation:
+    - build_manifold_core: The core implementation that uses preallocated buffers
+    - build_manifold: The main entry point that handles buffer allocation and result extraction
+
+    Args:
+        support_func: Support mapping function for shapes that takes
+                     (geometry, direction, data_provider) and returns a support point
+        writer_func: Function to write contact data (signature: (ContactData, writer_data) -> None)
+        post_process_contact: Function to post-process contact data
+
+    Returns:
+        build_manifold function that generates up to 5 contact points between two shapes
+        using perturbed support mapping and polygon clipping.
+    """
+
+    @wp.func
+    def contact_plane_is_supporting(geom: Any, direction: wp.vec3, plane_d: float, provider: Any) -> bool:
+        """Certify a fitted feature plane against the complete shape."""
+        query = geom
+        if not _has_verified_hull(query, provider):
+            query.shape_index = -1
+        point = support_func(query, direction, provider)
+        offset = wp.dot(direction, point) + plane_d
+        return offset * offset <= EPS * EPS * wp.length_sq(direction)
+
+    @wp.func
+    def feature_plane_is_supporting(
+        geom: Any,
+        projector: BodyProjector,
+        normal: wp.vec3,
+        on_b: bool,
+        relative_orientation_b: wp.quat,
+        relative_position_b: wp.vec3,
+        provider: Any,
+    ) -> bool:
+        """Orient an A-local feature plane outward and certify it in the shape's frame."""
+        direction = projector.normal
+        plane_d = projector.plane_d
+        alignment = wp.dot(direction, normal)
+        if (on_b and alignment > 0.0) or (not on_b and alignment < 0.0):
+            direction = -direction
+            plane_d = -plane_d
+        if on_b:
+            plane_d += wp.dot(direction, relative_position_b)
+            direction = wp.quat_rotate_inv(relative_orientation_b, direction)
+        return contact_plane_is_supporting(geom, direction, plane_d, provider)
+
+    if _support_funcs is not None:
+        _support_map_b = _support_funcs[0]
+    else:
+        _support_map_b = create_support_map_function(support_func)[0]
+
+    @wp.func
+    def support_contact_feature(geom: Any, direction: wp.vec3, normal: wp.vec3, data_provider: Any) -> wp.vec3:
+        """Sample a feature without widening an axial shape's supporting line."""
+        point = support_func(geom, direction, data_provider)
+        is_line_side = geom.shape_type == int(GeoType.CAPSULE) or (
+            geom.shape_type == int(GeoType.CYLINDER) and geom.scale[2] == 0.0
+        )
+        if is_line_side and wp.abs(normal[2]) <= 1.0e-4:
+            # Allow GJK/MPR normal error in rotated frames. Radial
+            # perturbations must not turn a side segment into a polygon.
+            radial = wp.normalize(wp.vec3(normal[0], normal[1], 0.0)) * geom.scale[0]
+            point[0] = radial[0]
+            point[1] = radial[1]
+            # A zero axial perturbation must choose an endpoint as well.
+            point[2] = geom.scale[1] if direction[2] >= 0.0 else -geom.scale[1]
+        return point
+
+    @wp.func
+    def extract_4_point_contact_manifolds(
+        m_a: wp.array[wp.vec2],
+        m_a_count: int,
+        m_b: wp.array[wp.vec2],
+        m_b_count: int,
+        normal_local: wp.vec3,
+        cross_vector_1: wp.vec3,
+        cross_vector_2: wp.vec3,
+        center_local: wp.vec3,
+        projector_a: BodyProjector,
+        projector_b: BodyProjector,
+        orientation_a: wp.quat,
+        position_a_world: wp.vec3,
+        normal_world: wp.vec3,
+        writer_data: Any,
+        contact_template: Any,
+        geom_a: Any,
+        geom_b: Any,
+        position_a: wp.vec3,
+        position_b: wp.vec3,
+        quaternion_a: wp.quat,
+        quaternion_b: wp.quat,
+    ) -> tuple[int, float]:
+        """
+        Extract up to 4 contact points from two convex contact polygons and write them immediately.
+
+        All intermediate work (clipping, projectors) operates in shape A's local frame.
+        Final contact points are transformed to world space before writing.
+
+        Args:
+            m_a: Contact polygon vertices for shape A (2D contact plane space, up to 5 points).
+            m_a_count: Number of vertices in polygon A.
+            m_b: Contact polygon vertices for shape B (2D contact plane space, up to 5 points, space for 10).
+            m_b_count: Number of vertices in polygon B.
+            normal_local: Collision normal in A-local frame.
+            cross_vector_1: First tangent vector in A-local frame.
+            cross_vector_2: Second tangent vector in A-local frame.
+            center_local: Center point for back-projection in A-local frame.
+            projector_a: Body projector for shape A (in A-local frame).
+            projector_b: Body projector for shape B (in A-local frame).
+            orientation_a: World orientation of shape A (for final transform).
+            position_a_world: World position of shape A (for final transform).
+            normal_world: Contact normal in world space (for output).
+            writer_data: Data structure for contact writer.
+            contact_template: Pre-packed ContactData with static fields.
+            geom_a: Geometry data for shape A.
+            geom_b: Geometry data for shape B.
+            position_a: World position of shape A (for post_process_contact).
+            position_b: World position of shape B (for post_process_contact).
+            quaternion_a: Orientation of shape A (for post_process_contact).
+            quaternion_b: Orientation of shape B (for post_process_contact).
+
+        Returns:
+            Tuple of (loop_count, normal_dot) where:
+            - loop_count: Number of valid contact points written (0-4)
+            - normal_dot: Absolute dot product of polygon normals
+        """
+
+        normal_dot = wp.abs(wp.dot(projector_a.normal, projector_b.normal))
+
+        # Clipping wide, slightly tilted faces leaves sliver polygons whose
+        # extra vertices turn line contacts into poorly supported manifolds
+        # and destabilize resting stacks. Limit merging by half the estimated
+        # input feature width (with an EPS floor) so thin faces keep both sides.
+        # Small overlaps of wide faces can collapse entirely within the cap;
+        # these intentionally fall back to the single deepest contact.
+        merge_distance = wp.clamp(
+            0.5 * wp.min(polygon_width(m_a, m_a_count), polygon_width(m_b, m_b_count)),
+            EPS,
+            MAX_CLIP_VERTEX_MERGE_DISTANCE,
+        )
+
+        loop_count = trim_all_in_place(m_a, m_a_count, m_b, m_b_count)
+
+        loop_count = remove_zero_length_edges(m_b, loop_count, merge_distance)
+
+        if loop_count > 1:
+            result = wp.vec4i()
+            if loop_count > 4:
+                result = approx_max_quadrilateral_area_with_calipers(m_b, loop_count)
+                loop_count = 4
+            else:
+                result = wp.vec4i(0, 1, 2, 3)
+
+            for i in range(loop_count):
+                ia = int(result[i])
+
+                # Back-project from 2D to 3D in A-local frame
+                p_local = m_b[ia].x * cross_vector_1 + m_b[ia].y * cross_vector_2 + center_local
+
+                a = body_projector_project(projector_a, p_local, normal_local)
+                b = body_projector_project(projector_b, p_local, normal_local)
+                contact_point_local = 0.5 * (a + b)
+                signed_distance = wp.dot(b - a, normal_local)
+
+                # Transform from A-local to world space
+                contact_point_world = wp.quat_rotate(orientation_a, contact_point_local) + position_a_world
+
+                contact_data = contact_template
+                contact_data.contact_point_center = contact_point_world
+                contact_data.contact_normal_a_to_b = normal_world
+                contact_data.contact_distance = signed_distance
+                contact_data.sort_sub_key = (contact_template.sort_sub_key << 3) | i
+
+                contact_data = post_process_contact(
+                    contact_data, geom_a, position_a, quaternion_a, geom_b, position_b, quaternion_b
+                )
+                writer_func(contact_data, writer_data, -1)
+        else:
+            normal_dot = 0.0
+            loop_count = 0
+
+        return loop_count, normal_dot
+
+    @wp.func
+    def point_in_contact_polygon(
+        point: wp.vec2,
+        polygon: wp.array[wp.vec2],
+        count: int,
+    ) -> bool:
+        """Test a projected point against a convex polygon of either winding, within EPS [m]."""
+        side = float(0.0)
+        inside = count >= 3
+        for k in range(count):
+            start = polygon[k]
+            edge = polygon[(k + 1) % count] - start
+            cross = edge[0] * (point[1] - start[1]) - edge[1] * (point[0] - start[0])
+            if cross * cross > EPS * EPS * wp.length_sq(edge):
+                if side == 0.0:
+                    side = wp.sign(cross)
+                elif cross * side < 0.0:
+                    inside = False
+        return inside
+
+    @wp.func
+    def write_vertex_face_contacts(
+        vertex_points: _SamplePoints,
+        vertex_polygon: wp.array[wp.vec2],
+        vertex_count: int,
+        vertex_anchor: wp.vec3,
+        vertex_on_a: bool,
+        face_projector: BodyProjector,
+        face_points: wp.array[wp.vec2],
+        face_count: int,
+        normal_local: wp.vec3,
+        orientation_a: wp.quat,
+        position_a_world: wp.vec3,
+        normal_world: wp.vec3,
+        writer_data: Any,
+        contact_template: Any,
+        geom_a: Any,
+        geom_b: Any,
+        position_a: wp.vec3,
+        position_b: wp.vec3,
+        quaternion_a: wp.quat,
+        quaternion_b: wp.quat,
+    ) -> int:
+        """
+        Write contacts between the sampled support points of a non-planar feature and a verified face.
+
+        Each sampled support point lies on its shape's surface. Its projection along the contact
+        normal onto the face plane lies on the face when it falls inside the face's sampled
+        polygon, so both witnesses stay on their surfaces and each depth is exact. Submit
+        at most four samples to the writer, which applies its contact gap policy, skipping
+        the deepest witness, which the caller writes.
+
+        Args:
+            vertex_points: Sampled support points of the non-planar feature in A-local frame.
+            vertex_polygon: Support samples projected into the contact plane.
+            vertex_count: Number of valid rows in ``vertex_points``.
+            vertex_anchor: Deepest witness on the non-planar shape in A-local frame.
+            vertex_on_a: True when the non-planar feature belongs to shape A.
+            face_projector: Plane of the verified face in A-local frame.
+            face_points: Face samples projected into the contact plane.
+            face_count: Number of valid rows in ``face_points``.
+            normal_local: Contact normal from A to B in A-local frame.
+            orientation_a: Rotation from A-local frame to world frame.
+            position_a_world: Origin of A-local frame in world coordinates.
+            normal_world: Contact normal from A to B in world frame.
+            writer_data: Output buffers and contact admission policy data.
+            contact_template: Pair metadata shared by all candidate contacts.
+            geom_a: Geometry of shape A.
+            geom_b: Geometry of shape B.
+            position_a: World position of shape A for contact postprocessing.
+            position_b: World position of shape B for contact postprocessing.
+            quaternion_a: World orientation of shape A for contact postprocessing.
+            quaternion_b: World orientation of shape B for contact postprocessing.
+
+        Returns:
+            Number of contact candidates submitted to the writer (0-4).
+        """
+        distances = _SampleDistances()
+        candidates = int(0)
+        for i in range(5):
+            distances[i] = 1.0e30
+            if i < vertex_count:
+                vertex = vertex_points[i]
+                if wp.length_sq(vertex - vertex_anchor) > EPS * EPS and point_in_contact_polygon(
+                    vertex_polygon[i], face_points, face_count
+                ):
+                    on_face = body_projector_project(face_projector, vertex, normal_local)
+                    signed_distance = wp.dot(on_face - vertex, normal_local)
+                    if not vertex_on_a:
+                        signed_distance = -signed_distance
+                    distances[i] = signed_distance
+                    candidates += 1
+        # Keep the four deepest candidates; the writer applies gap filtering.
+        if candidates > 4:
+            shallowest = int(0)
+            for i in range(1, 5):
+                if distances[i] > distances[shallowest]:
+                    shallowest = i
+            distances[shallowest] = 1.0e30
+        written = int(0)
+        for i in range(5):
+            if distances[i] < 1.0e30:
+                vertex = vertex_points[i]
+                on_face = body_projector_project(face_projector, vertex, normal_local)
+                contact_point_local = 0.5 * (vertex + on_face)
+                contact_point_world = wp.quat_rotate(orientation_a, contact_point_local) + position_a_world
+
+                contact_data = contact_template
+                contact_data.contact_point_center = contact_point_world
+                contact_data.contact_normal_a_to_b = normal_world
+                contact_data.contact_distance = distances[i]
+                contact_data.sort_sub_key = (contact_template.sort_sub_key << 3) | written
+
+                contact_data = post_process_contact(
+                    contact_data, geom_a, position_a, quaternion_a, geom_b, position_b, quaternion_b
+                )
+                writer_func(contact_data, writer_data, -1)
+                written += 1
+        return written
+
+    @wp.func
+    def build_manifold(
+        geom_a: Any,
+        geom_b: Any,
+        orientation_a: wp.quat,
+        position_a_world: wp.vec3,
+        relative_orientation_b: wp.quat,
+        relative_position_b: wp.vec3,
+        p_a: wp.vec3,
+        p_b: wp.vec3,
+        normal: wp.vec3,
+        data_provider: Any,
+        writer_data: Any,
+        contact_template: ContactData,
+    ) -> int:
+        """
+        Build a contact manifold between two convex shapes and write contacts directly.
+
+        All intermediate work operates in shape A's local frame to avoid redundant
+        quaternion transforms. Final contact points are transformed to world space
+        before writing.
+
+        Args:
+            geom_a: Geometry data for the first shape.
+            geom_b: Geometry data for the second shape.
+            orientation_a: World orientation of shape A (for final world-space transform).
+            position_a_world: World position of shape A (for final world-space transform).
+            relative_orientation_b: Orientation of B relative to A.
+            relative_position_b: Position of B relative to A (in A-local frame).
+            p_a: Anchor contact point on shape A in A-local frame (from GJK/MPR).
+            p_b: Anchor contact point on shape B in A-local frame (from GJK/MPR).
+            normal: Contact normal in A-local frame pointing from A to B.
+            data_provider: Support mapping data provider for shape queries.
+            writer_data: Data structure for contact writer.
+            contact_template: Pre-packed ContactData with static fields.
+
+        Returns:
+            Number of valid contact points written (0-5).
+        """
+
+        # Precomputed cos/sin for 5 evenly spaced pentagonal angles (0, 72, 144, 216, 288 deg).
+        PENT_COS_0 = float(1.0)
+        PENT_SIN_0 = float(0.0)
+        PENT_COS_1 = wp.static(math.cos(2.0 * math.pi / 5.0))
+        PENT_SIN_1 = wp.static(math.sin(2.0 * math.pi / 5.0))
+        PENT_COS_2 = wp.static(math.cos(4.0 * math.pi / 5.0))
+        PENT_SIN_2 = wp.static(math.sin(4.0 * math.pi / 5.0))
+        PENT_COS_3 = wp.static(math.cos(6.0 * math.pi / 5.0))
+        PENT_SIN_3 = wp.static(math.sin(6.0 * math.pi / 5.0))
+        PENT_COS_4 = wp.static(math.cos(8.0 * math.pi / 5.0))
+        PENT_SIN_4 = wp.static(math.sin(8.0 * math.pi / 5.0))
+
+        a_count = int(0)
+        b_count = int(0)
+
+        feature_normal_a = normal
+        if (
+            geom_a.shape_type == int(GeoType.CYLINDER)
+            and geom_b.shape_type == int(GeoType.CYLINDER)
+            and geom_a.scale[2] == 0.0
+            and geom_b.scale[2] == 0.0
+        ):
+            axis_b = wp.quat_rotate(relative_orientation_b, wp.vec3(0.0, 0.0, 1.0))
+            radial_offset = wp.vec3(relative_position_b[0], relative_position_b[1], 0.0)
+            if (
+                axis_b[0] * axis_b[0] + axis_b[1] * axis_b[1] <= 1.0e-12
+                and wp.abs(relative_position_b[2]) < geom_a.scale[1] + geom_b.scale[1]
+                and wp.length_sq(radial_offset) > 1.0e-20
+            ):
+                radial_normal = wp.normalize(radial_offset)
+                if wp.dot(normal, radial_normal) >= COS_TILT_ANGLE:
+                    # Parallel cylinder sides support exact axial lines. Their
+                    # feature type must not depend on GJK/MPR normal error.
+                    feature_normal_a = radial_normal
+
+        # Orthonormal basis from the collision normal (in A-local frame).
+        tangent_a, tangent_b = orthonormal_basis(normal)
+
+        plane_tracker_a = IncrementalPlaneTracker()
+        plane_tracker_b = IncrementalPlaneTracker()
+        points_a = _SamplePoints()
+        points_b = _SamplePoints()
+        planar_a = has_planar_contact_feature(geom_a)
+        planar_b = has_planar_contact_feature(geom_b)
+
+        center = 0.5 * (p_a + p_b)
+
+        # Allocate buffers: 5 for A, up to 10 for B (5 + clipping headroom)
+        b_buffer = wp.zeros(shape=(10,), dtype=wp.vec2f)
+        a_buffer = wp.array(ptr=b_buffer.ptr + wp.uint64(5 * 8), shape=(5,), dtype=wp.vec2f)
+
+        # --- Step 1: Find Contact Polygons using Perturbed Support Mapping ---
+        # Shape A: support_func returns points in A-local frame directly, no quat_rotate needed.
+        # Shape B: pre-transform basis to B-local, then transform results back to A-local.
+        local_normal_b = wp.quat_rotate_inv(relative_orientation_b, -normal)
+        local_feature_normal_b = wp.quat_rotate_inv(relative_orientation_b, -feature_normal_a)
+        local_ta_b = wp.quat_rotate_inv(relative_orientation_b, -tangent_a)
+        local_tb_b = wp.quat_rotate_inv(relative_orientation_b, -tangent_b)
+
+        for e in range(5):
+            c = PENT_COS_0
+            s = PENT_SIN_0
+            if e == 1:
+                c = PENT_COS_1
+                s = PENT_SIN_1
+            elif e == 2:
+                c = PENT_COS_2
+                s = PENT_SIN_2
+            elif e == 3:
+                c = PENT_COS_3
+                s = PENT_SIN_3
+            elif e == 4:
+                c = PENT_COS_4
+                s = PENT_SIN_4
+
+            cos_tilt = COS_TILT_ANGLE
+            c_sin = c * SIN_TILT_ANGLE
+            s_sin = s * SIN_TILT_ANGLE
+
+            # Shape A: direction and result both in A-local frame, zero quaternion ops.
+            dir_a = normal * cos_tilt + c_sin * tangent_a + s_sin * tangent_b
+            pt_a_3d = support_contact_feature(geom_a, dir_a, feature_normal_a, data_provider)
+            projected_a = pt_a_3d - center
+            pt_a_2d = wp.vec2(wp.dot(tangent_a, projected_a), wp.dot(tangent_b, projected_a))
+            a_count, was_added_a = add_avoid_duplicates_vec2(a_buffer, a_count, pt_a_2d, EPS)
+            if was_added_a:
+                points_a[a_count - 1] = pt_a_3d
+                plane_tracker_a = update_incremental_plane_tracker(plane_tracker_a, pt_a_3d, a_count - 1, planar_a)
+
+            # Shape B: direction in B-local, result transformed to A-local.
+            local_dir_b = local_normal_b * cos_tilt + c_sin * local_ta_b + s_sin * local_tb_b
+            pt_b_local = support_contact_feature(geom_b, local_dir_b, local_feature_normal_b, data_provider)
+            pt_b_3d = wp.quat_rotate(relative_orientation_b, pt_b_local) + relative_position_b
+            projected_b = pt_b_3d - center
+            pt_b_2d = wp.vec2(wp.dot(tangent_a, projected_b), wp.dot(tangent_b, projected_b))
+            b_count, was_added_b = add_avoid_duplicates_vec2(b_buffer, b_count, pt_b_2d, EPS)
+            if was_added_b:
+                points_b[b_count - 1] = pt_b_3d
+                plane_tracker_b = update_incremental_plane_tracker(plane_tracker_b, pt_b_3d, b_count - 1, planar_b)
+
+        # World-space normal (computed once for all output contacts)
+        normal_world = wp.quat_rotate(orientation_a, normal)
+
+        # World-space positions/orientations for post_process_contact
+        position_a_ws = position_a_world
+        position_b_ws = wp.quat_rotate(orientation_a, relative_position_b) + position_a_world
+        quaternion_a_ws = orientation_a
+        quaternion_b_ws = orientation_a * relative_orientation_b
+
+        feature_a_flat = not planar_a or contact_feature_supports_anchor(plane_tracker_a, p_a)
+        feature_b_flat = not planar_b or contact_feature_supports_anchor(plane_tracker_b, p_b)
+        if a_count < 2 or b_count < 2 or not feature_a_flat or not feature_b_flat:
+            count_out = 0
+            normal_dot = 0.0
+            # A tessellated feature that is not flat to EPS can still rest on a
+            # verified face. Its sampled support points then give exact
+            # vertex-face contacts instead of a single deepest contact.
+            if planar_a and planar_b and feature_a_flat != feature_b_flat:
+                face_on_b = feature_b_flat
+                vertex_points = points_a
+                vertex_polygon = a_buffer
+                vertex_count = a_count
+                vertex_anchor = p_a
+                face_points = wp.array(ptr=b_buffer.ptr, shape=(5,), dtype=wp.vec2)
+                face_count = b_count
+                face_tracker = plane_tracker_b
+                face_anchor = p_b
+                if not face_on_b:
+                    vertex_points = points_b
+                    vertex_polygon = wp.array(ptr=b_buffer.ptr, shape=(5,), dtype=wp.vec2)
+                    vertex_count = b_count
+                    vertex_anchor = p_b
+                    face_points = a_buffer
+                    face_count = a_count
+                    face_tracker = plane_tracker_a
+                    face_anchor = p_a
+                if face_tracker.largest_area_sq > 0.0:
+                    face_projector = BodyProjector()
+                    face_projector.normal = face_tracker.normal * (1.0 / wp.sqrt(face_tracker.largest_area_sq))
+                    face_projector.plane_d = -wp.dot(face_anchor, face_projector.normal)
+                    face_supported = not excess_normal_deviation(normal, face_projector.normal)
+                    if face_supported:
+                        # Certify the face plane against the complete shape, as for manifolds.
+                        if face_on_b:
+                            face_supported = feature_plane_is_supporting(
+                                geom_b,
+                                face_projector,
+                                normal,
+                                True,
+                                relative_orientation_b,
+                                relative_position_b,
+                                data_provider,
+                            )
+                        else:
+                            face_supported = feature_plane_is_supporting(
+                                geom_a,
+                                face_projector,
+                                normal,
+                                False,
+                                relative_orientation_b,
+                                relative_position_b,
+                                data_provider,
+                            )
+                    if face_supported:
+                        count_out = write_vertex_face_contacts(
+                            vertex_points,
+                            vertex_polygon,
+                            vertex_count,
+                            vertex_anchor,
+                            face_on_b,
+                            face_projector,
+                            face_points,
+                            face_count,
+                            normal,
+                            orientation_a,
+                            position_a_world,
+                            normal_world,
+                            writer_data,
+                            contact_template,
+                            geom_a,
+                            geom_b,
+                            position_a_ws,
+                            position_b_ws,
+                            quaternion_a_ws,
+                            quaternion_b_ws,
+                        )
+        else:
+            projector_a, projector_b = create_body_projectors(plane_tracker_a, p_a, plane_tracker_b, p_b, normal)
+
+            valid_planes = not excess_normal_deviation(normal, projector_a.normal) and not excess_normal_deviation(
+                normal, projector_b.normal
+            )
+            # The collision normal certifies parallel planes through witnesses.
+            # Line projectors use sampled midpoints, so they also need a bound.
+            if (
+                valid_planes
+                and planar_a
+                and (plane_tracker_a.largest_area_sq == 0.0 or wp.length_sq(wp.cross(normal, projector_a.normal)) > 0.0)
+            ):
+                valid_planes = feature_plane_is_supporting(
+                    geom_a, projector_a, normal, False, relative_orientation_b, relative_position_b, data_provider
+                )
+            if (
+                valid_planes
+                and planar_b
+                and (plane_tracker_b.largest_area_sq == 0.0 or wp.length_sq(wp.cross(normal, projector_b.normal)) > 0.0)
+            ):
+                valid_planes = feature_plane_is_supporting(
+                    geom_b, projector_b, normal, True, relative_orientation_b, relative_position_b, data_provider
+                )
+            if not valid_planes:
+                count_out = 0
+                normal_dot = 0.0
+            else:
+                num_manifold_points, normal_dot = extract_4_point_contact_manifolds(
+                    a_buffer,
+                    a_count,
+                    b_buffer,
+                    b_count,
+                    normal,
+                    tangent_a,
+                    tangent_b,
+                    center,
+                    projector_a,
+                    projector_b,
+                    orientation_a,
+                    position_a_world,
+                    normal_world,
+                    writer_data,
+                    contact_template,
+                    geom_a,
+                    geom_b,
+                    position_a_ws,
+                    position_b_ws,
+                    quaternion_a_ws,
+                    quaternion_b_ws,
+                )
+                count_out = wp.min(num_manifold_points, 4)
+
+        if should_include_deepest_contact(normal_dot) or count_out == 0:
+            deepest_center_local = 0.5 * (p_a + p_b)
+            deepest_signed_distance = wp.dot(p_b - p_a, normal)
+
+            deepest_center_world = wp.quat_rotate(orientation_a, deepest_center_local) + position_a_world
+
+            contact_data = contact_template
+            contact_data.contact_point_center = deepest_center_world
+            contact_data.contact_normal_a_to_b = normal_world
+            contact_data.contact_distance = deepest_signed_distance
+            contact_data.sort_sub_key = (contact_template.sort_sub_key << 3) | count_out
+
+            contact_data = post_process_contact(
+                contact_data, geom_a, position_a_ws, quaternion_a_ws, geom_b, position_b_ws, quaternion_b_ws
+            )
+            writer_func(contact_data, writer_data, -1)
+
+            count_out += 1
+
+        return count_out
+
+    return build_manifold

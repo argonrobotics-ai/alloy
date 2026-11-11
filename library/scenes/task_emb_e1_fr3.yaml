@@ -1,0 +1,9 @@
+# P3-2b embodiment e1_fr3: Franka FR3 + Franka Hand. Built by alloy.tasks.emb_scene from https://github.com/google-deepmind/mujoco_menagerie@98a70c569c4c (Apache-2.0 (mujoco_menagerie franka_fr3, franka_emika_panda hand)). Replay tier: the whole MJCF as one robot.
+schema: alloy.scene/1
+robots:
+- path: robots/emb_e1_fr3/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: emb_e1_fr3
+objects: []
+control_dt: 0.002

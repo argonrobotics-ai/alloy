@@ -1,0 +1,30 @@
+{
+ "schema": "alloy.look/1",
+ "object": "screwdriver_pz2",
+ "materials": {
+  "grip": {
+   "preset": "plastic_gloss",
+   "base_color": [
+    0.72,
+    0.06,
+    0.05
+   ],
+   "roughness": 0.3
+  },
+  "shaft": {
+   "preset": "steel_polished"
+  }
+ },
+ "assign": [
+  {
+   "match": "grip",
+   "material": "grip"
+  },
+  {
+   "match": "shaft",
+   "material": "shaft"
+  }
+ ],
+ "default": "shaft",
+ "note": "PZ2 screwdriver: red moulded grip, chrome-vanadium shaft"
+}

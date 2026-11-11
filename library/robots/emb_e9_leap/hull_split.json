@@ -1,0 +1,28 @@
+{
+ "bodies": ".",
+ "config": {
+  "max_verts": 64,
+  "tol_m": 0.0002,
+  "max_pieces": 64
+ },
+ "max_bound_m": 0.0,
+ "max_piece_verts": 0,
+ "meshes": [
+  {
+   "mesh": "tip",
+   "hull_verts": 52,
+   "piece_verts": [
+    52
+   ],
+   "bound_m": 0.0
+  },
+  {
+   "mesh": "thumb_tip",
+   "hull_verts": 52,
+   "piece_verts": [
+    52
+   ],
+   "bound_m": 0.0
+  }
+ ]
+}

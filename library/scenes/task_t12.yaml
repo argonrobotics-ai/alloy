@@ -1,0 +1,9 @@
+# T12 block overhang (reference-task, two YAM arms, 8 alder blocks on a plywood ledge), converted from [internal reference]; traces t12, t12pre. Replay tier: the whole recorded model as one MJCF robot (alloy.tasks.scenes).
+schema: alloy.scene/1
+robots:
+- path: robots/task_t12/scene.xml
+  kind: mjcf
+  base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  name: task_t12
+objects: []
+control_dt: 0.0008333333333

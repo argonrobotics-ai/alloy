@@ -1,0 +1,8 @@
+schema: alloy.object/1
+name: spoon_steel
+shape:
+  mesh:
+    path: meshes/spoon_steel_flat.obj
+    sha256: c5d6172edabba6f1640001ae18d5f66b962cbad4d16ff112e28fec79b687da74
+    collision: sdf
+material: stainless_304

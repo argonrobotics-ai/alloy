@@ -1,0 +1,9 @@
+{
+ "schema": "alloy.look/1",
+ "material": "wood_cedar_pencil",
+ "preset": "wood_oak",
+ "texture": "polyhaven:cherry_veneer",
+ "scale_m": 0.3,
+ "note": "incense cedar: reddish brown (cherry veneer scan, closest CC0 match)",
+ "licence": "textures: Poly Haven (polyhaven.com) 'cherry_veneer', CC0"
+}

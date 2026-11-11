@@ -1,0 +1,22 @@
+schema: alloy.object/1
+name: block_bore_d12_2
+shape:
+  mesh:
+    path: meshes/block_bore_d12_2.obj
+    sha256: 755fa5387cbef8e47f4517c629fae77355db10a98449cc1a3cae6cc15eb7a3f1
+    collision: sdf
+material: pmma_cast
+motion: static
+features:
+  precision_anchor: [0.0, 0.0, 0.0]
+precision_partners:
+- peg_d12:shaft
+precision_features:
+- name: bore
+  crop:
+  - [-0.008, -0.008, -0.005]
+  - [0.008, 0.008, 0.005]
+  clearance:
+    value: 0.0002
+    source: catalog
+    note: D12 peg in a 12.2 mm hole, 0.2 mm diametral clearance

@@ -1,0 +1,13 @@
+schema: alloy.pair/1
+a: pa66_gf30
+b: pbt
+mu_static:
+  value: 0.2
+  source: model
+  unc: [0.15, 0.25]
+  note: nylon/nylon as closest match, no PA-on-PBT value
+mu_dynamic:
+  value: 0.2
+  source: model
+  unc: [0.15, 0.25]
+  note: nylon/nylon as closest match, no PA-on-PBT value

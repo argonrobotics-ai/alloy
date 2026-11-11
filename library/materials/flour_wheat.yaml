@@ -1,0 +1,58 @@
+schema: alloy.material/1
+name: flour_wheat
+density:
+  value: 1500.0
+  source: measured
+  unc: [1450.0, 1550.0]
+  note: 'grain (particle) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
+    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 900 kg/m3 here. Wheat starch granules ~1.5
+    g/cm3 by liquid pycnometry (Dengate, Baruch, Meredith, Starch 30 (1978) 80-84; BioNumbers 112353). Measured uncompacted
+    wheat-flour bulk is 601 kg/m3 at 14.2 % moisture and 630 at 8.6 % (Guan 2010, MSc thesis, U. Manitoba, ''Effect of Compaction
+    on Strength and Arching of Cohesive Material in Storage Bins'', Table 4.1, at 0.2 kPa): packing ~0.40-0.42, so a grain_mpm
+    fill of this card is ~45 % heavier than real flour until packing is per material'
+surface:
+  mu_static:
+    value: 0.3939104756149424
+    source: measured
+    unc: [0.36397023426620234, 0.3939104756149424]
+    note: 'wheat flour on aluminium foil, tilt table: 21.5 deg at 14.2 % moisture, 20.0 deg at 8.6 % (Guan 2010, Table 4.1)'
+  mu_dynamic:
+    value: 0.35451942805344816
+    source: model
+    note: 'wheat flour on aluminium foil, tilt table: 21.5 deg at 14.2 % moisture, 20.0 deg at 8.6 % (Guan 2010, Table 4.1);
+      dynamic 0.9 x static (model)'
+  restitution:
+    value: 0.1
+    source: model
+    unc: [0.0, 0.2]
+    note: powder impacts are almost fully plastic (model, as the soil cards)
+elastic:
+  youngs:
+    value: 10000000.0
+    source: model
+    unc: [5000000.0, 50000000.0]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws), as the soil
+      cards; no flour source opened'
+  poisson:
+    value: 0.3
+    source: model
+    unc: [0.25, 0.35]
+    note: 'continuum stiffness for implicit MPM (rigid-plastic regime: strength, not stiffness, sets the laws), as the soil
+      cards; no flour source opened'
+plastic:
+  friction_angle:
+    value: 0.6544984694978736
+    source: measured
+    unc: [0.609119908946021, 0.7016223593017206]
+    note: 'wheat flour, direct shear: 37.5 deg at 14.2 % moisture (95 % CI 34.9-40.2), 37.6 deg at 8.6 % (Guan 2010, Table
+      4.1 and Sec 5.3)'
+  cohesion:
+    value: 100.0
+    source: model
+    unc: [20.0, 2410.0]
+    note: low-stress estimate for flour in a bowl (~0.2 kPa from self-weight, Guan 2010 Sec 5.1). Measured 2.08 kPa at 14.2
+      % moisture (CI 1.74-2.41) and 1.21 kPa at 8.6 % (0.90-1.52), after pre-consolidation at 9.1 kPa (Guan 2010, Table 4.1).
+      Holding that test's flow function ff_c = 9.1 / 4.22 = 2.2 at 0.2-0.5 kPa gives an unconfined strength of 0.09-0.23 kPa,
+      so c = sigma_c / (2 tan(45 + phi/2)) = 23-57 Pa; flow functions fall at low stress (more cohesive), hence ~0.1 kPa.
+      A free face of this card stands to H_c = 4 c tan(45 + phi/2) / (rho g) = 9 cm at the 900 kg/m3 fill; at 2.08 kPa it
+      would stand 1.9 m and cut like clay

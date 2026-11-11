@@ -1,0 +1,242 @@
+[
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__0.npz",
+  "index": 0,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__1.npz",
+  "index": 1,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__2.npz",
+  "index": 2,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__3.npz",
+  "index": 3,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__4.npz",
+  "index": 4,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__5.npz",
+  "index": 5,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__6.npz",
+  "index": 6,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__7.npz",
+  "index": 7,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__8.npz",
+  "index": 8,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__9.npz",
+  "index": 9,
+  "split": "calib"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__10.npz",
+  "index": 10,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__11.npz",
+  "index": 11,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__12.npz",
+  "index": 12,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__13.npz",
+  "index": 13,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__14.npz",
+  "index": 14,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__15.npz",
+  "index": 15,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__16.npz",
+  "index": 16,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__17.npz",
+  "index": 17,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__18.npz",
+  "index": 18,
+  "split": "valid"
+ },
+ {
+  "condition_id": "pp_on_steel",
+  "file": "trials/pp_on_steel__19.npz",
+  "index": 19,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__0.npz",
+  "index": 0,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__1.npz",
+  "index": 1,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__2.npz",
+  "index": 2,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__3.npz",
+  "index": 3,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__4.npz",
+  "index": 4,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__5.npz",
+  "index": 5,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__6.npz",
+  "index": 6,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__7.npz",
+  "index": 7,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__8.npz",
+  "index": 8,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__9.npz",
+  "index": 9,
+  "split": "calib"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__10.npz",
+  "index": 10,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__11.npz",
+  "index": 11,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__12.npz",
+  "index": 12,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__13.npz",
+  "index": 13,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__14.npz",
+  "index": 14,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__15.npz",
+  "index": 15,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__16.npz",
+  "index": 16,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__17.npz",
+  "index": 17,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__18.npz",
+  "index": 18,
+  "split": "valid"
+ },
+ {
+  "condition_id": "rubber_on_wood",
+  "file": "trials/rubber_on_wood__19.npz",
+  "index": 19,
+  "split": "valid"
+ }
+]

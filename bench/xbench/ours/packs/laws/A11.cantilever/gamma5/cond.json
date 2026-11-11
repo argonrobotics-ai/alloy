@@ -1,0 +1,5218 @@
+{
+ "schema": "alloy.xbench.ours.law/1",
+ "law": "A11.cantilever",
+ "condition": "gamma5",
+ "params": {
+  "gamma": 5.0,
+  "links": 30.0
+ },
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 5.5,
+ "steps": 4400,
+ "record_every": 1,
+ "gravity": [
+  -0.0,
+  -0.0,
+  -9.8100004196167
+ ],
+ "bodies": [
+  {
+   "name": "law0_0",
+   "parent": "world",
+   "mass": 0.000129997,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    2.59994e-10,
+    9.35071e-10,
+    9.35071e-10
+   ],
+   "pos": [
+    0.00431034,
+    0.0,
+    1.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.00431034,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_1",
+   "parent": "law0_0",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.012931,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.01724134,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_2",
+   "parent": "law0_1",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.03448274,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_3",
+   "parent": "law0_2",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.05172414,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_4",
+   "parent": "law0_3",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.06896554,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_5",
+   "parent": "law0_4",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.08620694000000001,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_6",
+   "parent": "law0_5",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.10344834000000001,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_7",
+   "parent": "law0_6",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.12068974000000002,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_8",
+   "parent": "law0_7",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.13793114,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_9",
+   "parent": "law0_8",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.15517253999999997,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_10",
+   "parent": "law0_9",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.17241393999999993,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_11",
+   "parent": "law0_10",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.1896553399999999,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_12",
+   "parent": "law0_11",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.20689673999999986,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_13",
+   "parent": "law0_12",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.22413813999999982,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_14",
+   "parent": "law0_13",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.24137953999999978,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_15",
+   "parent": "law0_14",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.2586209399999998,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_16",
+   "parent": "law0_15",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.2758623399999998,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_17",
+   "parent": "law0_16",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.29310373999999983,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_18",
+   "parent": "law0_17",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.31034513999999985,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_19",
+   "parent": "law0_18",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.32758653999999987,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_20",
+   "parent": "law0_19",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.3448279399999999,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_21",
+   "parent": "law0_20",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.3620693399999999,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_22",
+   "parent": "law0_21",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.3793107399999999,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_23",
+   "parent": "law0_22",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.39655213999999994,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_24",
+   "parent": "law0_23",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.41379353999999996,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_25",
+   "parent": "law0_24",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.43103494,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_26",
+   "parent": "law0_25",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.44827634,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_27",
+   "parent": "law0_26",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.46551774,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_28",
+   "parent": "law0_27",
+   "mass": 0.000259994,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    5.19988e-10,
+    6.70059e-09,
+    6.70059e-09
+   ],
+   "pos": [
+    0.0172414,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.48275914000000003,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "law0_29",
+   "parent": "law0_28",
+   "mass": 0.000129997,
+   "ipos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "iquat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_principal": [
+    2.59994e-10,
+    9.35071e-10,
+    9.35071e-10
+   ],
+   "pos": [
+    0.012931,
+    0.0,
+    0.0
+   ],
+   "quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xpos0": [
+    0.49569014000000006,
+    0.0,
+    1.0
+   ],
+   "xquat0_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "name": "joint_2_ang0",
+   "type": "hinge",
+   "body": "law0_1",
+   "qposadr": 0,
+   "dofadr": 0,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_2_ang1",
+   "type": "hinge",
+   "body": "law0_1",
+   "qposadr": 1,
+   "dofadr": 1,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_2_ang2",
+   "type": "hinge",
+   "body": "law0_1",
+   "qposadr": 2,
+   "dofadr": 2,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_3_ang0",
+   "type": "hinge",
+   "body": "law0_2",
+   "qposadr": 3,
+   "dofadr": 3,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_3_ang1",
+   "type": "hinge",
+   "body": "law0_2",
+   "qposadr": 4,
+   "dofadr": 4,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_3_ang2",
+   "type": "hinge",
+   "body": "law0_2",
+   "qposadr": 5,
+   "dofadr": 5,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_4_ang0",
+   "type": "hinge",
+   "body": "law0_3",
+   "qposadr": 6,
+   "dofadr": 6,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_4_ang1",
+   "type": "hinge",
+   "body": "law0_3",
+   "qposadr": 7,
+   "dofadr": 7,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_4_ang2",
+   "type": "hinge",
+   "body": "law0_3",
+   "qposadr": 8,
+   "dofadr": 8,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_5_ang0",
+   "type": "hinge",
+   "body": "law0_4",
+   "qposadr": 9,
+   "dofadr": 9,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_5_ang1",
+   "type": "hinge",
+   "body": "law0_4",
+   "qposadr": 10,
+   "dofadr": 10,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_5_ang2",
+   "type": "hinge",
+   "body": "law0_4",
+   "qposadr": 11,
+   "dofadr": 11,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_6_ang0",
+   "type": "hinge",
+   "body": "law0_5",
+   "qposadr": 12,
+   "dofadr": 12,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_6_ang1",
+   "type": "hinge",
+   "body": "law0_5",
+   "qposadr": 13,
+   "dofadr": 13,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_6_ang2",
+   "type": "hinge",
+   "body": "law0_5",
+   "qposadr": 14,
+   "dofadr": 14,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_7_ang0",
+   "type": "hinge",
+   "body": "law0_6",
+   "qposadr": 15,
+   "dofadr": 15,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_7_ang1",
+   "type": "hinge",
+   "body": "law0_6",
+   "qposadr": 16,
+   "dofadr": 16,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_7_ang2",
+   "type": "hinge",
+   "body": "law0_6",
+   "qposadr": 17,
+   "dofadr": 17,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_8_ang0",
+   "type": "hinge",
+   "body": "law0_7",
+   "qposadr": 18,
+   "dofadr": 18,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_8_ang1",
+   "type": "hinge",
+   "body": "law0_7",
+   "qposadr": 19,
+   "dofadr": 19,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_8_ang2",
+   "type": "hinge",
+   "body": "law0_7",
+   "qposadr": 20,
+   "dofadr": 20,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_9_ang0",
+   "type": "hinge",
+   "body": "law0_8",
+   "qposadr": 21,
+   "dofadr": 21,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_9_ang1",
+   "type": "hinge",
+   "body": "law0_8",
+   "qposadr": 22,
+   "dofadr": 22,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_9_ang2",
+   "type": "hinge",
+   "body": "law0_8",
+   "qposadr": 23,
+   "dofadr": 23,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_10_ang0",
+   "type": "hinge",
+   "body": "law0_9",
+   "qposadr": 24,
+   "dofadr": 24,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_10_ang1",
+   "type": "hinge",
+   "body": "law0_9",
+   "qposadr": 25,
+   "dofadr": 25,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_10_ang2",
+   "type": "hinge",
+   "body": "law0_9",
+   "qposadr": 26,
+   "dofadr": 26,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_11_ang0",
+   "type": "hinge",
+   "body": "law0_10",
+   "qposadr": 27,
+   "dofadr": 27,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_11_ang1",
+   "type": "hinge",
+   "body": "law0_10",
+   "qposadr": 28,
+   "dofadr": 28,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_11_ang2",
+   "type": "hinge",
+   "body": "law0_10",
+   "qposadr": 29,
+   "dofadr": 29,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_12_ang0",
+   "type": "hinge",
+   "body": "law0_11",
+   "qposadr": 30,
+   "dofadr": 30,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_12_ang1",
+   "type": "hinge",
+   "body": "law0_11",
+   "qposadr": 31,
+   "dofadr": 31,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_12_ang2",
+   "type": "hinge",
+   "body": "law0_11",
+   "qposadr": 32,
+   "dofadr": 32,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_13_ang0",
+   "type": "hinge",
+   "body": "law0_12",
+   "qposadr": 33,
+   "dofadr": 33,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_13_ang1",
+   "type": "hinge",
+   "body": "law0_12",
+   "qposadr": 34,
+   "dofadr": 34,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_13_ang2",
+   "type": "hinge",
+   "body": "law0_12",
+   "qposadr": 35,
+   "dofadr": 35,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_14_ang0",
+   "type": "hinge",
+   "body": "law0_13",
+   "qposadr": 36,
+   "dofadr": 36,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_14_ang1",
+   "type": "hinge",
+   "body": "law0_13",
+   "qposadr": 37,
+   "dofadr": 37,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_14_ang2",
+   "type": "hinge",
+   "body": "law0_13",
+   "qposadr": 38,
+   "dofadr": 38,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_15_ang0",
+   "type": "hinge",
+   "body": "law0_14",
+   "qposadr": 39,
+   "dofadr": 39,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_15_ang1",
+   "type": "hinge",
+   "body": "law0_14",
+   "qposadr": 40,
+   "dofadr": 40,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_15_ang2",
+   "type": "hinge",
+   "body": "law0_14",
+   "qposadr": 41,
+   "dofadr": 41,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_16_ang0",
+   "type": "hinge",
+   "body": "law0_15",
+   "qposadr": 42,
+   "dofadr": 42,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_16_ang1",
+   "type": "hinge",
+   "body": "law0_15",
+   "qposadr": 43,
+   "dofadr": 43,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_16_ang2",
+   "type": "hinge",
+   "body": "law0_15",
+   "qposadr": 44,
+   "dofadr": 44,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_17_ang0",
+   "type": "hinge",
+   "body": "law0_16",
+   "qposadr": 45,
+   "dofadr": 45,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_17_ang1",
+   "type": "hinge",
+   "body": "law0_16",
+   "qposadr": 46,
+   "dofadr": 46,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_17_ang2",
+   "type": "hinge",
+   "body": "law0_16",
+   "qposadr": 47,
+   "dofadr": 47,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_18_ang0",
+   "type": "hinge",
+   "body": "law0_17",
+   "qposadr": 48,
+   "dofadr": 48,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_18_ang1",
+   "type": "hinge",
+   "body": "law0_17",
+   "qposadr": 49,
+   "dofadr": 49,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_18_ang2",
+   "type": "hinge",
+   "body": "law0_17",
+   "qposadr": 50,
+   "dofadr": 50,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_19_ang0",
+   "type": "hinge",
+   "body": "law0_18",
+   "qposadr": 51,
+   "dofadr": 51,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_19_ang1",
+   "type": "hinge",
+   "body": "law0_18",
+   "qposadr": 52,
+   "dofadr": 52,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_19_ang2",
+   "type": "hinge",
+   "body": "law0_18",
+   "qposadr": 53,
+   "dofadr": 53,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_20_ang0",
+   "type": "hinge",
+   "body": "law0_19",
+   "qposadr": 54,
+   "dofadr": 54,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_20_ang1",
+   "type": "hinge",
+   "body": "law0_19",
+   "qposadr": 55,
+   "dofadr": 55,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_20_ang2",
+   "type": "hinge",
+   "body": "law0_19",
+   "qposadr": 56,
+   "dofadr": 56,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_21_ang0",
+   "type": "hinge",
+   "body": "law0_20",
+   "qposadr": 57,
+   "dofadr": 57,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_21_ang1",
+   "type": "hinge",
+   "body": "law0_20",
+   "qposadr": 58,
+   "dofadr": 58,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_21_ang2",
+   "type": "hinge",
+   "body": "law0_20",
+   "qposadr": 59,
+   "dofadr": 59,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_22_ang0",
+   "type": "hinge",
+   "body": "law0_21",
+   "qposadr": 60,
+   "dofadr": 60,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_22_ang1",
+   "type": "hinge",
+   "body": "law0_21",
+   "qposadr": 61,
+   "dofadr": 61,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_22_ang2",
+   "type": "hinge",
+   "body": "law0_21",
+   "qposadr": 62,
+   "dofadr": 62,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_23_ang0",
+   "type": "hinge",
+   "body": "law0_22",
+   "qposadr": 63,
+   "dofadr": 63,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_23_ang1",
+   "type": "hinge",
+   "body": "law0_22",
+   "qposadr": 64,
+   "dofadr": 64,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_23_ang2",
+   "type": "hinge",
+   "body": "law0_22",
+   "qposadr": 65,
+   "dofadr": 65,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_24_ang0",
+   "type": "hinge",
+   "body": "law0_23",
+   "qposadr": 66,
+   "dofadr": 66,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_24_ang1",
+   "type": "hinge",
+   "body": "law0_23",
+   "qposadr": 67,
+   "dofadr": 67,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_24_ang2",
+   "type": "hinge",
+   "body": "law0_23",
+   "qposadr": 68,
+   "dofadr": 68,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_25_ang0",
+   "type": "hinge",
+   "body": "law0_24",
+   "qposadr": 69,
+   "dofadr": 69,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_25_ang1",
+   "type": "hinge",
+   "body": "law0_24",
+   "qposadr": 70,
+   "dofadr": 70,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_25_ang2",
+   "type": "hinge",
+   "body": "law0_24",
+   "qposadr": 71,
+   "dofadr": 71,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_26_ang0",
+   "type": "hinge",
+   "body": "law0_25",
+   "qposadr": 72,
+   "dofadr": 72,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_26_ang1",
+   "type": "hinge",
+   "body": "law0_25",
+   "qposadr": 73,
+   "dofadr": 73,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_26_ang2",
+   "type": "hinge",
+   "body": "law0_25",
+   "qposadr": 74,
+   "dofadr": 74,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_27_ang0",
+   "type": "hinge",
+   "body": "law0_26",
+   "qposadr": 75,
+   "dofadr": 75,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_27_ang1",
+   "type": "hinge",
+   "body": "law0_26",
+   "qposadr": 76,
+   "dofadr": 76,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_27_ang2",
+   "type": "hinge",
+   "body": "law0_26",
+   "qposadr": 77,
+   "dofadr": 77,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_28_ang0",
+   "type": "hinge",
+   "body": "law0_27",
+   "qposadr": 78,
+   "dofadr": 78,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_28_ang1",
+   "type": "hinge",
+   "body": "law0_27",
+   "qposadr": 79,
+   "dofadr": 79,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_28_ang2",
+   "type": "hinge",
+   "body": "law0_27",
+   "qposadr": 80,
+   "dofadr": 80,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_29_ang0",
+   "type": "hinge",
+   "body": "law0_28",
+   "qposadr": 81,
+   "dofadr": 81,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_29_ang1",
+   "type": "hinge",
+   "body": "law0_28",
+   "qposadr": 82,
+   "dofadr": 82,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_29_ang2",
+   "type": "hinge",
+   "body": "law0_28",
+   "qposadr": 83,
+   "dofadr": 83,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00862069,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  },
+  {
+   "name": "joint_30_ang0",
+   "type": "hinge",
+   "body": "law0_29",
+   "qposadr": 84,
+   "dofadr": 84,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "pos": [
+    -0.00431034,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_30_ang1",
+   "type": "hinge",
+   "body": "law0_29",
+   "qposadr": 85,
+   "dofadr": 85,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pos": [
+    -0.00431034,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0431162,
+   "frictionloss": 0.0,
+   "stiffness": 0.2145
+  },
+  {
+   "name": "joint_30_ang2",
+   "type": "hinge",
+   "body": "law0_29",
+   "qposadr": 86,
+   "dofadr": 86,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "pos": [
+    -0.00431034,
+    0.0,
+    0.0
+   ],
+   "limited": false,
+   "range": [
+    -572958000000.0,
+    572958000000.0
+   ],
+   "armature": 1e-06,
+   "damping": 0.0331663,
+   "frictionloss": 0.0,
+   "stiffness": 0.165
+  }
+ ],
+ "geoms": [],
+ "contact_body_pairs": [],
+ "worlds": 1,
+ "samples": [
+  {}
+ ],
+ "materials": {},
+ "initial": [
+  {
+   "bodies": {
+    "law0_0": {
+     "q": [
+      0.004310344811528921,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_1": {
+     "q": [
+      0.017241379246115685,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_2": {
+     "q": [
+      0.03448275849223137,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_3": {
+     "q": [
+      0.0517241396009922,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_4": {
+     "q": [
+      0.06896551698446274,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_5": {
+     "q": [
+      0.08620689064264297,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_6": {
+     "q": [
+      0.10344826430082321,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_7": {
+     "q": [
+      0.12068963795900345,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_8": {
+     "q": [
+      0.13793101906776428,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_9": {
+     "q": [
+      0.1551724076271057,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_10": {
+     "q": [
+      0.17241379618644714,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_11": {
+     "q": [
+      0.18965518474578857,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_12": {
+     "q": [
+      0.20689657330513,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_13": {
+     "q": [
+      0.22413796186447144,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_14": {
+     "q": [
+      0.24137935042381287,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_15": {
+     "q": [
+      0.2586207091808319,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_16": {
+     "q": [
+      0.27586206793785095,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_17": {
+     "q": [
+      0.29310342669487,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_18": {
+     "q": [
+      0.31034478545188904,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_19": {
+     "q": [
+      0.3275861442089081,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_20": {
+     "q": [
+      0.3448275029659271,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_21": {
+     "q": [
+      0.36206886172294617,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_22": {
+     "q": [
+      0.3793102204799652,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_23": {
+     "q": [
+      0.39655157923698425,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_24": {
+     "q": [
+      0.4137929379940033,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_25": {
+     "q": [
+      0.43103429675102234,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_26": {
+     "q": [
+      0.4482756555080414,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_27": {
+     "q": [
+      0.4655170142650604,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_28": {
+     "q": [
+      0.48275837302207947,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "law0_29": {
+     "q": [
+      0.49568939208984375,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "joints": {
+    "joint_2_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_2_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_2_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_3_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_3_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_3_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_4_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_4_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_4_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_5_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_5_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_5_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_6_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_6_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_6_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_7_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_7_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_7_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_8_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_8_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_8_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_9_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_9_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_9_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_10_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_10_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_10_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_11_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_11_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_11_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_12_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_12_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_12_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_13_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_13_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_13_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_14_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_14_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_14_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_15_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_15_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_15_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_16_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_16_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_16_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_17_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_17_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_17_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_18_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_18_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_18_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_19_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_19_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_19_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_20_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_20_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_20_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_21_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_21_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_21_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_22_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_22_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_22_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_23_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_23_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_23_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_24_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_24_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_24_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_25_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_25_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_25_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_26_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_26_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_26_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_27_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_27_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_27_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_28_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_28_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_28_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_29_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_29_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_29_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_30_ang0": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_30_ang1": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "joint_30_ang2": {
+     "q": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "qd": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "note": "Newton coordinates: body q = x y z qx qy qz qw; free joint q = x y z qx qy qz qw; qd = COM linear then angular velocity, world frame"
+  }
+ ],
+ "drive": null,
+ "extras": {},
+ "alloy_settings": {
+  "solver": "mujoco",
+  "kwargs": {
+   "integrator": "implicitfast",
+   "solver": "newton",
+   "iterations": 50,
+   "disable_contacts": true
+  },
+  "mujoco_solimp": null,
+  "newton_contacts": false
+ }
+}

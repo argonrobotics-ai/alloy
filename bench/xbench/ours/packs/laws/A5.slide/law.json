@@ -1,0 +1,344 @@
+{
+ "law": "A5.slide",
+ "dt": 0.00125,
+ "substeps": 1,
+ "duration_s": 1.0,
+ "metrics": {
+  "accel_rel_err": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A5 (+ SPEC \u00a75.3 amendment): a = g(sin th - mu cos th) within 1 %"
+  },
+  "stop_rel_err": {
+   "abs": 0.01,
+   "rel": 0.0,
+   "source": "bench \u00a74.5 A5 (+ SPEC \u00a75.3 amendment): stop distance v0^2/(2 mu g) within 1 %"
+  }
+ },
+ "stat": {
+  "accel_rel_err": "mean",
+  "stop_rel_err": "mean"
+ },
+ "conditions": [
+  {
+   "id": "slide_ph0.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 0.0
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph22.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 0.39269908169872414
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph45.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 0.7853981633974483
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph67.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 1.1780972450961724
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph90.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 1.5707963267948966
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph112.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 1.9634954084936207
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph135.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 2.356194490192345
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph157.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 2.748893571891069
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph180.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 3.141592653589793
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph202.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 3.5342917352885173
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph225.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 3.9269908169872414
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph247.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 4.319689898685965
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph270.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 4.71238898038469
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph292.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 5.105088062083414
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph315.0",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 5.497787143782138
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "slide_ph337.5",
+   "params": {
+    "tilted": 1.0,
+    "theta": 0.5509140716005225,
+    "phi": 5.890486225480862
+   },
+   "worlds": 1,
+   "drive": true
+  },
+  {
+   "id": "stop_ph0.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 0.0
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph22.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 0.39269908169872414
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph45.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 0.7853981633974483
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph67.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 1.1780972450961724
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph90.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 1.5707963267948966
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph112.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 1.9634954084936207
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph135.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 2.356194490192345
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph157.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 2.748893571891069
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph180.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 3.141592653589793
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph202.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 3.5342917352885173
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph225.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 3.9269908169872414
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph247.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 4.319689898685965
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph270.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 4.71238898038469
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph292.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 5.105088062083414
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph315.0",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 5.497787143782138
+   },
+   "worlds": 1,
+   "drive": false
+  },
+  {
+   "id": "stop_ph337.5",
+   "params": {
+    "tilted": 0.0,
+    "theta": 0.0,
+    "phi": 5.890486225480862
+   },
+   "worlds": 1,
+   "drive": false
+  }
+ ]
+}
