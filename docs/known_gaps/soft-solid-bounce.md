@@ -34,8 +34,8 @@ landing body's record damping is scaled x1 (as built), x0.2 and x3.
   bounce through MuJoCo.
 
 ## Planned fix
-- Soft solids (WP11): a material damping term for VBD tet solids, sized from the card (a loss factor, or the
+- Soft solids: a material damping term for VBD tet solids, sized from the card (a loss factor, or the
   restitution of a drop test). Its law: C3's 1 mm drop rebounds within 0.1 of a measured e. Not scheduled.
-- Cloth landings (WP10): record damping sized from the pair only once a measured drop reference exists (a body on
+- Cloth landings: record damping sized from the pair only once a measured drop reference exists (a body on
   cotton over a hard support). The restitution-sized record damping of gaps-now #10a (slice B) was measured and
   dropped on 2026-11-08: the numbers above have no sound target to size it to.

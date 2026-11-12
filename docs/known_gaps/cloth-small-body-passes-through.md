@@ -81,4 +81,4 @@ Ball over a vertex: every run pressed the sheet (sheet centre within 1 mm of the
 
 ## Planned fix
 - Contact between a rigid shape and a cloth triangle, so that a body between the vertices still meets the sheet.
-  Not scheduled (WP11).
+  Not scheduled.

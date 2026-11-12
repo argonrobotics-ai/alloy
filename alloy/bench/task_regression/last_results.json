@@ -1,7 +1,7 @@
 {
  "schema": "alloy.bench.task_regression.last/1",
  "tasks": {
-  "DC1.eth_scene": {
+  "dc1.eth_scene": {
    "values": {
     "start_latched": 1.0,
     "hold_slip_mm": 0.958885,
@@ -17,7 +17,7 @@
    "date": "2026-11-06T02:38:29-0800",
    "source": "rebaseline on d1ffee66 (851 s, cpu)"
   },
-  "DC2.eth_swap_nocable": {
+  "dc2.eth_swap_nocable": {
    "values": {
     "success_rate": 0.84375,
     "invalid_worlds": 0.0,
@@ -28,7 +28,7 @@
    "date": "2026-11-06T08:50:20+0000",
    "source": "rebaseline on 6783c9df (1070 s, cuda:0)"
   },
-  "DC3.c13_forces": {
+  "dc3.c13_forces": {
    "values": {
     "insertion_mu0.5_N": 25.45767180994025,
     "insertion_seated_gap_mm": -0.018757104873657823,
@@ -39,7 +39,7 @@
    "date": "2026-11-05T22:06:13-0800",
    "source": "rebaseline on a7829db5 (31 s, cpu)"
   },
-  "DC3.qsfp_starts64": {
+  "dc3.qsfp_starts64": {
    "values": {
     "success_rate": 1.0,
     "invalid_worlds": 0.0,
@@ -50,7 +50,7 @@
    "date": "2026-11-06T09:33:50+0000",
    "source": "rebaseline on 53706c9b (945 s, cuda:0)"
   },
-  "DC3.sfp_ensemble": {
+  "dc3.sfp_ensemble": {
    "values": {
     "failed_starts": 2.0,
     "unhealthy_starts": 0.0,
@@ -61,7 +61,7 @@
    "date": "2026-11-05T22:07:10-0800",
    "source": "rebaseline on a7829db5 (52 s, cpu)"
   },
-  "JOB1.first_press_w0": {
+  "job1.first_press_w0": {
    "values": {
     "invalid_worlds": 0.0,
     "cut_front_pen_mm": 1.239229692146182,
@@ -272,14 +272,14 @@
   },
   {
    "date": "2026-11-05T22:06:13-0800",
-   "task": "DC3.c13_forces",
+   "task": "dc3.c13_forces",
    "reason": "first baseline on main a7829db5 (task-regression suite v1, coordinator 2026-11-06 05:55Z: re-baseline on current main before gating)",
    "build": "a7829db5",
    "replaced": null
   },
   {
    "date": "2026-11-05T22:07:10-0800",
-   "task": "DC3.sfp_ensemble",
+   "task": "dc3.sfp_ensemble",
    "reason": "first baseline on main a7829db5 (task-regression suite v1, coordinator 2026-11-06 05:55Z: re-baseline on current main before gating)",
    "build": "a7829db5",
    "replaced": null
@@ -314,14 +314,14 @@
   },
   {
    "date": "2026-11-06T08:23:28+0000",
-   "task": "JOB1.first_press_w0",
+   "task": "job1.first_press_w0",
    "reason": "first baseline on main afd9e238 (task-regression suite v1, coordinator 2026-11-06 05:55Z), one L4",
    "build": "afd9e238",
    "replaced": null
   },
   {
    "date": "2026-11-06T08:50:20+0000",
-   "task": "DC2.eth_swap_nocable",
+   "task": "dc2.eth_swap_nocable",
    "reason": "first baseline on main 6783c9df (task-regression suite v1, coordinator 2026-11-06 05:55Z), one L4",
    "build": "6783c9df",
    "replaced": null
@@ -329,7 +329,7 @@
   {
    "date": "2026-11-06T09:12:34+0000",
    "task": "T12.sb7_gpu",
-   "reason": "re-baseline on main 53706c9b plus the route_off check: the SB-7 target asks for the ordered MuJoCo route (coordinator 2026-11-06 06:23Z, WP5 670c092b), one L4",
+   "reason": "re-baseline on main 53706c9b plus the route_off check: the SB-7 target asks for the ordered MuJoCo route (coordinator 2026-11-06 06:23Z, the team 670c092b), one L4",
    "build": "53706c9b",
    "replaced": {
     "s1_trips": 0.0,
@@ -347,14 +347,14 @@
   },
   {
    "date": "2026-11-06T09:33:50+0000",
-   "task": "DC3.qsfp_starts64",
+   "task": "dc3.qsfp_starts64",
    "reason": "first baseline on main 53706c9b (task-regression suite round 3, with the QSFP adapter's rows folder fixed), one L4",
    "build": "53706c9b",
    "replaced": null
   },
   {
    "date": "2026-11-06T02:38:29-0800",
-   "task": "DC1.eth_scene",
+   "task": "dc1.eth_scene",
    "reason": "first baseline on main d1ffee66 (task-regression suite round 4), CPU, the test host",
    "build": "d1ffee66",
    "replaced": null
@@ -369,42 +369,42 @@
   {
    "date": "2026-11-06T03:51:05-0800",
    "task": "SOFT1.film_drop",
-   "reason": "first baseline on main a9e4bd36 (task-regression round 5: SOFT-1 rows, sources 10:46Z), CPU, the test host",
+   "reason": "first baseline on main a9e4bd36 (task-regression round 5: the team rows, sources 10:46Z), CPU, the test host",
    "build": "a9e4bd36",
    "replaced": null
   },
   {
    "date": "2026-11-06T03:52:56-0800",
    "task": "SOFT1.cloth_drop",
-   "reason": "first baseline on main a9e4bd36 (task-regression round 5: SOFT-1 rows, sources 10:46Z), CPU, the test host",
+   "reason": "first baseline on main a9e4bd36 (task-regression round 5: the team rows, sources 10:46Z), CPU, the test host",
    "build": "a9e4bd36",
    "replaced": null
   },
   {
    "date": "2026-11-06T04:36:43-0800",
    "task": "SOFT2.sph_fills",
-   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: SOFT-2 rows, sources 12:25Z), CPU, the test host",
+   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: the team rows, sources 12:25Z), CPU, the test host",
    "build": "6b2cbb73",
    "replaced": null
   },
   {
    "date": "2026-11-06T04:39:44-0800",
    "task": "SOFT2.paste_fills",
-   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: SOFT-2 rows, sources 12:25Z), CPU, the test host",
+   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: the team rows, sources 12:25Z), CPU, the test host",
    "build": "6b2cbb73",
    "replaced": null
   },
   {
    "date": "2026-11-06T04:54:54-0800",
    "task": "SOFT2.grain_fills",
-   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: SOFT-2 rows, sources 12:25Z), CPU, the test host",
+   "reason": "first baseline on main 6b2cbb73 (task-regression round 6: the team rows, sources 12:25Z), CPU, the test host",
    "build": "6b2cbb73",
    "replaced": null
   },
   {
    "date": "2026-11-06T07:03:23-0800",
    "task": "SOFT1.cloth_drop",
-   "reason": "SOFT-1 batches 2-3 added towel_cotton_hand (cloth_vbd, 8528f5ee) and bag_hdpe_tshirt (cloth_film, 0d885d03); the task now checks every alloy.testing.soft_film object on its route (fix for the 14:55Z post-merge red, coordinator)",
+   "reason": "the team batches 2-3 added towel_cotton_hand (cloth_vbd, 8528f5ee) and bag_hdpe_tshirt (cloth_film, 0d885d03); the task now checks every alloy.testing.soft_film object on its route (fix for the 14:55Z post-merge red, coordinator)",
    "build": "45cfe467",
    "replaced": {
     "objects": 3.0,
@@ -416,7 +416,7 @@
   {
    "date": "2026-11-06T07:03:53-0800",
    "task": "SOFT1.film_drop",
-   "reason": "SOFT-1 batches 2-3 added towel_cotton_hand (cloth_vbd, 8528f5ee) and bag_hdpe_tshirt (cloth_film, 0d885d03); the task now checks every alloy.testing.soft_film object on its route (fix for the 14:55Z post-merge red, coordinator)",
+   "reason": "the team batches 2-3 added towel_cotton_hand (cloth_vbd, 8528f5ee) and bag_hdpe_tshirt (cloth_film, 0d885d03); the task now checks every alloy.testing.soft_film object on its route (fix for the 14:55Z post-merge red, coordinator)",
    "build": "45cfe467",
    "replaced": {
     "objects": 3.0,
@@ -428,35 +428,35 @@
   {
    "date": "2026-11-06T07:45:45-0800",
    "task": "SOFT3.soft_vbd_drops",
-   "reason": "first baseline (SOFT-3's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
+   "reason": "first baseline (the team's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
    "build": "c40c9735",
    "replaced": null
   },
   {
    "date": "2026-11-06T07:45:45-0800",
    "task": "SOFT3.dough_drop",
-   "reason": "first baseline (SOFT-3's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
+   "reason": "first baseline (the team's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
    "build": "c40c9735",
    "replaced": null
   },
   {
    "date": "2026-11-06T07:45:45-0800",
    "task": "SOFT3.visuals_bitwise",
-   "reason": "first baseline (SOFT-3's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
+   "reason": "first baseline (the team's regression entries, alloy-job1 11-06): the adapter run on CPU on the test host, the same functions the task runs; per-object rows in [internal note]",
    "build": "c40c9735",
    "replaced": null
   },
   {
    "date": "2026-11-06T10:30:11-0800",
    "task": "SC.C6_w0",
-   "reason": "first baseline: known marginal: needle-eye clearance (coordinator ruling 2026-11-06T18:08Z, scr/WP3.md: case (a), C6 marginal in float64 too; a regression band at today's main, the 0.1 mm rule goes to known gaps)",
+   "reason": "first baseline: known marginal: needle-eye clearance (coordinator ruling 2026-11-06T18:08Z, a ruling: case (a), C6 marginal in float64 too; a regression band at today's main, the 0.1 mm rule goes to known gaps)",
    "build": "adf75041",
    "replaced": null
   },
   {
    "date": "2026-11-06T16:34:39-0800",
    "task": "SOFT2.viscoplastic_fills",
-   "reason": "baseline: SOFT-2's 7 viscoplastic box fills (main 442896119), first record on wp6 a3f7b6c5c rebased on origin/main",
+   "reason": "baseline: the team's 7 viscoplastic box fills (main 442896119), first record on wp6 a3f7b6c5c rebased on origin/main",
    "build": "a3f7b6c5",
    "replaced": null
   },
@@ -470,7 +470,7 @@
   {
    "date": "2026-11-07T05:40:12-0800",
    "task": "SC.C6_w0",
-   "reason": "WP3 closed contact-needle-eye (f1d0fcd6a, thread/needle impedance 0.999): the check is back on the clip's 0.1 mm rule; baseline on main 3172e6f3e",
+   "reason": "the team closed contact-needle-eye (f1d0fcd6a, thread/needle impedance 0.999): the check is back on the clip's 0.1 mm rule; baseline on main 3172e6f3e",
    "build": "3172e6f3",
    "replaced": {
     "succeeded": 0.0,

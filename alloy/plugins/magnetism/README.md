@@ -61,10 +61,10 @@ Results on CPU, 2026-11-06:
 ## Findings while building it
 
 - **At the default step, MuJoCo tips a lightly pressed sliding eraser off the board.**
-  - Corrected by WP13's review: the cause is the step size.
+  - Corrected in review: the cause is the step size.
   - At a 1.25 ms step, an eraser held to a vertical whiteboard by its magnet tips while it slides (61°) and its gap
     opens to 30 mm. The pull's 1/h⁴ loss amplifies that.
-  - WP13 reproduced it without the plug-in, under a constant press (14°, 11 mm off the board), and in MuJoCo C,
+  - It reproduces without the plug-in, under a constant press (14°, 11 mm off the board), and in MuJoCo C,
     so it is MuJoCo's model.
     - Statically it should not tip: the friction moment needs the normal-force centroid only 5 mm below centre on
       a 25 mm half-height face.
@@ -76,7 +76,7 @@ Results on CPU, 2026-11-06:
   - The pull gets stiffer as the gap closes (4F/h). With Newton's default ke of 2.5e3 the eraser sank 5 mm into
     the board, and the force ran away (2 → 43 N).
   - Use ke ≥ 1e5 with kd = 2·sqrt(ke).
-  - At a 1.25 ms step MuJoCo clamps the time constant to 2·dt, so ke 1e6 runs as about 2e5 there (WP13).
+  - At a 1.25 ms step MuJoCo clamps the time constant to 2·dt, so ke 1e6 runs as about 2e5 there.
 - **A lightly damped stir bar has two states.**
   - Like a damped pendulum under constant torque, it has a second, slipping state above cω/(mB) ≈ (4/π)·2ζ. Started
     from rest at full speed it may never lock in: ζ = 0.17 slipped at a ratio of 0.8.

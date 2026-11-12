@@ -2,7 +2,7 @@
 # Row: [group, base material, size [lo, typ, hi] m (longest side), mass [lo, typ, hi] kg, flags, spec, (lvis labels)]
 # flags: hollow = scans are usually closed outer shells (mass set from the prior), flat = thin by nature (no aspect cap).
 # Every size and mass here is an ESTIMATE for a typical retail item described by `spec` (not measured, no single
-# source); cards label them so, and the sourcing agent (OSS-12) replaces them with cited values.
+# source); cards label them so, and a sourcing pass replaces them with cited values.
 # Sealed retail packaging is filled (as sold); reusable containers and tableware are empty.
 schema: alloy.objaverse.categories/1
 defaults: {cap: 30}

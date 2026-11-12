@@ -5,8 +5,8 @@ density:
   source: catalog
   unc: [2600.0, 2750.0]
   note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
-    (WP1''s card ruling 2026-11-06): 1590 kg/m3 here. Mineral soil particle density 2.60-2.75 g/cm3, 2.65 the standard value.
-    A plough pan is denser than the fill: 1.54 Mg/m3 at the Pacolet pan depth (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/raper_09d.pdf,
+    (card rule of 2026-11-06): 1590 kg/m3 here. Mineral soil particle density 2.60-2.75 g/cm3, 2.65 the standard value. A
+    plough pan is denser than the fill: 1.54 Mg/m3 at the Pacolet pan depth (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/raper_09d.pdf,
     Table 2), 1.76 Mg/m3 in a soil-bin hardpan (https://ars.usda.gov/ARSUserFiles/60100500/csr/ResearchPubs/raper/tekeste_06b.pdf,
     Table 1)'
 surface:

@@ -45,11 +45,11 @@ wp11-coarse-contact on 2026-11-08, with development probe scripts (not shipped).
 
 ## Workaround
 - **When a result depends on cloth sliding under its own weight:** put the support near the world origin (the table
-  top at z = 0, the sheet within a few cm of it) and use `coarse_contact=True` (opt-in, SCR-WP11-6 step 3).
+  top at z = 0, the sheet within a few cm of it) and use `coarse_contact=True` (opt-in).
 - **Otherwise,** treat friction between a resting sheet and a support well away from the origin as an upper bound.
 
 ## Planned fix
-- SCR-WP11-6 follow-up (WP11), not started. Candidates:
+- A follow-up, not started. Candidates:
   - take each vertex's friction load from its normal momentum balance (resolution m / dt^2 x spacing, under 1e-3 of the
     weight) instead of the contact law's force;
   - give VBD positions a per-object origin.

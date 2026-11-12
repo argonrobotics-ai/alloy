@@ -15,7 +15,7 @@
   mesh.
 
 ## Number
-- WP2's trace on `open_cylinder(0.03, 0.06, 0.004)`: one wrong point (cavity, 4.3 mm from the inner wall,
+- A trace on `open_cylinder(0.03, 0.06, 0.004)`: one wrong point (cavity, 4.3 mm from the inner wall,
   n.(x - p) = -4.257 mm). 0 errors in 200,000 random cavity points. Moving one ulp off the point gives the right sign.
 - So it is rare, a measure-zero sheet hit by a float32 position. It has not been seen on a full-surface record, but it
   has not been looked for there either.

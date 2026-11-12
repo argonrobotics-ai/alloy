@@ -1,6 +1,6 @@
 # Granular MPM: slopes rest at the card's friction angle; a collapsed heap's flank reads lower, a free end slumps
 
-Status: the slope part is closed (2026-11-09, gap #5b). Sand rests at its card's friction angle within 1-2 deg; the
+Status: the slope part is closed (2026-11-09). Sand rests at its card's friction angle within 1-2 deg; the
 first reading, that it "stands well below the friction angle", came from a law whose layer had a free end. What is
 left: the flank a collapse leaves is not the repose angle (26-27 deg for this sand), a squat collapse's runout still
 grows with resolution at 16 cells, and one angle serves for both starting and stopping. Pair friction to an MPM
@@ -64,7 +64,7 @@ Squat block in plane strain, height over half-length 0.5, on a table with fricti
 
 - By height band the 8 cm block's flank is 20 deg in its lowest third and 25-26 deg above.
 
-The same in 3D, height over half-width 0.44, settled from 0.2 s (OSS-4 and WP12, 2026-11-08):
+The same in 3D, height over half-width 0.44, settled from 0.2 s (2026-11-08):
 
 | block | cells up the flank | flank | edge runout |
 |---|---|---|---|
@@ -112,4 +112,4 @@ The same in 3D, height over half-width 0.44, settled from 0.2 s (OSS-4 and WP12,
 - Squat collapses: the runout's convergence past 16 cells is not measured (32 cells is 200,000 particles on the
   CPU). No change to the solver is planned for it.
 - Start and stop angles: not planned.
-- Pair friction to MPM (WP12): done (2026-11-08).
+- Pair friction to MPM: done (2026-11-08).

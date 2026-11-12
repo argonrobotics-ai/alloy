@@ -5,11 +5,12 @@ The full-material tracer draws an item look as Blender would. The fast tracer, w
 cameras use (``camera_scene(sim, quality="fast")``), draws an approximation of the same look on each shape the look
 layer assigns:
 
-- an untextured material: its base colour times its colour gain;
+- an untextured material: its base colour (sRGB, made linear as the full tracer does) times its colour gain;
 - a textured one: its colour map times the colour gain (the texture replaces the base colour, as in the full
   tracer), tiled every ``scale_m`` metres in the shape's frame by a planar projection per triangle along the axis
   its normal is closest to (the full tracer blends the three projections; on flat faces they agree). A colour map
-  the camera cannot read here (not cached, an EXR, no Pillow) leaves the base colour, with one log line.
+  the camera cannot read here (not cached, an EXR, no Pillow) draws the flat tone of its texture family
+  (``alloy.camera.item_looks.flat_tone``; the preset colour without a family), with one log line.
 
 Not drawn: bump, roughness, metal, the ``tint_var`` noise and the other details of the full tracer. Lights stay the
 fast tracer's own, so a policy image and a full render of the same pose differ in shading as well (the Gym laws in
@@ -67,14 +68,18 @@ def with_item_looks(sd: SceneData, items: dict | None) -> SceneData:
 
 
 def _material(key: str, spec: dict) -> tuple[np.ndarray, tuple[np.ndarray, str] | None, float]:
-    """(linear RGB that multiplies the image, or the flat colour; (sRGB image, key) or None; tile size in metres)."""
+    """(linear RGB that multiplies the image, or the flat colour: the base colour, sRGB, made linear as the full
+    tracer does; (sRGB image, key) or None; tile size in metres)."""
+    from .item_looks import flat_tone
+    from .looks.material import rgba
     from .looks.spec import resolve_spec
     eff = resolve_spec(key, spec)
     gain = float(eff.get("color_gain", 1.0))
     image = _color_map(str(eff["texture"]), str(eff.get("res", "2k")), key) if eff.get("texture") else None
     if image is not None:
         return np.full(3, gain, np.float32), image, float(eff.get("scale_m") or 1.0)
-    base = np.asarray(eff.get("base_color", (0.8, 0.8, 0.8)), np.float64)[:3]
+    tone = flat_tone({**spec, "texture": eff["texture"]}) if eff.get("texture") else None   # not the white placeholder
+    base = np.asarray(rgba(tone or eff.get("base_color", (0.8, 0.8, 0.8)))[:3], np.float64)  # sRGB, as the full tracer
     return (base * gain).astype(np.float32), None, 1.0
 
 
@@ -89,7 +94,7 @@ def _color_map(ref: str, res: str, key: str) -> tuple[np.ndarray, str] | None:
             raise CameraError(f"{path.name} is an EXR", "the fast tracer reads 8-bit colour maps")
         out = decode_image(path.read_bytes())
     except (CameraError, KeyError, OSError) as exc:
-        log.info("camera: item look %s drawn in its base colour on the fast tracer (%s)", key, exc)
+        log.info("camera: item look %s drawn in a flat colour on the fast tracer (%s)", key, exc)
         return None
     return out
 

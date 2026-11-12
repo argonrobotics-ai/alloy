@@ -21,6 +21,6 @@
   },
   "cpu_model": "Intel(R) Xeon(R) CPU @ 2.20GHz",
   "key": "cuda-sm89-warp1.18.0-newton4f3b41ef",
-  "reason": "Newton pin 8f3466f9 -> 4f3b41ef (WP11 CARD-8), main e02435b7",
+  "reason": "Newton pin 8f3466f9 -> 4f3b41ef (the team CARD-8), main e02435b7",
   "schema": "alloy.precision.golden/1"
 }

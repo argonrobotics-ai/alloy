@@ -6,7 +6,7 @@ lies exactly midway between two of them. Material resting directly on the ground
 bottom one or two particle layers: pastes, viscous liquids and other flows along the ground run slow. Newton's dense
 grid has its planes on whole voxels, so the ground case is right. But a floor thinner than a voxel that rests on the
 ground (a 4 mm container floor) then has no node plane inside it, and particles leak through. The sparse grid holds
-such floors. Fills in containers are the common case, so sparse is the default (coordinator 2026-11-07). Sparse
+such floors. Fills in containers are the common case, so sparse is the default (2026-11-07). Sparse
 entries warn once when their material starts within a voxel of a ground plane.
 
 **The number.** CPU, 5 mm voxel.
@@ -23,7 +23,7 @@ A container that moved at many GPU worlds lost sand into or through its floor at
 
 On the sparse grid the film ratio is the same at a 2.5 mm voxel (0.811-0.817) and at half the time step (0.821). A
 floor raised 1 mm (0.2 voxel) off the midplane gives 1.016. Rows and probes: the development scripts and result rows of
-ticket SCR-SOFT-2-5 (not shipped).
+a development ticket (not shipped).
 
 **Why.** Newton applies a collider at grid nodes: a node inside it takes the wall's velocity. A wall halfway between
 two planes couples the lowest particles to the wall too strongly; a floor with no node inside it has nothing to hold
@@ -31,7 +31,7 @@ material out. Sparse: `grid_offset = 0.5` in `SolverImplicitMPM`. Dense: planes 
 
 **Workaround.** For a flow along the ground that has no floor thinner than a voxel (a film or pour speed, a paste
 spreading on the ground plane), ask for the dense grid: `ALLOY_MPM_GRID=dense`, an entry's `grid_type="dense"`, or
-`with alloy.integration.mpm_grid.grid_override("dense"):` around the build (SOFT-2's film laws do this). Dense needs
+`with alloy.integration.mpm_grid.grid_override("dense"):` around the build (the film law tests do this). Dense needs
 a run without CUDA graph capture: under graphs the entry keeps Newton's persistent sparse grid. Build containers with
 floors at least one voxel thick (a container that moved at many GPU worlds was a separate fault:
 [mpm-moving-container-many-worlds.md](mpm-moving-container-many-worlds.md)). The run's solvers record the grid in use as `solver.alloy_grid`. A dense grid that

@@ -3,7 +3,7 @@
 ## What
 - A 0.05 mm film (route `cloth_film`) draped over a static box's edge pushes particles into the box until health's
   depth limit fires (PEN_FAIL), and the world goes INVALID. The library's `film_ldpe_sheet` (0.3 m, 50 um LDPE) did
-  it, as does `add_cloth(..., thickness=5e-5, material="film_ldpe")`. Found by OSS-17 (docs/guide/deformables.md
+  it, as does `add_cloth(..., thickness=5e-5, material="film_ldpe")`. Found in an audit (docs/guide/deformables.md
   warns about it).
 - The fix is in the film plug-in, `FilmConfig.contact_skin_entry` (`alloy/solvers/film/skin.py`), and is off by
   default in this release: with it the same scenes stay valid with no penetration flag
@@ -57,7 +57,7 @@ along the record's normal, at the particle's deepest record only (two coplanar b
   already carry force.
 
 ## Planned fix
-SC8: on by default after the release, once the Bonds C-1 tube row at 1.25 mm cells re-passes with it (the other
-Bonds, film, dent and SOFT-1 laws re-pass already). Then dynamic and kinematic bodies, the same two limits against planes that move with the body (Newton's rigid-soft
+On by default after the release, once the Bonds C-1 tube row at 1.25 mm cells re-passes with it (the other
+Bonds, film, dent and soft-body laws re-pass already). Then dynamic and kinematic bodies, the same two limits against planes that move with the body (Newton's rigid-soft
 DAT does that for its own truncation); not yet scheduled. docs/guide/deformables.md's warning should now name moving
 bodies only (that page is its owner's edit).

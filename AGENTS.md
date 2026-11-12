@@ -4,7 +4,7 @@ Alloy is a GPU physics engine for robotics, built on Newton, MuJoCo Warp and War
 MuJoCo Warp (MuJoCo C on the CPU), cloth and soft bodies in Newton's VBD, sand and pastes in Newton's MPM, liquids in
 Alloy's own DFSPH. One scene can hold rigid robots (sub-millimetre contact for declared precision fits such as pegs
 and threads), cloth, liquids and other materials, stepped together in parallel worlds on one GPU: thousands for free
-rigid bodies, hundreds for a robot arm, tens to hundreds with cloth or liquid (`docs/guide/worlds.md` has the measured
+rigid bodies, 512 to 4,096 for a robot arm, tens to hundreds with cloth or liquid (`docs/guide/worlds.md` has the measured
 rows). This file is the whole quick start: read it once, then write code. Every snippet runs as shown. More:
 `llms.txt` (index), `docs/guide/` (one page per topic), `examples/` (runnable). Known engine limits, each with its
 size and workaround: one file per limit in `docs/known_gaps/` (`docs/guide/known_limits.md`); read the ones for your
@@ -22,6 +22,8 @@ python -c "import alloy; print(alloy.__version__)"     # the import name is allo
 ```
 - Install with pip, inside a virtual environment: a stock Ubuntu 24.04 refuses pip outside one (PEP 668,
   "externally-managed-environment"), and its `python3 -m venv` fails until `sudo apt install python3-venv`.
+- Alloy needs Python 3.11 or 3.12: on an older one (a stock Ubuntu 22.04 has 3.10) pip answers "from versions:
+  none". `uv venv -p 3.12 --seed && source .venv/bin/activate` makes a 3.12 environment with pip on any machine with uv.
 - The docs and runnable examples install with the package, in its `_data` folder: `python -m alloy.docs` prints both
   folders.
 - NVIDIA GPUs: the pinned Warp (`warp-lang` 1.18.0) needs an R580-series or newer NVIDIA driver and a Turing
@@ -58,12 +60,13 @@ If `ubuntu-drivers` picked a driver older than 580, `ubuntu-drivers list` shows 
   `docs/guide/install.md`). The CPU figures in this file are from an AMD EPYC 7B13 unless a line names another
   machine. Or use a GPU. CPU and GPU runs give the same physics, not the same bits. `ALLOY_CPU_ROUTE=warp` keeps the
   CPU on the GPU's code path.
-- The first build of a new scene compiles kernels: 3 to 4 minutes on a GPU for a rigid or robot scene (190 to 240 s
-  measured on fresh L4 machines) and about 10 min for cloth: the `ClothFold-v0` environment's first step alone
-  compiled for 9 to 10 min on two fresh L4s. The quick start below took 190 s on a fresh L4 machine and 41 s on a
-  fresh 8-vCPU machine with no GPU (then 15 s and 9.5 s); cloth and liquid scenes compile longer on a CPU. They are
-  cached (`~/.cache/warp`), so later runs start in seconds. Nothing shortens the first compile: run one short build
-  and step as a warm-up job before a long run, and never time it or give up on it (section 6).
+- The first run of a new kind of scene compiles kernels once: about 45 s on a CPU (41 s on an 8-vCPU Linux machine,
+  44 s on an Apple-silicon Mac) and 3 to 4 minutes on an NVIDIA GPU (190 to 240 s on L4s); a robot environment can
+  take up to about 8 minutes (a first `PickCube-v0` build took 7.4 min on an L4). The result is cached, so later
+  runs start in seconds. Those figures are for the quick start below; cloth and liquid scenes compile longer
+  (about 10 min for cloth on a GPU: the `ClothFold-v0` environment's first step alone compiled for 9 to 10 min on two
+  fresh L4s). The cache is `~/.cache/warp`. Nothing shortens the first compile: run one short build and step as a
+  warm-up job before a long run, and never time it or give up on it (section 6).
 - Conventions: SI units (m, kg, s, N), z up, gravity -9.81 m/s². Sizes are **full** edge lengths. Quaternion keys
   name their order (`quat_xyzw`, `quat_wxyz`); orientation can also be `rpy=(roll, pitch, yaw)` in radians.
 
@@ -526,8 +529,8 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
   `python -m alloy.envs.wrappers.train GripperLift-v0 --lib rsl_rl` (PPO with one fixed setting per library, on small
   tasks of ours: rsl_rl and skrl reached 90 % success on both ready-made environments in every run (1 to 6 runs each),
   Stable-Baselines3 on one of the two, rows in the guide; `PickCube-v0`, a Franka picking a cube, has its own
-  settings, a starting point: with them training does not yet learn the pick reliably (some runs learn it and
-  others do not): `docs/guide/rl.md`, Arm pick);
+  settings, a starting point (results vary between runs; watch the success rate the trainer prints):
+  `docs/guide/rl.md`, Arm pick);
   `Task(obs={"policy": [...], "critic": [...]})` returns one
   observation per group (a critic that sees more than the policy). Opt-in first versions, tested on the CPU:
   hand-motion actions for arms (`alloy.envs.diffik.EEActionSpec`, differential inverse kinematics; one body, no
@@ -547,7 +550,7 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
   or `pip install 'lerobot[dataset]'`); `replay` re-runs
   recordings, `evaluate` gives a policy's success rate with an interval, `KeyboardTeleop` drives action columns from
   the terminal, `generate(env, demonstrator(env), writers, episodes)` saves scripted demos from every world (scripts
-  ship for 3 of the 8 ready-made envs; no trajectory augmentation or motion planning). It records, replays and
+  ship for 3 of the 9 ready-made envs; no trajectory augmentation or motion planning). It records, replays and
   evaluates; it trains no policy. Joint-space teleoperation only, no live view, no cloth or liquid replay.
   `docs/guide/imitation.md`.
 - System identification (optional; `import alloy.sysid`): a recording of your real robot (time, commanded joint

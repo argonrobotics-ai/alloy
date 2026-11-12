@@ -10,7 +10,7 @@ slides flat. Slow slides (the light-box law `tests/contact/test_light_sliding_ti
 ## Number
 Cubes (1,000 kg/m3) on the ground (mu 0.5), settled, then pushed at their centre by 1.5 mu m g, so they reach about
 2.5 m/s in 1 s. CPU, main 132d4450f (free bodies on rk4), the same to the last digit as release-1109; measured with
-WP3's SPEED-S1 development probe (2026-11-09, not shipped):
+A development probe (2026-11-09, not shipped):
 
 | run | rise by 1 s (2.5 m/s) | pitch, peak to peak | slide / 0.5 mu g |
 |---|---|---|---|

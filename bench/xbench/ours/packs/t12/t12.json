@@ -2,7 +2,7 @@
  "schema": "alloy.xbench.ours.scene/1",
  "source": "library/robots/task_t12/scene.xml",
  "licence": "Apache-2.0 AND MIT",
- "provenance": "Argon reference-task recording, converted by WP13 (SCR-OSS1-13 ruling 2026-11-07)",
+ "provenance": "Argon reference-task recording, converted by the team (a ruling 2026-11-07)",
  "option": {
   "timestep": 0.0008333333333,
   "gravity": [

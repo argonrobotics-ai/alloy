@@ -27,10 +27,10 @@ elastic:
     source: model
     unc: [4000000.0, 15000000.0]
     note: 'effective: E = EI/(pi r^4/4) with EI 5.67e-5 N·m^2 at r 1.75 mm; isotropic nu 0.3 gives GJ 4.4e-5 vs the stated
-      9.29e-5; the card''s features.twist_stiffness carries GJ (SCR-WP1-7)'
+      9.29e-5; the card''s features.twist_stiffness carries GJ'
   poisson:
     value: 0.3
     source: model
     unc: [0.2, 0.45]
     note: 'effective: E = EI/(pi r^4/4) with EI 5.67e-5 N·m^2 at r 1.75 mm; isotropic nu 0.3 gives GJ 4.4e-5 vs the stated
-      9.29e-5; the card''s features.twist_stiffness carries GJ (SCR-WP1-7)'
+      9.29e-5; the card''s features.twist_stiffness carries GJ'

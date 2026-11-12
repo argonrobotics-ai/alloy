@@ -7,7 +7,7 @@
   "Mechanics (Table 2, KES-FB part, p. 6): EM at Fm = 490.35 cN per unit width; B warp (-1) and weft (-2); one shear rigidity G per fabric; T0 at 0.49 cN cm-2.",
   "Units as printed: B 'cNcm' read as the KES unit cN cm^2/cm (1e-4 N m); G 'cN/(cm°)-1' read as cN/(cm deg) (the paper's FAST G agrees: F1 23 N/m vs 23.5 here).",
   "Drape (section 2.3, p. 6): Cusick drape meter, 30 cm samples, horizontal disk radius 90 mm, 5 samples per fabric, Kd = (A - pi R1^2) / (pi (R2^2 - R1^2)). Node counts not reported.",
-  "Picked: no elastane, KES B not flagged (DC5, notes/wp2-fabric/sources.md)."
+  "Picked: no elastane, KES B not flagged (the team, notes/wp2-fabric/sources.md)."
  ],
  "rig": {
   "specimen_diameter_m": 0.3,

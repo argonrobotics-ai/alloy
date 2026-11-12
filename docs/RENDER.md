@@ -1,4 +1,4 @@
-# Alloy render: ARB v1 bundles, look files, and the Cycles CLI (WP20)
+# Alloy render: ARB v1 bundles, look files, and the Cycles CLI
 
 This document is the contract between clip builders and the renderer. A builder runs Alloy physics and writes an
 **ARB bundle** with `alloy.render.RenderRecorder`. It then writes a **look file** with the camera, lights and

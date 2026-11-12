@@ -1,8 +1,8 @@
 # Sound: `ModalSound` (engine item 10, part 5)
 
 This package gives audio per world and per microphone. It uses modal synthesis, driven by the engine's own contacts.
-The plug-in has no feedback into the dynamics. The plan is `[internal note]` section 5, and
-the handoff is `wp13-engine10-sound-handoff.md`. WP13 reviewed the design changes on 2026-11-06.
+The plug-in has no feedback into the dynamics.
+The design changes were reviewed on 2026-11-06.
 
 ```python
 from alloy.plugins.sound import ModalSound
@@ -23,7 +23,7 @@ sim.plugins["modal_sound"].write_wav("bar.wav")
 
 The tables come from:
 - presets: a free-free beam (one or two bending planes), a cantilever, or a simply supported plate;
-- DC6's RJ45 tab and housing (`dc6_tab`, `dc6_housing`);
+- an RJ45 tab and housing (`dc6_tab`, `dc6_housing`);
 - `fem_box`: a free box solved by P2 tet FEM;
 - a `modes.npz` file (`ModeSet.save`/`load`).
 
@@ -113,14 +113,14 @@ reconciliation pass.
   model.
 - **The monopole proxy is not absolute SPL.** Compare spectra and decay.
 - **Audio inherits the contact model.**
-  - WP13, 2026-11-06: Newton's default kd 100 at a stiff ke of 1e5 gives MuJoCo a damping ratio of ~0.15. Contacts
+  - Measured 2026-11-06: Newton's default kd 100 at a stiff ke of 1e5 gives MuJoCo a damping ratio of ~0.15. Contacts
     under a steady load then chatter at ~100 Hz, ±1 mm, and ModalSound hears that as repeated impacts or a buzz.
   - Give sounding contacts a damping ratio near 1. The law scenes use ke 2,500 and kd 100.
 - **The oscillator state is float32.**
   - Decay rates are within 0.16 % for tan δ ≥ 1e-3 down to 20 Hz.
-  - They are about 5 % off at 50 Hz with tan δ 1e-4 (WP13).
+  - They are about 5 % off at 50 Hz with tan δ 1e-4.
   - Setup warns when 2ζω/fs < 1e-5.
 - **One step size per run.** The audio clock counts steps.
 - **Shear and rotary inertia are ignored** in the beam and plate presets. The FEM path includes them.
-- **v2 idea (WP13): take J as the episode's integrated normal impulse at its end.** That gives the right J for jointed
+- **v2 idea: take J as the episode's integrated normal impulse at its end.** That gives the right J for jointed
   bodies, at a few ms of onset delay.

@@ -26,7 +26,7 @@ first torsional mode is 3,051 rad/s (486 Hz, period 2.06 ms).
 Damping is the bend-mode damping ratio the chain's stiffness-proportional damping is set from; at 0.05 the
 continuum's twist mode is damping-limited too.
 
-**On the ROD_VBD route** (WP9, SCR-WP9-ROD; a development twist-release script, not shipped). This is Newton's
+**On the ROD_VBD route** (a development twist-release script, not shipped). This is Newton's
 Cosserat rod on `SolverVBDRod`, the same rod from the ROD_VBD emitter, with no armature:
 
 | step | damping | released twist |
@@ -59,7 +59,7 @@ axial inertia and N the link count (2.5 here at 25 µs, measured 2.58).
   the floor then moves it little (the estimate above). Check sqrt(1 + a (pi / 2N)² / I) for your rod first.
 - No setting removes CHAIN's floor, so on CHAIN a smaller `dt` alone gives the 2.6x-slow mode above.
 - A thin rod's torsional vibration (a torsional pendulum, a twist wave) needs the ROD_VBD solver (no armature) at a
-  step that resolves the mode: the period came out +1.0 % at 25 µs. ROD_VBD is routable from SCR-WP9-ROD's R2.
+  step that resolves the mode: the period came out +1.0 % at 25 µs. ROD_VBD is routable from R2 of the rod change.
 
 ## Planned fix
 None planned. The floor could drop where float32 does not apply (the CPU route runs MuJoCo C in float64), or on the

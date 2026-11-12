@@ -56,10 +56,11 @@ def __getattr__(name: str) -> Any:
     return QuietWriter
 
 
-#: Settings that differ from the base for one ready-made env, as "section.key": value (measured: docs/guide/rl.md)
+#: Settings that differ from the base for one ready-made env, as "section.key": value (chosen from training runs on
+#: one L4)
 RECIPES: dict[str, dict[str, Any]] = {
     "PickCube-v0": {"algorithm.gamma": 0.95, "algorithm.num_learning_epochs": 8, "algorithm.num_mini_batches": 8,
-                    "algorithm.entropy_coef": 0.0, "actor.hidden_dims": [256, 256, 256],
+                    "algorithm.entropy_coef": 0.003, "actor.hidden_dims": [256, 256, 256],
                     "critic.hidden_dims": [256, 256, 256]},
 }
 

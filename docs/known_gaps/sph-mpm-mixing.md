@@ -1,13 +1,13 @@
 # Liquid beside a paste or powder: the paste is a solid wall to the liquid (no wetting, no percolation)
 
 Status: open, by design for now. A liquid (SPH) and a paste or powder (MPM) in one scene step together since
-SCR-WP12-MIX, but they meet only at the paste's surface.
+the liquid-paste coupling change, but they meet only at the paste's surface.
 
 ## What
 
-Since SCR-WP12-MIX an SPH liquid and an MPM paste or powder step in one scene; before, the build refused them. The
-paste's particles are a moving wall of the liquid, and the liquid's pressure pushes back on them, so a paste block
-floats, sinks and gets pushed around as it should. A whisk or spoon stirs both.
+Since the liquid-paste coupling change an SPH liquid and an MPM paste or powder step in one scene; before, the build
+refused them. The paste's particles are a moving wall of the liquid, and the liquid's pressure pushes back on them, so
+a paste block floats, sinks and gets pushed around as it should. A whisk or spoon stirs both.
 
 What is not modelled is everything that happens inside the paste or powder:
 
@@ -71,7 +71,7 @@ Three cases are refused at build, with the fix named:
 
 ## Planned fix
 
-- Hydration (SCR-WP12-HYD, after the coupling's laws pass): a powder particle takes up the liquid it touches and
+- Hydration (after the coupling's laws pass): a powder particle takes up the liquid it touches and
   turns into batter, with mass moving exactly from the liquid to the powder. Lumps follow from wetting only the
   exposed surface. Sized at about 4-5 days.
 - Percolation and hindered settling need the shared grid (a two-phase mixture in MPM). Not planned before launch.

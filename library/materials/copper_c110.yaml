@@ -44,7 +44,7 @@ plastic:
     value: 603000000.0
     source: model
     unc: [574000000.0, 603000000.0]
-    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 221 MPa (same row),
-      eu = e^n − 1 from Hollomon n 0.474 for annealed copper ("Here the parameter n = 0.474 is called the strain hardening
-      parameter", Roylance, MIT 3.11 https://web.mit.edu/course/3/3.11/www/modules/ss.pdf); unc: n 0.54 (Kalpakjian, via https://en.wikipedia.org/wiki/Strain_hardening_exponent)
+    note: 'ESTIMATE (derived): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 221 MPa (same row), eu = e^n
+      − 1 from Hollomon n 0.474 for annealed copper ("Here the parameter n = 0.474 is called the strain hardening parameter",
+      Roylance, MIT 3.11 https://web.mit.edu/course/3/3.11/www/modules/ss.pdf); unc: n 0.54 (Kalpakjian, via https://en.wikipedia.org/wiki/Strain_hardening_exponent)
       gives 574 MPa'

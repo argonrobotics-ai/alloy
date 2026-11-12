@@ -21,9 +21,10 @@ LIBRARY = ROOT / "library"
 # Staged beside the library when the source tree has them (a clone, the sdist): examples/ whole, AGENTS.md, and of
 # docs/ ONLY the public set (an allow-list: never docs/notes, oss, research, ENV.md or SPEC.md; 2026-11-11). Same
 # lists in tools/deps/stage.py, tools/release/stage_release.py and MANIFEST.in (tests/core/test_packaging.py).
-DOCS_PUBLIC = ("public", "known_gaps", "guide")   # public pages, the gap pages limits.md links, guide/ as reference
-#                                                  (coordinator 17:5xZ; physics ruling (A): AGENTS.md and code point at it)
-DATA_FILES = ("AGENTS.md",)   # python -m alloy.docs agents prints it (user 2026-11-11 17:20Z)
+# public/ pages, the known_gaps/ pages keep-in-mind.md links, and guide/ as reference (coordinator 17:5xZ; physics
+# ruling (A): AGENTS.md and the code's errors point at it).
+DOCS_PUBLIC = ("public", "known_gaps", "guide")
+DATA_FILES = ("AGENTS.md", "llms.txt")   # alloy.docs agents prints AGENTS.md; llms.txt beside it (GEO P3)
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store")
 
 

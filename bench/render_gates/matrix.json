@@ -14,7 +14,7 @@
          "claims": {"128x128": {"spp": 8, "den": "on", "denoiser": "learned c4_128, tta 2", "weights": "c4_128"},
                     "640x480": {"spp": 32, "den": "on", "denoiser": "learned c4_640, tta 1", "weights": "c4_640"},
                     "1280x720": {"spp": 32, "den": "on", "denoiser": "learned c4_1280, tta 1", "weights": "c4_1280"}}},
-  "dc5": {"title": "DC5 1,024-world grid", "frames": ["100", "400", "1300"], "camera": "horizontal",
+  "dc5": {"title": "1,024-world grid", "frames": ["100", "400", "1300"], "camera": "horizontal",
           "needs": ["1,024 worlds in one image", "cables"]},
   "t12": {"title": "T12 diffuse benchmark", "frames": ["0"], "camera": "fixed", "needs": ["diffuse only"],
           "claims": {"128x128": {"spp": 40, "den": "on", "denoiser": "learned t12_128, tta 1", "weights": "t12_128"},

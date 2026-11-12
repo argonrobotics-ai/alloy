@@ -75,4 +75,4 @@ A run can also go wrong without raising: a world that fails its checks is frozen
 ## Next
 
 - [World health](guides/health.md): every health flag and its fix.
-- [Known limits](limits.md): what does not work yet.
+- [Keep in mind](keep-in-mind.md): what does not work yet.

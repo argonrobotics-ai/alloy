@@ -1,4 +1,4 @@
-# T12 card tier: WP1 block_alder_75x25x15 x8 + ledge_plywood at the poses of trace t12 (t0 = 36.0 s) around the arms + bench; not gated against the recording (alloy.tasks.scenes.card_tier_scene).
+# T12 card tier: library block_alder_75x25x15 x8 + ledge_plywood at the poses of trace t12 (t0 = 36.0 s) around the arms + bench; not gated against the recording (alloy.tasks.scenes.card_tier_scene).
 schema: alloy.scene/1
 robots:
 - path: robots/yam_bench/robot.xml

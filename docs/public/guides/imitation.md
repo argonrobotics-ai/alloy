@@ -52,7 +52,7 @@ print(result.episodes, result.mean_length)
 Four episodes ran and every one lasted 150 steps. `result.success_rate` and its 95 %
 interval are in `result.summary()`; with so few episodes the interval is wide, so use many more for a real number.
 
-## Limits
+## Keep in mind
 
 - `alloy.il` records, replays and evaluates; it trains no policy.
 - Teleoperation is joint-space only: there is no end-effector control, so a 7-joint arm is driven joint by joint.
@@ -62,6 +62,7 @@ interval are in `result.summary()`; with so few episodes the interval is wide, s
 
 ## Next
 
+- [Record a dataset to HDF5 or LeRobot](../how-to/make-a-dataset.md).
 - [Train with RL](rl.md): train a policy in the same environments.
 - [Robots](robots.md): load a robot and drive its joints.
-- [Known limits](../limits.md)
+- [Keep in mind](../keep-in-mind.md)

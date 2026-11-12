@@ -56,4 +56,4 @@ wire on the ground. In both runs `sim.check()["ok"]` is True with no problems li
 
 ## Planned fix
 - Contact between rod segments and the faces of a soft body, so that a rod between vertices still meets the surface.
-  Until then, a build warning when a rod is thinner than the soft body's gaps. After the 0.1.0 release (WP9).
+  Until then, a build warning when a rod is thinner than the soft body's gaps. After the 0.1.0 release.

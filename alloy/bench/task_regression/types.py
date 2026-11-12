@@ -57,7 +57,7 @@ class MetricCheck:
 class TaskCheck:
     """A finished task the engine must keep doing: how to re-run its small check and what it must still give."""
 
-    id: str                         # e.g. "DC1.cat6_s4"
+    id: str                         # e.g. "dc1.cat6_s4"
     title: str
     owner: str                      # the WP a regression goes to (as ASK)
     part: Part                      # cpu: post-merge full run, gates last-green; nightly: GPU or long CPU runs

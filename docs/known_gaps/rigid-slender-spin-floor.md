@@ -28,11 +28,11 @@
 - Any raised part rolling on a round face of radius R accelerates (1 + r_g²/R²) / (1 + r0²/R²) times the true
   value, r_g being its own smallest radius of gyration. A solid 9 mm-radius cylinder: 0.75x (the law in
   `tests/contact/test_inertia_floor.py`, within 3 %).
-- Without the floor, WP13's clutter pile (100 objects dropped into a bin, 8 worlds, CPU) had 3 of 8 worlds INVALID.
+- Without the floor, a clutter pile (100 objects dropped into a bin, 8 worlds, CPU) had 3 of 8 worlds INVALID.
   A marker reached 240 m/s, +705 J against the pile's 70 J.
 - With it the pile is clean at 0.625, 1.25 and 1.5625 ms: 0 INVALID and nothing faster than the 3.3 m/s free fall
   + 1 m/s (measured with development scripts, not shipped).
-- The law (`tests/contact/test_inertia_floor_pile.py`, ruling 2026-11-08 13:36Z) runs seeds 0, 1 and 2. It requires:
+- The law (`tests/contact/test_inertia_floor_pile.py`) runs seeds 0, 1 and 2. It requires:
   - no world's energy above its start + 1 %;
   - no body above 2 x the free fall (6.6 m/s);
   - no INVALID world and no SPIN.
@@ -55,5 +55,5 @@
 ## Planned fix
 - Contacts that follow the rotation within a step (substepping only the fast-spinning body, or a rotation-aware
   contact frame). Then the floor can go.
-- A spin health flag (DEGRADED above 0.5 rad per step, naming the body and the fix) is coming from WP5 (SCR-WP5-14).
+- A spin health flag (DEGRADED above 0.5 rad per step, naming the body and the fix) is coming.
 - Estimate: several days, research grade. Not scheduled.

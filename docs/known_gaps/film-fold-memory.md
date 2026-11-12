@@ -40,5 +40,5 @@ mesh and on the cell size. Paper's 17 deg in the flat-fold law is not diagnosed.
 - Read `sim.check()` after a tight fold against a body.
 
 ## Planned fix
-SC8, after the release: a yield by curvature (an edge's yield angle from the bend it shares with its neighbours, so a
+After the release: a yield by curvature (an edge's yield angle from the bend it shares with its neighbours, so a
 fold yields the same on any mesh), and the flat-fold law run on the paper cards.

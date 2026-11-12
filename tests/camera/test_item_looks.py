@@ -10,6 +10,7 @@ import numpy as np
 import alloy
 from alloy.camera import Camera
 from alloy.camera.item_looks import items_look
+from alloy.camera.looks.material import rgba
 from alloy.camera.model_pack import pack_from_model
 from alloy.scene.variants import vary
 
@@ -72,3 +73,28 @@ def test_a_swapped_texture_missing_from_the_cache_falls_back_to_the_items_own(mo
         monkeypatch.setattr(T, "local_texture_files", cache(*have))
         assert IL.items_look(v)["materials"]["table:wood_pine"].get("texture") == want
     IL._MEMO.clear()
+
+
+def test_a_texture_missing_from_the_cache_draws_its_familys_tone_with_one_warning(monkeypatch, caplog):
+    import alloy.camera.item_looks as IL
+    import alloy.camera.looks.textures as T
+
+    def nothing(ref, res, root=None):
+        raise FileNotFoundError(ref)
+    monkeypatch.setattr(T, "local_texture_files", nothing)
+    monkeypatch.setattr(IL, "_MEMO", {})
+    monkeypatch.setattr(IL, "_WARNED", [])
+    (v,) = vary(_scene(), 1, pos=0.0, textures="same-family", seed=3)
+    s = alloy.Scene(dt=0.01)
+    s.add_ground()
+    s.items["ground"]["look"] = {"materials": {"floor": {"preset": "wood_oak", "texture": "polyhaven:wood_floor"}},
+                                 "assign": [], "default": "floor"}            # a floor-family texture: not wood
+    with caplog.at_level("INFO", logger="alloy.camera.item_looks"):
+        table = IL.items_look(v)["materials"]["table:wood_pine"]
+        floor = IL.items_look(s)["materials"]["ground:floor"]
+    assert table["texture"] is None and table["base_color"] == list(IL.FAMILY_TONE["wood"])
+    assert floor["texture"] is None and floor["base_color"] == list(IL.FAMILY_TONE["floor"])
+    warned = [r for r in caplog.records if "--fetch-textures" in r.getMessage()]
+    assert [r.levelname for r in warned] == ["WARNING", "INFO"]                 # one warning per process
+    for rgb in IL.FAMILY_TONE.values():                                           # mid-tones, never white
+        assert 0.15 <= float(np.dot(rgba(rgb)[:3], [0.2126, 0.7152, 0.0722])) <= 0.37

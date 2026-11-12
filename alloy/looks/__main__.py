@@ -44,7 +44,12 @@ def main(argv: list[str] | None = None) -> int:
 def _pool_command(args, lib: CardLibrary) -> int:
     from alloy.looks import pool
     if args.fetch_textures:
-        report = pool.fetch(args.family, args.source, lib)
+        from alloy.assets.hub.source import HubError
+        try:
+            report = pool.fetch(args.family, args.source, lib)
+        except HubError as e:              # no huggingface_hub, offline, ...: one line and its fix, not a traceback
+            print(f"error: {e.message}\nfix: {e.fix}", file=sys.stderr)
+            return 2
         print(json.dumps(report, indent=1))
         return 1 if report["missing"] else 0
     rows = {f: [{"look": e.name, "texture": e.texture, "author": e.author, "source": e.source}

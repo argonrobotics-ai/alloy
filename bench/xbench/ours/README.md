@@ -1,6 +1,6 @@
 # P3-2: rival engines on Alloy's own tests (contract)
 
-Brief: `[internal note]`. Owner WP8. Engines: Isaac Lab (PhysX), Genesis, ManiSkill3 (SAPIEN); Alloy beside
+Engines: Isaac Lab (PhysX), Genesis, ManiSkill3 (SAPIEN); Alloy beside
 on the same VM in the same session. Results: `bench/xbench/OUR_TESTS.md` + `bench/xbench/our_tests_rows.json`,
 linked from CROSS_ENGINE.md §10.
 
@@ -59,7 +59,7 @@ One file per run. Keys:
 
 ## T12 port facts (`packs/t12/t12.json`)
 
-- Geometry: the convex hulls MuJoCo collides (WP13's split pieces, <= 64 vertices each, under every engine's
+- Geometry: the convex hulls MuJoCo collides (the task's split pieces, <= 64 vertices each, under every engine's
   convex-hull vertex limit). Load the OBJ as a convex shape **without** re-hulling, decimation or decomposition.
 - Inertia: explicit (`mass`, `ipos`, `iquat_wxyz`, `inertia_principal`); never recomputed from geometry.
 - Contacts: `contact_body_pairs` lists every body pair MuJoCo collides and its effective sliding friction; pairs not
@@ -68,7 +68,7 @@ One file per run. Keys:
 - Joints: limits, armature, damping, frictionloss as listed; fingers b = -a (`equality`, mimic joint).
 - Actuators: affine PD `force = kp (ctrl - q) - kv qdot`, clipped to `force_clamp`: +-28 N m on joints 1-3, +-10 N m
   on joints 4-6, +-100 N on finger_a (scene.xml `actuatorfrcrange` on the joints; the actuators themselves are
-  `forcelimited` false, which is what this line wrongly said until XB4-4). The clamp binds in 15/16 B0 episodes
+  `forcelimited` false, which is what this line wrongly said before). The clamp binds in 15/16 B0 episodes
   (peaks 88 N m against 28), so a port without it is not comparable; every T12 row says `actuator_clamp`.
   In every pack `force_clamp` is the composed clamp MuJoCo applies (actuator `forcerange` x gear, then the joint's
   `actuatorfrcrange`; null = none); `tests/xbench/test_ours_packs.py` reads it back from each scene.xml.
@@ -77,12 +77,12 @@ One file per run. Keys:
   `b0.applied_traces(space, 2048, seed)` (Alloy's runner legalises twice; play exactly this); campaign seeds 100000.. (`b0.campaign_seeds`), 2 s horizon.
 - Alloy's route: dt 0.625 ms (32 steps per 20 ms tick), SolverMuJoCo.
 
-## Scene packs for P3-2b embodiments (WP13 builds scenes + targets, WP8 builds packs, engine agents run)
+## Scene packs for P3-2b embodiments (scenes and targets first, then packs, then the engine runs)
 
-WP13 commits the scenes and the Alloy targets; WP8 builds and commits the pack dirs. One pack per embodiment,
+The scenes and the Alloy targets are committed first; the pack dirs are built from them. One pack per embodiment,
 `packs/<name>/` (name `emb_e1_fr3`, ...), made by
 `scene_pack.py --target <bully target> --scene <scene.xml> --initial keyframe:init --out packs/<name>`
-(`--licence` text recorded in the pack). What the builder needs from WP13:
+(`--licence` text recorded in the pack). What the builder needs:
 
 1. **One MJCF scene file** with the robot (model files from the pinned source: mujoco_menagerie commit or
    gym-anything/robotics commit, licence recorded), the fixtures and the objects (arms, bimanual, mobile: table with

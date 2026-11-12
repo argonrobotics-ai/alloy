@@ -19,7 +19,7 @@
   kg along the jaw, 2.12 kg along the carriage. Its clock bound was 1.15 ms on the 1.329 kg; it is 0.75 ms on the
   0.56 kg now. The CPU coupling suite (136 tests) passes unchanged.
 
-- What it changes in a coupled contact (WP10, CPU Warp route, 2026-11-09, with the momentum-consistent feedback of
+- What it changes in a coupled contact (CPU Warp route, 2026-11-09, with the momentum-consistent feedback of
   `alloy.coupling.record_momentum`; measured with a development rig, not shipped): a 0.515 kg platen over C3's free
   16 g silicone pad, mid-air, as one MJCF body whose joint alone changes: one vertical slider, a hinge 5 cm from its
   centre of mass, and three slides (an exact proxy with the same contact, the slider's twin).
@@ -39,7 +39,7 @@
 ## Why
 - trace(W)/3 is the least-squares isotropic fit of W (argmin_a ||aI - W||_F). One scalar cannot match a body whose
   mobility differs by direction.
-- A proxy at the most mobile axis's mass was tried and withdrawn (WP11). It scales `body_invweight0` by
+- A proxy at the most mobile axis's mass was tried and withdrawn. It scales `body_invweight0` by
   3·lambda_max/trace, which makes the proxy too light in every other direction.
 - In a cloth clamp test at the same 0.521 ms exchange step, that variant made the clamp bounce: gap spread 0.72 mm
   and an 18.2 N force peak, against a 1.2 mu N limit of 15.1 N. The isotropic fit gives 0.0013 mm and 12.5 N.
@@ -109,7 +109,7 @@
 
 ## Planned fix
 - Phase 1 (VBD) is in as the opt-in above. It becomes the default when its law passes on the GPU too, the two-pad
-  drag is no worse than the scalar's, and the coordinator rules.
+  drag is no worse than the scalar's, and a decision is made.
 - Phase 2: the SPH body integrate and harvest. Phase 3: MPM's collider IJtm and rewind. Each reads the same tensor
   (`alloy.coupling.proxy_tensor`) and gets its own law first.
 - Later: W per exchange instead of at qpos0, and the translation-rotation block.

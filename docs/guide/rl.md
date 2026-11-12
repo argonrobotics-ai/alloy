@@ -119,14 +119,17 @@ that opens or closes in one step; 100-step (2 s) episodes. The cube counts as he
 the table: a reward that paid fingers closed around a cube resting on the table taught policies to hold it there.
 
 ```bash
-python -m alloy.envs.wrappers.train PickCube-v0 --lib rsl_rl --num-envs 2048 --iterations 500
+python -m alloy.envs.wrappers.train PickCube-v0 --lib rsl_rl --num-envs 2048 --iterations 1000
 ```
 
-rsl_rl takes this env's own settings (`train_rsl_rl.RECIPES["PickCube-v0"]`: discount 0.95, three 256-unit layers, 8
-epochs and 8 mini-batches, no entropy term).
+At 2,048 worlds on a 24 GB GPU (L4), Warp prints a CUDA out-of-memory line at start while it captures the step graph;
+training continues on a smaller graph.
 
-With these settings training does not yet learn the pick reliably: some runs learn it and others do not. Treat
-them as a starting point; tuning continues. Not covered: other cube sizes, masses or friction, other objects, camera
+rsl_rl takes this env's own settings (`train_rsl_rl.RECIPES["PickCube-v0"]`: discount 0.95, three 256-unit layers, 8
+epochs and 8 mini-batches, an entropy term of 0.003).
+
+Results vary between runs on a GPU: watch the success rate the trainer prints, and treat these settings as a
+starting point; tuning continues. Not covered: other cube sizes, masses or friction, other objects, camera
 observations, and Stable-Baselines3 and skrl (not run on it).
 
 Speed under contact, two opt-in settings (both off by default): `ALLOY_NOSLIP_SWEEPS=20` caps Alloy's no-slip pass at

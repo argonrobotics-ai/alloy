@@ -7,14 +7,14 @@
   18.7 m/s.
 - `ClothFold-v0`'s friction pinch is where it shows. As the closing fingers squeeze the gathered towel corner, a
   corner particle is thrown at 14-33 m/s and SPEED_FAIL marks the world INVALID (frozen), in about 40 % of the worlds
-  of SC4's pinch-and-lift repro.
+  of the pinch-and-lift repro.
 - The health report names the fastest gripper body with that speed, not the particle. In 19 of 23 such resets every
   gripper body was under 3 m/s.
 
 ## Number
 One 60 mg particle (1 mm radius), started inside a static box, no gravity. CPU, `make_vbd`'s defaults (log-barrier
-contact), contact stiffness 2e6 mixed with the box's 2.5e3. Main 816eca76e, 2026-11-10; [internal note]
-`notes/wp11-kick/exit_probe.py`.
+contact), contact stiffness 2e6 mixed with the box's 2.5e3. Main 816eca76e, 2026-11-10; a development
+probe, not shipped.
 
 | Start depth | Step | Leaves at | Depth / step |
 |---|---|---|---|
@@ -26,7 +26,7 @@ contact), contact stiffness 2e6 mixed with the box's 2.5e3. Main 816eca76e, 2026
 
 - The speed equals the depth the step resolved / dt to 0.1 %. Some depth is left at the step's end (0.13 mm of the
   0.5 mm) and is resolved in the next step.
-- ClothFold, SC4's pinch-and-lift repro (GPU, 128 worlds, 2026-11-10, [internal note] `notes/sc4-kick`): 55 worlds reset,
+- ClothFold, the pinch-and-lift repro (GPU, 128 worlds, 2026-11-10; development notes, not shipped): 55 worlds reset,
   at 20.2-37.5 m/s (median 25.1).
   - In 45 of the 62 reset dumps the probe's fastest towel particle matches the reported speed to 0.1 m/s.
   - In world 12, a corner particle went from 0.6 to 13.9 m/s in one 39 us exchange while the finger's records went
@@ -62,9 +62,9 @@ contact), contact stiffness 2e6 mixed with the box's 2.5e3. Main 816eca76e, 2026
     step; the coupler's record-momentum feedback gives a robot body back only what the particles took.
   - A particle squeezed sideways out of a wedge between two records leaves along the wedge, not along either normal,
     and that speed is not capped.
-  - Not yet measured on ClothFold. SC4 runs the 128-world pinch row with it.
+  - Not yet measured on ClothFold; the 128-world pinch row with it is to run.
 
 ## Planned fix
-- SC4's ClothFold rows with the cap (INVALID worlds, fold count). Then the cap as a default, after its laws, the
-  coordinator's ruling and the engine auditor's verdict.
+- The ClothFold rows with the cap (INVALID worlds, fold count). Then the cap as a default, after its laws
+  and an engine audit.
 - Then trace how the particle starts a step that deep, which the cap does not fix.

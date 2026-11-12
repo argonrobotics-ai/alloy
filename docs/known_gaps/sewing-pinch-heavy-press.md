@@ -6,8 +6,7 @@ light. Pressed at 100 N, the closing pads gather nothing: they rise and the plie
 valid throughout (no health flag), so a script that only checks health reads a grasp that did not happen.
 
 Before 2026-11-10 the sewing note stated a 96 % carry at 100 N. That row was not a pinch: the pads had slipped off the
-mesh's vertex row and stood on the table, and the lift drew up cloth that lay above their bottoms
-(`docs/notes/sewing-ply-pinch.md`, Re-cut).
+mesh's vertex row and stood on the table, and the lift drew up cloth that lay above their bottoms.
 
 ## Number
 The rig of `alloy.tasks.sew_ply_pinch` (CPU): two 16 x 6.4 mm pads, 0.2 kg each, on 0.61 mm muslin plies (10 mm

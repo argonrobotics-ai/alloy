@@ -19,7 +19,7 @@ Sheets dropped 5 mm onto two 1 cm round supports 10 cm apart, a 20 x 10 cm sheet
 
 At 400 iterations the PET sheet from the inertial guess nearly rests (0.013 m/s) with its centroid still 8.5 mm low.
 From the adaptive start it still moves at 0.37 m/s and walks 6 mm, so the pump is not only an effect of too few
-iterations. WP11's dent-and-release rig (80 x 30 mm, round supports 40 mm apart) gives the same picture: about 18 mm
+iterations. A dent-and-release rig (80 x 30 mm, round supports 40 mm apart) gives the same picture: about 18 mm
 mid-span sag for 0.5 mm polycarbonate and PET at every 40-iteration setting.
 
 ## Why
@@ -44,6 +44,6 @@ up-swing, kept on the down-swing, which on an unconverged stiff sheet feeds ener
 
 ## Planned fix
 None before launch. A stiff sheet needs a solve that converges its bending: more iterations scaled to the sheet's
-stiffness, or the film route for stiff sheets. WP11's velocity-gated adaptive start (branch wp11-adaptive-v0) took
+stiffness, or the film route for stiff sheets. A velocity-gated adaptive start (a development branch) took
 out the climb on its rig, but undid the drape's convergence (L5 drape: 4.5 % strain against 0.36 %), so it did not
 ship.

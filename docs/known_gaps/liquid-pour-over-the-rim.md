@@ -35,6 +35,6 @@ sheet lying 30 cm away. A particle counts as through a wall when its path in one
   `sim.state()`, instead of trusting a clean health report.
 
 ## Planned fix
-0.1.1: beside cloth the liquid takes a quarter of its stability limit per substep (in the scene above that kept
-every particle in both boxes), with a law that a pour keeps its particles in an open box alone, beside cloth and
-beside a free body. The 4 % alone is studied in 0.1.1 as well.
+Planned for a later release: beside cloth the liquid takes a quarter of its stability limit per substep (in the scene
+above that kept every particle in both boxes), with a law that a pour keeps its particles in an open box alone,
+beside cloth and beside a free body. The 4 % alone is studied as well.

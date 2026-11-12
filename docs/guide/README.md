@@ -27,7 +27,7 @@ each. Every code block is complete and runs as shown (GPU if present, else CPU).
 | [envs.md](envs.md) | Gym / PyTorch vector environments over parallel worlds |
 | [rl.md](rl.md) | adapters for rsl_rl, Stable-Baselines3 and skrl, a one-command PPO train, observation groups for a privileged critic; which library reached 90 % success on which task and which did not (one to six runs per row); opt-in first versions of hand-motion actions for arms, noise / delay / history layers and PD / DC-motor actuator models, each with what it does not cover |
 | [locomotion.md](locomotion.md) | legged robots: the Go2 velocity environment on flat ground or on rough terrain tiles with a level curriculum (commands, pushes, policy and critic observations, foot contact forces) and a PPO train command; no height scan, stairs or gaps, no actuator model |
-| [imitation.md](imitation.md) | imitation-learning data: record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation (3 of 8 ready-made envs), replay, policy evaluation (no training code) |
+| [imitation.md](imitation.md) | imitation-learning data: record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation (3 of 9 ready-made envs), replay, policy evaluation (no training code) |
 | [sysid.md](sysid.md) | system identification (optional): fit a simulated robot's servo stiffness, damping, dry friction and action delay to a recording of the real one; one command, a report, then `add_robot(sysid=)`; what is not fitted |
 | [compose.md](compose.md) | the scene builder: a sentence in, a checked scene and variations out |
 | [variants.md](variants.md) | `alloy.vary` / `alloy vary`: copies of a scene with objects moved and textures swapped |

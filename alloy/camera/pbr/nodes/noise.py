@@ -7,9 +7,11 @@ import warp as wp
 # Hashes (util/hash.h, Jenkins lookup3 `final`)
 # ---------------------------------------------------------------------------------------------------------
 _U = wp.uint32
-_H1 = wp.constant((0xDEADBEEF + (1 << 2) + 13) & 0xFFFFFFFF)
-_H2 = wp.constant((0xDEADBEEF + (2 << 2) + 13) & 0xFFFFFFFF)
-_H3 = wp.constant((0xDEADBEEF + (3 << 2) + 13) & 0xFFFFFFFF)
+# Typed uint32 (GEO P5, 2026-11-11): each is above INT32_MAX, and as a plain int constant it compiled to
+# `const wp::int32 v = 3735928584;` with a clang -Wconstant-conversion warning; the same bits, read through _U below.
+_H1 = wp.constant(wp.uint32((0xDEADBEEF + (1 << 2) + 13) & 0xFFFFFFFF))
+_H2 = wp.constant(wp.uint32((0xDEADBEEF + (2 << 2) + 13) & 0xFFFFFFFF))
+_H3 = wp.constant(wp.uint32((0xDEADBEEF + (3 << 2) + 13) & 0xFFFFFFFF))
 
 
 @wp.func

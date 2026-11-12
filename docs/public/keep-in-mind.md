@@ -1,7 +1,16 @@
-# Known limits
+# Keep in mind
 
-What does not work yet, one line each. Every line links to a page with the measured size of the limit and what to
-do instead today. Read the lines for your area before you trust a result there.
+What does not work yet, one line each. A linked line goes to a page with the measured size of the limit and what to
+do instead today; a plain line carries its workaround. Read the lines for your area before you trust a result there.
+
+## Compile, memory and speed
+
+- An interrupted first compile can damage the kernel cache: later runs then fail with a `JSONDecodeError` or an
+  nvJitLink error. Delete the folder `~/.cache/warp` and build again.
+- `env.close()` does not free GPU memory, so a larger environment built later in the same process can step many
+  times slower with no error. Use one environment size per process, or start a new process.
+- A robot, a cable and cloth together in one scene can force a very small coupled step, and the scene then steps
+  very slowly. Run `alloy.estimate(scene, worlds, seconds)` before you build.
 
 ## Rigid bodies and contact
 
@@ -202,8 +211,12 @@ do instead today. Read the lines for your area before you trust a result there.
 
 ## Cameras
 
-- [Env camera images are bright and grainy: mean brightness 214 of 255 and 3.9 grey levels of noise at 4 samples per
-  pixel.](../known_gaps/camera-env-images.md)
+- [Env camera images are bright and grainy: 4.2 to 4.8 grey levels of noise at 4 samples per pixel (16.8 on a textured
+  cabinet), and a mean brightness of up to 212 of 255.](../known_gaps/camera-env-images.md)
 - [Glass objects render opaque unless a look file makes them glass.](../known_gaps/camera-glass-opaque.md)
 - [A robot file with one visual-only geom draws only its visual geoms, so the rest of the robot is invisible in
   images.](../known_gaps/camera-robot-collision-geoms.md)
+- Each new look of the full camera (`quality="full"`: other lights, colours or a look file) compiles again, about
+  100 s the first time on one L4. Keep one look for a whole run; a look used before starts in under a second.
+- Lighting set with `camera_scene(sim, lighting=...)` carries into later default `sim.render()` calls on that
+  simulation. Render the default pictures first, or build a second simulation for them.

@@ -7,7 +7,7 @@ for every scene, image size and GPU, measured against Cycles' own noise.
 
 | | |
 |---|---|
-| Scenes | C2 water + glass, C3 opaque latch, C4 clear lid, DC5 1,024-world grid, T12 diffuse benchmark (`matrix.json`) |
+| Scenes | C2 water + glass, C3 opaque latch, C4 clear lid, a 1,024-world grid, T12 diffuse benchmark (`matrix.json`) |
 | Sizes | 128x128, 640x480, 1280x720 |
 | GPUs | NVIDIA L4, NVIDIA RTX PRO 6000 |
 

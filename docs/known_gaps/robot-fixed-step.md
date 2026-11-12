@@ -103,4 +103,4 @@ Not fixed yet:
   for robots;
 - a servo on a tendon and joint limits written as stiffness and damping (URDF, USD) are not checked by the caps,
   and a loose body in the robot file is checked for its contact stiffness only, not for how far it moves in a step.
-Making "auto" the default for robots is proposed (it changes only the Go2 among the shipped robots) and waits on a ruling.
+Making "auto" the default for robots is proposed (it changes only the Go2 among the shipped robots) and waits on a decision.

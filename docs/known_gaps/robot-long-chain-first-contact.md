@@ -46,6 +46,6 @@ is not yet known.
 - For a cable, cord or rope, use `scene.add_rod` rather than a chain of bodies in a robot file.
 
 ## Planned fix
-In 0.1.1, Alloy moves the MuJoCo entry of a long light chain to CG by itself. It does this already for an `add_rod`
-chain with a weld or joint attached. Alternatively, Alloy re-steps a world with CG when the Newton solver's pivot guard
+Planned for a later release: Alloy moves the MuJoCo entry of a long light chain to CG by itself. It does this already
+for an `add_rod` chain with a weld or joint attached. Alternatively, Alloy re-steps a world with CG when the Newton solver's pivot guard
 fires. The breakdown itself is in MuJoCo Warp's Newton solver.

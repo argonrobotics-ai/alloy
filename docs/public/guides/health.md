@@ -92,7 +92,7 @@ Read `sim.health()["worlds"][w]["flags"]`; `fixes` in the same row lists the cha
 | DET_DOWNGRADED | notice | GPU runs do not repeat bit for bit | nothing; use the CPU for the same bits |
 | LATCHED | INVALID | the world was frozen at its last good state | fix the first problem listed |
 
-## Limits
+## Keep in mind
 
 - Health does not catch every overlap between rigid bodies and robot parts, and it freezes a fallen legged robot
   that lies deeper than 1 cm ([what it misses](../../known_gaps/health-mujoco-penetration.md)).
@@ -104,4 +104,4 @@ Read `sim.health()["worlds"][w]["flags"]`; `fixes` in the same row lists the cha
 ## Next
 
 - Add a robot: [Robots](robots.md).
-- Known limits: [Limits](../limits.md).
+- Everything that does not work yet: [Keep in mind](../keep-in-mind.md).

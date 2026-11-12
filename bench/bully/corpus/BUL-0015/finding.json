@@ -38,10 +38,10 @@
     "first_step": "-1: the crash time is random",
     "measured_by": "alloy-dev",
     "needs": "the runner's 64-substep CUDA graphs: 0 of 4 runs with graphs off, 0 of 15 with one graph per substep stage plus a sync",
-    "owner": "WP5 triage (HealthMonitor); kernel fix to its owner (WP3 analytic rows, WP0 or Newton otherwise)",
+    "owner": "the team triage (HealthMonitor); kernel fix to its owner (the team analytic rows, the team or Newton otherwise)",
     "rate": "3 crashes in 8 full runs (about 1 per 48 simulated s), at random times t = 0.2 to 10 s, with 4-5 GPU processes on the L4; not tied to the arm runaway",
     "scene": "C5 nut scene (precise clip): MuJoCo Warp robot, Newton contacts + analytic M10 thread rows; 64-substep CUDA graphs (HalfPeriods), dt 1/7680",
-    "scr": "SCR-SC3-3"
+    "scr": "a ruling"
   },
   "status": "open",
   "target": "",

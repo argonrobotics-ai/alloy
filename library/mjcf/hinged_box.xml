@@ -1,6 +1,6 @@
-<!-- A 100 x 80 x 60 mm box with a hinged 6 mm lid (articulated MJCF object for WP1 tests and demos). -->
+<!-- A 100 x 80 x 60 mm box with a hinged 6 mm lid (articulated MJCF object for the team tests and demos). -->
 <mujoco model="hinged_box">
-  <compiler angle="radian"/>  <!-- the lid range is 0-2 rad; MJCF reads angles in degrees by default (XB4-7) -->
+  <compiler angle="radian"/>  <!-- the lid range is 0-2 rad; MJCF reads angles in degrees by default -->
   <worldbody>
     <body name="box" pos="0 0 0.03">
       <freejoint/>

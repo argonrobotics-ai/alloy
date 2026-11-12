@@ -1,4 +1,4 @@
-# T09 USB-A plug into a port with a 1 m USB cable, authored from WP1 cards (usb_a_plug, usb_a_receptacle, usb_cable_1m) and the [internal reference] layout; no recorded trace (alloy.tasks.scenes.t09_card).
+# T09 USB-A plug into a port with a 1 m USB cable, authored from library cards (usb_a_plug, usb_a_receptacle, usb_cable_1m) and the [internal reference] layout; no recorded trace (alloy.tasks.scenes.t09_card).
 schema: alloy.scene/1
 robots:
 - path: robots/yam_bench/robot.xml

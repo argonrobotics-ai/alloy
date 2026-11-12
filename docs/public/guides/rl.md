@@ -81,7 +81,7 @@ with `python -m alloy.envs.loco.train`. The policy walks blind, and nothing here
 Draw a different value in every world with `scene.randomize("ball", "friction", 0.6, 1.0)`: it is seeded by
 `alloy.build(scene, seed=)`. Other fields such as `density` work the same way.
 
-## Limits
+## Keep in mind
 
 - No shipped trainer learns from camera images: on a camera environment (`GripperLiftCamera-v0`) the one-command
   trainer trains on the state only and does not say so.
@@ -90,10 +90,13 @@ Draw a different value in every world with `scene.randomize("ball", "friction", 
   training runs with the same seed differ.
 - A world that goes INVALID is frozen and its episode ends: count `info["invalid"]` before you trust a result
   ([World health](health.md)).
-- Training an arm to grasp does not work reliably yet: treat any grasping task as early.
+- Training an arm to grasp gives results that vary between runs on a GPU: watch the success rate the trainer
+  prints, and treat the shipped settings as a starting point. `PickPlace-v0` does not learn to place: no reward
+  term pays the release into the bin.
 
 ## Next
 
+- [Evaluate a trained policy on held-out seeds](../how-to/evaluate-checkpoint.md).
 - [Imitation learning](imitation.md): record demonstrations and evaluate a policy.
 - [Robots](robots.md): load a robot and drive its joints.
-- [Known limits](../limits.md)
+- [Keep in mind](../keep-in-mind.md)

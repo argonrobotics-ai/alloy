@@ -59,6 +59,16 @@ def soft_queries(spec: SceneSpec) -> set[str]:
     return out
 
 
+def _no_match_hint() -> str:
+    """What to do when no object matches: the ``import`` extra on a base install (the Hub holds most objects), else
+    another word (GEO P4)."""
+    from alloy.api.catalog import _hub_unreachable  # noqa: PLC0415
+
+    if _hub_unreachable():
+        return 'the object library on the Hugging Face Hub needs the import extra: pip install "alloy-engine[import]"'
+    return "try another word (alloy.compose.search lists names)"
+
+
 def choose_one(item: ItemSpec, catalog, rng: np.random.Generator | None, notes: list[str]) -> str | None:
     """Draw from the best-scoring tier, reading (and fetching) only the card drawn; an unplaceable draw is dropped
     and the draw repeated, down the ranking."""
@@ -69,7 +79,7 @@ def choose_one(item: ItemSpec, catalog, rng: np.random.Generator | None, notes: 
         return item.object if info.placeable else None
     matches = catalog.search(item.query, item.words, k=LOOK)
     if not matches:
-        notes.append(f"{item.query}: no object matches; try another word (alloy.compose.search lists names)")
+        notes.append(f"{item.query}: no object matches; {_no_match_hint()}")
         return None
     skipped: list[tuple[str, str]] = []
     floor = matches[0].score - TIER                  # never fall back to a weaker meaning ("apple" -> a game box)

@@ -1,18 +1,29 @@
-# Alloy
+# Alloy physics engine
+
+Open source under Apache-2.0: https://github.com/argonrobotics-ai/alloy
+
+Alloy is the physics engine from Argon Robotics. The package is `alloy-engine`; the import is `alloy`.
+`pip install alloy` installs a different project. Alloy is not related to Alloy Robotics, Grafana Alloy or the Alloy
+modelling language.
+
+![A cloth sheet draped over a stand, simulated in Alloy](https://alloy.argonrobotics.ai/docs/img/cloth.png)
 
 **Install:** `pip install alloy-engine`, inside a Python 3.11 or 3.12 virtual environment (Linux x86_64, or macOS
-on Apple silicon), then the quick start below.
+on Apple silicon), then the quick start below. On an older Python (a stock Ubuntu 22.04 has 3.10) pip answers "from
+versions: none": `uv venv -p 3.12 --seed && source .venv/bin/activate` makes a 3.12 environment with pip in it.
 
 Alloy is a physics engine for robot learning, built on [Newton](https://github.com/newton-physics/newton),
 [MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp) and [Warp](https://github.com/NVIDIA/warp): rigid
 bodies and robots step in MuJoCo Warp (MuJoCo C on the CPU), cloth and soft bodies in Newton's VBD, sand and pastes
 in Newton's MPM, liquids in Alloy's own DFSPH. One scene can hold rigid robots (sub-millimetre contact for declared
 precision fits such as pegs and threads), cloth and soft bodies, liquids, granular material, cables and objects that
-cut or tear, stepped together in parallel worlds on one NVIDIA GPU: thousands for free rigid bodies, hundreds for a
-robot arm, tens to hundreds with cloth or liquid. Without a GPU everything runs on the CPU, slowly.
+cut or tear, stepped together in parallel worlds on one NVIDIA GPU: thousands for free rigid bodies, 512 to 4,096
+for a robot arm (on one L4, a Franka Panda with a table and a cube ran best at 2,048), tens to hundreds with cloth or
+liquid. Without a GPU everything runs on the CPU, slowly.
 
-Known engine limits, each with its size and workaround, are on one page, https://alloy.argonrobotics.ai/docs/limits/
-(installed as `public/limits.md` in the docs folder, with a page per limit in `known_gaps/`).
+Keep in mind: the engine's known limits, each with its size and workaround, are on one page,
+https://alloy.argonrobotics.ai/docs/keep-in-mind/ (installed as `public/keep-in-mind.md` in the docs folder, with a
+page per limit in `known_gaps/`).
 
 Objects are described once as **cards** (YAML: shape plus material values with their sources); a router picks the
 solver for
@@ -56,11 +67,13 @@ pip install "alloy-engine[envs]"               # in your virtual environment: Al
 A C compiler lets CPU robot scenes use MuJoCo's C step (gcc on Linux; on a Mac, Apple's command line tools:
 `xcode-select --install`); without one they run on a slower fallback, and Alloy says so.
 
-The first run compiles Warp kernels (1-3 minutes on a CPU; 3 to 4 minutes on a GPU, 190-240 s measured on fresh L4
-machines, and about 10 minutes for a cloth scene); they are cached in `~/.cache/warp`, so later runs start in seconds.
+The first run of a new kind of scene compiles kernels once: about 45 s on a CPU (41 s on an 8-vCPU Linux machine,
+44 s on an Apple-silicon Mac) and 3 to 4 minutes on an NVIDIA GPU (190 to 240 s on L4s). The result is cached, so later
+runs start in seconds.
 
 AI agents: start with AGENTS.md, the whole quick start in one file: `python -m alloy.docs agents` prints it. Every
-page is also on the docs site, https://alloy.argonrobotics.ai/docs/.
+page is also on the docs site, https://alloy.argonrobotics.ai/docs/, and its index for language models is
+https://alloy.argonrobotics.ai/llms.txt.
 
 ## Quick start
 
@@ -114,6 +127,21 @@ the licence its source declares (CC BY 4.0, MIT, CC0 1.0 or Apache-2.0) and, in 
 to give (the dataset's `ATTRIBUTION.md` collects them); check both before you share an object or an image of it, or
 use it commercially.
 
+## MCP server
+
+`alloy mcp` serves the engine as Model Context Protocol (MCP) tools over stdio, with nothing beyond
+`pip install alloy-engine`: `list`, `scene`, `build`, `step`, `run`, `state`, `targets`, `reset`, `close`, `check`,
+`render`, `estimate`, `import`, `export`, `vary`, `compose`, `create`, `audit` and `fetch`, the operations of the
+`alloy` command line with the same JSON. To add it to Claude Code:
+
+```bash
+claude mcp add alloy -- alloy mcp
+```
+
+`fetch`, `create` and `compose`'s objects from the Hub library need the `import` extra
+(`pip install "alloy-engine[import]"`). The server code is
+[`alloy/mcp/`](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp).
+
 ## What is in the box
 
 What `pip install alloy-engine` puts in site-packages (`python -m alloy.docs` prints the docs, examples and
@@ -147,3 +175,6 @@ versions; otherwise keep it in its own virtual environment.
 ## Licence
 
 Apache-2.0 (see `LICENSE`). Third-party code, robot models and data keep their own licences; see `NOTICE`.
+Issues and questions: https://github.com/argonrobotics-ai/alloy/issues. Contributing:
+https://github.com/argonrobotics-ai/alloy/blob/main/CONTRIBUTING.md. Security reports: privately, through
+https://github.com/argonrobotics-ai/alloy/security (see SECURITY.md), not in public issues.

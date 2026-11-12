@@ -34,7 +34,7 @@ patch, its GPU runs and a chain-clamp script; not shipped).
   anchor (`ALLOY_STICK_ANCHOR=0`) it creeps about 2 % per second (0.9976 -> 0.9828 over 0.7 s, 0.8651 after 5 s).
 - The creep falls faster than 1 / impratio on MuJoCo C: 0.69 / 0.08 / 0.01 % over 5 s at impratio 300 / 1,000 /
   3,000. MuJoCo Warp runs the rule at impratio 30, not 300 (Why).
-- A rigid grip (pads welded to the wrist, 0.1 mm into the cable; WP9's GPU chain rig, not shipped) on
+- A rigid grip (pads welded to the wrist, 0.1 mm into the cable; a GPU chain rig, not shipped) on
   MuJoCo Warp: 0.9974 at the ramp's end and 0.9976 after 0.7 s, 2 s and 5 s, the same at 1, 64 and 1,024 worlds.
   Without the anchor it followed 0.978 and ran on to 0.899 / 0.762 / 0.523 after 0.7 / 2 / 5 s. On MuJoCo C the
   welded rig holds: 1.0000, -0.03 %. Fingers held by position servos, between the two, are not measured.
@@ -91,7 +91,7 @@ still creeps.
 - Read the cable's own twist (`"<rod>.twist"`, its segments' quaternions), not the gripper's angle.
 
 ## Cost
-- CPU, MuJoCo C: +33 % per simulated second with a gripped cable (WP9's api_speed robot scene, 1 world: 0.947 ->
+- CPU, MuJoCo C: +33 % per simulated second with a gripped cable (the api_speed robot scene, 1 world: 0.947 ->
   1.257 s). The Panda scene with a cable lying on its table showed no measurable cost (1.53 / 1.47 s).
 - GPU, MuJoCo Warp, an L4, the same scene: 1.62x / 1.14x / 1.10x at 64 / 1,024 / 4,096 worlds (1.17 -> 1.89,
   5.32 -> 6.05, 21.2 -> 23.4 s per simulated second). The stick anchor adds 4 % / 3 % / 0 % at 1 / 64 / 1,024

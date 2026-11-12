@@ -21,7 +21,7 @@ from typing import Any, NamedTuple
 
 import numpy as np
 
-from alloy.api import _robot_random, _robot_random_push, _robots, catalog, fixtures as _fixtures
+from alloy.api import _cpu_note, _robot_random, _robot_random_push, _robots, catalog, fixtures as _fixtures
 from alloy.api.errors import BuildError, SceneError, world_limits, wrapped
 from alloy.api.scene import Scene
 from alloy.route import weld_stiff
@@ -155,7 +155,7 @@ def build(scene: Scene | str | Path | dict, worlds: int | None = None, device: s
                         tau)
         if rerun_worlds:
             _fine_pack(sim, scene, int(rerun_worlds), seed, (profile, native), bool(plugins), cap)
-    return sim
+    return _cpu_note.after_build(sim, device)        # GEO P6: one line on CPU speed when no GPU was found
 
 
 def _world_count(scene: Scene, worlds: int | None, profile: str) -> int:

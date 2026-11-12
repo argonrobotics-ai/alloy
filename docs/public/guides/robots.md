@@ -75,7 +75,7 @@ print(sim.state(world=0)["panda/joint1.q"].round(2), sim.check()["ok"])
 The 0.2 s ramp aimed at 0.5 rad, and the servo had reached 0.3 rad when the run ended. Other shipped robots include
 the Franka FR3, a UR10e, two humanoids, a quadruped and a hand.
 
-## Limits
+## Keep in mind
 
 - MJCF reads angles (joint `range`, `euler`) in degrees unless the file says `<compiler angle="radian"/>`; targets
   are always radians. A hinge with range `-2 2` and no such line moves only 2 degrees each way.

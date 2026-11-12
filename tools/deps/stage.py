@@ -33,9 +33,10 @@ IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", "*.so",
 # Copied to alloy/_data beside the library (TRAIN-AUDIT fix 1, 2026-11-11): examples/ whole, AGENTS.md (user
 # 17:20Z), and of docs/ ONLY the public set (an allow-list: never docs/notes, oss, research, ENV.md or SPEC.md).
 # Same lists in setup.py, tools/release/stage_release.py and MANIFEST.in (tests/core/test_packaging.py).
-DOCS_PUBLIC = ("public", "known_gaps", "guide")   # public pages, the gap pages limits.md links, guide/ as reference
-#                                                  (coordinator 17:5xZ; physics ruling (A): AGENTS.md and code point at it)
-DATA_FILES = ("AGENTS.md",)
+# public/ pages, the known_gaps/ pages keep-in-mind.md links, and guide/ as reference (coordinator 17:5xZ; physics
+# ruling (A): AGENTS.md and the code's errors point at it).
+DOCS_PUBLIC = ("public", "known_gaps", "guide")
+DATA_FILES = ("AGENTS.md", "llms.txt")
 TOP_FILES = ("LICENSE", "NOTICE", "README.md")
 IMPORT_SUFFIXES = frozenset({".yaml", ".json", ".jsonl", ".md", ".xml"})  # cards and their text; no meshes
 NO_REDISTRIBUTE = re.compile(r"\bredistribute:\s*no\b")

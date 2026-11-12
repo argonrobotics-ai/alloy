@@ -1,7 +1,7 @@
 # MPM at many worlds: the rheology solve sets the speed (256 dough worlds ~7.6 s per 10 ms period on an L4)
 
 Status: open. The solve tolerance is 3e-4 by default since 2026-11-08 (22 % faster for dough), after a law
-re-pass. A faster solver is planned after launch (SCR-WP12-3 (3), coordinator ruling 2026-11-08).
+re-pass. A faster solver is planned after launch (2026-11-08).
 
 ## What
 
@@ -12,7 +12,7 @@ work at 256.
 
 ## Number
 
-L4, 256 worlds, eager periods (the memory check's choice at this size), 10 ms periods (WP12's rheology-default rows, not
+L4, 256 worlds, eager periods (the memory check's choice at this size), 10 ms periods (the rheology-default rows, not
 shipped, 2026-11-08):
 
 | scene | tolerance 1e-4 (before) | tolerance 3e-4 (default) | memory per world |
@@ -20,7 +20,7 @@ shipped, 2026-11-08):
 | dough ball pressed by a plate | 9.78 s | 7.60 s (-22 %) | 37 MiB |
 | sand fill | 6.73 s | 6.69 s (-1 %) | 45 MiB |
 
-Where a period goes (WP0, GAPS-NOW #5a, same L4, 256 dough worlds eager; Newton's own phase timers, which
+Where a period goes (same L4, 256 dough worlds eager; Newton's own phase timers, which
 synchronize, so a period reads about 1 s slower than untimed):
 
 | phase | tolerance 3e-4 | tolerance 1e-4 |
@@ -103,15 +103,15 @@ below, rc2-1109 took 1.336 s (1 world) and 18.84 s (64 worlds) for the same scen
 ## Planned fix
 
 - **Tolerance 3e-4 as the default**: done (2026-11-08), in its own commit after the law re-pass above.
-- **A faster solver, measured** (WP0, GAPS-NOW #5a). Anderson-accelerated Gauss-Seidel takes 1.6-2.4x fewer sweeps
-  per solve on the CPU (1 and 2 worlds; the dough within mean 0.06 mm of GS). On the L4 at 256 worlds the loop
-  drops from 130 to 84 sweeps, but the untimed periods are equal (7.56 against 7.59 s). Not merged.
-- **Converged worlds are skipped: done** (WP0, 5fd256eaf). Newton's Gauss-Seidel sweep skips the worlds that the
+- **A faster solver, measured** (an Anderson-acceleration probe). Anderson-accelerated Gauss-Seidel takes 1.6-2.4x
+  fewer sweeps per solve on the CPU (1 and 2 worlds; the dough within mean 0.06 mm of GS). On the L4 at 256 worlds the
+  loop drops from 130 to 84 sweeps, but the untimed periods are equal (7.56 against 7.59 s). Not merged.
+- **Converged worlds are skipped: done** (5fd256eaf). Newton's Gauss-Seidel sweep skips the worlds that the
   per-world stop has frozen, so results are bitwise the same. L4, 256 dough worlds:
   - presses at spread heights, so the worlds stop at different sweeps: 7.87 against 10.10 s per period
     (strain solve 4.16 against 6.39 s);
   - identical worlds: no change.
 - **After the solve:** grid allocation, elasticity and the collider rasterization take about 2.8 s of a timed 8.6 s
   period together.
-- **Not planned**, by the coordinator's ruling: an iteration cap of 100, tolerance 1e-3, or half-precision solves.
+- **Not planned**, by decision: an iteration cap of 100, tolerance 1e-3, or half-precision solves.
   Each leaves the solve unconverged or below its own resolution.

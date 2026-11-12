@@ -14,7 +14,7 @@ Since this page was written the build warns and health flags it (below); the pas
 Steel ball on a static plate 0.3 m above the ground, `Scene(dt=0.01)` (rigid step 1.25 ms), CPU, MuJoCo C route,
 main ba2713ec0. The ball's speed is swept in 0.25-1 m/s steps at two or three start offsets within one step's
 travel; "passes from" is the travel per rigid step (speed x step) at the first speed that passes. One run per
-case (the CPU repeats bit for bit). Probe and rows: `[internal note]` notes/gap-e2/measure.md.
+case (the CPU repeats bit for bit). Probe and rows: development notes, not shipped.
 
 | ball radius | plate | passes from (speed at 1.25 ms) | travel per step there |
 |---|---|---|---|
@@ -45,8 +45,8 @@ case (the CPU repeats bit for bit). Probe and rows: `[internal note]` notes/gap-
 
 Thin parts onto a thin pane: a static glass pane 5 mm thick, parts dropped from 1.0 m (4.4-4.6 m/s) or 7.7 m
 (12.3-12.4 m/s) with `scene.rigid_step` pinned (0.3125 ms in the last column), 32 worlds per cell, one L4 (MuJoCo
-Warp), alloy 0.1.0 (rc6-1110); each cell counts the worlds that read TUNNEL. Probes: `[internal note]`
-samples/no_tunnelling/logs/probes (probe3.py and its log).
+Warp), alloy 0.1.0 (rc6-1110); each cell counts the worlds that read TUNNEL. Probes: development
+probes (probe3.py and its log), not shipped.
 
 | moving part (thinnest size) | 3.8 mm per step (12.3 m/s, 0.3125 ms) | 1.9 mm (12.3 m/s, 0.156 ms) | 1.4 mm (4.5 m/s) |
 |---|---|---|---|
@@ -62,11 +62,11 @@ samples/no_tunnelling/logs/probes (probe3.py and its log).
   FAST_CONTACT seen in every world; at the pinned steps FAST_CONTACT never showed and the build did not warn.
 - The sample scene (a 4 mm coin tilted 12 degrees, a radius 3 mm capsule lying across and a radius 5 mm ball on the
   same pane) held from 4.4-4.85 m/s at 0.3125 ms (1.4-1.5 mm per step): no TUNNEL and no INVALID world in 2,048
-  (`[internal note]` samples/no_tunnelling, logs/on_seed0.json).
+  (a development sample, not shipped).
 - A smaller pinned step did not do worse when re-run: the sample scene (run.py, 256 worlds, 12.2-12.4 m/s) read
   TUNNEL in 256 of 256 worlds at 0.3125 ms (3.8 mm per step) and was OK in 256 of 256 at 0.156 and 0.078 ms on one L4
   (main 3beb7251c; the 0.078 ms row also on rc6-1110), and in 8 of 8 at 0.078 ms on the CPU (MuJoCo C and the Warp
-  path; `[internal note]` scr/WP3.md). So on this scene 1.9 mm per step, about half the 4 mm coin, held.
+  path; development notes, not shipped). So on this scene 1.9 mm per step, about half the 4 mm coin, held.
 
 ## Why
 MuJoCo's contacts are soft and are found from where the bodies are at each step, with no test of the path between

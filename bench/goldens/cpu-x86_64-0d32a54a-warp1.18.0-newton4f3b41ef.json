@@ -15,6 +15,6 @@
   },
   "cpu_model": "AMD EPYC 7B13",
   "key": "cpu-x86_64-0d32a54a-warp1.18.0-newton4f3b41ef",
-  "reason": "Newton pin 8f3466f9 -> 4f3b41ef (WP11 CARD-8)",
+  "reason": "Newton pin 8f3466f9 -> 4f3b41ef (the team CARD-8)",
   "schema": "alloy.precision.golden/1"
 }

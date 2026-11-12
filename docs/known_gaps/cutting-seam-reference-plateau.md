@@ -25,7 +25,7 @@
   `BladeContact`; copies use `VNodeTopology`.
 - The copies' Simulation entry splits with the `lead` rule, so its knife meets no cutting resistance at all.
 
-## Tried: a face-aware seam reference (WP15, 2026-11-08)
+## Tried: a face-aware seam reference (2026-11-08)
 Setup: the TOP-2 rig on agar (softness 1, cut_spring_ke 1000) on CPU, at the law's dt (5e-4 s) and at dt/2. The knife
 force is read two ways:
 - the twin's readout: normal penalty force only;

@@ -47,7 +47,7 @@ N/m and 1.13 N·s/m each.
     inside one step (no record force at its end); the correction then goes by record count.
 - On main a coupled cloth in free fall fell 2 % faster than g (+0.20 m/s², 2026-11-08). It is not this feedback:
   VBD's float32 velocity update v = (x - x_prev) / dt quantizes each velocity change to ulp(z) / dt on fine steps
-  (WP4's triage write-up, not shipped). It biases a momentum check by about 10 mN per 50 g at that
+  (a triage write-up, not shipped). It biases a momentum check by about 10 mN per 50 g at that
   height and step; the law compares against a second world on the same route.
 - A 2 kg ball dropped 5 mm on that cloth lying on the ground lands at 0.34-0.36 m/s and rebounds at 0.20-0.25 m/s
   (e 0.58-0.69; with the fix about 0.23 m/s, e 0.68, resting 0.08 mm into contact). The cloth's own contact with the

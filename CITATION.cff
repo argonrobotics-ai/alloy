@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use Alloy in your work, please cite it as below."
+title: "Alloy physics engine"
+type: software
+authors:
+  - name: "Argon Robotics"
+abstract: >-
+  Alloy is a multi-material, parallel physics engine for robot learning, built on Newton, MuJoCo Warp and Warp:
+  rigid robots, cloth, liquids, sand and soft bodies in one scene, stepped together in parallel worlds on a GPU or on
+  a CPU. The package is alloy-engine; the import is alloy.
+license: Apache-2.0
+url: "https://alloy.argonrobotics.ai"
+repository-code: "https://github.com/argonrobotics-ai/alloy"
+keywords:
+  - physics engine
+  - robotics
+  - robot learning
+  - simulation
+  - cloth
+  - liquid
+  - soft body
+  - reinforcement learning
+  - MuJoCo
+  - Newton
+  - Warp
+  - sim-to-real

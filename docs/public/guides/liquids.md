@@ -50,12 +50,14 @@ True
 To fill a container from above, pour instead of dropping a block:
 `scene.add_pour("stream", 2e-5, pos=(0, 0, 0.12))` streams 20 ml straight down from that point.
 
-## Limits
+## Keep in mind
 
 - Containers narrower than 24 mm are unreliable ([details](../../known_gaps/liquid-narrow-containers.md)).
 - A block of liquid dropped from above splashes over the rim; a poured stream much less, with `scene.add_pour`
   ([details](../../known_gaps/liquid-pour-over-the-rim.md)).
-- Liquid touching cloth is very slow, and cloth takes up no water ([details](../../known_gaps/liquid-on-cloth.md)).
+- A stream poured onto a fabric sheet with self-contact on (the default) makes the world INVALID within about
+  0.1 s: give that sheet `self_contact=False`. Where liquid and cloth do touch, stepping is very slow, and cloth
+  takes up no water ([details](../../known_gaps/liquid-on-cloth.md)).
 - Heated liquid does not convect ([details](../../known_gaps/heat-no-buoyancy.md)).
 - Liquid is slow on the CPU, so keep the particle count small while you try things out.
 

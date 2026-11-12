@@ -2,8 +2,7 @@
 
 ## What
 - A rigid container flagged by its card (`features.passage_width`: a cup, bowl, tray or boat) floating in SPH liquid
-  routes like any floating body. The liquid's solver integrates it inside every SPH step at its effective mass
-  (SCR-WP9-2), as a strong pair (staggered, never ADMM).
+  routes like any floating body. The liquid's solver integrates it inside every SPH step at its effective mass, as a strong pair (staggered, never ADMM).
 - That holds up to D5's ratio m_a/m_s = ρ_liquid·V_outline/m of 50 (`coupler_select.FLOATING_CONTAINER_RATIO_MAX`).
   V_outline is the container's outline volume (its box for a mesh), so the air inside counts.
 - Above 50 the build raises `FloatingContainerError` (a `RouteError`). The message names the ratio and the mass
@@ -36,6 +35,6 @@
 - A container on a robot or in a hand is not floating, so the bound does not apply.
 
 ## Planned fix
-Gissler interlinked pressure (the engine specification's section on this coupling, and option (a2) in WP9's
+Gissler interlinked pressure (the engine specification's section on this coupling, and option (a2) in the
 liquid-coupling scope note; neither shipped) if a task needs floating containers lighter than 1/50 of their outline's
 liquid. Not scheduled.

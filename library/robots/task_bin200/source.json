@@ -1,6 +1,6 @@
 {
  "scene": "task_bin200",
- "provenance": "r5 pile scene converted from its recording ([internal reference], mjb -> MJCF; WP13). Its replay reference bench/traces/bin200 starts from this scene's qpos0 and pins its hash, so the layout stays as recorded",
+ "provenance": "r5 pile scene converted from its recording ([internal reference], mjb -> MJCF; the team). Its replay reference bench/traces/bin200 starts from this scene's qpos0 and pins its hash, so the layout stays as recorded",
  "start": "54 capsule pairs start 8 mm deep by the recorded layout; they push apart in the first steps; START_PEN warns",
- "start_measured": "capsules r 9 mm, half-length 15 mm (48 mm tall) stand in columns 40 mm apart: 7.97 mm deep each at qpos0. MuJoCo C at the scene's 2 ms step: all 54 under 0.5 mm within 10 ms (5 steps), joint speeds up to 9.4 (WP5 START_PEN scan 2026-11-09; coordinator: keep the layout and the trace, document it)"
+ "start_measured": "capsules r 9 mm, half-length 15 mm (48 mm tall) stand in columns 40 mm apart: 7.97 mm deep each at qpos0. MuJoCo C at the scene's 2 ms step: all 54 under 0.5 mm within 10 ms (5 steps), joint speeds up to 9.4 (the team START_PEN scan 2026-11-09; coordinator: keep the layout and the trace, document it)"
 }

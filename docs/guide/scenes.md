@@ -150,7 +150,7 @@ squeeze stayed within 4.2 % of the neo-Hookean law (median 1.9 %), and none of 2
   at about 0.1-0.15 of the impact speed (0.11-0.15 at 1-5 m/s on a 0.3125 ms rigid step; less at the default 1.25 ms
   step: 0.08 at 2 m/s), and every restitution reads a little higher than set (0.5 gives about 0.55): the contact lets
   go when its force reaches zero, not at zero overlap. Measured with a 5 mm ball on a pane, on the CPU. There is no
-  setting for a dead stop yet; a fix is planned for 0.1.1.
+  setting for a dead stop yet; a fix is planned for a later release.
 - `scene.add_material("my_rubber", density=1100, friction=1.2, restitution=0.2)` makes a new rigid material;
   `like="nitrile_70a"` copies another one's other properties.
 - `scene.set_friction("finger", "cube", 1.1)` sets the friction of one pair of objects, overriding their materials.
@@ -160,7 +160,7 @@ squeeze stayed within 4.2 % of the neo-Hookean law (median 1.9 %), and none of 2
   hitting a wall at walking speed goes 3-4x deeper than that stiffness gives (a 6.8 kg ball at 1.7 m/s: 14-15 mm,
   measured on one L4 at 3.33 / 1.67 / 0.42 ms steps, so a smaller step does not change it). Past 1 cm health reads
   PEN_WARN, and a harder hit can reach the depth at which it freezes the world (PEN_FAIL: [health.md](health.md)). A
-  fix is planned for 0.1.1.
+  fix is planned for a later release.
 - The material also decides the solver. Stiff materials (metals, hard plastics, wood, glass) stay rigid; soft ones
   (rubbers, foams, silicone) can make the object a soft body (`sim.routes()[name]["route"] == "soft_vbd"`), which
   deforms and steps much slower, especially on the CPU; the build logs a warning when that happens. Pass

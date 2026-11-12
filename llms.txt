@@ -1,6 +1,6 @@
 # Alloy
 
-> Alloy is a GPU physics engine for robotics, built on Newton, MuJoCo Warp and Warp (Python, `pip install alloy-engine`, import name `alloy`). One scene holds rigid robots (sub-millimetre contact for declared precision fits), cloth, liquids and other materials; Alloy routes each object to a suitable solver (MuJoCo Warp for rigid bodies and robots, Newton's VBD for cloth and soft bodies, Newton's MPM for sand and pastes, its own DFSPH for liquids), steps them together in parallel worlds on one GPU (thousands for free rigid bodies, hundreds for a robot arm, tens to hundreds with cloth or liquid), checks the physics as it runs, and names everything so you read state by name.
+> Alloy is a GPU physics engine for robotics, built on Newton, MuJoCo Warp and Warp (Python, `pip install alloy-engine`, import name `alloy`). One scene holds rigid robots (sub-millimetre contact for declared precision fits), cloth, liquids and other materials; Alloy routes each object to a suitable solver (MuJoCo Warp for rigid bodies and robots, Newton's VBD for cloth and soft bodies, Newton's MPM for sand and pastes, its own DFSPH for liquids), steps them together in parallel worlds on one GPU (thousands for free rigid bodies, 512 to 4,096 for a robot arm, tens to hundreds with cloth or liquid), checks the physics as it runs, and names everything so you read state by name.
 
 Start with AGENTS.md: it is the complete quick start and every snippet in it runs as shown. The public API is `alloy.Scene`, `alloy.build`, `alloy.load`, `alloy.Sim` (`step`, `run`, `state`, `set_targets`, `health`, `check`), `alloy.estimate`, `alloy.materials`, `alloy.scenes` and the error classes; everything else is engine internals. Conventions: SI units, z up, sizes are full edge lengths, quaternion keys name their order (`quat_xyzw`, `quat_wxyz`). Without an NVIDIA GPU it runs on the CPU, slowly; the first build of a new scene compiles kernels (a few minutes on a GPU, more with cloth or liquid), cached afterwards.
 
@@ -10,6 +10,7 @@ Each page is one idea with code that runs as written and the output it prints. I
 
 - [Home](docs/public/index.md): what Alloy is, the install line, a 10-line example and its image
 - [Quickstart](docs/public/quickstart.md): a first simulation, its result, an image, a health check, many worlds
+- [What ships](docs/public/what-ships.md): every ready-made environment, robot and object library, with counts, licences and how to get each
 - [Use Alloy with your coding agent](docs/public/agents.md): one prompt to paste, and what to ask an agent to do
 - [Robots](docs/public/guides/robots.md): add a robot, drive a joint with a ramp, read its angle
 - [Train with RL](docs/public/guides/rl.md): Gym-style environments, your own task, the one-command trainer
@@ -20,11 +21,32 @@ Each page is one idea with code that runs as written and the output it prints. I
 - [Cables](docs/public/guides/cables.md): lay a cable and read its centre line
 - [World health](docs/public/guides/health.md): `sim.check()`, a failed world, every health flag with its fix
 - [Errors and fixes](docs/public/errors.md): the error classes, `e.message` / `e.fix`, a symptom and fix table
-- [Known limits](docs/public/limits.md): one line per measured limit, linking its page
+- [Keep in mind](docs/public/keep-in-mind.md): one line per measured limit, linking its page
+
+## Answers
+
+One question per page, answered in the first paragraph, with code that runs as written.
+
+- [What is the Alloy physics engine?](docs/public/faq.md): what it is, who makes it, install, platforms, GPU or CPU, licence, coding agents
+- [Which physics simulator should I use for robot learning?](docs/public/compare/index.md): when to choose Alloy and when another engine; the other engines' cells were read, not tested
+- [Alloy vs MuJoCo and MuJoCo Warp](docs/public/compare/mujoco.md)
+- [Alloy vs Newton](docs/public/compare/newton.md)
+- [Alloy vs Genesis](docs/public/compare/genesis.md)
+- [Alloy vs MuJoCo Playground](docs/public/compare/mujoco-playground.md)
+- [Alloy vs ManiSkill](docs/public/compare/maniskill.md)
+- [How do I run a physics simulator on a Mac without a GPU?](docs/public/how-to/mac-without-gpu.md)
+- [How do I render a camera for thousands of parallel worlds?](docs/public/how-to/camera-many-worlds.md)
+- [How do I let Claude Code, Codex or Cursor build a robot simulation?](docs/public/how-to/coding-agents.md)
+- [How do I simulate a cable or wire in Python?](docs/public/how-to/cable-or-wire.md)
+- [How do I train a quadruped robot to walk with reinforcement learning?](docs/public/how-to/quadruped-rl.md)
+- [How do I simulate cloth folding for robot learning in Python?](docs/public/how-to/cloth-folding.md)
+- [How do I simulate pouring a liquid with a robot arm?](docs/public/how-to/pour-liquid-robot-arm.md)
+- [How do I record a dataset of robot demonstrations?](docs/public/how-to/make-a-dataset.md)
+- [How do I evaluate a trained policy on held-out seeds?](docs/public/how-to/evaluate-checkpoint.md)
 
 ## Start here
 
-- [Known limits](docs/guide/known_limits.md): read first: the engine limits we have measured, one file each in [docs/known_gaps/](docs/known_gaps/), with its size, the workaround and the planned fix; other limits are stated on the guide page where you meet them
+- [Keep in mind](docs/guide/known_limits.md): read first: the engine limits we have measured, one file each in [docs/known_gaps/](docs/known_gaps/), with its size, the workaround and the planned fix; other limits are stated on the guide page where you meet them
 - [AGENTS.md](AGENTS.md): install, a short quick start, names and trajectories, robots, many worlds, cloth, liquid and heat, precision and health, errors, camera, checks, files, plug-ins
 - [Guide index](docs/guide/README.md): one page per topic, deeper than AGENTS.md
 - [Examples](examples/README.md): runnable scripts by topic (api, basics, camera, check, cli, compose, create, envs, export, il, io, plugins, soft, tactile, topology, viewer), each prints its results
@@ -51,7 +73,7 @@ Each page is one idea with code that runs as written and the output it prints. I
 - [Command line and MCP](docs/guide/cli.md): `alloy` JSON command line and `alloy mcp` tool server, no Python needed
 - [Gym environments](docs/guide/envs.md): VectorEnv over parallel worlds, torch tensors, ready-made tasks
 - [Imitation learning](docs/guide/imitation.md): record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation, replay, policy evaluation (no training code)
-- [RL libraries](docs/guide/rl.md): wrappers for rsl_rl, Stable-Baselines3 and skrl, a one-command PPO train, an arm pick env (PickCube-v0, not yet reliable), observation groups, task-space actions, noise / delay / history layers, actuator models
+- [RL libraries](docs/guide/rl.md): wrappers for rsl_rl, Stable-Baselines3 and skrl, a one-command PPO train, an arm pick env (PickCube-v0), observation groups, task-space actions, noise / delay / history layers, actuator models
 - [Legged locomotion](docs/guide/locomotion.md): the Go2 velocity environment on flat ground or on rough terrain tiles with a level curriculum (commands, pushes, gravity / accelerometer / foot-contact observations), `python -m alloy.envs.loco.train` (a blind policy: no height scan, no stairs or gaps; no actuator model; one rough-terrain training run measured)
 - [System identification](docs/guide/sysid.md): fit a simulated robot's joint gains, damping, friction and delay to a recording of your real robot (opt-in), report, apply, what is not covered
 - [Scene builder](docs/guide/compose.md): a sentence in, a physics-checked scene and variations out

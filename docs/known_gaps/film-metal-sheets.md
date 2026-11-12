@@ -1,6 +1,6 @@
 # Metal sheets on the film: VBD sags a stiff sheet at real density, and the hinge network bends unlike a plate
 
-Status: open. J2 metal sheets (SCR-WP7-15 P3) are on main; their laws run mass-scaled, which hides both limits. A J2
+Status: open. J2 metal sheets (P3) are on main; their laws run mass-scaled, which hides both limits. A J2
 film runs 20 VBD iterations from the inertial start. That stops the sag from yielding for a 6061 or brass sheet on 5 mm
 cells; steel, stainless and copper sheets, and any metal on finer cells, still yield under their own weight before
 anything presses them. `add_cloth` with a j2 material always makes a film sheet. Design, laws and the full numbers are in the sheet-plasticity
@@ -22,7 +22,7 @@ development notes (not shipped).
   supports it settles within 1 mm; on the sharp edges of boxes it keeps sliding sideways, about 1 mm/s.
 - **VBD's adaptive start throws a dented sheet.** With `alloy_initial_guess="adaptive"` (the J2 default in
   b650fd2fd only), a dented metal sheet released from a press walked sideways and climbed off its supports, while
-  `sim.check()` stayed ok. Stiff CLOTH_VBD sheets did the same until WP2's 24178a806, which starts them inertial.
+  `sim.check()` stayed ok. Stiff CLOTH_VBD sheets did the same until 24178a806, which starts them inertial.
 - **The hinge network is not the plate.** Each hinge carries the plane-strain J2 section on its own curvature. Bent
   along the mesh grid that is exact, but:
   - under a concentrated load (a cylinder pressing a strip) the network is more compliant than the plate;
@@ -46,7 +46,7 @@ development notes (not shipped).
   | hung over a 20 mm bar | droops 9 mm, ε̄p 9.6e-4 | rings 1.5-5 mm, ε̄p 0 | 5.1 mm, ε̄p 0 |
   | on two 10 mm round supports 4 cm apart (static sag ~2 µm) | 2.7 mm, ε̄p 1.8e-3 | 0.27-0.36 mm, ε̄p 0 | 1.9 mm, ε̄p 0 |
 
-  OSS-17 measured the 10-iteration inertial start independently: 10-15 mm and 0.0041 over a bar; 0.0003-0.0012
+  A second, independent measurement of the 10-iteration inertial start: 10-15 mm and 0.0041 over a bar; 0.0003-0.0012
   after a 0.14-0.3 mm drop onto round supports. At 40 iterations the bar droop is 3.1 mm. With
   `alloy_chebyshev_rho` 0.9 on the inertial start at 20 (main 4522df750): bar 3.2 mm, round supports 1.5 mm, ε̄p 0,
   every press-and-release case below stays on its supports, 1.14 x the step cost. Still 100 x or more the statics,
@@ -65,7 +65,7 @@ development notes (not shipped).
   The audit's rows (a 0.2 mm lower start): brass 0, steel 0.0014, stainless 0.0007, copper 0.0055 at res 13; 6061 on
   2 mm cells (res 31) 0.110, sag 10.3 mm; a 0.5 mm 6061 sheet at res 13 0.0014. Scene dt 0.005 gave identical
   digits, an L4 the same to 4 digits. The static sag is about 2 µm and its strain 1e-6.
-- **Press and release** (OSS-17's rig, CPU, dt 0.01; `test_a_dented_sheet_released_fast_stays_on_its_supports`): the
+- **Press and release** (the press rig, CPU, dt 0.01; `test_a_dented_sheet_released_fast_stays_on_its_supports`): the
   same sheet on two 10 mm round supports 4 cm apart (or 2 cm boxes 5 cm apart), pressed 15 mm by a kinematic 5 mm
   sphere, released at 0.1 m/s (fast) or 0.02 m/s (slow), watched to t 3 s:
   - inertial, 10: stays on round supports; on boxes it went INVALID (PEN_FAIL, contact 0.6 mm deep; scene dt 0.005
@@ -95,7 +95,7 @@ development notes (not shipped).
   step (Chen et al. 2024). That removes most of the sag (the 1 mm strip: 1,170 -> 42 µm). But a stiff sheet far
   from converged follows its guess, so gravity then acts one step late. A restoring force with a lag feeds energy in,
   and a dented sheet resting on two supports rocks itself off them.
-- **Network**, a film model property (SC8's film; the J2 section only uses it):
+- **Network**, a film model property (the film route; the J2 section only uses it):
   - The membrane runs at 1e-4 of the material for VBD, and the strain cap carries the stretch, so in-plane shear and
     twist are nearly free below the cap and rigid past it.
   - On the alternating right-triangle grid the axis hinges read κxx and κyy and the diagonals the twist κxy. With
@@ -123,11 +123,11 @@ development notes (not shipped).
 ## Planned fix
 
 After the 1109 release. More iterations and Chebyshev buy factors of 1.3-1.6; the sag needs a solve that moves the
-whole sheet's bend at once (a Newton or multigrid step on the bending, in SC8's film or VBD; WP2's
+whole sheet's bend at once (a Newton or multigrid step on the bending, in the film route or VBD; the
 cloth-stiff-sheet-sag has the same need).
 - J2 films run 20 iterations from the inertial start. An adaptive start without the lag (or one used only near
-  convergence) is the VBD accelerators' owners' call (WP2, WP11). CLOTH_VBD keeps it for fabrics, which the drape
+  convergence) is the VBD accelerators' call. CLOTH_VBD keeps it for fabrics, which the drape
   needs, and since 24178a806 starts sheets with a bending length over 50 mm (PET, nylon, PP, cardboard) inertial;
   their sag is [cloth-stiff-sheet-sag.md](cloth-stiff-sheet-sag.md).
-- A plate-like network needs hourglass control, or another bending discretization, in SC8's film. That is a film
+- A plate-like network needs hourglass control, or another bending discretization, in the film route. That is a film
   design change, not a J2 one.

@@ -1,8 +1,8 @@
 # MPM on the GPU: CUDA graphs cost ~10x the memory of an eager step; too big for graphs runs eager, too big for both is refused
 
-Status: guarded, not fixed. A scene whose MPM step does not fit as CUDA graphs runs without them (SCR-WP12-3), and one
-that fits in neither mode is refused before its first step. With the check off, a full GPU on an MPM step is a clean
-error, not CUDA error 700. The graph mode's memory itself is not reduced yet (SCR
+Status: guarded, not fixed. A scene whose MPM step does not fit as CUDA graphs runs without them (the MPM graph
+guard), and one that fits in neither mode is refused before its first step. With the check off, a full GPU on an MPM
+step is a clean error, not CUDA error 700. The graph mode's memory itself is not reduced yet (the
 follow-ups below). Warp's unchecked allocation is written up for upstream (an issue draft, not shipped) but not posted.
 
 ## What
@@ -12,8 +12,8 @@ how the step runs:
 - **As CUDA graphs** (the default on CUDA): capture needs Newton's rebuildable sparse grid, and everything built on it
   is sized by its reservation. The graph also keeps every temporary of the step alive at once. Beside a kinematic or
   dynamic body, Newton's subgrid collider matrix adds 160 triplets per particle. Alloy reserves twice the cells the
-  material fills at the start (it fills one cell per 5-9 particles; `alloy.integration.mpm_grid`, SCR-WP12-3 a2),
-  and a grid that outgrows that is doubled and its period re-run (`grid_growth`).
+  material fills at the start (it fills one cell per 5-9 particles; `alloy.integration.mpm_grid`, the MPM graph
+  guard), and a grid that outgrows that is doubled and its period re-run (`grid_growth`).
 - **Eager** (no graphs): Newton's per-step sparse grid, sized by the cells in use, temporaries freed as it goes.
 
 When the GPU filled up inside the sparse build, Warp's native code (`wp_bsr_matrix_from_triplets_device`) did not
@@ -34,7 +34,7 @@ Alloy now does two things:
   encodes. This is the backstop when the prediction is low or the check is off.
 - When a step graph runs out of memory all the same (the prediction was low, or the device filled up after the
   build), the simulation steps down to smaller graphs, then to none, and the period it was for steps without graphs
-  at once (2026-11-10, SCR-OSS22-9). Before that period it drops its captured graphs (they are captured again when
+  at once (2026-11-10). Before that period it drops its captured graphs (they are captured again when
   next launched), collects simulations dropped earlier, hands the pools' unused memory back and clears the error the
   failed allocation leaves in Warp (Why, below). If the device then has no room for the eager scratch still to come
   (1 kB per MPM particle), it raises MPMMemoryError with the bytes needed and free. Before this fix that period died
@@ -42,7 +42,7 @@ Alloy now does two things:
 
 ## Number
 
-L4, 23 GB, Warp 1.18 (WP12's memory probes and its Nov 8 triage runs, not shipped):
+L4, 23 GB, Warp 1.18 (memory probes and Nov 8 triage runs, not shipped):
 
 | mode | per MPM particle, beyond the model | MiB per world (dough_ball under a press, 17,256 particles) |
 |---|---|---|
@@ -70,16 +70,16 @@ L4, 23 GB, Warp 1.18 (WP12's memory probes and its Nov 8 triage runs, not shippe
   (a ballast array holding the rest), soil_dig at 64 worlds with the check off failed in the grid rebuild: "out of
   memory" printed, then `RuntimeError: Failed to create volume`, then error 700 on every later free.
 - Warp's BVH and mesh builds (bvh.cu, mesh.cu) are unchecked too: a create writes through null pointers, and so does
-  an LBVH rebuild. An MPM step's moving colliders refit their meshes. Since GAPS-NOW #5a (WP0, 07df81039) the guard
+  an LBVH rebuild. An MPM step's moving colliders refit their meshes. Since 07df81039 the guard
   reserves a create's scratch and the tree it keeps first (LBVH scratch 52 B and tree 84 B per item; a mesh's bounds
   24 B and winding data 288 B per triangle; cuBQL's terms doubled; 4 MiB for CUB). A rebuild or refit is bounded by
   the size its create recorded. The guard installs with the first MPM entry, so a scene without MPM (cloth only)
   still builds them unchecked.
 
-Limits of the prediction (WP4's review of the first version):
+Limits of the prediction (review of the first version):
 - The graph rate beside a body applies whenever the scene has any body. It was measured with a moving body inside
   the material. Newton's collider matrix does not grow only near a body: it is sized by the reserved collider nodes
-  (160 triplets per reserved cell, no distance test; WP0, GAPS-NOW #5a). On one L4, dough at 16 worlds as graphs, a
+  (160 triplets per reserved cell, no distance test). On one L4, dough at 16 worlds as graphs, a
   press inside the dough, a press 1 m away and no press all peaked at 129.1 MiB per world. A far robot is therefore
   not charged early. The split between the rates with and without a body may be stale in that scene; it is kept,
   because a lower prediction would move scenes onto graphs without a law.
@@ -89,9 +89,9 @@ Limits of the prediction (WP4's review of the first version):
   20 GB, and the step-down cannot carry it: after a graph out-of-memory the MPM step goes on with the grid sized for
   capture, so its eager periods need far more than an eager run from the start (about 6 GB here). It stops with a
   clean SparseMemoryError (the process keeps its GPU). Workaround: at most 64 worlds of it on an L4, or
-  `profile="debug"`, which runs without graphs. Planned (0.1.1, physics ruling 2026-11-10): the no-body rate raised
-  to 12 kB, with WP2's estimate rows re-checked, so such a scene starts without graphs.
-- Above 64 worlds, MPM with a body is not validated, and the build warns (physics ruling 2026-11-11): Newton's sparse
+  `profile="debug"`, which runs without graphs. Planned for a later release: the no-body rate raised to
+  12 kB, with the estimate's rows re-checked, so such a scene starts without graphs.
+- Above 64 worlds, MPM with a body is not validated, and the build warns: Newton's sparse
   grid runs out of capacity (status 8) or memory. On one L4, a free 0.3 kg box on a 2 x 2 x 1 cm sand slab at 256
   worlds failed its grid rebuild with status 8 and stopped with a clean SparseMemoryError; at 1,024 worlds the runs
   stalled past 25 minutes, and once an out-of-memory in Warp's sparse transpose (`wp_bsr_transpose_device`, which the
@@ -125,7 +125,7 @@ Warp it logs a warning and stays off, and the prediction is the only protection.
 
 - For graph speed on fewer worlds: fewer worlds, or fewer particles (a coarser spacing).
 - A scene refused in both modes: fewer worlds (the error says how many fit) or a bigger GPU.
-- `alloy.estimate(scene, worlds)` gives the graph-mode MPM memory before a build (OSS-3, 6ea274528); for many worlds
+- `alloy.estimate(scene, worlds)` gives the graph-mode MPM memory before a build (6ea274528); for many worlds
   the eager rate (3 kB per particle) applies instead.
 
 ## Fix
@@ -133,9 +133,9 @@ Warp it logs a warning and stays off, and the prediction is the only protection.
 - Upstream Warp: check every native scratch allocation and raise (sparse build, grid builder, run-length encode, BVH,
   mesh), and raise when a sort cannot get its buffer. Clear the CUDA runtime's error after a failed allocation, and
   check the sizing calls of the sort, the sum and the encode (not written up for upstream yet).
-- Alloy: done for scenes with an MPM entry (BVH and mesh guards, GAPS-NOW #5a). Install the guard in the wiring
+- Alloy: done for scenes with an MPM entry (BVH and mesh guards). Install the guard in the wiring
   as well if a cloth-only scene path ever builds them per step.
-- Alloy, memory (SCR-WP12-3 follow-ups):
+- Alloy, memory (MPM graph guard follow-ups):
   - done (a2): the graph grid is reserved from the cells in use, grown on overflow. The check still predicts graphs at
     one cell per particle, on purpose: 64 dough or sand worlds then fit as graphs but ran 3.0-3.1 s per period
     against 1.8-2.0 s eager, so scenes past that size stay eager;

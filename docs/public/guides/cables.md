@@ -50,7 +50,7 @@ True
 
 ![A cable lying over the edge of a table](../img/cables.png)
 
-## Limits
+## Keep in mind
 
 - A clamped cable (`clamp="start"`) steps on a slower solver. Beside a robot on the CPU it costs 83-95 s per simulated
   second on an AMD EPYC 7B13, and `route="chain"` keeps it on the fast chain, about 60x faster

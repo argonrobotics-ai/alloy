@@ -15,6 +15,6 @@
   },
   "cpu_model": "AMD EPYC 7B13",
   "key": "cpu-x86_64-0d32a54a-warp1.18.0-newtond15a836c",
-  "reason": "Newton pin 4f3b41ef -> d15a836c (pin11: coupled proxy DAG, WP11)",
+  "reason": "Newton pin 4f3b41ef -> d15a836c (pin11: coupled proxy DAG, the team)",
   "schema": "alloy.precision.golden/1"
 }

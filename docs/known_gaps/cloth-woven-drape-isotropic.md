@@ -105,7 +105,7 @@ in-plane stiffness through locking, more than by the bending.
   KES stretch stiffness outweighs the inertia per step (`cloth-style3d-stretch-lock.md`).
 
 ## Planned fix
-WP2 (gap #3, with DC5; WP11 reviews). The law is R6 / D03M: each fabric's DC within 0.05 of its measured value at
+The law is R6 / D03M: each fabric's DC within 0.05 of its measured value at
 convergence. Next:
 - F9: its bending at drape curvatures (FAST fits F9 but not F1 / F4; a KES 2HB for it would test the hysteretic
   hinge, `elastic.bending_hysteresis`).

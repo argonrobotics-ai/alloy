@@ -24,7 +24,7 @@ within 0.4 % and 0.7 % of the loaded twist.
 ## Why
 - The rest update is a fixed-point iteration with the elastic stiffness as its step. It contracts by
   (1 - k_t / k), with k_t the section's tangent stiffness, which goes to 0 at M_p for a perfectly plastic wire.
-- WP7's 220-fibre section is within 0.35 % of the closed-form M(κ) and T(φ') up to 0.98 M_p
+- The 220-fibre section is within 0.35 % of the closed-form M(κ) and T(φ') up to 0.98 M_p
   (`alloy/solvers/plastic/j2.py`). Near M_p, dM/dκ is small, so that error in M is several percent in κ.
 
 ## Workaround
@@ -35,5 +35,5 @@ within 0.4 % and 0.7 % of the loaded twist.
 
 ## Planned fix
 An implicit rest update, with the section's tangent in the rod solve's joint Hessian, so the step converges like
-the elastic one. Not scheduled. Reversed loading has no Bauschinger effect (WP7's model:
+the elastic one. Not scheduled. Reversed loading has no Bauschinger effect (the model:
 [plasticity-metal.md](plasticity-metal.md)).

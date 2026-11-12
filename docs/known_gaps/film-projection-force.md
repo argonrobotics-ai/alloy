@@ -1,6 +1,6 @@
 # Film: the strain projection carries no force
 
-Status: open; SC8 fixing now (gap 11, coordinator 2026-11-08). The projection's reaction on pinned vertices is read
+Status: open; being fixed now (2026-11-08). The projection's reaction on pinned vertices is read
 out (below); it does not reach bodies yet. An opt-in limiter that carries force, `FilmConfig(limiter="stress")`, is
 in (below, "The stress limiter"); the default is still the projection.
 
@@ -29,7 +29,7 @@ Only VBD's own terms reach bodies: contact, friction, bonds and the soft membran
   A constraint's share is split equally among its pinned vertices, so only sums over pins are forces; a torque needs
   the split by moment balance (slice 2). With `FilmConfig.mass_ratio_cap` > 0, free-free pairs and unpinned
   triangles (the capped centroid) do not conserve momentum among free vertices, so then the free film's momentum
-  change is not all from the pins (WP4's review).
+  change is not all from the pins (from review).
 - **The limiter does not converge on a loaded strip.** A 40 x 80 mm HDPE 15 um strip hung from its top row, with
   2-50 g on its bottom row, stands 2-22x past its strain cap (p99) at 16-64 Jacobi sweeps and rings (0.3-1 m/s). So
   its reaction reads the dynamics of an unconverged stretch, not the weight (50 g: 0.47 N vs 0.49 N at 0.6 s). Unloaded,
@@ -101,11 +101,11 @@ caps keep no λ to balance them.
 
 ## Planned fix
 
-SC8, gap 11 (WP4 reviews):
+Steps:
 - Done: the reaction on pinned vertices is read out; the opt-in stress limiter carries a hung load (above).
 - Multipliers on the projection were tried and dropped: a multiplier updated by local sweeps under-estimates by the
   load-to-vertex mass ratio (15,000 here), as the projection's corrections do, and carried into VBD as a force it was
   unstable on 0.36 mg vertices.
 - Next: forces on bodies with the stress limiter (a 90° peel against Kendall, a pinched strap's weight on the pads),
   then tear seams and the grip and skin limits with it.
-- Then the default: every film, Bonds and paper-pack law with `limiter="stress"`, and a physics ruling.
+- Then the default: every film, Bonds and paper-pack law with `limiter="stress"`, and a decision.

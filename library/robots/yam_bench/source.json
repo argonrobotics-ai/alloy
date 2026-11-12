@@ -10,7 +10,7 @@
    "arm links (robot_models/yam/assets, in v1.1)": "25e78c2ff57e5f9241c465a1a4c2c854a1938ac3",
    "gripper, fingertips and D405 mount (v1.4.0)": "fe78bae67334b9af0b79833dd8ba141a61767f2a"
   },
-  "provenance_list": "OSS-1's per-file match (SCR-OSS1-13, 2026-11-07): sha256, then geometry"
+  "provenance_list": "the team's per-file match (a ruling, 2026-11-07): sha256, then geometry"
  },
  "files": {
   "library/robots/meshes/d405_wrist_mount-66434ccab0d4.msh": {

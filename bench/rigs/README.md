@@ -17,7 +17,7 @@ Rules (bench §4.3): material values are fitted on `calib` trials only (`run_law
 through `bind_calib`); `valid` trials judge. Instrument `u95` per metric feeds U_real = sqrt(u_instr^2 +
 (t_0.975 s / sqrt n)^2); TUR = bound / U_real < 3 gives `inconclusive`.
 
-Current datasets (synthetic, generated from the analytic law by `alloy.testing.bench`, WP0 `synthetic_rig`):
+Current datasets (synthetic, generated from the analytic law by `alloy.testing.bench`, `synthetic_rig`):
 
 | Dataset | Law | Conditions | Trials |
 |---|---|---|---|

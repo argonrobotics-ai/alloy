@@ -1,6 +1,6 @@
 # A soft body that yields can yield spuriously at rest when its yield strain is small (under about 10 %)
 
-Status: open, accepted for launch (coordinator ruling 2026-11-09). The build warns. A punch dent in a metal-like
+Status: open, accepted for launch (2026-11-09). The build warns. A punch dent in a metal-like
 solid is not supported on this route. Since 2026-11-10 such a solid can run on MPM instead, opt-in (Workaround),
 where it yields at its yield stress but reads a punch's force low
 ([plasticity-mpm-solid-punch-force.md](plasticity-mpm-solid-punch-force.md)).
@@ -75,6 +75,6 @@ start rule carries. The spurious strain grows with the load (about ρ g h / E, t
 
 ## Planned fix
 
-After launch (ruling 2026-11-09): solid j2 cards with σ_y / E under 10 % route to implicit MPM by themselves, once
+After launch (2026-11-09): solid j2 cards with σ_y / E under 10 % route to implicit MPM by themselves, once
 the punch laws pass there (the open part: [plasticity-mpm-solid-punch-force.md](plasticity-mpm-solid-punch-force.md)).
 The route is opt-in until then, and the VBD tet route keeps the warning.

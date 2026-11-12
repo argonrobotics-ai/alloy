@@ -3,7 +3,7 @@
 Runner: `run.py` (rsl_rl PPO through `alloy.envs.wrappers.for_rsl_rl.RslRlVecEnv`), matched variant only (Alloy has
 no separate native trainer; its `python -m alloy.envs.wrappers.train` uses the matched wrapper too). Matched PPO
 settings in `matched.py`; metrics in `metrics.py`; envs in `bench/scorecard/train/alloy_envs/`.
-Alloy tree on the VM: `git archive` of origin/main (FEAT-RL and FEAT-LOCO merged) with bench/scorecard/ overlaid
+Alloy tree on the VM: `git archive` of origin/main (with the RL wrappers and the locomotion envs) with bench/scorecard/ overlaid
 (commit in the status file). main has no root install.sh: `install.sh` here does the install (uv, `.[envs]`, rsl-rl-lib 5.5.2).
 VM jobs: `queue_go2.sh` (smoke, matched pilot, native; skips finished jobs; @reboot cron).
 
@@ -26,7 +26,7 @@ staggered. `goals_per_min` counts goal-reached events per env per simulated minu
 ## Change log
 - 01:25Z first version of both envs; zero action holds cube, action moves joints, per-world reset ok (tests/bench/test_score_train_envs.py).
 
-## go2_flat (Go2Velocity-v0, FEAT-LOCO; docs/guide/locomotion.md)
+## go2_flat (Go2Velocity-v0; docs/guide/locomotion.md)
 Go2 (Menagerie file) on flat ground; 12 position-servo actions (target = 0.25 * action, kp 50, kd 0.5); control 50 Hz
 (16 physics steps of 1.25 ms); episode 20 s = 1000 steps; obs 55 (policy) / 79 (critic: + privileged); commands
 vx +-1, vy +-0.5, yaw +-1, new every 10 s, 10 % stand. As shipped: pushes ON (every 8 s, 0.1 s, up to +-80 N in x and y),

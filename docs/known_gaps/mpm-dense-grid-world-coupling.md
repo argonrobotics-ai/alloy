@@ -16,7 +16,7 @@ the box, it grows for every world. A warning is logged once, and at that step th
 The per-world sparse grids (the default on CUDA) index voxels from the origin and do not have this coupling.
 
 CPU worlds split over worker processes (`alloy.build(scene, device="cpu", processes=N)`) hold the whole scene's
-start box in every worker (`mpm_worlds.start_box` / `hold_box`, WP8's 9a1bd07da), so a world steps the same in
+start box in every worker (`mpm_worlds.start_box` / `hold_box`, 9a1bd07da), so a world steps the same in
 any split. When a particle leaves the held box, only its own worker's box grows. From then on that worker's
 worlds differ by about one ulp from a run with another split, or with one process.
 

@@ -20,7 +20,7 @@ under the same terms (see `LICENSE`).
 
 ## Reporting bugs
 
-Open an issue with the smallest script that shows the problem, the device (`cpu` or the GPU model), and the
+Open an issue (https://github.com/argonrobotics-ai/alloy/issues) with the smallest script that shows the problem, the device (`cpu` or the GPU model), and the
 versions printed by `python -c "import alloy, warp; print(alloy.__version__, warp.config.version)"`.
 
 Security problems: see `SECURITY.md`, not the public issue tracker.

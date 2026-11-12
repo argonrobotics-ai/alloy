@@ -76,4 +76,4 @@ how long a contact has been past its limit. Which flags were raised earlier in a
 ## Planned fix
 A "seen since reset" flag list beside the current flags, so a PEN_WARN raised during a run is visible at its end
 (in work under audit finding ERR-11). A public option to relax the depth limit for a robot file with soft
-contacts comes in 0.1.1; today there is none. Not scheduled: a shorter dwell for stiff contacts.
+contacts comes in a later release; today there is none. Not scheduled: a shorter dwell for stiff contacts.

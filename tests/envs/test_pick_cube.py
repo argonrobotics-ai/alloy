@@ -103,3 +103,17 @@ def test_a_scripted_pick_carries_the_cube_to_its_goal():
     assert done.sum() >= 3 and _np(grasped(s))[done].all() and _np(enclosed(s))[done].all()   # 4 of 4 on main
     assert env.sim.health()["invalid_worlds"] == []
     env.close()
+
+
+def test_the_rsl_rl_recipe_carries_the_entropy_term_its_seed_runs_used():
+    """PickCube-v0's rsl_rl recipe is the one its seed runs on one L4 used (TRAIN-FIX robustness): an entropy term
+    of 0.003 with discount 0.95, three 256-unit layers, 8 epochs and 8 mini-batches, on top of the base settings,
+    which keep their own entropy term for the other envs."""
+    from alloy.envs.wrappers.train_rsl_rl import RECIPES, default_config
+
+    pick, base = default_config(10, 3, "PickCube-v0"), default_config(10, 3)
+    assert RECIPES["PickCube-v0"]["algorithm.entropy_coef"] == 0.003
+    assert pick["algorithm"]["entropy_coef"] == 0.003 and base["algorithm"]["entropy_coef"] != 0.003
+    assert pick["algorithm"]["gamma"] == 0.95 and pick["actor"]["hidden_dims"] == [256, 256, 256]
+    assert (pick["algorithm"]["num_learning_epochs"], pick["algorithm"]["num_mini_batches"]) == (8, 8)
+    assert pick["seed"] == 3 and pick["max_iterations"] == 10

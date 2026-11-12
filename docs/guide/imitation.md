@@ -235,8 +235,8 @@ not repeat bit for bit):
 |---|---|---|---|---|---|
 | GripperLift-v0, 1,024 | 10,000 / 10,240 | 100 % [99.96, 100] | 101 s | 99 | 623 MB |
 | GripperLift-v0, 4,096 | 20,000 / 20,480 | 100 % [99.98, 100] | 221 s | 91 | 2.1 GB |
-| GripperLiftCamera-v0 (64x64 RGB), 256 | 1,000 / 1,024 | 100 % [99.6, 100] | 77 s | 13 | 290 MB |
-| the same, 64, with `--lerobot` (MP4 video) | 256 / 256 | 100 % [98.5, 100] | 189 s | 1.4 | 89 MB (HDF5) |
+| GripperLiftCamera-v0 (64x64 RGB), 256 | 1,000 / 1,024 | 100 % [99.6, 100] | 76 s | 13 | 312 MB |
+| the same, 64, with `--lerobot` (MP4 video) | 256 / 256 | 100 % [98.5, 100] | 189 s | 1.4 | 80 MB (HDF5) |
 | PickPlace-v0, 256 | 1,000 / 1,280 | 97.0 % [96.0, 97.8] | 97 s | 10 | 101 MB |
 | PickPlace-v0, 256, `--noise 0.1` | 1,000 / 1,280 | 97.8 % [96.9, 98.5] | 106 s | 9.4 | 101 MB |
 
@@ -293,7 +293,7 @@ observation; loading a trained robomimic or LeRobot policy into that function is
 ## Not covered
 
 - Demonstration generation beyond a scripted policy: trajectory augmentation in the style of MimicGen, motion
-  planning, subtask annotation, DAgger-style correction. Scripts ship for three of the eight ready-made envs.
+  planning, subtask annotation, DAgger-style correction. Scripts ship for three of the nine ready-made envs.
 - VR, phone, gamepad and leader-arm teleoperation; Cartesian teleoperation.
 - Training code: Alloy writes datasets and evaluates policies; it trains none.
 - Running a trained robomimic or LeRobot policy in Alloy, and their own training and evaluation commands on Alloy

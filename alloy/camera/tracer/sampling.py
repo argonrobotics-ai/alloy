@@ -18,6 +18,21 @@ PRNG_TERMINATE = wp.constant(0)
 PRNG_LIGHT = wp.constant(1)
 PRNG_SURFACE_BSDF = wp.constant(3)
 
+# Hash and scramble constants above INT32_MAX, as typed uint32 constants (GEO P5, 2026-11-11). Written inline,
+# wp.uint32(0xD35A2D97) compiles to `const wp::int32 v = 3545902487;` before its cast, and clang warns at every
+# use (-Wconstant-conversion: a flood on the first camera compile, hundreds of lines on macOS). A uint32 constant
+# compiles to `3545902487u`: the same bits, no warning. Constants up to INT32_MAX stay inline.
+_H_MUL2 = wp.constant(wp.uint32(0xD35A2D97))
+_H_XOR = wp.constant(wp.uint32(0xE6FE3BEB))
+_U32_ALL = wp.constant(wp.uint32(0xFFFFFFFF))
+_GOLDEN = wp.constant(wp.uint32(0x9E3779B9))
+_S1_INDEX = wp.constant(wp.uint32(0xBFF95BFE))
+_S2_INDEX = wp.constant(wp.uint32(0xF8ADE99A))
+_S2_DIM0 = wp.constant(wp.uint32(0xE0AAAF76))
+_S2_DIM1 = wp.constant(wp.uint32(0x94964D4E))
+_S3_INDEX = wp.constant(wp.uint32(0xCAA726AC))
+_S3_DIM0 = wp.constant(wp.uint32(0x9E78E391))
+
 
 @wp.struct
 class Rng:
@@ -43,9 +58,9 @@ def hash_hp_uint(v: wp.uint32) -> wp.uint32:
     i = i ^ (i >> wp.uint32(16))
     i = i * wp.uint32(0x21F0AAAD)
     i = i ^ (i >> wp.uint32(15))
-    i = i * wp.uint32(0xD35A2D97)
+    i = i * _H_MUL2
     i = i ^ (i >> wp.uint32(15))
-    return i ^ wp.uint32(0xE6FE3BEB)
+    return i ^ _H_XOR
 
 
 @wp.func
@@ -123,13 +138,13 @@ def sobol_burley(rev_bit_index: wp.uint32, dimension: wp.int32, scramble_seed: w
 def _seq(rng: Rng, sample: wp.int32) -> wp.vec3ui:
     """(index, seed, mask) for sobol_burley_sample_ND, as blue_noise_indexing() / the Sobol-Burley pattern."""
     if rng.kind == 0:
-        return wp.vec3ui(wp.uint32(sample) + rng.pixel * rng.seq_len, wp.uint32(0), wp.uint32(0xFFFFFFFF))
+        return wp.vec3ui(wp.uint32(sample) + rng.pixel * rng.seq_len, wp.uint32(0), _U32_ALL)
     return wp.vec3ui(wp.uint32(sample), rng.pixel, rng.mask)
 
 
 @wp.func
 def _pcg(sample: wp.int32, dim: wp.int32, k: wp.int32, pixel: wp.uint32) -> float:
-    h = hash_hp_uint(pixel ^ hash_hp_uint(wp.uint32(sample) * wp.uint32(0x9E3779B9) + wp.uint32(dim * 4 + k)))
+    h = hash_hp_uint(pixel ^ hash_hp_uint(wp.uint32(sample) * _GOLDEN + wp.uint32(dim * 4 + k)))
     return wp.float32(h) * U32_INV_EXCL
 
 
@@ -139,7 +154,7 @@ def rand1(rng: Rng, sample: wp.int32, dim: wp.int32, table: wp.array(dtype=wp.ui
         return _pcg(sample, dim, 0, rng.pixel)
     s = _seq(rng, sample)
     seed = s[1] ^ hash_hp_uint(wp.uint32(dim))
-    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ wp.uint32(0xBFF95BFE)) & s[2]
+    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ _S1_INDEX) & s[2]
     return sobol_burley(index, 0, seed ^ wp.uint32(0x635C77BD), table)
 
 
@@ -149,9 +164,9 @@ def rand2(rng: Rng, sample: wp.int32, dim: wp.int32, table: wp.array(dtype=wp.ui
         return wp.vec2(_pcg(sample, dim, 0, rng.pixel), _pcg(sample, dim, 1, rng.pixel))
     s = _seq(rng, sample)
     seed = s[1] ^ hash_hp_uint(wp.uint32(dim))
-    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ wp.uint32(0xF8ADE99A)) & s[2]
-    return wp.vec2(sobol_burley(index, 0, seed ^ wp.uint32(0xE0AAAF76), table),
-                   sobol_burley(index, 1, seed ^ wp.uint32(0x94964D4E), table))
+    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ _S2_INDEX) & s[2]
+    return wp.vec2(sobol_burley(index, 0, seed ^ _S2_DIM0, table),
+                   sobol_burley(index, 1, seed ^ _S2_DIM1, table))
 
 
 @wp.func
@@ -161,8 +176,8 @@ def rand3(rng: Rng, sample: wp.int32, dim: wp.int32, table: wp.array(dtype=wp.ui
                        _pcg(sample, dim, 2, rng.pixel))
     s = _seq(rng, sample)
     seed = s[1] ^ hash_hp_uint(wp.uint32(dim))
-    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ wp.uint32(0xCAA726AC)) & s[2]
-    return wp.vec3(sobol_burley(index, 0, seed ^ wp.uint32(0x9E78E391), table),
+    index = reversed_bit_owen(reverse_bits(s[0]), seed ^ _S3_INDEX) & s[2]
+    return wp.vec3(sobol_burley(index, 0, seed ^ _S3_DIM0, table),
                    sobol_burley(index, 1, seed ^ wp.uint32(0x67C33241), table),
                    sobol_burley(index, 2, seed ^ wp.uint32(0x78C395C5), table))
 

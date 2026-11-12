@@ -5,7 +5,7 @@ density:
   source: catalog
   unc: [2600.0, 2750.0]
   note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
-    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    (card rule of 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
     2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Bulk: typical
     top soil 15 kN/m3 = 1530 kg/m3, range 11-18 kN/m3 (https://elibrary.asabe.org/data/pdf/7/sd2009/chap3_cdfiles/Guidelines_for_spreadsheets.pdf)'
 surface:

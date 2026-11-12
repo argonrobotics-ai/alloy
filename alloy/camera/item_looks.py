@@ -6,10 +6,11 @@ Each item look becomes materials ``<item>:<key>`` and rules on the item's shape 
 ``<item>#k``; ``alloy.scene.variants.scene_look``). The camera consults the layer after a caller's own ``look`` and
 before the card library's looks (``card_looks``): an item with a look renders with it, the others as before. A
 texture the local render asset cache lacks falls back to the item's own library look for that material (its card's
-object look, else its material's look, through ``alloy.looks``) when that texture is cached, else it is dropped (the
-material keeps its preset colour; fill the cache with ``python -m alloy.looks --fetch-textures``); details the camera
-does not draw are turned off. Both are logged. Lights and world are not part of the layer: a variant renders lit like
-its base scene.
+object look, else its material's look, through ``alloy.looks``) when that texture is cached, else to a flat mid-tone
+of its texture family (``FAMILY_TONE``: wood a wood brown, a floor a darker floor brown, plastic mid grey, ...; a
+material with no family keeps its preset colour), never the white placeholder colour textured presets carry. One
+warning per process names the fix, ``python -m alloy.looks --fetch-textures``; details the camera does not draw are
+turned off. Lights and world are not part of the layer: a variant renders lit like its base scene.
 
 Example::
 
@@ -26,6 +27,22 @@ log = logging.getLogger(__name__)
 
 _MEMO: dict[str, dict] = {}
 _MEMO_MAX = 64
+_WARNED: list[bool] = []   # the missing-texture warning, once per process
+
+# The base colour (sRGB, as every look material's) a textured look material is drawn in when its texture is not on
+# disk, by texture family (``alloy.looks.schema.FAMILIES``): mid-tones (linear luminance 0.16 to 0.36, near the
+# families' median pool albedo) in each family's usual hue, 8-bit sRGB in the comments. Textured presets carry a white
+# placeholder base colour (wood_oak's is 1.0), which drew every varied env's floor white without the texture cache.
+FAMILY_TONE = {
+    "wood": (0.667, 0.486, 0.31),     # honey wood (170, 124, 79)
+    "floor": (0.51, 0.424, 0.329),    # floor brown (130, 108, 84), darker than wood so wooden objects stand out
+    "metal": (0.561, 0.561, 0.569),   # steel grey (143, 143, 145)
+    "plastic": (0.533, 0.533, 0.533), # mid grey (136, 136, 136): plastics come in every colour
+    "fabric": (0.667, 0.631, 0.569),  # natural linen (170, 161, 145)
+    "stone": (0.643, 0.635, 0.624),   # warm stone grey (164, 162, 159)
+    "tile": (0.624, 0.635, 0.643),    # cool tile grey (159, 162, 164)
+    "paper": (0.678, 0.584, 0.455),   # kraft board (173, 149, 116)
+}
 
 
 def scene_of(source):
@@ -69,10 +86,12 @@ def _texture(spec: dict, key: str) -> tuple[str | None, str]:
 
 
 def _with_cached_textures(raw: dict, scene) -> dict:
-    """``raw`` with each material whose texture the cache lacks given its item's own library texture (when cached)."""
+    """``raw`` with each material whose texture the cache lacks given its item's own library texture when that is
+    cached, else its family's flat tone (``flat_tone``)."""
     from alloy.scene.variants.looks import TEXTURE_FIELDS  # noqa: PLC0415
     out = {**raw, "materials": dict(raw["materials"])}
     own: dict[str, dict] = {}
+    flat: list[str] = []
     for mkey, spec in raw["materials"].items():
         item, _, key = mkey.partition(":")
         ref, res = _texture(spec, mkey)
@@ -82,11 +101,39 @@ def _with_cached_textures(raw: dict, scene) -> dict:
             own[item] = _library_materials(scene, item)
         base = own[item].get(key)
         bref, bres = _texture(base, mkey) if base else (None, "")
+        rest = {k: v for k, v in spec.items() if k not in TEXTURE_FIELDS}
         if base and bref and _cached(bref, bres):
-            out["materials"][mkey] = {**{k: v for k, v in spec.items() if k not in TEXTURE_FIELDS},
-                                      **{k: base[k] for k in TEXTURE_FIELDS if k in base}}
+            out["materials"][mkey] = {**rest, **{k: base[k] for k in TEXTURE_FIELDS if k in base}}
             log.info("camera: %s keeps its library texture %s (%s is not cached)", mkey, bref, ref)
+            continue
+        tone = flat_tone({**spec, "texture": ref})
+        if tone is not None:
+            out["materials"][mkey] = {**rest, "texture": None, "base_color": list(tone)}
+            flat.append(f"{mkey}: {ref}")
+    _warn_flat(flat)
     return out
+
+
+def flat_tone(spec: dict) -> tuple[float, float, float] | None:
+    """The flat base colour (sRGB) a look material is drawn in when its texture is not on disk: its texture family's
+    ``FAMILY_TONE`` (the family of its texture in the pool, else of its preset), else None (keep the preset colour)."""
+    from alloy.looks.pool import PRESET_FAMILY, family_of  # noqa: PLC0415
+    try:
+        family = family_of(spec)
+    except Exception as exc:  # noqa: BLE001 - a pool file the camera cannot read: the preset's family
+        log.info("camera: texture pool not readable (%s)", exc)
+        family = PRESET_FAMILY.get(str(spec.get("preset", "")))
+    return FAMILY_TONE.get(family) if family else None
+
+
+def _warn_flat(flat: list[str]) -> None:
+    if not flat:
+        return
+    msg = ("camera: %d item-look texture(s) not on disk (%s%s): drawn in a flat colour of their family; fetch them "
+           "with python -m alloy.looks --fetch-textures")
+    args = (len(flat), "; ".join(flat[:3]), " ..." if len(flat) > 3 else "")
+    (log.info if _WARNED else log.warning)(msg, *args)
+    _WARNED.append(True)
 
 
 def _library_materials(scene, item: str) -> dict:

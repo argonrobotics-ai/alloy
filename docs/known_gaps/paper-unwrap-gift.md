@@ -24,7 +24,7 @@
 2. **The layers stand 1 mm apart.** A film particle collides at 0.5 mm, so every layer stands a pitch of 1 mm off the
    one below it (12 times the paper's 82 um), and an end stacks up to six layers. No tine or finger fits between two
    layers to lift a flap, and a thinner contact radius would need a finer clock than the coupling already runs.
-3. **Tape.** The reference tapes the seam and the ends. WP13's Bonds plug-in bonds film to rigid bodies only; tape on
+3. **Tape.** The reference tapes the seam and the ends. The Bonds plug-in bonds film to rigid bodies only; tape on
    paper needs film-to-film bonds that break by peel, which are not modelled.
 4. **Cost.** The box on the film couples at the lightest body's clock: about 0.16 ms (j = 6), so a task of tens of
    seconds is a GPU-only run.

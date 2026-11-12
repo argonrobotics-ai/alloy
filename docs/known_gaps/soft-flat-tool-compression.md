@@ -33,7 +33,7 @@
   - The 17-19 aligned bonds of that push can still break, and the crush itself is unchanged.
   - The push has not been re-run with the gate. A unit law covers the case: a blade pressed through a flat seam
     touches none of its bonds (`tests/topology/test_cut_alignment.py`).
-- Workaround: clear cut pieces with something other than the blade edge, as JOB1's scripted clear does (the pads
+- Workaround: clear cut pieces with something other than the blade edge, as a scripted clear in a robot cutting scene does (the pads
   push from behind the last cut). From the same restore it kept all 4 worlds valid over 9 s (max penetration
   0.21 mm).
 
@@ -81,8 +81,8 @@ seam" is the rule before, kept as the targets `cut_block_stroke_anyseam` and `cu
       piece after the cut is through. 835: the same with the case, clean without it.
     - 1024, 1798, 1868 and 2021 are clean on the CPU in both arms, and 1288 is clean with the case (flagged only
       without it): those failures were seen only on the GPU.
-  - No robot scene has fired the re-entry case yet: JOB1 (a first press, and two rounds with the knife sweep) and
-    the C9 dough clip counted 0 records, so the default changes nothing there. Its evidence is `cut_block_stroke`
+  - No robot scene has fired the re-entry case yet: a robot cutting scene (a first press, and two rounds with the
+    knife sweep) and a dough-cutting clip counted 0 records, so the default changes nothing there. Its evidence is `cut_block_stroke`
     (86 -> 12, in two runs) and the law in `tests/topology/test_blade_contact_zone.py`.
   - `cut_block_free`'s 1,326 are not diagnosed. Its cut faces do not collide (no self-contact on that task), so
     part of them is cut pieces passing through each other.
@@ -101,4 +101,4 @@ seam" is the rule before, kept as the targets `cut_block_stroke_anyseam` and `cu
 ## Planned fix
 - Large-deformation remeshing, after launch.
 - The second effect: a re-run of JOBRK's push with the cutter's alignment gate, to count the bonds it still breaks
-  (WP10).
+  

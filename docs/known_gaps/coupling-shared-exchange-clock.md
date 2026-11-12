@@ -5,20 +5,20 @@
   of per-entry substeps for all its worlds each control period.
 - Every per-world stability estimate feeds that choice by its minimum. VBD's is 0.4 · r / |v| over its fastest
   particle. So when one world's state changes the choice, every world steps differently from then on.
-- That includes a world re-run after a force jump (SCR-WP11-4). The re-run is refined to dt_x / 2^k, and its own
+- That includes a world re-run after a force jump. The re-run is refined to dt_x / 2^k, and its own
   later trajectory can move the clock. The other worlds are restored exactly to their first-run state, then step on
   that changed clock and leave the trajectory they would have had alone.
 - Same seed, same device stays bit-for-bit (the whole scene is deterministic). Only "this world does what it would
   do by itself" does not hold.
 - A re-run steps every world. The worlds that did not trip are computed again at the finer step and then put back,
   so they pay that period's compute twice. That holds for a force-jump re-run, a world's first escalation (below)
-  and a contact-band re-run (WP4, R2-E3).
+  and a contact-band re-run.
 
-## Escalations (WP4, SCR-WP3-C3RAND, 2026-11-08)
+## Escalations (2026-11-08)
 - Before: a world's escalation (its energy or residual rule tripped, not a force jump) raised the clock's floor for
-  good, and on the second trip switched the pairs to their strong mode, for every world. XB4-9's randomized C3
-  box-on-pad (64 worlds, L4) tripped in 1-11 different worlds in each of periods 1-5. The floor went from 0.156 ms
-  to 0.0195 ms with staggered coupling for all 64 worlds, and 0.5 s never finished.
+  good, and on the second trip switched the pairs to their strong mode, for every world. A randomized C3 box-on-pad
+  benchmark (64 worlds, L4) tripped in 1-11 different worlds in each of periods 1-5. The
+  floor went from 0.156 ms to 0.0195 ms with staggered coupling for all 64 worlds, and 0.5 s never finished.
 - Now (`alloy.coupling.ladder`): a world's first escalation re-runs that world's period at one grid level finer per
   re-run (up to 2), for that period only. The floor and the coupling mode stay, and the next period starts on the
   clock the scene's bounds pick.
@@ -30,14 +30,14 @@
   moved.
 
 ## Number
-- WP12's towel on a box (`tests/coupling/test_rollback_bitwise.py`, CPU, 2 worlds, C3's per-body record gains):
+- A towel on a box (`tests/coupling/test_rollback_bitwise.py`, CPU, 2 worlds, C3's per-body record gains):
   - the reference's VBD stable step at P+2 is 1.59e-4 s, 1.8 % above the 2-substep threshold (dt_x 1.5625e-4 s);
   - after a refined re-run of world 1 its towel drapes about 9 % faster (max particle speed 0.69 vs 0.63 m/s), so its
     stable step is 1.46e-4 s;
   - at P+3 the scene takes 4 VBD substeps instead of 2, and the kept world 0 leaves the reference in that period.
 - `test_a_refined_world_changes_the_shared_clock_for_every_world` shows this. The restore itself is exact: on the
   reference's clock the kept world stays bitwise on it (`test_a_refined_rerun_leaves_the_kept_world_on_the_reference`).
-- The demonstration sits on that 1.8 % margin. Sub-ulp changes to VBD velocities move it (SCR-WP11-F32, 2026-11-08:
+- The demonstration sits on that 1.8 % margin. Sub-ulp changes to VBD velocities move it (2026-11-08:
   velocity from the true displacement), and then the re-run world no longer crosses the threshold. The test is
   xfail(strict=False) until it has a scenario with margin. The clock is still the minimum over worlds.
 

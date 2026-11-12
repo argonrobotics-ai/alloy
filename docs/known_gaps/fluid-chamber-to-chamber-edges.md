@@ -10,7 +10,7 @@ A second effect of the same split: the network adds a step's source inflow after
 filling a chamber, the node's end-of-step `pressure` therefore reads up to K·Q·dt/V above the pressure the piston acts
 with.
 
-**Number.** GA's forklift lift line (SCR-WP8-12 F2): a pump node of 0.5 L joined by a 1e-7 m³/(s·Pa) hose to the
+**Number.** A forklift lift line (F2): a pump node of 0.5 L joined by a 1e-7 m³/(s·Pa) hose to the
 free-lift and main cylinders (0.1 L dead volume each), at the 1.25 ms task step.
 - Unladen carriage: the lift pressure swung between -3 and +5 MPa gauge, and the carriage crept 10 mm while held.
 - Gauge while flowing (one shared node instead, 0.1 L dead volume per cylinder): in mid free lift the node read
@@ -28,5 +28,5 @@ moves with the first one's within the step; and the inflow arrives after the for
 - For pressure readouts while oil flows, use `piston_pressure` (the gauge pressure each actuator's force acted with,
   A and B sides) instead of the node's `pressure`.
 
-**Planned fix.** Not scheduled (WP13). A network-implicit force pressure: the coupled response of the connected
+**Planned fix.** Not scheduled. A network-implicit force pressure: the coupled response of the connected
 nodes to the actuators' volume changes, and the step's known source inflow added to the force's prediction.

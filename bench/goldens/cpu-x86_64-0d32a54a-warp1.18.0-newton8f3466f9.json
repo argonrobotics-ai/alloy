@@ -15,6 +15,6 @@
   },
   "cpu_model": "AMD EPYC 7B13",
   "key": "cpu-x86_64-0d32a54a-warp1.18.0-newton8f3466f9",
-  "reason": "Newton pin ac7f7830 -> 8f3466f9 (main 742db9dd, SCR-WP11-5; WP0 2026-11-05): no golden covered the pin",
+  "reason": "Newton pin ac7f7830 -> 8f3466f9 (main 742db9dd, a ruling; the team 2026-11-05): no golden covered the pin",
   "schema": "alloy.precision.golden/1"
 }

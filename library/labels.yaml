@@ -1,5 +1,5 @@
 schema: alloy.labels/1
-note: Expert routes for CARD-2 (SPEC §5.2), one per library object, written by the WP1 builder from the physics of each card's
+note: Expert routes for CARD-2 (SPEC §5.2), one per library object, written by the library builder from the physics of each card's
   load envelope and common simulation practice, not by running the router. reason gives the deciding number.
 labels:
 - object: bolt_m10x60

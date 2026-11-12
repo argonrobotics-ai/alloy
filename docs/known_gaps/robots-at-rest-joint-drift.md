@@ -11,7 +11,7 @@ joint angles it starts at. Two causes, one per robot family:
 The health checks do not flag either: `sim.check()["ok"]` is True in every case below.
 
 **The number.** Largest |q(2 s) - q(0)| per joint, one world, CPU, 10 ms control steps, no targets; the same to four
-digits on the MuJoCo C and the MuJoCo Warp routes (and with or without the C extension, OSS-17).
+digits on the MuJoCo C and the MuJoCo Warp routes (and with or without the C extension).
 
 | pack | joint | moves | cause |
 |---|---|---|---|

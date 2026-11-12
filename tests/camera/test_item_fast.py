@@ -7,6 +7,7 @@ import pytest
 
 from alloy.camera import CameraError, camera_scene
 from alloy.camera.item_fast import projected, with_item_looks
+from alloy.camera.looks.material import rgba
 from alloy.camera.scene import MeshGeom, SceneData
 from tests.camera.scan_fixture import box_mesh, png_bytes, quadrants
 
@@ -51,12 +52,14 @@ def test_item_looks_colour_and_texture_the_shapes_they_name(wood_png):
     assert mesh.texture >= 0 and mesh.uv is not None and sd.inst_textured[floor]
     assert np.array_equal(sd.textures[mesh.texture], quadrants(16))
     assert np.allclose(sd.inst_color[floor], 0.8)                          # the colour map times the gain
-    assert not sd.inst_textured[wall] and np.allclose(sd.inst_color[wall], [0.2, 0.4, 0.6])  # base colour x gain
+    assert not sd.inst_textured[wall] and np.allclose(sd.inst_color[wall], np.multiply(rgba([0.1, 0.2, 0.3])[:3], 2))
+    # the base colour (sRGB) made linear as the full tracer does, times the gain
     assert sd.inst_mesh[other] == 0 and np.allclose(sd.inst_color[other], 0.5)              # no look: unchanged
     assert with_item_looks(_scene(), None).meshes[0].texture == -1
 
 
-def test_an_unreadable_colour_map_leaves_the_base_colour(monkeypatch):
+def test_an_unreadable_colour_map_draws_its_familys_flat_tone(monkeypatch):
+    from alloy.camera.item_looks import FAMILY_TONE
     from alloy.camera.looks import textures
 
     def missing(ref, res):
@@ -64,6 +67,7 @@ def test_an_unreadable_colour_map_leaves_the_base_colour(monkeypatch):
     monkeypatch.setattr(textures, "local_texture_files", missing)
     sd = with_item_looks(_scene(), LOOK)
     assert sd.meshes[sd.inst_mesh[0]].texture == -1 and not sd.inst_textured[0] and not sd.textures
+    assert np.allclose(sd.inst_color[0], np.multiply(rgba(FAMILY_TONE["plastic"])[:3], 0.8))  # abs_black: plastic
 
 
 def test_the_fast_scene_of_a_sim_draws_its_item_looks_and_caches_by_them():
@@ -76,5 +80,6 @@ def test_the_fast_scene_of_a_sim_draws_its_item_looks_and_caches_by_them():
     with_looks = camera_scene(sim, quality="fast", device="cpu").sd
     without = camera_scene(sim, quality="fast", device="cpu", items=None).sd
     rgb = {n: c for n, c in zip(with_looks.inst_name, with_looks.inst_color)}
-    assert np.allclose(rgb["block"], [0.2, 0.4, 0.6])
-    assert not np.allclose(dict(zip(without.inst_name, without.inst_color))["block"], [0.2, 0.4, 0.6])
+    paint = np.multiply(rgba([0.1, 0.2, 0.3])[:3], 2.0)
+    assert np.allclose(rgb["block"], paint)
+    assert not np.allclose(dict(zip(without.inst_name, without.inst_color))["block"], paint)

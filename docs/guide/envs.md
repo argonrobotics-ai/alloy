@@ -78,6 +78,13 @@ of the sim. The looks cost nothing measurable: on one L4 at 512 worlds, 64 px im
 rendered 15,100 images/s with them and 14,400 with the palette colours drawn before; `GripperLiftCamera-v0`, with no
 looks, 23,800 either way (median of 3 runs each). The full-material tracer would draw 740 images/s there.
 
+- The images changed in this release: release candidates up to rc8 drew the engine's palette colours (the ground and
+  the first object one blue) and no looks, so a policy trained on their images sees new colours; retrain it.
+- `vary=True` draws one variant per environment: every world of it shows the same looks (the seed picks which).
+- A fresh install has no texture images: a varied look whose texture is not on disk is drawn in a flat colour of its
+  family (a brown floor, grey plastic, ...), with one warning. `python -m alloy.looks --fetch-textures` downloads the
+  images once; the policy images then show the textures.
+
 In `PickPlace-v0` and `DrawerOpen-v0` the gantry gripper's position servos can push a finger into the bin's 6 mm
 wall, the floor or the cabinet past the health limit (10 mm, or half the thinner part): health marks the world
 INVALID, `info["invalid"]` is True and the episode ends. In one check on an L4, uniform random actions sent 16 of

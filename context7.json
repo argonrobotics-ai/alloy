@@ -1,0 +1,11 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Alloy physics engine",
+  "description": "Alloy, the physics engine from Argon Robotics: rigid robots, cloth, liquids, sand and soft bodies in one scene, in parallel worlds on a GPU or a CPU. pip install alloy-engine; import alloy.",
+  "folders": ["docs/public"],
+  "excludeFolders": [],
+  "rules": [
+    "Install with pip install alloy-engine; the import name is alloy. pip install alloy installs a different project.",
+    "Alloy is not related to Alloy Robotics, Grafana Alloy or the Alloy modelling language."
+  ]
+}

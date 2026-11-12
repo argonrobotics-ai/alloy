@@ -51,7 +51,7 @@ True
 
 ![A cloth sheet draped over a stand](../img/cloth.png)
 
-## Limits
+## Keep in mind
 
 - A sheet thinner than the 2 mm default needs a smaller `dt`.
 - There is no cloth from a mesh. To cover a shape, drape a flat sheet sized to it from a little above.

@@ -6,7 +6,68 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
-## [0.1.0] - unreleased
+## [0.1.2] - 2026-11-12
+
+### Added
+- `python -m alloy` runs the command line and prints its help when given no arguments.
+- A build that finds no NVIDIA GPU (no `device` given) and holds cloth, liquid, sand or paste, or soft bodies logs one
+  line per process: such scenes run many times slower than real time on the CPU, `alloy.estimate` predicts the wall
+  time, and `device="cpu"` keeps the line quiet. Rigid and robot scenes and rods get no line; it never stops a build.
+
+### Fixed
+- `alloy.__version__` reads the installed package's version and never raises.
+- `alloy.compose`: a scene that leaves out an object it was asked for fails the call (`ok` false), and when the Hub
+  library is out of reach the fix names `pip install "alloy-engine[import]"`.
+- `python -m alloy.looks --fetch-textures` without the `import` extra prints one error naming
+  `pip install "alloy-engine[import]"`, not a traceback.
+- Camera kernels compile without the compiler's integer-constant warnings on the first render; images are unchanged.
+
+### Documentation
+- New answer pages: a FAQ, how-to pages and comparison pages.
+- The docs take the corrections of a review of the website; the "What ships" page says when its lists were read
+  from the package instead of naming a version.
+- The README and the PyPI description say Python 3.11 or 3.12, with a `uv` line for systems whose Python is older,
+  and give the range of worlds a robot arm runs at as the docs measure it, in place of "hundreds".
+- Internal team and work-item names are gone from the known-limit pages, other prose and data notes (exported JSON,
+  card and MJCF notes); the release scan now fails on them.
+
+### Packaging
+- PyPI keywords and classifiers; the repository has `CITATION.cff` (how to cite Alloy) and `context7.json`.
+- `llms.txt` ships in the wheel and the sdist, beside `AGENTS.md`.
+
+## [0.1.1] - 2026-11-11
+
+### Fixed
+- Camera environments with `vary=True` on a fresh install (texture images not downloaded): a varied look is drawn in
+  a mid-tone of its texture family (a brown floor, honey wood, mid-grey plastic), with one warning naming
+  `python -m alloy.looks --fetch-textures`. Before, such a look fell back to its white placeholder colour, so the
+  floor drew pure white. A colour map the fast camera cannot read draws the same tone. `docs/guide/envs.md`.
+- The fast camera behind Gym camera observations reads a look's base colour as sRGB and converts it to linear, as the
+  full-quality camera does. Before, it used the colour as linear, so varied looks were drawn too bright. A policy
+  trained on 0.1.0's camera images sees different colours: retrain it.
+
+### Changed
+- `PickCube-v0`'s rsl_rl recipe (`train_rsl_rl.RECIPES`) takes an entropy term of 0.003 (it had none), and the
+  documented training command runs 1,000 iterations (it ran 500). Results vary between runs on a GPU, so watch the
+  success rate the trainer prints. `docs/guide/rl.md`, Arm pick.
+
+### Documentation
+- Every page's "Limits" section is now "Keep in mind", and the limits page is the "Keep in mind" page.
+- A new page, "What ships", lists the ready-made environments with their observations, the robots with their source
+  licences, and the object libraries with their counts, licences and how to get each.
+- The README and the docs home page link the Apache-2.0 licence and the GitHub repository, where issues,
+  contributions and private security reports go.
+
+### Packaging
+- `pip install alloy-engine` is the only install path: there is no `install.sh`, and the GitHub Release carries
+  release notes only.
+- The package metadata links the GitHub repository and its issue tracker, as in 0.1.0.post1.
+
+## [0.1.0.post1] - 2026-11-11
+
+Package metadata only: the PyPI page links the GitHub repository and its issues. The code is 0.1.0's.
+
+## [0.1.0] - 2026-11-11
 
 ### Fixed
 - With `scene.randomize` on an object (friction, density, start `x` / `y` / `z`, ...), resetting some worlds (one
@@ -27,7 +88,8 @@ are engine internals with no stability promise.
   colours (the ground and the first object the same blue) and left out every look, so `alloy.vary` textures never
   reached a policy. A scene variant's looks (`vary=True`) are drawn by the fast camera as each look's colour and
   colour map, where `Camera.render(sim)` uses the full-material tracer; on one L4 at 512 worlds that costs nothing
-  measurable (`PickPlace-v0`: 15,100 64 px images/s, 14,400 before). `docs/guide/envs.md`.
+  measurable (`PickPlace-v0`: 15,100 64 px images/s, 14,400 before). A policy trained on the earlier images sees new
+  colours: retrain it. `docs/guide/envs.md`.
 - Since 0.1.0rc2: `sim.stop_drives()`, `sim.set_pose()` and `sim.reset()` bring a kinematic object to rest in both of
   the engine's states. Before, a stopped or reset tool kept its old speed or pose every second exchange, and MPM
   material under it (sand, paste, dough) kept being pushed.
@@ -44,15 +106,15 @@ are engine internals with no stability promise.
   runs its target on: after a 3 s press on the table, an up command lifts the Panda's hand 1 cm in 4 steps (12-23
   before). Costs: the servos now set the top speed, so an open-loop 10 cm hand command over 5 steps moves 4.1 cm and
   a slow servo moves slower (the custom-task example's pusher: 91 steps, 47 before). Trajectories change even where
-  outcomes do not: the window binds in 86 of the GripperLift demonstrator's 100 steps, and it still succeeds in every
-  world. With the shipped arms' firm contacts it does not change whether a world freezes. `window=float("inf")`
+  outcomes do not: the window binds in 86 of the GripperLift demonstrator's 100 steps, and its outcome is
+  unchanged. With the shipped arms' firm contacts it does not change whether a world freezes. `window=float("inf")`
   restores the old behaviour.
   `docs/guide/envs.md`, `docs/guide/rl.md`.
 
 ### Added
 - `alloy.envs`: `PickCube-v0`, a Franka Panda that picks a 4 cm cube and carries it to a point in the air, with its
-  own rsl_rl settings (`train_rsl_rl.RECIPES`). With these settings training does not yet
-  learn the pick reliably: some runs learn it and others do not. Treat them as a starting point; tuning continues.
+  own rsl_rl settings (`train_rsl_rl.RECIPES`): a starting point, and results vary between runs on a GPU, so watch
+  the success rate the trainer prints; tuning continues.
   `docs/guide/rl.md`, Arm pick.
 - Scanned library objects (YCB, Google Scanned Objects, Objaverse and the other fetched scans) render with their own
   photo texture in both cameras: the quick look (`sim.render()`, `alloy.Camera`) and `quality="full"` / looks. The

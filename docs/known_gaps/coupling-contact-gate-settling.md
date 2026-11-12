@@ -1,7 +1,7 @@
 # Known gap: with the opt-in contact gate, cloth resting on fixed geometry while the robot is away settles at a coarser step
 
 ## What is wrong
-- The contact gate is experimental and not advertised (coordinator 2026-11-08). Its loss against today's clock in the
+- The contact gate is experimental and not advertised (2026-11-08). Its loss against today's clock in the
   scene where it releases the clock is fixed (Speed below).
 - The contact gate (`ClockPolicy.contact_gate`, off by default; `alloy/coupling/contact_gate.py`) releases the
   exchange clock while a robot is away from the cloth. Today's clock instead holds the lightest robot link's bound
@@ -53,7 +53,7 @@ Leave the gate off (the default) when the cloth's settled shape before contact m
   65 s. The result rows for `gatefix`, `base` and `gate` are in a speed run's output (not shipped).
 
 ## Planned fix
-- Probe (WP10, coordinator 2026-11-08), report only: keeping VBD's fine step while the gate is released removes
+- Probe (2026-11-08), report only: keeping VBD's fine step while the gate is released removes
   the towel's offset (0.00 mm when the arm arrives), but costs more: 41-62 s per period at 64 worlds against 9.3 s.
   The water still moves 2.4 mm RMS.
 - The settling offset is within today's run-to-run floor at the end of the measured scene (Number). Default-on is

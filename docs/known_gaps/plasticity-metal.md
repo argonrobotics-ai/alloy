@@ -1,12 +1,12 @@
 # Plasticity: J2 covers soft volumes, joint springs, metal sheets, wires and coil springs; bulk metal parts stay rigid
 
-Status: open, being closed in phases by SCR-WP7-15 (WP7, with WP9's rods; WP12 reviews). Build estimate below.
+Status: open, being closed in phases by the J2 metal-sheet change. Build estimate below.
 
-## Now covered (SCR-WP7-15)
+## Now covered
 
 - **One J2 model** (`alloy/solvers/plastic/j2.py`): von Mises, linear isotropic hardening. Card fields
   `plastic.model: j2`, `plastic.yield_stress` (σ_y0), `plastic.hardening_modulus` (H). A j2 card keeps its solid
-  route; a yield_stress alone still makes a paste. Metal cards carry sourced values (WP1, db81a79f0).
+  route; a yield_stress alone still makes a paste. Metal cards carry sourced values (db81a79f0).
 - **Soft volumes that yield** (VBD tets, `alloy/solvers/plastic/tets.py`): a j2 card on the soft_vbd route.
   - MuJoCo 4.0's column row: onset bracket (76, 77] mm against 76.45 analytic (RERUN.md's
     `alloy.scene.analytic_plastic:column_case`).
@@ -47,7 +47,7 @@ Status: open, being closed in phases by SCR-WP7-15 (WP7, with WP9's rods; WP12 r
   A yielding rod always steps on `rod_vbd`, which is slow beside a robot. Near the fully plastic moment it settles
   slowly and less accurately: [rod-plastic-near-full-yield.md](rod-plastic-near-full-yield.md).
 
-## Limits of the J2 model (SCR-WP7-15)
+## Limits of the J2 model
 
 - **No kinematic hardening:** no Bauschinger effect. A reversed load yields at -σ_y(ε̄p), the isotropic surface, so
   cyclic bending under-predicts reverse yielding.
@@ -79,7 +79,7 @@ What Alloy's plasticity covers today:
 What it does not cover:
 - **Bulk metal bending and forming.** A thick metal part (a bar, a bracket, a rack) keeps the rigid route and never
   takes a permanent bend; J2 runs on soft volumes, joint springs and thin sheets only (Now covered). Before
-  SCR-WP7-15 none of the 11 metal cards had plastic fields; they now carry sourced J2 values (WP1).
+  the J2 metal-sheet change none of the 11 metal cards had plastic fields; they now carry sourced J2 values.
 - **Springs that yield**, apart from joint springs and j2 rods (above). MuJoCo tendon springs, rod and cable cards
   without `plastic` fields, and the clips' sprung members are linear elastic at any load. An overloaded spring of
   that kind returns to its rest length.
@@ -95,7 +95,8 @@ What a user sees if they try:
 
 ## Number
 
-- Before SCR-WP7-15: law tests for metal plasticity 0, metal cards with plastic fields 0 of 11 (now: Now covered).
+- Before the J2 metal-sheet change: law tests for metal plasticity 0, metal cards with plastic fields 0 of 11 (now:
+  Now covered).
 - The probe above: CPU, main a6b698923, `alloy.build` only, no step. `steel_carbon` plus `plastic.yield_stress`
   250 MPa:
   - the 200 x 20 x 20 mm bar routes paste_mpm, 5 mm voxel, 5,120 particles;
@@ -133,8 +134,8 @@ None scheduled. Build estimate, in the order it would pay off:
 1. **Springs and wires that yield: done** (J2 rod joints on `rod_vbd`, 2026-11-08; the laws above: a cantilever's
    tip set, and a coil spring's free-length loss against wire torsion theory). Its limit is near full yield:
    [rod-plastic-near-full-yield.md](rod-plastic-near-full-yield.md).
-2. **Sheet-metal bending: done** (P3, SCR-WP7-15: J2 sheets on the film route, laws S1-S3). Its own limits:
-   [film-metal-sheets.md](film-metal-sheets.md).
+2. **Sheet-metal bending: done** (P3, the J2 metal-sheet change: J2 sheets on the film route, laws S1-S3). Its own
+   limits: [film-metal-sheets.md](film-metal-sheets.md).
 3. **Bulk metal parts, 1-3 weeks.** Either:
    - validate Newton's implicit MPM von Mises (friction 0, yield_stress, hardening) at metal stiffness, about
      1 week; limited by resolution, needs ~8 voxels across a section;

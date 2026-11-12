@@ -47,7 +47,7 @@ def _root(name: str, package: Path = _PACKAGE) -> Path:
 
 def docs_root() -> Path:
     """The docs folder: ``public/`` (the pages, from ``public/index.md``) and ``known_gaps/`` (a page per known
-    limit, each linked from ``public/limits.md``)."""
+    limit, each linked from ``public/keep-in-mind.md``)."""
     return _root("docs")
 
 

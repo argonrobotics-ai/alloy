@@ -1,4 +1,4 @@
-# T02 M10 nut on bolt, authored from WP1 cards (bolt_m10x60, nut_m10, pegboard_base_plywood) and the [internal reference] / bench P02 setup; no recorded trace (alloy.tasks.scenes.t02_card).
+# T02 M10 nut on bolt, authored from library cards (bolt_m10x60, nut_m10, pegboard_base_plywood) and the [internal reference] / bench P02 setup; no recorded trace (alloy.tasks.scenes.t02_card).
 schema: alloy.scene/1
 robots:
 - path: robots/yam_bench/robot.xml

@@ -26,13 +26,13 @@ elastic:
     source: model
     unc: [200000.0, 5000000.0]
     note: 'effective isotropic membrane: E·h/(1-nu^2) = 660 N/m stretch, D = 2e-5 N·m bend at h 0.6 mm (real woven fabric
-      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate (WP11)'
+      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate'
   poisson:
     value: 0.3
     source: model
     unc: [0.1, 0.4]
     note: 'effective isotropic membrane: E·h/(1-nu^2) = 660 N/m stretch, D = 2e-5 N·m bend at h 0.6 mm (real woven fabric
-      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate (WP11)'
+      decouples the two; Kawabata bending 1e-6..1e-5 N·m); calibrate'
   bending:
     value: 1.9780219780219777e-05
     source: model

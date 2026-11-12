@@ -26,7 +26,7 @@ stiff for the solve.
 ## Number
 
 CPU dense grid unless named; a kinematic ball pressed at 2 mm/s into a block on a rough floor; E 3 MPa, Poisson 0.3
-unless named. Rows: [internal note] `notes/wp7-dent/slice2/` (rig `rig3.py`, batches b1-b4, g1-g4).
+unless named. Rows: development notes, not shipped (rig `rig3.py`, batches b1-b4, g1-g4).
 
 Converged share of the force at 1.0 mm (5 mm ball pressed to 1.2 mm, the force read as it passes 1.0 mm; 30 x 30 x 15
 mm block, 3 mm voxels, 4,000 particles), by sweeps per step; the yield stress is E / 312 (brass's ratio) except the
@@ -83,7 +83,7 @@ plastic and elastic rows read 1.2-2x higher and start 2.5-5 mm early.
 
 ## Planned fix
 
-After the release (WP7, dents slice 2): quasi-static mass scaling for stiff cards (density times s, chosen so the
+After the release: quasi-static mass scaling for stiff cards (density times s, chosen so the
 solve converges in its sweeps, with the weight kept true and the kinetic energy checked against the tool's work), not
 measured yet; the punch laws (mean pressure 2.6-3.2 of the yield stress fully plastic, Hertz within 15 %) on a rig
 that reads the contact radius, and the depth under a given force; then the default route for small yield strains.

@@ -17,7 +17,7 @@
   "collision hulls above 64 vertices split into convex pieces within 0.2 mm (hull_split.json)",
   "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
   "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
-  "LEAP joint and servo dynamics from MuJoCo Playground (dynamics_source; LICENSE.1): every hand joint damping 0.03 -> 0.2 N m s/rad, armature 0 -> 0.00149376 kg m^2, frictionloss 0.001 -> 0.02 N m, every position servo's torque capped at +-0.2196 N m (none before). As shipped, random finger targets flung a 7 cm cube in 66 % of worlds (TA-4 F3). Kp 3 and kv 0.01 are menagerie's (alloy.tasks.emb_robots.playground_dynamics)"
+  "LEAP joint and servo dynamics from MuJoCo Playground (dynamics_source; LICENSE.1): every hand joint damping 0.03 -> 0.2 N m s/rad, armature 0 -> 0.00149376 kg m^2, frictionloss 0.001 -> 0.02 N m, every position servo's torque capped at +-0.2196 N m (none before). As shipped, random finger targets flung a 7 cm cube in 66 % of worlds (an outside test F3). Kp 3 and kv 0.01 are menagerie's (alloy.tasks.emb_robots.playground_dynamics)"
  ],
  "dynamics_source": {
   "url": "https://github.com/google-deepmind/mujoco_playground",

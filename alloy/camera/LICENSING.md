@@ -27,7 +27,7 @@ Apache-2.0 and installs from PyPI. No NVIDIA SDK headers, OptiX code or other NV
 
 ## Denoisers
 
-- **Learned denoiser** (`alloy/camera/denoiser`, OSS-6): our own model and weights; see that package.
+- **Learned denoiser** (`alloy/camera/denoiser`): our own model and weights; see that package.
 - **Intel Open Image Denoise** (fallback): Apache-2.0. Not bundled. `python -m alloy.camera.oidn fetch` downloads the
   official release (with its CUDA module) into the user's cache, or `OIDN_LIB_DIR` points at an installed copy.
 

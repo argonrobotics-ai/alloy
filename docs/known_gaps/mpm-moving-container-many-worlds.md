@@ -9,7 +9,7 @@ before the fix's law can run there, and such a build warns (`alloy.integration.m
 
 - Before the fix, at many worlds on a GPU, MPM grains (sand, soil, paste) sank into bodies they touched, and
   `sim.check()` stayed ok. Affected: a container that a drive moves, a kinematic tool or press, a robot's link, and
-  a free box resting on the material. A sand slab on the ground alone held (AUDIT-STACK): static shapes did not show
+  a free box resting on the material. A sand slab on the ground alone held (an audit): static shapes did not show
   it.
 - How much grew with the world's place in the batch: world 0 of 64 read like a lone world, and the last worlds were
   the worst. Sand in a lifted open box sank into or through its floor at every floor thickness measured (4, 6 and
@@ -21,20 +21,20 @@ before the fix's law can run there, and such a build warns (`alloy.integration.m
 ## Number
 
 One L4, 2026-11-11. Bodies in the material: the largest number of grains more than 1 mm inside the body at any
-control period, per world. Before: main; after: the integer lookup (WP12's law runs, not shipped).
+control period, per world. Before: main; after: the integer lookup (the law runs, not shipped).
 
 | scene (grains per world) | 1 world | 64 worlds before: world 0 / last 8 mean / worlds with any | 64 worlds after |
 |---|---|---|---|
 | kinematic blade ploughing a sand slab (16,128) | 4 | 4 / 66 / 64 | 4 in every world |
 | blade: worlds with grains through it (behind its face) | 0 | 57 of 64 | 0 |
 | kinematic plate pressing a dough block (6,912) | 0 | 1 / 32 / 64 | 0 in every world |
-| a free 0.3 kg box resting on a sand slab (AUDIT-STACK) | 0 | 45 of 64 (at most 5) | 0 in every world |
+| a free 0.3 kg box resting on a sand slab (an audit) | 0 | 45 of 64 (at most 5) | 0 in every world |
 | plate, every world's grid offset shifted 131,072 voxels | | about 633 in every world, world 0 included | 0 in every world |
-| servo gantry's finger pushed into sand and swept (13,824) | 11 | 12 / 76 / 64 | 12 in every world (AUDIT-STACK) |
+| servo gantry's finger pushed into sand and swept (13,824) | 11 | 12 / 76 / 64 | 12 in every world (an audit) |
 
 - 1 world is bit for bit with Warp's own lookup (it has no offsets, and that branch is unchanged).
 - Newton's and Alloy's GPU MPM laws pass with the fix (17 tests).
-- The lifted box, with the fix (AUDIT-STACK, 6 mm floor, 64 worlds, the next release's drive timing): 0, 0 and 0
+- The lifted box, with the fix (an audit, 6 mm floor, 64 worlds, the next release's drive timing): 0, 0 and 0
   worlds at 0.099, 0.100 and 0.101 m/s (before: 42, 0 and 13), the 64 worlds within 0.007 mm of each other; a
   128-world lift sank none.
 - The lifted box before the fix: sand_silica_dry 4 x 4 x 2 cm in an open box 6 x 6 x 5 cm inside, at rest for
@@ -51,7 +51,7 @@ control period, per world. Before: main; after: the integer lookup (WP12's law r
   15.7 mm below the floor's bottom face (6 mm floor at 0.101).
 - The drive's timing did not decide it. The table is from the next release's drive timing (a drive at full speed
   from its first physics step). With this release's timing the 4 mm row at 0.099, 0.100 and 0.101 read 16, 9 and 54
-  worlds (OSS-3's runs).
+  worlds.
 - Above 64 worlds (a free box on a 2 x 2 x 1 cm slab, with the fix and without): at 256 worlds the grid rebuild
   failed with status 8 and the step ended in SparseMemoryError; at 1,024 worlds the runs stalled past 25 minutes, and
   once ended in CUDA error 700 ([mpm-gpu-memory.md](mpm-gpu-memory.md)).
@@ -79,7 +79,7 @@ control period, per world. Before: main; after: the integer lookup (WP12's law r
 
 ## Planned fix
 
-- Done (0.1.0, WP12): the integer cell lookup.
+- Done (0.1.0): the integer cell lookup.
 - Above 64 worlds: the sparse grid's capacity and memory ([mpm-gpu-memory.md](mpm-gpu-memory.md)), then the fix's law
   (per-world counts flat in the offset) at 256 and 1,024 worlds.
 - A health check that flags MPM particles inside a collider.

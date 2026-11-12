@@ -14,7 +14,7 @@
   100 with the previous one. That is one machine, not a cure.
 
 ## Number
-CPU, Warp route, main 201bdc94a (2026-11-09). The machine is WP3's plain-seam rig (`alloy.tasks.sew_seam`): two 0.61 mm
+CPU, Warp route, main 201bdc94a (2026-11-09). The machine is the plain-seam rig (`alloy.tasks.sew_seam`): two 0.61 mm
 muslin plies on a 10 x 11 mm feed dog (pair mu 1.0) under a 20 x 12 mm foot at 40 N, one stitch per 0.2 s cycle,
 reversed for the backtacks. Measured with three development probe scripts on this rig (not shipped).
 - Feed of the cycles right after the first reversal, in stitch lengths, for plies without bending
@@ -30,7 +30,7 @@ reversed for the backtacks. Measured with three development probe scripts on thi
   | 100 | 12 | 0.99-1.00 (no slip) | 0.92, 0.88, 0.90 |
   | 100 | 13 | 0.95-0.99 (no slip) | 0.59, 0.85, 0.48 |
 
-  Every other cycle feeds 0.95-1.03. WP3's seam check asks 0.7-1.15 in every cycle.
+  Every other cycle feeds 0.95-1.03. The seam check asks 0.7-1.15 in every cycle.
 - With the KES bending (the default plies), records feedback, the cycles through the reversal feed 0.97-1.01 at both 20
   and 100 iterations. Over all 22 cycles at 20 iterations, the momentum feedback feeds 0.98-1.00 and the records
   feedback 0.87-1.01.
@@ -70,8 +70,8 @@ reversed for the backtacks. Measured with three development probe scripts on thi
 - Trace the solve at the reversal: the per-iteration tangential residual and friction use of the dog's contacts in the
   first stroke after a flip, at 20 and 100 iterations. Then decide whether the cloth entry needs more iterations
   where a reversing body grips it (a contact-driven iteration count) or a better start for the tangential iterate.
-  Not scheduled; owner WP10, pending the coordinator's ruling.
-- Other cases this may also affect: robot pinches that carry cloth through a load reversal (SC4's ClothFold, gap #2;
-  not measured), and WP3's 3-ply pinch (press, then lift). Its carry was 67 % when it was written. On main it is
+  Not scheduled.
+- Other cases this may also affect: robot pinches that carry cloth through a load reversal (ClothFold;
+  not measured), and the 3-ply pinch (press, then lift). Its carry was 67 % when it was written. On main it is
   25-54 % at 30.5 / 30.0 / 29.5 N (52 % at the test's 30 N, 25 % at 30.5 N, under the 40 % minimum). With the records
-  feedback the stack is not lifted at all: -18 to -19 % at all three loads. Readers: WP3 (sewing), SC4 (cloth fold).
+  feedback the stack is not lifted at all: -18 to -19 % at all three loads. Readers: sewing, cloth fold.

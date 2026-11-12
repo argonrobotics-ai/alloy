@@ -32,7 +32,7 @@
   - `self_contact=False`, dt 10 ms: 3.70 m/s (free fall).
 - **Earlier numbers:** with the old reach the cap was 0.816 and 2.72 m/s (development scripts, not shipped).
 - **Fine meshes, where 0.75 ℓ binds:**
-  - SOFT-3's skin/fat pads (ℓ 4.7 mm, margin 1.38 mm): 2.4 m/s;
+  - Skin/fat pads (ℓ 4.7 mm, margin 1.38 mm): 2.4 m/s;
   - a 2 mm-cell sheet at h 0.6 mm: about 1 m/s.
 
 ## Why
@@ -43,7 +43,7 @@
   (docs/known_gaps/vbd-self-contact-buffer-overflow.md).
 - The 3 m/s bound and the 0.75-edge cap were chosen by measurement:
   - at 5 m/s a towel's fast pinch ran 9x slower and its half fold failed;
-  - at 3 m/s, 0 crossings, the same fold quality, 1.5-2.8x the old cost on towels, and 3.35x faster on WP2's 4 mm drape.
+  - at 3 m/s, 0 crossings, the same fold quality, 1.5-2.8x the old cost on towels, and 3.35x faster on a 4 mm drape.
 
 ## Workaround
 - `Scene(dt=...)` alone does not raise the cap. Halving the control dt does not double it: at the route's reach the cap
@@ -60,4 +60,4 @@
 ## Planned fix
 - None planned in the reach rule itself.
 - A detection inside the iterations would lift the cap at less cost than a larger reach. Newton's ITERATIONS schedule
-  does that; it is not measured yet (WP11).
+  does that; it is not measured yet.

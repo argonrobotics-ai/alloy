@@ -73,7 +73,9 @@ print(img.shape, batch.shape)
   `camera_scene(sim, quality="fast")` the fast tracer draws them instead, each as its colour, or its colour map tiled
   over the shape (projected along each face's axis, one tile per `scale_m`), without bump, roughness or the full
   lights: a Gym environment's cameras render that way (`docs/guide/envs.md`). In the fast camera a ground plane with
-  no colour of its own is grey, also beside a robot whose parts carry their own colours.
+  no colour of its own is grey, also beside a robot whose parts carry their own colours. A variant texture that is
+  not on disk is drawn by both tracers in a flat colour of its family (wood brown, plastic grey, ...; a material with
+  no family keeps its preset colour), with one warning naming `python -m alloy.looks --fetch-textures`.
 - More (materials, lights, mounting a camera on a robot link, scene packs): the docstrings in `alloy/camera/`.
 
 ## Depth and segmentation
@@ -319,6 +321,6 @@ GPUs, and the spread between runs.
 - A robot is not one id: each link is a body with its own id.
 - No sensor model: no noise, and no range limit other than the camera's `clip` distances (0.01 m to 1000 m by
   default; a surface outside them reads as nothing hit).
-- No separate ids for static objects (the ground, the table and every other static object all read 1), no semantic
-  classes, no optical flow, no lens distortion and no intrinsics matrix (the pinhole `fov` only).
+- In `"segmentation"` static objects share one id (the ground, the table and every other static object all read 1;
+  `"instance_id"` tells them apart). No lens distortion and no intrinsics matrix (the pinhole `fov` only).
 - Environment observations (`alloy.envs` cameras) are still RGB only.

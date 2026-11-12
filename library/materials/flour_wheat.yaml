@@ -5,11 +5,11 @@ density:
   source: measured
   unc: [1450.0, 1550.0]
   note: 'grain (particle) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
-    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 900 kg/m3 here. Wheat starch granules ~1.5
-    g/cm3 by liquid pycnometry (Dengate, Baruch, Meredith, Starch 30 (1978) 80-84; BioNumbers 112353). Measured uncompacted
-    wheat-flour bulk is 601 kg/m3 at 14.2 % moisture and 630 at 8.6 % (Guan 2010, MSc thesis, U. Manitoba, ''Effect of Compaction
-    on Strength and Arching of Cohesive Material in Storage Bins'', Table 4.1, at 0.2 kPa): packing ~0.40-0.42, so a grain_mpm
-    fill of this card is ~45 % heavier than real flour until packing is per material'
+    (card rule of 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 900 kg/m3 here. Wheat starch granules ~1.5 g/cm3
+    by liquid pycnometry (Dengate, Baruch, Meredith, Starch 30 (1978) 80-84; BioNumbers 112353). Measured uncompacted wheat-flour
+    bulk is 601 kg/m3 at 14.2 % moisture and 630 at 8.6 % (Guan 2010, MSc thesis, U. Manitoba, ''Effect of Compaction on Strength
+    and Arching of Cohesive Material in Storage Bins'', Table 4.1, at 0.2 kPa): packing ~0.40-0.42, so a grain_mpm fill of
+    this card is ~45 % heavier than real flour until packing is per material'
 surface:
   mu_static:
     value: 0.3939104756149424

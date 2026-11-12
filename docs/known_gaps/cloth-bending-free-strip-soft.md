@@ -62,6 +62,6 @@ every node), 0.4261 L at 12 links and 0.3998 L at 24.
   energy, not a measured droop). Do not use it for a sheet that drapes in two directions.
 
 ## Planned fix
-- A hinge map that holds in free cylindrical bending as well as in plate sag (WP11). Not scheduled.
+- A hinge map that holds in free cylindrical bending as well as in plate sag. Not scheduled.
 - Until then `tests/solvers/vbd/test_fabric_bending_law.py` keeps the hinge-chain law as a strict expected
   failure and pins the present droop within 3 %, so a change of the hinge stiffness of about 5 % either way fails.

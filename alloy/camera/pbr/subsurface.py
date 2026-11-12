@@ -31,6 +31,7 @@ PRNG_SUBSURFACE_SCATTER_DISTANCE = 2
 PRNG_SUBSURFACE_GUIDE_STRATEGY = 3
 PRNG_SUBSURFACE_GUIDE_DIRECTION = 4
 WALK_SEED = wp.constant(wp.uint32(0x29D5BEEF))  # 0xdeadbeef ^ (0xdeadbeef << 19): hash_hp_seeded_uint's seed
+_ALIGN4 = wp.constant(wp.uint32(0xFFFFFFFC))   # above INT32_MAX: typed, so clang does not warn (GEO P5)
 
 
 @wp.struct
@@ -258,7 +259,7 @@ def random_walk(geo: Geo, inst: wp.int32, p0: wp.vec3, cast0: wp.vec3, d0: wp.ve
     if dl == 1.0:
         return WalkResult()
     phase_log = wp.log((dl + 1.0) / (dl - 1.0))
-    ofs = wp.int32(hash_hp_uint(wp.uint32(rng_offset) ^ WALK_SEED) & wp.uint32(0xFFFFFFFC))
+    ofs = wp.int32(hash_hp_uint(wp.uint32(rng_offset) ^ WALK_SEED) & _ALIGN4)
     o = p0
     d = d0
     have_opp = int(0)

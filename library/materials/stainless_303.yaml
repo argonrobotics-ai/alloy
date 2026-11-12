@@ -44,6 +44,6 @@ plastic:
     value: 1590000000.0
     source: model
     unc: [1320000000.0, 1590000000.0]
-    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 620 MPa (same sheet:
-      "Tensile Strength, Ultimate 620 MPa"), eu = 1 − σy0/σu = 0.613 (EN 1993-1-4 Annex C, Rasmussen 2003, as Afshan & Gardner
-      2012 Eq. 13); unc: Rolled Alloys 30 / 75 ksi gives 1320 MPa'
+    note: 'ESTIMATE (derived): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 620 MPa (same sheet: "Tensile
+      Strength, Ultimate 620 MPa"), eu = 1 − σy0/σu = 0.613 (EN 1993-1-4 Annex C, Rasmussen 2003, as Afshan & Gardner 2012
+      Eq. 13); unc: Rolled Alloys 30 / 75 ksi gives 1320 MPa'

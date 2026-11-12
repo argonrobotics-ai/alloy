@@ -22,7 +22,7 @@ profiles say it through the notice and the build log only.
 One L4 (driver 580), 4 worlds, seed 3, `dt=0.01`, 2 s, largest difference in position (m) or quaternion between
 two runs. Fresh builds in one process, two processes, and a run repeated after `sim.reset()` give the same picture;
 main b9441c38 and the Newton 1.8 / MuJoCo Warp 3.17 tree agree (on that tree the two-process check ran for the
-tilted box only, and the Panda row at `"fast"` stopped with a CUDA graph error: no number; GAP-E3, 2026-11-10).
+tilted box only, and the Panda row at `"fast"` stopped with a CUDA graph error: no number; 2026-11-10).
 
 | Scene | standard | precision | fast |
 |---|---|---|---|

@@ -14,7 +14,7 @@
 - A dropped pair is never resolved, so the two surfaces can pass into each other.
 
 ## Number
-- SOFT-3's skin pad on a fat pad (CPU, 1.25 ms, margin 1.38 mm), with the reach set to 7.35 mm (an uncapped 5 m/s
+- A skin pad on a fat pad (CPU, 1.25 ms, margin 1.38 mm), with the reach set to 7.35 mm (an uncapped 5 m/s
   motion bound, a test of the reach rule):
   - 1,890 vertices and 4,527 edges were over capacity: up to 85 of 32 and 151 of 64;
   - the skin reached 1.02 mm into the fat;
@@ -41,8 +41,8 @@
   - at the end of every control period, rows more than 75 % full grow, before they drop a pair;
   - a period in which a row did drop pairs is run again on the larger rows, so no accepted period has a dropped pair;
   - inside a period nothing is read on the host; a growth drops the captured CUDA graphs, which are captured again.
-- Numbers (one world, CPU, 1 s, flat 16 x 16 cotton sheets of 0.3 m stacked 2.5 mm apart on a table; [internal note]
-  `notes/gap-13b/measure/stacks.py`):
+- Numbers (one world, CPU, 1 s, flat 16 x 16 cotton sheets of 0.3 m stacked 2.5 mm apart on a table; a
+  development script, not shipped):
 
   | Sheets | Fixed 32 / 64: peak pairs | Fixed: dropped | Sized rows: peak pairs | Sized: dropped | Row memory |
   |---|---|---|---|---|---|
@@ -77,16 +77,16 @@
     dropped pairs runs twice. On the 12-sheet, 16-world GPU run below that was 19 s more over 1 s of simulation
     (53 s against 34 s for the first half second); later periods ran at the fixed rows' speed;
   - `alloy.estimate` does not count the self-contact rows in its memory: 64 worlds of the 12-sheet stack hold about
-    354 MiB of rows before growth and 591 MiB after (scaled from 2 worlds, AUDIT-STACK), against an estimate of
+    354 MiB of rows before growth and 591 MiB after (scaled from 2 worlds, an audit), against an estimate of
     146 MiB for the whole scene;
   - sized rows keep the pairs a crowded row used to drop; they do not stop sheets crossing in general. 12 or 20
     sheets falling together from 5 cm apart end with layers passed through each other in both modes, with no row
-    over 24 / 46 pairs (no pair dropped; a separate gap, PHYSA-10);
+    over 24 / 46 pairs (no pair dropped; a separate gap);
   - these keep the fixed 32 / 64 rows: the side simulation of `rerun_worlds`, Newton's deterministic modes, rows
     owned by a collision pipeline (above), and every `SolverVBD` an Alloy module builds itself instead of through a
     scene's VBD entry (`alloy.solvers.vbd.make_vbd`): the cucumber-slicing job (`alloy/tasks/job_slice_sim.py`),
     the coupling and topology rigs, the test rigs.
-- On a GPU (one L4, CUDA graphs on, 1 s, the same stacks in many worlds; [internal note] `notes/gap-13b/vmgpu/REPORT.md`):
+- On a GPU (one L4, CUDA graphs on, 1 s, the same stacks in many worlds; development notes, not shipped):
 
   | Scene, worlds | Fixed 32 / 64 | Sized rows | Row memory | Warm world-steps/s, fixed -> sized |
   |---|---|---|---|---|
@@ -101,7 +101,7 @@
     4-sheet stack differ by 6 um, and a sized-row run differs from a fixed-row one by the same 6 um. The bit for bit
     law is a CPU law.
   - Not measured: the GPU's total memory at the peak (the table is the rows' own bytes).
-- The default since 2026-11-10 (coordinator ruling 04:34Z): it changes nothing below the fill mark (CPU bit for bit,
+- The default since 2026-11-10: it changes nothing below the fill mark (CPU bit for bit,
   law R3) and replaces dropped pairs where a scene is crowded (law R1).
 
 ## Pass-through after dropped pairs (opt-in since 2026-11-10)
@@ -124,22 +124,22 @@
     pairs): INVALID and named with the switch on; world 0 never crosses;
   - the stack with a 1 kg upper sheet, rows of no pair: it sinks flat through the lower one from step 4 with no
     triangle pair intersecting; only the side-change clause sees it (it read 0 before that clause).
-- Miss test (two sheets, 6 ways of loading them, rows of 0 and 1 pair, 100 steps; [internal note]
-  `notes/gap-13a/vm/miss_test.py`): all 6 runs with rows of no pair passed through, and each was caught by the step
+- Miss test (two sheets, 6 ways of loading them, rows of 0 and 1 pair, 100 steps; a development
+  script, not shipped): all 6 runs with rows of no pair passed through, and each was caught by the step
   its layers inverted; no run with rows of one pair swapped or crossed; the control world never.
 - Cost with the meter on (CPU, 4 worlds of two 20 x 20 sheets): 0.4 % per step when nothing drops (no marked
   vertex: no search), about 2 % with a quarter of the particles marked. Off (the default): none, and no step
   changes (CPU law: on and off step bit for bit).
-- Scenes (CPU, the switch on `invalid`, [internal note] `notes/gap-13a/sweep.md`): of 22 library scenes, examples and
-  cloth tasks run with the fixed 32 / 64 rows, only SOFT-3's skin pad on a fat pad (3 pairs dropped) and 8 or 12
+- Scenes (CPU, the switch on `invalid`; development notes, not shipped): of 22 library scenes, examples and
+  cloth tasks run with the fixed 32 / 64 rows, only the skin pad on a fat pad (3 pairs dropped) and 8 or 12
   stacked sheets (8 and 16) dropped pairs; none passed through (crossed 0, DEGRADED as before, no new INVALID). With
   the default rows sized to the scene, those three drop nothing and the meter has nothing to judge.
-- Not seen by design: sheets that pass through each other with every pair kept (no row dropped), as in PHYSA-10
-  above; an auditor's sheet dropped onto another at full rows ended with 5 vertex columns up to 1.3 mm below the
+- Not seen by design: sheets that pass through each other with every pair kept (no row dropped), as in the
+  separate gap above; an auditor's sheet dropped onto another at full rows ended with 5 vertex columns up to 1.3 mm below the
   lower sheet's, health OK.
 - Limits:
   - only surfaces whose rows dropped pairs are watched: sheets that pass through each other with every pair kept
-    (12 or 20 sheets falling together, PHYSA-10, above) are not seen;
+    (12 or 20 sheets falling together, above) are not seen;
   - a particle that moved more than the self-contact query radius between two detections (a reset, a teleport) is
     not judged for that move; a vertex that went round a free sheet edge inside one such short move would read as a
     pass-through (not seen in the laws or the sweep);
@@ -157,5 +157,5 @@
   through, so the flag does not make a world INVALID.
 - Done (2026-11-10): rows sized to the scene, above, opt-in first, then the default.
 - Done (2026-11-10, opt-in): the pass-through law and meter above; INVALID with `ALLOY_SELF_CONTACT_CROSS=invalid`.
-- Open: INVALID by default (needs the sweep on more scenes, a GPU run and a ruling); tighter growth (the overshoot);
+- Open: INVALID by default (needs the sweep on more scenes, a GPU run and a decision); tighter growth (the overshoot);
   growing rows in the side simulation of `rerun_worlds`.

@@ -13,15 +13,32 @@ from typing import Any
 from alloy.cli.spec import Op, Param
 
 
+def missing_fix() -> str:
+    """The change that brings a missing object: the ``import`` extra on a base install, whose object library is on the
+    Hugging Face Hub (GEO P4, 2026-11-11); otherwise another word."""
+    from alloy.api.catalog import _hub_unreachable  # noqa: PLC0415
+
+    if _hub_unreachable():
+        return ('pip install "alloy-engine[import]": the object library (about 5,400 objects) is on the Hugging Face '
+                "Hub and fetching from it needs the import extra; then compose again")
+    return "use another word for it (alloy.compose.search lists the object names)"
+
+
 def op_compose(session: Any, a: dict[str, Any]) -> dict[str, Any]:
-    """Compose scenes; returns ``ComposeResult.to_dict()`` (+ ``saved`` paths with ``out``)."""
+    """Compose scenes; returns ``ComposeResult.to_dict()`` (+ ``saved`` paths with ``out``). An object the request
+    names that no scene could place makes the call fail (top-level ``ok`` false) with the fix (GEO P4)."""
     from alloy.compose.build import compose  # noqa: PLC0415
+    from alloy.compose.errors import ComposeError  # noqa: PLC0415
 
     request = a.get("spec") if a.get("spec") is not None else a.get("sentence")
     result = compose(request, variations=a.get("variations") or 0, seed=a.get("seed") or 0,
                      check=a.get("check") or "full", device=a.get("device"), roots=a.get("library") or (),
                      robots=a.get("robots") or (), area=a.get("area"), jitter=a.get("jitter"),
                      scene_worlds=a.get("worlds"))
+    missing = sorted({name for scene in result.scenes for name in scene.missing})
+    if missing:
+        raise ComposeError(f"the scene leaves out {', '.join(missing)}: no object on this install matches "
+                           f"{'it' if len(missing) == 1 else 'them'}", missing_fix(), field="sentence")
     out = result.to_dict()
     if a.get("out"):
         out["saved"] = [str(p) for p in result.save(a["out"])]

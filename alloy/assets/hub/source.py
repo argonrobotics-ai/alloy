@@ -56,8 +56,10 @@ def _hub() -> Any:
     try:
         import huggingface_hub  # noqa: PLC0415
     except ImportError as exc:
-        raise HubError("the object library needs huggingface_hub, which is not installed",
-                       "pip install huggingface_hub   (or: pip install 'alloy-engine[import]')") from exc
+        raise HubError("downloading from the Hugging Face Hub (library objects, texture sets) needs huggingface_hub, "
+                       "which the base install does not include",
+                       'pip install "alloy-engine[import]"   (or the downloader alone: pip install huggingface_hub)'
+                       ) from exc
     return huggingface_hub
 
 

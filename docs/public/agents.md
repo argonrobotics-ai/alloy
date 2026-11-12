@@ -15,14 +15,29 @@ Install alloy-engine with pip (Python 3.11 or 3.12, in a virtual environment). R
 - `llms.txt` at the address above lists these pages, one line each; `llms-full.txt` beside it has their full text.
 - Every page is short, and its code runs as written and prints the output shown under it.
 
+## Connect over MCP
+
+`alloy mcp` serves the engine as Model Context Protocol tools over stdio, so an agent can build and step scenes
+without writing Python. It comes with the package. For Claude Code:
+
+```bash
+claude mcp add alloy -- alloy mcp
+```
+
+Any other MCP client starts the same command, `alloy mcp`. The tools are `list`, `scene`, `build`, `step`, `run`,
+`state`, `targets`, `reset`, `close`, `check`, `render`, `estimate`, `import`, `export`, `vary`, `compose`,
+`create`, `audit` and `fetch`; each takes and returns JSON. The server's code is in
+[alloy/mcp](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp).
+
 ## What to ask your agent to do
 
-1. Start from the [Quickstart](quickstart.md) and the guide for the task, not from memory.
+1. Start from the [Quickstart](quickstart.md), [What ships](what-ships.md) (the environments, robots and objects
+   that already exist) and the guide for the task, not from memory.
 2. Use `import alloy` and the calls on these pages only.
 3. After every run, read `sim.check()`: when `"ok"` is False, each entry of `"problems"` has a `"fix"`. Apply it and
    run again ([World health](guides/health.md)).
 4. On an exception, read `e.message` and `e.fix` ([Errors and fixes](errors.md)).
-5. Report what it ran, what that printed, and any line of [Known limits](limits.md) that touches the result.
+5. Report what it ran, what that printed, and any line of [Keep in mind](keep-in-mind.md) that touches the result.
 
 ## Good first tasks
 
@@ -30,7 +45,7 @@ Install alloy-engine with pip (Python 3.11 or 3.12, in a virtual environment). R
 - "Add a robot arm from an MJCF file, move one joint to 0.5 rad and plot the joint angle."
 - "Pour 50 ml of water into a cup and report how much lands in it."
 
-## Limits
+## Keep in mind
 
 - A frozen world looks calm. An agent that reads only positions will report a failed run as a success, so make it
   print `sim.check()["ok"]`.

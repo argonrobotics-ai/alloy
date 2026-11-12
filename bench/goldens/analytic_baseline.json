@@ -3247,7 +3247,7 @@
  "history": [
   {
    "date": "2026-10-31T21:57:57-0700",
-   "reason": "initial baseline: stock Newton ac7f7830 solvers on CPU, quick (WP6)",
+   "reason": "initial baseline: stock Newton ac7f7830 solvers on CPU, quick",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3298,7 +3298,7 @@
   },
   {
    "date": "2026-10-31T22:23:19-0700",
-   "reason": "add cuda:0 (a dev GPU VM L4, wp6 @ b094c26, scripts/gpu_run.sh WP6 tests/bench/test_gpu_suite.py) analytic + determinism quick keys, and CPU determinism quick keys (wp6 @ b1a5c54)",
+   "reason": "add cuda:0 (a dev GPU VM L4, wp6 @ b094c26, scripts/gpu_run.sh tests/bench/test_gpu_suite.py) analytic + determinism quick keys, and CPU determinism quick keys (wp6 @ b1a5c54)",
    "overwrite": false,
    "keys": [
     "A1.freefall|featherstone|cuda:0|quick",
@@ -3396,7 +3396,7 @@
   },
   {
    "date": "2026-11-01T12:01:09-0800",
-   "reason": "A5 per bench + SCR-WP6-3: isotropy is the slip-force spread (A5.isotropy); A5.slide kinetic metrics gated on the MuJoCo default route; A5.slide_recipe known gap",
+   "reason": "A5 per bench + a ruling: isotropy is the slip-force spread (A5.isotropy); A5.slide kinetic metrics gated on the MuJoCo default route; A5.slide_recipe known gap",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3417,7 +3417,7 @@
   },
   {
    "date": "2026-11-01T13:29:12-0800",
-   "reason": "A5 quick mode uses the bench's 16 azimuths and 1 s: 8 azimuths over 0.5 s missed MuJoCo's slide anisotropy (box yaw spin-up, WP3 FRIC rows); A5.slide mujoco 9.8 % now fails in quick as in full",
+   "reason": "A5 quick mode uses the bench's 16 azimuths and 1 s: 8 azimuths over 0.5 s missed MuJoCo's slide anisotropy (box yaw spin-up, the team FRIC rows); A5.slide mujoco 9.8 % now fails in quick as in full",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3438,7 +3438,7 @@
   },
   {
    "date": "2026-11-01T14:01:28-0800",
-   "reason": "SCR-WP3-7: A5.slide on MuJoCo gated at azimuth 0; 16-azimuth spread as known gaps A5.slide_spread (defaults) and A5.slide_recipe (recipe)",
+   "reason": "a ruling: A5.slide on MuJoCo gated at azimuth 0; 16-azimuth spread as known gaps A5.slide_spread (defaults) and A5.slide_recipe (recipe)",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3460,7 +3460,7 @@
   },
   {
    "date": "2026-11-01T14:35:28-0800",
-   "reason": "A6 on MuJoCo mirrors the assembler: static solmix on the floor, native gains capped at dt (WP2 5cbbbbf)",
+   "reason": "A6 on MuJoCo mirrors the assembler: static solmix on the floor, native gains capped at dt (the team 5cbbbbf)",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3472,7 +3472,7 @@
   },
   {
    "date": "2026-11-01T19:08:19-0800",
-   "reason": "MuJoCo laws on Alloy's routed settings (builtin kwargs, SCR-WP6-4 rk4 for free-body scenes); A3/A4 off the static-hold recipe",
+   "reason": "MuJoCo laws on Alloy's routed settings (builtin kwargs, a ruling rk4 for free-body scenes); A3/A4 off the static-hold recipe",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3515,7 +3515,7 @@
   },
   {
    "date": "2026-11-03T10:50:46-0800",
-   "reason": "SCR-WP3-10 300 fill-in: A5.speed fixed, slide spread 0.034 -> 0.103 (coordinator ruling 2026-11-03 ~19:15Z, [internal note]: a stated trade, shown beside SB-12; known gap since SCR-WP3-7, never gated; CPU quick accel_spread 0.0339 -> 0.1028)",
+   "reason": "a ruling 300 fill-in: A5.speed fixed, slide spread 0.034 -> 0.103 (coordinator ruling 2026-11-03 ~19:15Z, [internal note]: a stated trade, shown beside SB-12; known gap since a ruling, never gated; CPU quick accel_spread 0.0339 -> 0.1028)",
    "overwrite": true,
    "keys": [
     "A5.slide_spread|mujoco|cpu|quick"
@@ -3555,7 +3555,7 @@
   },
   {
    "date": "2026-11-04T09:09:33-0800",
-   "reason": "SCR-WP3-10 on main 27da8424: the MuJoCo route fills in impratio 300; A5.speed fail 0.970 -> pass (WP3 confirms 9.744e-07)",
+   "reason": "a ruling on main 27da8424: the MuJoCo route fills in impratio 300; A5.speed fail 0.970 -> pass (the team confirms 9.744e-07)",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3581,7 +3581,7 @@
   },
   {
    "date": "2026-11-04T14:52:09-0800",
-   "reason": "WP11's coarse step is the vbd capability's default since main 8423239b (SCR-WP11-2): A17 flat 0.398 / curved 2.29 fail -> 3.8e-6 / 1.0e-5 pass (Newton 25f406c7; WP11's ac7f7830 run: 5.3e-6 / 1.2e-5)",
+   "reason": "the team's coarse step is the vbd capability's default since main 8423239b: A17 flat 0.398 / curved 2.29 fail -> 3.8e-6 / 1.0e-5 pass (Newton 25f406c7; the team's ac7f7830 run: 5.3e-6 / 1.2e-5)",
    "overwrite": true,
    "keys": [
     "A16.selftest|none|cpu|quick",
@@ -3603,7 +3603,7 @@
   },
   {
    "date": "2026-11-05T02:25:14-0800",
-   "reason": "WP3's MJCF light-body rule on main aeac0ab1 (coordinator ruling 2026-11-05 07:19Z): A8.squeeze_face 0.152 -> 0.063 mm (pass), A8.squeeze_wedge 2.153 -> 2.023 mm (fail, known gap); the other 75 CPU quick results equal 20141cb6's",
+   "reason": "the team's MJCF light-body rule on main aeac0ab1 (coordinator ruling 2026-11-05 07:19Z): A8.squeeze_face 0.152 -> 0.063 mm (pass), A8.squeeze_wedge 2.153 -> 2.023 mm (fail, known gap); the other 75 CPU quick results equal 20141cb6's",
    "overwrite": true,
    "keys": [
     "A8.squeeze_face|mujoco|cpu|quick",
@@ -3612,7 +3612,7 @@
   },
   {
    "date": "2026-11-05T06:09:53-0800",
-   "reason": "WP9's SCR-WP9-12 (0b1af22d: the ambient residual offset of sealed liquid carries no net load; coordinator 2026-11-05): A13.piston_displacement quick outflow 0.0711 -> 0.0902 (fail; WP6's CPU quick run on 0b1af22d). Quick is outside the law's validity range (a 0.03 s push of 2 layers; full mode pushes 47 layers after the fit start), so SB-12 counts the law's full-mode verdict (+0.18 %, pass) per the coordinator's 05:48Z rule, and the law stays in SB-12's denominator",
+   "reason": "a ruling (0b1af22d: the ambient residual offset of sealed liquid carries no net load; coordinator 2026-11-05): A13.piston_displacement quick outflow 0.0711 -> 0.0902 (fail; the team's CPU quick run on 0b1af22d). Quick is outside the law's validity range (a 0.03 s push of 2 layers; full mode pushes 47 layers after the fit start), so SB-12 counts the law's full-mode verdict (+0.18 %, pass) per the coordinator's 05:48Z rule, and the law stays in SB-12's denominator",
    "overwrite": true,
    "keys": [
     "A13.piston_displacement|sph|cpu|quick"
@@ -3620,7 +3620,7 @@
   },
   {
    "date": "2026-11-05T14:32:29-0800",
-   "reason": "WP13's A8 squeeze tip 1 kg stand-in -> T12's measured 0.3 kg effective mass (a0eb9cf6; coordinator ruling 2026-11-05 21:04Z, notes/wp0-a8-bound.md: a fidelity fix): CPU quick on main 5dac9aac, A8.squeeze_wedge 2.023 -> 1.839 mm (fail vs 1 mm, known gap), A8.squeeze_face 0.063 -> 0.050 mm (pass); re-keyed so a revert to the stand-in shows",
+   "reason": "the team's A8 squeeze tip 1 kg stand-in -> T12's measured 0.3 kg effective mass (a0eb9cf6; coordinator ruling 2026-11-05 21:04Z, notes/wp0-a8-bound.md: a fidelity fix): CPU quick on main 5dac9aac, A8.squeeze_wedge 2.023 -> 1.839 mm (fail vs 1 mm, known gap), A8.squeeze_face 0.063 -> 0.050 mm (pass); re-keyed so a revert to the stand-in shows",
    "overwrite": true,
    "keys": [
     "A8.squeeze_face|mujoco|cpu|quick",
@@ -3629,7 +3629,7 @@
   },
   {
    "date": "2026-11-05T16:15:33-0800",
-   "reason": "WP3 coordinate carry default-on (SCR-SC10-3; coordinator rulings 2026-11-05 22:33Z GO, 22:50Z A8 re-key: carry-on closer to dt/2, quick max off/on dt 1.839/1.388, dt/2 0.736/0.734, dt/4 0.739/0.765 mm): CPU quick MuJoCo rows the carry moves, none flips (A2.pendulum, A5.slide_recipe, A5.speed, A8.squeeze_face, A8.squeeze_wedge); re-keyed so a revert shows",
+   "reason": "the team coordinate carry default-on (a ruling; coordinator rulings 2026-11-05 22:33Z GO, 22:50Z A8 re-key: carry-on closer to dt/2, quick max off/on dt 1.839/1.388, dt/2 0.736/0.734, dt/4 0.739/0.765 mm): CPU quick MuJoCo rows the carry moves, none flips (A2.pendulum, A5.slide_recipe, A5.speed, A8.squeeze_face, A8.squeeze_wedge); re-keyed so a revert shows",
    "overwrite": true,
    "keys": [
     "A2.pendulum|mujoco|cpu|quick",

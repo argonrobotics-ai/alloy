@@ -11,8 +11,8 @@ A scene of resting free rigid bodies (box stacks, piles) steps through the publi
 bodies in a stock Newton `SolverMuJoCo` with its default settings and one 10 ms step per period.
 - **The default on MuJoCo Warp** (a GPU, or the CPU with `ALLOY_CPU_ROUTE=warp`): an entry of more than 8 free bodies
   steps on implicitfast with Alloy's own contact gains, at the largest step that keeps contacts as stiff as at the
-  fixed 1.25 ms step: 5 ms for XB4-9's cubes, 2 steps per 10 ms period. The friction rows' pull is capped at 20 m/s²,
-  so a pushed or sliding box no longer hops and rocks ([rigid-sliding-box-hops.md](rigid-sliding-box-hops.md)).
+  fixed 1.25 ms step: 5 ms for the 27-cube stacks, 2 steps per 10 ms period. The friction rows' pull is capped at 20
+  m/s², so a pushed or sliding box no longer hops and rocks ([rigid-sliding-box-hops.md](rigid-sliding-box-hops.md)).
   Stock solves once per period, with softer contacts.
 - **Still on rk4:** an entry of 8 or fewer free bodies (free flight stays accurate), and every entry on the CPU's
   MuJoCo C route (the default for `device="cpu"`), which has no friction cap
@@ -23,8 +23,9 @@ bodies in a stock Newton `SolverMuJoCo` with its default settings and one 10 ms 
 
 ## Number
 
-One L4, 3,072 worlds of 27 resting 1 m cubes (10 kg/m³, a 3 x 3 x 3 stack, XB4-9's jitter), 3.29 s simulated, main
-04f81f0ff of 2026-11-09, back to back; real time summed over the worlds (simulated world-seconds per wall-second):
+One L4, 3,072 worlds of 27 resting 1 m cubes (10 kg/m³, a 3 x 3 x 3 stack, the benchmark's jitter), 3.29 s simulated,
+main 04f81f0ff of 2026-11-09, back to back; real time summed over the worlds (simulated world-seconds per
+wall-second):
 
 | | default (`profile="standard"`) | `profile="fast"` | stock Newton `SolverMuJoCo` |
 |---|---|---|---|
@@ -45,7 +46,7 @@ Without the cap the default runs 756x, worst settle 1.65 mm: the cap costs nothi
   flight; on the MuJoCo C route the friction cap is missing, and under implicitfast a sliding box rocks more and more
   there: a 30 cm cube sliding at 5 m/s toppled within 2 s. So every entry on that route stays on rk4, the fast
   mode's too (that cube in fast mode: 6 deg and an 8 cm hop on MuJoCo C; under 1 deg and 1 mm on MuJoCo Warp; the
-  rows are in WP7's development notes, under the cube pushed and sliding at 5 m/s per CPU route; not shipped).
+  rows are in development notes, under the cube pushed and sliding at 5 m/s per CPU route; not shipped).
 
 ## Workaround
 
@@ -60,5 +61,5 @@ Without the cap the default runs 756x, worst settle 1.65 mm: the cap costs nothi
 
 ## Planned fix
 
-After launch: the friction cap on the MuJoCo C route (WP3), so a CPU build takes the same route as a GPU; then
-implicitfast with the cap for entries of 8 or fewer free bodies, behind the free-flight laws (WP6).
+After launch: the friction cap on the MuJoCo C route, so a CPU build takes the same route as a GPU; then
+implicitfast with the cap for entries of 8 or fewer free bodies, behind the free-flight laws.

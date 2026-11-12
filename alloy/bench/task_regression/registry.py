@@ -43,7 +43,7 @@ T12_SB7_CPU = TaskCheck(
         MetricCheck("episodes", "band", lo=16.0, hi=16.0, why="the batch ran all 16 episodes")))
 
 DC3_C13 = TaskCheck(
-    id="DC3.c13_forces", title="DC3 C13 latch_d22 plug: insertion and withdrawal force at mu 0.5 (route impratio)",
+    id="dc3.c13_forces", title="DC3 C13 latch_d22 plug: insertion and withdrawal force at mu 0.5 (route impratio)",
     owner="WP3", part="cpu", runner=f"{_A}.dc3:c13_forces", seeds=(), est_s=90.0, device="cpu",
     command="python bench/dc/conn/c13/c13_rows.py insertion_mu0.5_route OUT; ... withdrawal_mu0.5_route OUT",
     source="docs/notes/dc3-c13-results.md:58-59, 85-87; coordinator ruling 2026-11-05 13:08Z (scr/WP3.md)",
@@ -57,7 +57,7 @@ DC3_C13 = TaskCheck(
         MetricCheck("invalid_worlds", "band", hi=0.0, why=_NO_INVALID)))
 
 DC3_SFP = TaskCheck(
-    id="DC3.sfp_ensemble", title="DC3 SFP+: insertion ensemble, 16 starts at rung 1 (mu 0.53, impratio 300)",
+    id="dc3.sfp_ensemble", title="DC3 SFP+: insertion ensemble, 16 starts at rung 1 (mu 0.53, impratio 300)",
     owner="WP3", part="cpu", runner=f"{_A}.dc3:sfp_ensemble", seeds=(), est_s=60.0, device="cpu",
     command="pytest tests/tasks/test_dc_conn_sfp_forces.py -k 'ensemble_vs_f64 and 1'",
     source="tests/tasks/test_dc_conn_sfp_forces.py:99-139 (coordinator ruling 2026-11-05 23:00Z, DC3 agreed)",
@@ -235,7 +235,7 @@ T12_SB7_GPU = TaskCheck(
                     "2026-11-06 06:23Z: the regression tasks request it); off, the GPU rows stop repeating")))
 
 DC2_ETH = TaskCheck(
-    id="DC2.eth_swap_nocable", title="DC2 Ethernet swap without the cable (port 1 -> 3, v2): 64 seed-0 worlds",
+    id="dc2.eth_swap_nocable", title="DC2 Ethernet swap without the cable (port 1 -> 3, v2): 64 seed-0 worlds",
     owner="WP2", part="nightly", runner=f"{_A}.dc2:eth_swap_nocable", seeds=(0,), est_s=1080.0, device="cuda:0",
     command="python bench/dc/episode/eth_batch.py --parts real --no-cable --route-profile default --nconmax 400 "
             "--njmax 300 --layouts random --worlds 1024 --seed 0 --solver v2 --max-sim-s 300 --only 0,...,63 --out DIR",
@@ -249,7 +249,7 @@ DC2_ETH = TaskCheck(
                     "DC 1)")))
 
 DC3_QSFP = TaskCheck(
-    id="DC3.qsfp_starts64", title="DC3 QSFP DAC: the first 64 starts of the seed-0 batch (pull and re-seat)",
+    id="dc3.qsfp_starts64", title="DC3 QSFP DAC: the first 64 starts of the seed-0 batch (pull and re-seat)",
     owner="WP3", part="nightly", runner=f"{_A}.dc3:qsfp_starts", seeds=(0,), est_s=950.0, device="cuda:0",
     command="python -m alloy.tasks.dc_conn_qsfp_bench --device cuda --starts 64 --offset 0 --seed 0",
     source="docs/notes/dc3-qsfp-results.md:105-115 (1,024/1,024, 0 INVALID, main cd43da5c)",
@@ -259,7 +259,7 @@ DC3_QSFP = TaskCheck(
         MetricCheck("invalid_worlds", "band", hi=0.0, why=_NO_INVALID)))
 
 JOB1_PRESS = TaskCheck(
-    id="JOB1.first_press_w0", title="JOB1 first press: world 0 of seed 1000 to 8 s (cucumber in VBD, BladeContact)",
+    id="job1.first_press_w0", title="JOB1 first press: world 0 of seed 1000 to 8 s (cucumber in VBD, BladeContact)",
     owner="WP10", part="nightly", runner=f"{_A}.job1:first_press_w0", seeds=(1000,), est_s=750.0, device="cuda:0",
     command="python bench/jobs/slice/run.py --worlds 1 --seed 1000 --first 0 --max-sim-s 8 --plan clear=fingers "
             "--out DIR (assets b2956b8+)",
@@ -321,7 +321,7 @@ SC_C6_W0 = TaskCheck(
                     "(precise_judge.judge_c6)")))
 
 DC1_SCENE = TaskCheck(
-    id="DC1.eth_scene", title="DC1 Ethernet scene on CPU: start latched, 89 N hold, release, insert (S4), latch, pen",
+    id="dc1.eth_scene", title="DC1 Ethernet scene on CPU: start latched, 89 N hold, release, insert (S4), latch, pen",
     owner="WP2", part="nightly", runner=f"{_A}.dc1:eth_scene", seeds=(), est_s=1100.0, device="cpu",
     command="python bench/dc/eth/checks.py scene  (rows only: the adapter calls scene_rows('cpu'), no merge)",
     source="docs/notes/dc1-results.md:47-53 (S1-S6, pass); [internal note] DC 8",

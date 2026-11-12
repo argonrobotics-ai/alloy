@@ -37,12 +37,12 @@ On the CPU the default rig reads the same way (2,360 particles: inside 41-100 %,
   at 3-5 cm/s and the sleeves at 0.1-0.5 m/s, mostly up and down, on plain weave and jersey alike, with the
   acceleration off and at 120 iterations too. Particles over 0.25 m/s, of 2,360: 199-331 at 2e6 N/m, 86 at 2e5,
   14-30 at 2e4, 0-4 at 2e3. The contact's damping (Newton's 10) alone keeps a 2e3 N/m fold moving; with it off the
-  fold rests under 1 cm/s. It is the pair that rests a fold, not the stiffness alone: on WP2's towel folded in
-  thirds (CPU, 8 starts, [internal note] `scr/WP2.md`, sweep 4) the route's 2e6 N/m with damping 10 ended 0.03-0.06 m/s
+  fold rests under 1 cm/s. It is the pair that rests a fold, not the stiffness alone: on a towel folded in
+  thirds (CPU, 8 starts, a development sweep) the route's 2e6 N/m with damping 10 ended 0.03-0.06 m/s
   short of rest on every start, 2e4 with the damping on failed a gate on 4 of 8 (the worst setting), and 2e3 with
   the damping off rested on all 8 (0.001 m/s, extent 11.9-12.1 mm, 0 crossings).
 - Not the cause: the card's bending. An earlier version of this page blamed the plain weave's bending rigidity
-  and the missing bending hysteresis. The jersey card with hysteresis (gap #4 slice 1) keeps a sleeve inside the
+  and the missing bending hysteresis. The jersey card with hysteresis keeps a sleeve inside the
   body better at 20 mm cells (93-100 %) but does not make it lie flat, and plain weave passes on the fine rig.
 
 ## Workaround

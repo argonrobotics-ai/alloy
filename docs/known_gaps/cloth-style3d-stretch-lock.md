@@ -11,7 +11,7 @@
 ## Number
 - Woven fabrics from KES-F data on a Cusick drape rig (Petrak 2021 F1 / F4 / F9, `alloy.scene.twins.fabric_rig` arm A,
   8 mm cells, 1.25 ms steps): ratio 9,700 (F1) and 2,900 (F9). They drape to DC 0.98-0.99, against measured 0.22-0.65.
-- Its own levers barely help (DC5, rim sag at 0.7 s):
+- Its own levers barely help (rim sag at 0.7 s):
 
   | change | rim sag at 0.7 s |
   |---|---|
@@ -30,7 +30,7 @@
 ## Why
 Style3D solves each step with a fixed matrix built once from the stretch and bending stiffness (projective dynamics).
 When its diagonal outweighs the inertia term m/dt² by about a thousand per vertex, each of its iterations releases only
-a little out-of-plane motion, so the sheet creeps instead of falling. DC5 ruled out the card's units, gravity, the
+a little out-of-plane motion, so the sheet creeps instead of falling. Probes ruled out the card's units, gravity, the
 clamp, bending and contact (bending ÷1000 leaves the sag unchanged). The build warns, with the ratio: "a Style3D
 cloth (an elastic.cloth card) is stiff in stretch for its step" (`alloy.scene.style3d_lock`, threshold 1,000).
 
@@ -41,6 +41,6 @@ cloth (an elastic.cloth card) is stiff in stretch for its step" (`alloy.scene.st
 - A coarser mesh lowers the ratio (cell size squared), at the cost of resolution.
 
 ## Planned fix
-None planned. A disclosed tensile cap on the Style3D route needs a coordinator ruling (DC5: F9 at 0.651 against 0.647
-with warp and weft capped, F1 0.347 against 0.222). Sources: DC5's probe notes and ratio script, and
-DC5's write-up of 2026-11-08 (not shipped).
+None planned. A disclosed tensile cap on the Style3D route needs a decision (F9 at 0.651 against 0.647
+with warp and weft capped, F1 0.347 against 0.222). Sources: probe notes, a ratio script and a
+write-up of 2026-11-08 (not shipped).

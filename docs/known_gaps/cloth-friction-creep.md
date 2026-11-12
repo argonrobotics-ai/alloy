@@ -12,7 +12,7 @@
 CPU, plain VBD (`SolverVBDAlloy`), main 8921e7718 (2026-11-10). A 4 x 12 cm cloth strip (1 cm cells, 1 g vertices,
 no gravity) hangs between two static pads that press each of its top 15 vertices with 1 N per pad (mu 0.3, so a
 limit of 0.6 N per vertex). A downward load on those vertices, ramped on over 0.1 s, at a fraction of the limit.
-Creep speed over the second half of a 1 s run ([internal note] `notes/wp11-stick/creep_probe.py`, `table_rows.txt`):
+Creep speed over the second half of a 1 s run (development notes, not shipped):
 
 | Load / limit | `friction_epsilon` | Iterations | Stock creep | Smoothed law | With the stick |
 |---|---|---|---|---|---|
@@ -29,11 +29,11 @@ Creep speed over the second half of a 1 s run ([internal note] `notes/wp11-stick
   limit but slips out at 0.98, as stock does (the solve does not converge so close to the limit; `rows_it40.txt`).
 - Past the limit (1.3x) both slide out at the same kinetic friction: the drops after 1 s agree within 0.2 %.
 - Coupled, per-vertex contacts (a gripper's two MuJoCo pads at 15 N on a hanging double towel, the lagged coupler, 10
-  iterations, a load of 0.3 of the limit on the 10-12 particles between the pads, [internal note]
-  `notes/wp11-stick/coupled_hold.py`): stock creeps 1.21 mm/s, every clamped particle drifting; with the stick
+  iterations, a load of 0.3 of the limit on the 10-12 particles between the pads; a development
+  script, not shipped): stock creeps 1.21 mm/s, every clamped particle drifting; with the stick
   7 of 12 stay within 0.03 mm and a few at the pads' edges shift both ways, a mean of 0.19 mm/s. The force the
   coupler hands the pads equals the load in both (3.84 N against 3.82 N).
-- Coupled, full-surface contacts as a gripper's fingers get them by default (SC4's pad rig, `run_hold`: two MuJoCo
+- Coupled, full-surface contacts as a gripper's fingers get them by default (a pad rig, `run_hold`: two MuJoCo
   pads at 15 N, the route's VBD at 40 iterations, `friction_epsilon` 1e-2, 1 s hold; CPU): stock at half the limit
   slides 2.99 mm and creeps 2.97 mm/s; with the stick 0.000 mm/s at 0.5 and at 0.9 of the limit (0.07 mm once, while
   the load comes on), and past it (1.2x) the cloth slides out of the pads as with stock.
@@ -54,8 +54,8 @@ Creep speed over the second half of a 1 s run ([internal note] `notes/wp11-stick
   - An anchor outlives its contact by 0.02 s, so a finger that chatters (lifts off and touches again) keeps it.
   - No vendored change: the anchors shift the contact records' body velocity, so the coupler's feedback to a gripper
     sees the same friction as the cloth.
-  - A sheet on a moving plate goes with it as with stock friction (a 10 cm sheet on a kinematic plate, CPU, [internal note]
-    `notes/wp11-stick/carried_after_fix.txt`): driven at 0.05 m/s it lags 0.33 mm (stock 0.35), at 0.3 m/s
+  - A sheet on a moving plate goes with it as with stock friction (a 10 cm sheet on a kinematic plate, CPU;
+    development notes, not shipped): driven at 0.05 m/s it lags 0.33 mm (stock 0.35), at 0.3 m/s
     11.3 mm (stock 11.3), and closes to 0 after the stop; tilted to half the friction angle it moves 0.29 mm while
     tilting (stock slides 3.7 mm downhill) and then holds (stock creeps 3 mm/s). An early version of the stick let a
     driven sheet fall behind at `friction_epsilon` (10 mm/s); a law pins that.
@@ -67,4 +67,4 @@ Creep speed over the second half of a 1 s run ([internal note] `notes/wp11-stick
   short.
 
 ## Planned fix
-- The stick by default for cloth, after the grasp law and the cloth environments pass with it (coordinator ruling).
+- The stick by default for cloth, after the grasp law and the cloth environments pass with it (a planned decision).

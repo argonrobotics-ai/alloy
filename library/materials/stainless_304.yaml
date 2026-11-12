@@ -46,6 +46,6 @@ plastic:
     value: 1648000000.0
     source: model
     unc: [1601000000.0, 1648000000.0]
-    note: 'ESTIMATE (derived, SCR-WP7-15): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 655 MPa (same bulletin),
-      eu = 1 − σy0/σu = 0.557 (EN 1993-1-4 Annex C, Rasmussen 2003, as Afshan & Gardner 2012 Eq. 13); unc: Swiss Steel 360
-      / 660 MPa gives 1601 MPa'
+    note: 'ESTIMATE (derived): H = (σu(1+eu) − σy0)/ln(1+eu), the secant to the true UTS; σu 655 MPa (same bulletin), eu =
+      1 − σy0/σu = 0.557 (EN 1993-1-4 Annex C, Rasmussen 2003, as Afshan & Gardner 2012 Eq. 13); unc: Swiss Steel 360 / 660
+      MPa gives 1601 MPa'

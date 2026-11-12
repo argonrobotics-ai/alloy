@@ -12,8 +12,8 @@
 ## Number
 CPU, the default cloth settings, main 03616d08c (2026-11-10). Cotton sheets of 16 x 16 vertices, 2 mm thick, 5 cm
 apart in height, released together over a ground plane. Measured per vertex column (the same grid vertex in every
-sheet) as the height difference to the sheet below; a column is crossed when that is 0 or less ([internal note]
-`audit/stack/work/review/gap13b`, RESULTS.md section 3, finding PHYSA-10):
+sheet) as the height difference to the sheet below; a column is crossed when that is 0 or less (an audit finding,
+not shipped):
 
 | Sheets | Time reached | Crossed columns | Smallest gap | Self-contact rows used |
 |---|---|---|---|---|

@@ -1,11 +1,28 @@
 [project]
 name = "alloy-engine"   # the import name is `alloy`
-version = "0.1.0"
-description = "Alloy: a multi-material, parallel physics engine for robot learning, built on Newton and MuJoCo Warp"
+version = "0.1.2"
+description = "Alloy: a multi-material, parallel physics engine for robot learning, built on Newton and MuJoCo Warp (Python 3.11 or 3.12)"
 requires-python = ">=3.11,<3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 readme = "README.md"
+# PyPI listing (GEO P1, 2026-11-11). No licence classifier: the licence is the SPDX `license` expression (PEP 639;
+# setuptools refuses both).
+keywords = ["physics engine", "robotics", "robot learning", "simulation", "cloth", "liquid", "soft body",
+            "reinforcement learning", "MuJoCo", "Newton", "Warp", "sim-to-real"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
 dependencies = [
     # Newton and MuJoCo Warp are bundled inside Alloy (alloy/_vendor, VENDORED.md: Newton 25b4603c = release-1.8
     # db915e1c + our patches, MuJoCo Warp v3.17.0 f34c6dd5), so installing Alloy never touches a newton or mujoco-warp of your own.
@@ -53,11 +70,12 @@ viewer = ["viser>=1.1.1", "pyglet>=2.1.6,<3", "imgui_bundle>=1.92.0"]
 [project.scripts]
 alloy = "alloy.cli:main"   # JSON in and out
 
-# The docs site only: the repository stays private at launch (user rule 2026-11-11 17:10Z), so no Source or
-# Repository link until a GitHub launch.
+# The docs site, the repository and its issues.
 [project.urls]
 Homepage = "https://alloy.argonrobotics.ai"
 Documentation = "https://alloy.argonrobotics.ai/docs/"
+Repository = "https://github.com/argonrobotics-ai/alloy"
+Issues = "https://github.com/argonrobotics-ai/alloy/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

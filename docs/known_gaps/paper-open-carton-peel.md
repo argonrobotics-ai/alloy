@@ -1,7 +1,7 @@
 # Known gap: the open-carton peel throws a light body in some worlds (1 in 40 with the task's caps)
 
 ## What
-- `alloy/tasks/gift_carton_tape.py` (open-carton): the hook's tine holds the tape's tab (WP13's Bonds grip) and peels
+- `alloy/tasks/gift_carton_tape.py` (open-carton): the hook's tine holds the tape's tab (the Bonds grip) and peels
   the seam tape off at ~180 deg. In some worlds, at the moment the arm goes taut or in the first ~0.5 s of peeling, a
   light body is launched past 20 m/s: the hook's wrist or palm, or the -y major (31 g). That world goes INVALID
   (`sim.check()` reports it) and fails the task.
@@ -39,6 +39,6 @@
   `alloy.integration.wiring.build_simulation`.
 
 ## Planned fix
-- A public way to set the caps (`alloy.build`) is a post-launch SCR with OSS-3 (coordinator 2026-11-08 15:16Z: no
-  new public knob before launch). Caps on by default need the bag slowdown understood first (SC8).
+- A public way to set the caps (`alloy.build`) is a post-launch change (2026-11-08 15:16Z: no
+  new public knob before launch). Caps on by default need the bag slowdown understood first.
 - The rest (1 in 40) needs a converged film solve where the arm snaps taut.

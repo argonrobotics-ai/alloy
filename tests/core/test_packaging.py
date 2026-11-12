@@ -8,6 +8,7 @@ from __future__ import annotations
 import ast
 import shutil
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
@@ -149,7 +150,8 @@ def test_every_build_and_check_uses_the_same_docs_allow_list() -> None:
     name the same public docs and the same alloy/_data files: AGENTS.md and the allow-listed docs, never docs/ whole."""
     lists = {p: _constants(ROOT / p) for p in ("setup.py", "tools/deps/stage.py", "tools/release/stage_release.py")}
     assert all(v == lists["setup.py"] for v in lists.values()), lists
-    assert lists["setup.py"] == {"DOCS_PUBLIC": ("public", "known_gaps", "guide"), "DATA_FILES": ("AGENTS.md",)}
+    assert lists["setup.py"] == {"DOCS_PUBLIC": ("public", "known_gaps", "guide"),
+                                 "DATA_FILES": ("AGENTS.md", "llms.txt")}
     assert not {"notes", "oss", "research", "ENV.md", "SPEC.md"} & set(lists["setup.py"]["DOCS_PUBLIC"])
     assert all((ROOT / "docs" / n).exists() for n in lists["setup.py"]["DOCS_PUBLIC"])
 
@@ -178,3 +180,56 @@ def test_pip_install_stages_only_the_public_docs_and_agents_md(tmp_path) -> None
                        "docs/public/index.md", "examples/x/y.py"]   # RENDER.md, benchmarks/ stay in the repo
     shutil.rmtree(root / "docs" / "known_gaps")
     _stage_public_docs()(root, data)            # a rebuild replaces the staged copy
+
+
+def test_version_reads_the_installed_dist_info_and_never_raises(tmp_path) -> None:
+    """GEO P3: 0.1.0.post1 reported 0.1.0. ``alloy.__version__`` is the one ``alloy_engine-<v>.dist-info`` beside the
+    package, else the source line (a checkout, an editable install, none or two found, an unreadable folder)."""
+    import alloy
+
+    site = tmp_path / "site"
+    (site / "alloy").mkdir(parents=True)
+    assert alloy._installed_version("9.9", str(site / "alloy")) == "9.9"                 # nothing installed here
+    (site / "alloy_engine-0.1.0.post1.dist-info").mkdir()
+    (site / "numpy-2.0.0.dist-info").mkdir()
+    assert alloy._installed_version("9.9", str(site / "alloy")) == "0.1.0.post1"
+    (site / "alloy_engine-0.1.1.dist-info").mkdir()
+    assert alloy._installed_version("9.9", str(site / "alloy")) == "9.9"                 # two: do not guess
+    assert alloy._installed_version("9.9", str(tmp_path / "gone" / "alloy")) == "9.9"   # never raises
+
+
+def test_a_checkout_reports_its_pyproject_version_and_an_install_its_dist_info(tmp_path) -> None:
+    import alloy
+
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    assert alloy.__version__ == version
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "alloy").symlink_to(ROOT / "alloy", target_is_directory=True)               # an installed layout
+    (site / "alloy_engine-0.1.0.post1.dist-info").mkdir()
+    out = subprocess.run([sys.executable, "-I", "-c", f"import sys; sys.path.insert(0, {str(site)!r}); import alloy; "
+                          "print(alloy.__version__, alloy.__file__)"], cwd=tmp_path, capture_output=True, text=True,
+                         check=True).stdout.split()
+    assert out == ["0.1.0.post1", str(site / "alloy" / "__init__.py")]
+
+
+def test_python_dash_m_alloy_prints_the_command_help(tmp_path) -> None:
+    """GEO P3: ``python -m alloy`` failed with "No module named alloy.__main__"."""
+    p = subprocess.run([sys.executable, "-m", "alloy"], cwd=ROOT, capture_output=True, text=True, check=False)
+    assert p.returncode == 0 and p.stdout.startswith("usage: alloy") and "COMMAND" in p.stdout
+    v = subprocess.run([sys.executable, "-m", "alloy", "--version"], cwd=ROOT, capture_output=True, text=True,
+                       check=False)
+    assert v.returncode == 0 and tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"] in v.stdout
+
+
+def test_fetching_textures_without_huggingface_hub_names_the_import_extra(monkeypatch, tmp_path, capsys) -> None:
+    """WEB-AUDIT (2): on a base install ``python -m alloy.looks --fetch-textures`` ended in a traceback whose fix
+    led with ``pip install huggingface_hub``. It now prints one error and leads with the import extra (exit 2)."""
+    from alloy.looks.__main__ import main
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", None)        # as on a base install: the import fails
+    monkeypatch.setenv("ALLOY_CACHE", str(tmp_path))
+    assert main(["--fetch-textures", "--family", "wood"]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("error: downloading from the Hugging Face Hub (library objects, texture sets) needs")
+    assert 'fix: pip install "alloy-engine[import]"' in err and "Traceback" not in err

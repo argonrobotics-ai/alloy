@@ -5,7 +5,7 @@ density:
   source: catalog
   unc: [2600.0, 2750.0]
   note: 'grain (solid) density: a granular card''s density is its grain density and grain_mpm fills at bulk = 0.6 x density
-    (WP1''s card ruling 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
+    (card rule of 2026-11-06; alloy.scene.emitters.deformable.mpm_density): 1590 kg/m3 here. Mineral soil particle density
     2.60-2.75 g/cm3, 2.65 the standard value (quartz specific gravity 2.65, https://en.wikipedia.org/wiki/Quartz). Measured
     bulk: rho = rho_d (1 + w) = 1460 x 1.0633 ~ 1552 kg/m3 at 6.33 % moisture (https://phd.mater.uni-mate.hu/671/1/Alaa_El_Hariri_Dissertation_doi.pdf,
     Sec 5); loose bulked moist sand ~1240-1370 (GeoStJohns 2019 paper 535, Table 1)'

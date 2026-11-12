@@ -124,7 +124,7 @@
         1,
         16
       ],
-      "notes": "The render-gates DC5 grid's weights at this size (the same file as v0_128): what its gate claims were measured with; kept when the default moved to v2."
+      "notes": "The render-gates grid's weights at this size (the same file as v0_128): what its gate claims were measured with; kept when the default moved to v2."
     },
     "dc5_640": {
       "file": "dn_v0_640.pt",
@@ -135,7 +135,7 @@
         1,
         16
       ],
-      "notes": "The render-gates DC5 grid's weights at this size (the same file as v0_640): what its gate claims were measured with; kept when the default moved to v2."
+      "notes": "The render-gates grid's weights at this size (the same file as v0_640): what its gate claims were measured with; kept when the default moved to v2."
     },
     "c3_1280": {
       "file": "dn_c3_1280.pt",

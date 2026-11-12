@@ -41,4 +41,4 @@ armature 1.01 kg, a 2 N push, CPU, 1.25 ms step:
 ## Planned fix
 An implicit joint damper set per world by the plug-in (the needle's A²/G only while liquid flows), so the armature can
 drop to the plunger's own mass. That needs a plug-in hook to the solvers' per-world joint damping on both CPU and GPU
-routes (WP8; the syringe tasks are ported, merged 43f77f638).
+routes (the syringe tasks are ported, merged 43f77f638).
