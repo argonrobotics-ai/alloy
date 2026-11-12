@@ -5,7 +5,6 @@
   "folders": ["docs/public"],
   "excludeFolders": [],
   "rules": [
-    "Install with pip install alloy-engine; the import name is alloy. pip install alloy installs a different project.",
-    "Alloy is not related to Alloy Robotics, Grafana Alloy or the Alloy modelling language."
+    "Install with pip install alloy-engine; the import name is alloy."
   ]
 }
