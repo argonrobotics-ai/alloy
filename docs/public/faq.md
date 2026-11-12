@@ -14,15 +14,9 @@ Alloy's own solver.
 
 Argon Robotics.
 
-## Is this the same as Alloy Robotics, Grafana Alloy, alloy-rs or the Alloy modelling language?
-
-No. Those are unrelated projects that share the name. This Alloy is the physics engine: its package is
-`alloy-engine` and its import name is `alloy`.
-
 ## How do I install it?
 
-In a Python virtual environment, run `pip install alloy-engine`. Do not run `pip install alloy`: that installs an
-unrelated package.
+In a Python virtual environment, run `pip install alloy-engine`. The import name is `alloy`.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate

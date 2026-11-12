@@ -19,10 +19,6 @@ uv venv -p 3.12 --seed && source .venv/bin/activate     # any machine with uv: f
 
 Alloy uses an NVIDIA GPU when it finds one (driver 580 or newer) and the CPU otherwise. Nothing else to set up.
 
-Alloy is the physics engine from Argon Robotics. The package is `alloy-engine`; the import is `alloy`.
-`pip install alloy` installs a different project. Alloy is not related to Alloy Robotics, Grafana Alloy or the Alloy
-modelling language.
-
 ## 2. Build a scene
 
 Sizes are full edge lengths in metres, masses in kilograms, and z points up.

@@ -11,10 +11,6 @@ one with pip in it; the [Quickstart](quickstart.md) has the full lines.
 
 Open source under [Apache-2.0](https://github.com/argonrobotics-ai/alloy/blob/main/LICENSE).
 
-Alloy is the physics engine from Argon Robotics. The package is `alloy-engine`; the import is `alloy`.
-`pip install alloy` installs a different project. Alloy is not related to Alloy Robotics, Grafana Alloy or the Alloy
-modelling language.
-
 ```python
 import alloy
 
