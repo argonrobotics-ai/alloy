@@ -1,0 +1,10 @@
+# Smithery: Alloy's MCP server runs locally over stdio as `alloy mcp`, from the alloy-engine package
+# (pip install alloy-engine). It takes no configuration.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: "alloy", args: ["mcp"] })
+  exampleConfig: {}
