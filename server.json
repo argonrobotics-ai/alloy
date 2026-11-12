@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.argonrobotics-ai/alloy",
+  "title": "Alloy physics engine",
+  "description": "A physics engine for robot learning: robots, cloth, liquids and cables in one scene, in many worlds.",
+  "websiteUrl": "https://alloy.argonrobotics.ai",
+  "repository": {
+    "url": "https://github.com/argonrobotics-ai/alloy",
+    "source": "github"
+  },
+  "version": "0.1.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "alloy-engine",
+      "version": "0.1.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

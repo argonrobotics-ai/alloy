@@ -138,6 +138,8 @@ claude mcp add alloy -- alloy mcp
 (`pip install "alloy-engine[import]"`). The server code is
 [`alloy/mcp/`](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp).
 
+<!-- mcp-name: io.github.argonrobotics-ai/alloy -->
+
 ## What is in the box
 
 What `pip install alloy-engine` puts in site-packages (`python -m alloy.docs` prints the docs, examples and
