@@ -73,6 +73,10 @@ https://alloy.argonrobotics.ai/llms.txt.
 
 ## Quick start
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/argonrobotics-ai/alloy/blob/main/notebooks/quickstart.ipynb)
+In a browser: the quick start notebook installs Alloy on Colab's free CPU runtime, drops a box, drapes a cloth and
+shows one rendered frame, in a few minutes.
+
 Drop a box onto a table and save its trajectory (`size` is full edge lengths in metres; under a minute on a CPU
 once kernels are cached):
 
