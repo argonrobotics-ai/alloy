@@ -1,21 +1,24 @@
-# MPM floors between grid planes: slow flows on the ground (sparse) or leaks through thin floors (dense)
+# MPM floors between grid planes: slow flows on the ground (sparse); thin floors leaked on the dense grid through 0.1.2
 
 **What is wrong.** Newton's MPM grids handle a wall well only when it lies on, or well inside, a plane of grid nodes.
-Alloy runs the sparse grid by default. Its node planes sit at half voxels, (k + 1/2) x voxel, so the ground (z = 0)
-lies exactly midway between two of them. Material resting directly on the ground then shears too little in its
-bottom one or two particle layers: pastes, viscous liquids and other flows along the ground run slow. Newton's dense
-grid has its planes on whole voxels, so the ground case is right. But a floor thinner than a voxel that rests on the
-ground (a 4 mm container floor) then has no node plane inside it, and particles leak through. The sparse grid holds
-such floors. Fills in containers are the common case, so sparse is the default (2026-11-07). Sparse
-entries warn once when their material starts within a voxel of a ground plane.
+Alloy runs the sparse grid by default. Its node planes sit at half voxels, (k + 1/2) x voxel, so the ground (z = 0) lies
+exactly midway between two of them. Material resting directly on the ground then shears too little in its bottom one or
+two particle layers: pastes, viscous liquids and other flows along the ground run slow. Newton's dense grid has its
+planes on whole voxels, so the ground case is right. But a floor thinner than a voxel that rests on the ground (a 4 mm
+container floor) then has no node plane inside it, and through 0.1.2 particles leaked through it. Every MPM step now
+ends by pushing particles that went into a collider back out to its surface (as Newton's own MPM examples do), so the
+dense grid holds the 4 mm floor measured too. The sparse grid holds such floors either way. Fills in containers are the
+common case, so sparse is the default (2026-11-07). Sparse entries warn once when their material starts within a voxel
+of a ground plane.
 
-**The number.** CPU, 5 mm voxel.
+**The number.** CPU, 5 mm voxel, solver tolerance 1e-5; each row reads the same with and without the push-out but
+the dense honey row.
 
 | Case | Sparse (default) | Dense (`ALLOY_MPM_GRID=dense`) |
 |---|---|---|
-| Newtonian film on the ground, 20 mm, 10 deg, 20 Pa·s: speed / analytic | 0.821 | 0.970 |
-| same, 200 Pa·s | 0.874 | 0.995 |
-| honey_box_150ml in liquid_box_56 (4 mm floor) after 0.3 s: lowest particle | 5.24 mm (rests on the floor) | -0.24 mm (leaks) |
+| Newtonian film on the ground, 20 mm, 10 deg, 20 Pa·s: speed / analytic | 0.822 | 0.970 |
+| same, 200 Pa·s | 0.851 | 0.995 |
+| honey_box_150ml in liquid_box_56 (4 mm floor) after 0.3 s: lowest particle | 5.24 mm (rests on the floor) | 3.95 mm (rests on the floor; -0.29 mm, leaking, without the push-out, as through 0.1.2) |
 
 A container that moved at many GPU worlds lost sand into or through its floor at every floor thickness measured
 (4, 6 and 10 mm): a separate fault, not this one, fixed for 64 worlds and below
@@ -25,9 +28,10 @@ On the sparse grid the film ratio is the same at a 2.5 mm voxel (0.811-0.817) an
 floor raised 1 mm (0.2 voxel) off the midplane gives 1.016. Rows and probes: the development scripts and result rows of
 a development ticket (not shipped).
 
-**Why.** Newton applies a collider at grid nodes: a node inside it takes the wall's velocity. A wall halfway between
-two planes couples the lowest particles to the wall too strongly; a floor with no node inside it has nothing to hold
-material out. Sparse: `grid_offset = 0.5` in `SolverImplicitMPM`. Dense: planes at `floor(bbox_min / voxel)`.
+**Why.** Newton applies a collider at grid nodes: a node inside it takes the wall's velocity. A wall halfway between two
+planes couples the lowest particles to the wall too strongly; a floor with no node inside it has nothing to hold
+material out during the step (the push-out at the step's end puts it back). Sparse: `grid_offset = 0.5` in
+`SolverImplicitMPM`. Dense: planes at `floor(bbox_min / voxel)`.
 
 **Workaround.** For a flow along the ground that has no floor thinner than a voxel (a film or pour speed, a paste
 spreading on the ground plane), ask for the dense grid: `ALLOY_MPM_GRID=dense`, an entry's `grid_type="dense"`, or

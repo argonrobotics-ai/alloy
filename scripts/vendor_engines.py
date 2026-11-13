@@ -41,13 +41,13 @@ NEWTON_VERSION, MJW_VERSION = "1.8.0rc1", "3.17.0"        # what pip reported fo
 NEWTON_EXCLUDE = (re.compile(r"^tests/"), re.compile(r"(^|/)\.gitignore$"))   # .gitignore: meaningless in a package
 MJW_EXCLUDE = (re.compile(r"_test\.py$"), re.compile(r"^conftest\.py$"), re.compile(r"^test_data/"))
 # Every Alloy file outside the vendored trees is rewritten (the release scan refuses any top-level engine import).
-# This script itself is skipped: its reviewed tables hold the upstream names.
+# This script is skipped (its tables hold the upstream names), and alloy/isaaclab/compat.py (Isaac Lab's mujoco_warp).
 # Scripts that target a given engine keep their own `import newton` / `import mujoco_warp`: xbench scenes (whichever
 # engine the benchmark provides: stock Newton, or Alloy's copy through the shim's alias), XB4 scripts (other engines'
 # installs: Isaac Lab's Newton, MuJoCo 4.0's), xbench results (what ran) and tools/deps (a user's own newton, OSS-2).
 ALLOY_SKIP = (re.compile(r"^alloy/_vendor/"), re.compile(r"^scripts/vendor_engines\.py$"),
               re.compile(r"^bench/xbench/scenes/(?!engine_shim\.py$)"), re.compile(r"^bench/xbench/xb4/"),
-              re.compile(r"^bench/xbench/results/"), re.compile(r"^tools/deps/"))
+              re.compile(r"^bench/xbench/results/"), re.compile(r"^(tools/deps/|alloy/isaaclab/compat\.py$)"))
 # Apache-2.0 4(b): every vendored .py file carries this notice under its licence header (the release adds none then).
 NOTICE = "# Vendored in Alloy: alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included."
 

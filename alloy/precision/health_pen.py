@@ -18,11 +18,16 @@ A landing or a bounce compresses a soft contact past the limit for a few steps b
 or a part pushed through a thin one, is wrong. ``check_mjw_contacts`` raises ``Accum.pen_native_fail`` to the worst
 contact's level (1 past its limit, ``NATIVE_HARD`` past its at-once limit); ``classify`` keeps the per-world clock in
 ``StepHealth.pen_deep_s`` (device-side, in the record: restored with it, graph-capturable).
+Contacts soft on purpose (physics ruling D, 2026-11-10 23:41Z; Menagerie ANYmal C's feet, solimp 0.015 1 0.03, rest
+17.2 mm deep): shapes marked by ``relax_soft_contacts`` (``scene.relax_contact_depth`` in the API) are judged on their
+depth past an allowance (``contact_allowance``: the contact's own solimp width when wider than MuJoCo's 1 mm, or a
+stated depth), for PEN_WARN, PEN_FAIL and START_PEN alike; the reported depths stay the true ones.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import warp as wp
@@ -147,6 +152,12 @@ def designed_pair(thin: wp.float32, pair_mark: wp.array[wp.int32], sa: int, sb: 
 Pairs = Sequence[tuple[Sequence[str], str]]
 
 
+def health_monitor(sim: object) -> Any:
+    """The ``HealthMonitor`` of an engine simulation (or the monitor itself); None when health is off."""
+    health = getattr(sim, "health", None)
+    return next((m for m in (sim, health, getattr(health, "health", None)) if hasattr(m, "_pair_mark")), None)
+
+
 def relax_designed_overlap(sim: object, pairs: Pairs, *, require_all: bool = True) -> list[list[int]]:
     """Hold the contacts WITHIN each designed pair to the 1 cm / 2 cm limits alone: the thin-part limit no longer
     applies between two shapes of the same entry, and still applies between each of them and every other shape
@@ -158,8 +169,7 @@ def relax_designed_overlap(sim: object, pairs: Pairs, *, require_all: bool = Tru
     that names no shape, so a renamed part cannot silently lose its mark; ``require_all=False`` (a rig whose scenes
     leave parts out) skips an entry with a missing shape and raises only when no entry is whole.
     Example: ``relax_designed_overlap(sim, [(("contact0_top", "module_card"), "0.20 mm drawn preload")])``."""
-    health = getattr(sim, "health", None)
-    monitor = next((m for m in (sim, health, getattr(health, "health", None)) if hasattr(m, "_pair_mark")), None)
+    monitor = health_monitor(sim)
     if monitor is None:                                   # health off: nothing to relax
         return []
     labels = [str(lb) for lb in getattr(monitor.model, "shape_label", None) or monitor.model.shape_key]
@@ -180,3 +190,54 @@ def relax_designed_overlap(sim: object, pairs: Pairs, *, require_all: bool = Tru
         raise ValueError(f"relax_designed_overlap: no entry has all its shapes in this scene ({[p[0] for p in pairs]})")
     monitor._pair_mark.assign(mark)
     return groups
+
+
+SOLIMP_WIDTH = wp.constant(0.001)   # MuJoCo's default solimp width (m); a wider one is a contact made soft on purpose
+FROM_SOLIMP = -1.0                  # ``_shape_allow`` entry: the contact's own solimp width (``relax_soft_contacts``)
+
+
+@wp.func
+def shape_allowance(shape_allow: wp.array[wp.float32], s: int, width: wp.float32) -> wp.float32:
+    """One shape's allowance in a contact of solimp width ``width``: 0 unmarked, its stated depth, or (marked
+    ``FROM_SOLIMP``) ``width`` when wider than MuJoCo's 1 mm default."""
+    if s < 0 or s >= shape_allow.shape[0]:
+        return 0.0
+    a = shape_allow[s]
+    if a < 0.0:
+        return wp.where(width > SOLIMP_WIDTH, width, 0.0)
+    return a
+
+
+@wp.func
+def contact_allowance(shape_allow: wp.array[wp.float32], sa: int, sb: int, width: wp.float32) -> wp.float32:
+    """How deep a contact may go before the PEN rule counts it: the larger allowance of its two shapes."""
+    return wp.max(shape_allowance(shape_allow, sa, width), shape_allowance(shape_allow, sb, width))
+
+
+def allowance_host(shape_allow: np.ndarray | None, sa: np.ndarray, sb: np.ndarray, width: np.ndarray) -> np.ndarray:
+    """``contact_allowance`` for host arrays of contacts (START_PEN's one-time judge); zeros when none is marked."""
+    out = np.zeros(len(sa), np.float64)
+    if shape_allow is None or not len(shape_allow) or not len(sa):
+        return out
+    for s in (sa, sb):
+        a = np.where(s >= 0, shape_allow[np.clip(s, 0, len(shape_allow) - 1)], 0.0).astype(np.float64)
+        own = np.where(width > float(SOLIMP_WIDTH), width, 0.0)
+        out = np.maximum(out, np.where(a < 0.0, own, a))
+    return out
+
+
+def relax_soft_contacts(sim: object, shape_ids: Sequence[int], depth: float | None = None) -> None:
+    """Judge the contacts of ``shape_ids`` on their depth past an allowance: ``depth`` (m), or with None each
+    contact's own MuJoCo solimp width when wider than the 1 mm default (a foot made soft on purpose: Menagerie ANYmal
+    C's solimp 0.015 1 0.03 gives 30 mm; a shape at the default keeps the full rule). PEN_WARN then fires 1 mm past
+    the allowance and PEN_FAIL 1 cm past it (0.1 s), and START_PEN alike; ``max_penetration_m`` and
+    ``peak_penetration_m`` stay the true depths. MuJoCo's own contacts only (rigid bodies and robots).
+    ``sim``: an engine simulation or its ``HealthMonitor``; nothing happens with health off.
+    Example: ``relax_soft_contacts(sim.engine, feet)``; in the API, ``scene.relax_contact_depth("anymal")``."""
+    monitor = health_monitor(sim)
+    if monitor is None:
+        return
+    allow = monitor._shape_allow.numpy()
+    allow[np.asarray(list(shape_ids), dtype=np.int64)] = FROM_SOLIMP if depth is None else float(depth)
+    monitor._shape_allow.assign(allow)
+    monitor.start.shape_allow = allow

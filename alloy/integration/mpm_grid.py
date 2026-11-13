@@ -7,10 +7,12 @@ between two node planes; they differ in where their planes are. Sparse: planes a
 particle layers of a flow on it shear too little (a 20 Pa s film on a 10 deg slope: 0.82 of the analytic speed at any
 voxel or dt). Dense: planes on whole voxels (grid min = floor(bbox_min / voxel)), so flows on the ground are right
 (0.970, 200 Pa s 0.995), but a floor thinner than a voxel resting on the ground has no node plane inside it and
-leaks particles (honey in liquid_box_56's 4 mm floor: min z -0.24 mm in 0.3 s; sparse holds). Fills in containers are
-the common case, so sparse stays the default; ``ALLOY_MPM_GRID=dense``, an entry's ``grid_type`` or
-``grid_override("dense")`` (law rigs: the film laws on the ground) ask for dense. ``warn_sparse_ground`` warns once
-when a sparse entry starts with material within a voxel of a ground plane. Known gap: mpm-sparse-floor-offset.md.
+leaked particles until every MPM step ended by pushing them back out of colliders (``mpm_project``): honey in
+liquid_box_56's 4 mm floor has its lowest particle at -0.29 mm after 0.3 s without the push-out, 3.95 mm with it
+(sparse: 5.24 mm either way). Fills in containers are the common case, so sparse stays the default;
+``ALLOY_MPM_GRID=dense``, an entry's ``grid_type`` or ``grid_override("dense")`` (law rigs: the film laws on the
+ground) ask for dense. ``warn_sparse_ground`` warns once when a sparse entry starts with material within a voxel of a
+ground plane. Known gap: mpm-sparse-floor-offset.md.
 
 A dense grid covers the particles' bounding box, every step, so grains that fly off (an ejected grain falling for
 seconds) would grow it without bound: ``guard_dense_grid`` checks each allocation against

@@ -111,6 +111,30 @@ def test_degrees_and_empty_motion_are_refused(arm_file, arm_kit):
     assert err.value.field == "robot"
 
 
+def test_unknown_fit_option_is_a_sysid_error(arm_file):
+    with pytest.raises(S.SysidError) as err:
+        S.fit(arm_file, "take.csv", columns=[0, 2])
+    assert err.value.field == "columns" and "state_columns" in err.value.fix
+
+
+@pytest.mark.timeout(900)
+def test_recording_labelled_by_actuator_is_fitted_by_joint(arm_file, arm_kit, tmp_path):
+    """A robot file with named actuators (as MuJoCo Menagerie's ``actuator1`` on ``joint1``)."""
+    from alloy.sysid.recording import Recording
+    from alloy.sysid.robot import actuator_joints
+
+    text = open(arm_file).read().replace('<position joint="shoulder"', '<position name="motor_s" joint="shoulder"')
+    text = text.replace('<general joint="elbow"', '<general name="motor_e" joint="elbow"')
+    named = tmp_path / "named.xml"
+    named.write_text(text)
+    assert actuator_joints(named) == {"motor_s": "shoulder", "motor_e": "elbow"}
+    assert actuator_joints("panda")["actuator1"] == "joint1" and actuator_joints(arm_file) == {}
+    rec = _recording(named, arm_kit[1], seconds=2.0)
+    by_actuator = Recording(["motor_s", "motor_e"], rec.episodes, rec.source, rec.notes)
+    result = S.fit(named, by_actuator, worlds=16, generations=2, seed=0, device="cpu")
+    assert result.joints == ["shoulder", "elbow"]
+
+
 def _law(robot, joints, device, worlds, generations, seconds):
     rec, hidden = S.demo(robot, joints, seconds=seconds, noise=2e-4, seed=0, device=device)
     result = S.fit(robot, rec, worlds=worlds, generations=generations, seed=0, device=device)

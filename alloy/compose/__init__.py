@@ -42,11 +42,12 @@ def search(query: str, hints: tuple[str, ...] = (), k: int = 10, *, roots: tuple
     """Library objects matching ``query`` as JSON rows (name, score, source, title, placeable, reason, size).
 
     ``placeable=True`` reads and measures each hit (slower, but says whether the builder can use it); imported
-    objects whose files are not on disk are reported as such (search never downloads).
-    Example: ``alloy.compose.search("mug", k=3)``."""
+    objects whose files are not on disk are reported as such: search never downloads an object. On a fresh install
+    (no imported library) it lists the object library on the Hugging Face Hub from the Hub's index, each object not
+    fetched yet with the ``alloy fetch <name>`` that gets it. Example: ``alloy.compose.search("mug", k=3)``."""
     from alloy.compose.catalog import Catalog  # noqa: PLC0415
 
-    cat = Catalog(roots, fetch=False)
+    cat = Catalog(roots, fetch=False, hub_index=True)
     rows = []
     for m in cat.search(query, hints, k=k):
         row = m.to_dict()

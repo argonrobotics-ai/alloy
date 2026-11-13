@@ -203,6 +203,33 @@ def test_the_same_read_takes_one_stage_on_young_paste_and_two_on_old(whole) -> N
     assert deep.count == ST.S_MAX and max(max(p) for p in deep.predicted if p is not None) > ST.HOLD_PLAN
 
 
+def test_every_planned_set_down_clears_the_paste_it_predicts_under_the_blade(whole, monkeypatch) -> None:
+    """WP15 ruling 7: every run the plan sets down sits at least ``SET_DOWN_CLEAR`` (20 um: twice the 7.3 um the
+    16-world line af3297 pressed, the ruling's floor above it) over the highest paste the plan predicts under the blade
+    at its start, on each line's start read and on a read standing exactly at its level (``touch`` 0: af3297's
+    presses). Without the clearance the second read sets down at 0 um over the paste."""
+    assert ST.SET_DOWN_CLEAR >= max(2.0 * 2.93e-11 / 0.002**2, 2.0e-5)
+    real, seen = MG.touch, []
+
+    def spy(run, level, h, f):
+        seen.append((level, MG.under_start(run, h, f)))
+        return real(run, level, h, f)
+
+    monkeypatch.setattr(MG, "touch", spy)
+    f, at_level = whole.f, 0
+    for d in whole.plan.downs:
+        tau = _tau(whole.task, f, d.t)
+        for h in (np.asarray(f["h"], dtype=float), np.full(np.asarray(f["h"]).shape, d.level)):
+            stages = [(st[0],) for st in ST.read_line(d, h, f, tau).stages if st is not None]
+            seen.clear()
+            ups = [u for pair in ST.chain(d, stages, h, f, tau, read_touch=True)[1] for u in pair]
+            assert len(ups) == len(seen)
+            for (level, top), up in zip(seen, ups, strict=True):
+                assert level + up >= top + ST.SET_DOWN_CLEAR - 1e-12, (d.t, level, up, top)
+                at_level += int(top == level)
+    assert at_level > 0                                     # the touch-0 case was planned and cleared
+
+
 def test_a_stage_is_predicted_on_the_paste_the_one_above_left(whole) -> None:
     """Stage k's prediction cuts the read clipped at stage k-1's level: a ridge over a flat read needs less in its
     second stage than as one cut, and a stage that cuts nothing predicts nothing."""

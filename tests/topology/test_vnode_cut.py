@@ -24,6 +24,7 @@ import warp as wp
 from scipy.spatial import ConvexHull
 
 from alloy._vendor import newton
+from alloy.core.errors import AssemblyError
 from alloy.testing.topology import blade_pose, soft_kwargs
 from alloy.topology.tet_copies import (add_tet_copies, fraction_from_params, positive_fraction, positive_fraction_np,
                                        vec6)
@@ -410,8 +411,9 @@ def test_copies_refuse_a_heavier_density_than_the_mesh() -> None:
 def test_the_cutter_refuses_two_blades_in_one_world() -> None:
     m, rec, _, body = _one_tet(X_CUT)
     blade = Blade(body=body, shape=-1, edge_a=(0.0, -0.05, -0.02), edge_b=(0.0, 0.05, -0.02))
-    with pytest.raises(ValueError, match="one blade per world"):
-        VNodeCutter(m, rec, [blade, blade], 1.6e-3)
+    with pytest.raises(AssemblyError, match="one blade per world") as err:      # an Alloy error with its way out:
+        VNodeCutter(m, rec, [blade, blade], 1.6e-3)                               # alloy.build raises BuildError
+    assert "cut_model: seams" in err.value.fix
 
 
 def test_mid_stroke_deviation_counts_only_crossings_the_edge_has_passed() -> None:

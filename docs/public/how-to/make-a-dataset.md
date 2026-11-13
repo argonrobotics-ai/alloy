@@ -45,6 +45,8 @@ generate(env, demonstrator(env), [writer], episodes=4, seed=0)
 - `demonstrator` ships for `GripperLift-v0`, `GripperLiftCamera-v0` and `PickPlace-v0` only; for other tasks write a
   `PhaseScript`.
 - `keep="success"` is the default: failed and invalid episodes are not saved.
+- The recorder needs a `VectorEnv` (a ready-made task or a `Task` of your own), not a task port or a Gymnasium
+  wrapper.
 - A LeRobot dataset has no start states, so use the HDF5 file when you want to replay episodes.
 - Full list: [Keep in mind](../keep-in-mind.md).
 
@@ -53,3 +55,5 @@ generate(env, demonstrator(env), [writer], episodes=4, seed=0)
 - Record and evaluate in more detail: [Imitation learning](../guides/imitation.md).
 - Train a policy with RL instead: [Train with RL](../guides/rl.md).
 - Check a run before you trust it: [World health](../guides/health.md).
+- Related: [record a LeRobot dataset](lerobot-dataset.md),
+  [imitation data with liquids](imitation-data-with-liquids.md).

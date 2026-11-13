@@ -41,6 +41,8 @@ if "FAST_CONTACT" in HealthFlags.__members__:  # GAP-E2: a body closed on a stat
     SPEC_FLAG_TABLE["FAST_CONTACT"] = (S2, Severity.DEGRADED)
 if "TUNNEL" in HealthFlags.__members__:  # GAP-E2: a body passed through a static shape (INVALID)
     SPEC_FLAG_TABLE["TUNNEL"] = (S1, Severity.INVALID)
+if "QUASI_STATIC" in HealthFlags.__members__:  # GAP #6 slice 2b: a mass-scaled solid moved too fast (DEGRADED)
+    SPEC_FLAG_TABLE["QUASI_STATIC"] = (S2, Severity.DEGRADED)
 # §4.3 bully-monitor rows: monitor -> (severity, threshold)
 SPEC_MONITOR_TABLE = {
     "nonfinite": (S1, 0.5), "capacity_overflow": (S1, 0.5), "teleport": (S1, 1.0), "max_speed": (S1, 20.0), "impossible_speed": (S1, 10.0),
@@ -82,7 +84,8 @@ def test_pre_registered_flag_rows():
     from alloy.bully.severity import _ADDED_FLAG_ROWS
 
     assert _ADDED_FLAG_ROWS == {"RUNG_PINNED": None, "STRAIN_RANGE": S2, "START_PEN": None, "SPIN": None,
-                                "CLOTH_STRETCH": S2, "SELF_CONTACT_OVERFLOW": S2, "FAST_CONTACT": S2, "TUNNEL": S1}
+                                "CLOTH_STRETCH": S2, "SELF_CONTACT_OVERFLOW": S2, "FAST_CONTACT": S2, "TUNNEL": S1,
+                                "QUASI_STATIC": S2}
 
 
 def test_energy_jump_and_far_from_origin_s1_levels_arrive_as_invalid():

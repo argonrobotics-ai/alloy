@@ -18,6 +18,11 @@ alone moved this drape (peak strain 0.364 % to 0.543 %, no world equal); vendore
 drape is then the build before the update bit for bit (``alloy/_vendor/VENDORED.md``; rows: [internal note]
 notes/wp11-bump/fastmath). The hash was taken on the update with the patch and equals main's before the update
 (PIN_ROWS). Re-key it, with the row, when a change is meant to move GPU cloth; an unexplained move is a regression.
+
+Re-keyed 2026-11-10 (DC5's nightly red on rc2 cd953fafd): WP11's SCR-WP11-F32 ``fb7d80a8a`` (VBD takes velocity and
+the inertia target from displacements, with a sub-ulp position remainder) moves this drape on purpose. On one L4 this
+test passes on its parent ``9e26d4a2b`` (the old hash d805149d..., 0.364 %, DC 0.7279) and fails on ``fb7d80a8a`` with
+this one (0.523 %, DC 0.7409), 64 identical worlds each; physics ruling 2026-11-10 20:27Z keeps it (PIN_ROWS).
 """
 
 from __future__ import annotations
@@ -36,9 +41,11 @@ MJW_L4 = 0.79              # MuJoCo Warp 4.0, L5 drape, 64 worlds, simulated s p
 SUPER_VS_MJW = 1.5
 DEFAULT_STRAIN_PCT = 0.6
 WORLDS = 64
-DEFAULT_BITS = "d805149d4ab8043dd58caf3767d0fa1f19b84a47ef9f528cf95048185b99213f"   # sha256, the L4's window frames
-PIN_ROWS = ("2026-11-10, one L4: the update with patch 0013 and main before the update (790a4eb73) both give this "
-            "hash, strain 0.364 %, DC 0.7279; the update with fast math on: dea4577a..., 0.543 %")
+DEFAULT_BITS = "9deb18300c5a121cebc1bc395069dffb68a191f5de3065540793a4d540ca027a"   # sha256, the L4's window frames
+PIN_ROWS = ("2026-11-10, L4s: SCR-WP11-F32 fb7d80a8a, rc1-1110 dc2759235 and rc2 cd953fafd give this hash, strain "
+            "0.523 %, DC 0.7409; fb7d80a8a's parent 9e26d4a2b gives the old pin d805149d..., 0.364 %, DC 0.7279. "
+            "This test on one L4 (2026-11-11): 9e26d4a2b passes on the old pin, fb7d80a8a fails with this hash, the "
+            "re-key passes ([internal note] notes/wp11-l4red; XB4-10's A/B frames xb4/raw/mujoco4/rc1_ab agree)")
 
 
 @pytest.fixture(scope="module")

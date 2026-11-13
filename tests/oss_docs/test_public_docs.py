@@ -26,6 +26,8 @@ NOT_PIP = re.compile(r"install\.sh|git clone|\bclone\b|pip install -e|conda |doc
 REPO_ONLY = re.compile(r"(?<![\w/])(?:bench|tests|tools|scripts)/[\w./-]+")   # paths a pip install does not have
 LICENCE_URL = "https://github.com/argonrobotics-ai/alloy/blob/main/LICENSE"   # the one GitHub link (Home)
 MCP_URL = "https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp"        # and the MCP server's code (agents page)
+COLAB_URL = ("https://colab.research.google.com/assets/colab-badge.svg)]"       # the quick start's notebook badge
+             "(https://colab.research.google.com/github/argonrobotics-ai/alloy/blob/main/notebooks/quickstart.ipynb")
 LONG_PAGES = {"keep-in-mind.md"}            # one line per known-limit page: as long as that list
 _BLOCK = re.compile(r"^```(python|text)\n(.*?)^```", re.S | re.M)
 _NUMBER = re.compile(r"-?\d+\.\d+(?:e-?\d+)?|-?\d+\.(?!\d)")
@@ -84,8 +86,20 @@ COMPARE = {"compare/index.md", "compare/mujoco.md", "compare/newton.md", "compar
 HOW_TO = {f"how-to/{name}.md" for name in (
     "mac-without-gpu", "camera-many-worlds", "coding-agents", "cable-or-wire", "quadruped-rl", "cloth-folding",
     "pour-liquid-robot-arm", "make-a-dataset", "evaluate-checkpoint")}
-NOT_RUN = {"how-to/evaluate-checkpoint.md": "needs rsl_rl and a trained checkpoint; run by hand on the 0.1.1 wheel"}
-ANSWERS = {"faq.md"} | HOW_TO | COMPARE     # one question per page; on the site but not in its menu
+HOW_TO |= {f"how-to/{name}.md" for name in (      # round 2
+    "gymnasium-vector-api", "imitation-data-with-liquids", "lerobot-dataset", "mjcf-robot-with-cloth-or-liquid",
+    "randomise-parallel-worlds", "squeeze-soft-object")}
+QUESTIONS = {f"answers/{name}.md" for name in (
+    "built-on-mujoco-warp-or-newton", "deformable-object-manipulation", "did-my-simulation-blow-up",
+    "error-messages", "gpu-parallel-engines-for-rl", "mcp-server-physics-engine",
+    "mujoco-models-with-liquids-and-sand", "new-robotics-simulators-2026", "open-source-multi-physics-engines",
+    "pip-installable-simulators", "robots-cloth-liquids-one-scene", "sand-and-granular-materials",
+    "soft-body-manipulation-python")}
+NOT_RUN = {"how-to/evaluate-checkpoint.md": "needs rsl_rl and a trained checkpoint; run by hand on the 0.1.2 wheel",
+           "how-to/lerobot-dataset.md": "needs the lerobot extra, which changes the numpy pin; run by hand on 0.1.2"}
+ANSWERS = {"faq.md"} | HOW_TO | COMPARE | QUESTIONS     # one question per page; on the site but not in its menu
+ONE_SENTENCE = {"answers/pip-installable-simulators.md":       # the only line of the set that names that product
+                "People looking for an alternative to Isaac Lab usually want a pip install and one GPU."}
 SCORECARD = "bench/scorecard/row6/capabilities.jsonl"    # the public file the compare pages take their cells from
 SET = NAV | ANSWERS
 
@@ -118,6 +132,7 @@ def test_answer_page_opens_with_the_answer(name) -> None:
     assert named, f"{name}: the first paragraph must name the engine and the install line"
     text = "\n".join(lines)
     assert "## Keep in mind" in text or "keep-in-mind.md" in text, f"{name}: no Keep in mind link"
+    text = " ".join(text.split()).replace(ONE_SENTENCE.get(name, "\0"), "")
     assert not re.search(r"isaac|physx|omniverse", text, re.I), f"{name}: names an engine this set does not discuss"
 
 
@@ -196,7 +211,7 @@ def test_agent_prompt_has_one_source() -> None:
 
 @pytest.mark.parametrize("page", PAGES, ids=_id)
 def test_page_is_short_and_pip_only(page) -> None:
-    text = page.read_text(encoding="utf-8").replace(LICENCE_URL, "").replace(MCP_URL, "")
+    text = page.read_text(encoding="utf-8").replace(LICENCE_URL, "").replace(MCP_URL, "").replace(COLAB_URL, "")
     if _id(page) in COMPARE:
         text = text.replace(SCORECARD, "")
     if _id(page) not in LONG_PAGES:

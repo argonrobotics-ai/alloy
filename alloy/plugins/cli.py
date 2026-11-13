@@ -11,7 +11,8 @@ Examples::
     python -m alloy.plugins check my_force/my_force/plugin.py --config '{"coefficient": 2.0}' --sandbox
     echo '{"command": "check", "target": "ink", "quick": true}' | python -m alloy.plugins --request -
 
-Exit codes: 0 ok (check passed), 1 check failed, 2 bad request or plug-in error.
+Exit codes: 0 ok (check passed), 1 check failed, 2 bad request or plug-in error. Every reply, errors included, is
+one JSON value on stdout; only ``--help`` prints text (on stderr).
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ import os
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from alloy.plugins.errors import PluginError
 
@@ -34,8 +35,17 @@ log = logging.getLogger("alloy.plugins")
 NO_FIX = "the message names what to change; `python -m alloy.plugins <command> --help` lists the arguments"
 
 
+class _Parser(argparse.ArgumentParser):
+    """argparse that raises PluginError instead of printing usage and exiting, so that a bad flag, command or
+    request option still gets a JSON reply (its sub-commands are made with this class too)."""
+
+    def error(self, message: str) -> NoReturn:
+        raise PluginError(f"bad arguments: {message}",
+                          fix=f"usage: {' '.join(self.format_usage().split())}; `{self.prog} --help` explains each")
+
+
 def _parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="python -m alloy.plugins", description=__doc__.splitlines()[0])
+    p = _Parser(prog="python -m alloy.plugins", description=__doc__.splitlines()[0])
     p.add_argument("--request", help="JSON request (or - for stdin): {'command': ..., <option>: ...}")
     sub = p.add_subparsers(dest="command")
     ls = sub.add_parser("list", help="registered plug-ins (built-ins + entry points)")
@@ -69,6 +79,8 @@ def _args_from_request(parser: argparse.ArgumentParser, raw: str) -> argparse.Na
     if not isinstance(req, dict) or "command" not in req:
         raise PluginError("--request needs a JSON object with a 'command'",
                           fix='add "command": one of list, describe, check, new')
+    if "speed" in req:                          # the Python API's speed=True/False; the CLI's flag is --no-speed
+        req["no_speed"] = not req.pop("speed")
     argv = [str(req.pop("command"))]
     for key in ("target", "name"):
         if key in req:
@@ -99,6 +111,7 @@ def _cmd_check(args: argparse.Namespace) -> tuple[Any, int]:
     if not isinstance(config, dict):
         raise PluginError("--config must be a JSON object of Config fields",
                           fix="pass e.g. --config '{\"coefficient\": 2.0}'; `describe <target>` lists the fields")
+    out_path = _out_path(args.out)
     if args.sandbox:
         from alloy.plugins.sandbox import sandboxed_check  # noqa: PLC0415
 
@@ -114,9 +127,22 @@ def _cmd_check(args: argparse.Namespace) -> tuple[Any, int]:
                               fix="check one at a time: pass 'module:Class' or its registered name")
         report = check(classes[0](config), device=args.device, quick=args.quick, speed=not args.no_speed)
     out = report.to_dict()
-    if args.out:
-        Path(args.out).write_text(json.dumps(out, indent=2))
+    if out_path is not None:
+        out_path.write_text(json.dumps(out, indent=2))
     return out, 0 if report.passed else 1
+
+
+def _out_path(raw: str | None) -> Path | None:
+    """``--out``, its folder made now (before the harness runs, so a bad path fails in seconds, not after it)."""
+    if not raw:
+        return None
+    path = Path(raw)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as err:
+        raise PluginError(f"cannot make the folder of --out {raw}: {err}",
+                          fix="pass --out a path in a folder you can write") from err
+    return path
 
 
 def _cmd_new(args: argparse.Namespace) -> tuple[Any, int]:
@@ -159,15 +185,21 @@ def main(argv: list[str] | None = None) -> int:
             if args.request:
                 args = _args_from_request(parser, args.request)
             if args.command not in COMMANDS:
-                parser.print_help(sys.stderr)
-                return 2
+                raise PluginError("no command given", fix=f"give one of {sorted(COMMANDS)}, e.g. "
+                                                          f"`python -m alloy.plugins list`; `--help` explains each")
             result, code = COMMANDS[args.command](args)
         except (PluginError, json.JSONDecodeError) as err:
-            fix = getattr(err, "fix", "") or NO_FIX
-            result, code = {"error": type(err).__name__, "message": str(err), "fix": fix}, 2
+            result, code = _error_reply(err), 2
+        except Exception as err:  # noqa: BLE001 - a plug-in's own code failed (an import, its Config): still JSON
+            log.error("python -m alloy.plugins: %s: %s", type(err).__name__, err, exc_info=True)
+            result, code = _error_reply(err, "the traceback above (stderr) shows the line; fix it and run again"), 2
         out.write(json.dumps(result, indent=2) + "\n")
         out.close()
     return code
+
+
+def _error_reply(err: Exception, fix: str = NO_FIX) -> dict[str, str]:
+    return {"error": type(err).__name__, "message": str(err), "fix": getattr(err, "fix", "") or fix}
 
 
 __all__ = ["main"]

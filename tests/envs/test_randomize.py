@@ -74,3 +74,96 @@ def test_masked_jitter_keeps_other_worlds_targets(env):
     env.reset(options={"reset_mask": np.array([True, False, False, False])})
     after = env.sim.engine.control.joint_target_q.numpy()[rows]
     assert np.allclose(after[1:], before[1:]) and abs(after[0] - env.state["gripper/lift.q"][0]) < 1e-6
+
+
+CUP = """<mujoco><worldbody><body name="cup" pos="0 0 0.06">
+  <joint name="x" type="slide" axis="1 0 0" range="-0.1 0.1" damping="50"/>
+  <geom type="box" size="0.032 0.032 0.003" pos="0 0 -0.03" mass="0.1"/>
+  <geom type="box" size="0.003 0.032 0.03" pos="0.032 0 0" mass="0.02"/>
+  <geom type="box" size="0.003 0.032 0.03" pos="-0.032 0 0" mass="0.02"/>
+  <geom type="box" size="0.032 0.003 0.03" pos="0 0.032 0" mass="0.02"/>
+  <geom type="box" size="0.032 0.003 0.03" pos="0 -0.032 0" mass="0.02"/></body></worldbody>
+  <actuator><position joint="x" kp="2000" kv="200"/></actuator></mujoco>"""
+
+
+def _cup_env(carry: tuple[str, ...], fill: str = "water", yaw: float = 0.0) -> VectorEnv:
+    """2 worlds: the cup on its slide (turned ``yaw`` rad about z), holding water or a small cloth, jittered by up
+    to 3 cm at each reset."""
+    import alloy.api as alloy
+    from alloy.envs import ActionSpec, Task
+
+    sc = alloy.Scene(dt=0.02)
+    sc.add_ground()
+    sc.add_robot("pourer", mjcf=CUP, rpy=(0.0, 0.0, yaw))
+    if fill == "water":
+        sc.add_liquid("water", size=(0.04, 0.04, 0.012), pos=(0.0, 0.0, 0.037))  # on the cup's floor (top z 0.033)
+    else:
+        sc.add_cloth("sheet", size=(0.04, 0.04), pos=(0.0, 0.0, 0.036), resolution=5, mass=0.005)
+    task = Task(obs=["pourer"], actions=ActionSpec(["pourer/x"], mode="delta", delta=0.005), max_steps=50,
+                randomize=[jitter_joint("pourer/x", by=0.03, carry=carry)])
+    return VectorEnv(sc, task, worlds=2, device="cpu", backend="numpy", seed=0)
+
+
+def _centre(env: VectorEnv, name: str) -> np.ndarray:
+    return np.asarray(env.sim.state([name])[f"{name}.points"], np.float64).mean(-2)       # (W, 3)
+
+
+def _slide(env: VectorEnv) -> np.ndarray:
+    return np.asarray(env.state["pourer/x.q"], np.float64).reshape(-1)
+
+
+@pytest.mark.compile_heavy
+@pytest.mark.parametrize(("carry", "carried"), [(("water",), True), ((), False)])
+def test_a_jittered_cup_carries_its_water(carry, carried):
+    """carry= takes a particle object: the water moves with the cup's slide (before, it stayed where the cup was and
+    a 3 cm jitter left 20-41 % of it outside the cup after 10 steps). Without carry: left behind, as before."""
+    env = _cup_env(carry)
+    start = _centre(env, "water")
+    env.reset(seed=1)
+    x, moved = _slide(env), _centre(env, "water") - start
+    env.close()
+    assert np.abs(x).max() > 0.01                                                # each world, by its own offset
+    assert np.allclose(moved[:, 0], x if carried else 0.0, atol=1e-5) and np.allclose(moved[:, 1:], 0.0, atol=1e-5)
+
+
+@pytest.mark.compile_heavy
+def test_a_partial_reset_moves_only_the_reset_worlds_water():
+    env = _cup_env(("water",))
+    start = _centre(env, "water")
+    env.reset(seed=1)
+    before, x_before = _centre(env, "water"), _slide(env)
+    env.reset(options={"reset_mask": np.array([True, False])})
+    after, x = _centre(env, "water"), _slide(env)
+    env.close()
+    assert x[0] != x_before[0] and np.isclose(after[0, 0] - start[0, 0], x[0], atol=1e-5)  # from its start, not again
+    assert x[1] == x_before[1] and np.array_equal(after[1], before[1])                     # untouched
+
+
+@pytest.mark.compile_heavy
+def test_a_turned_slide_carries_its_water_along_its_own_axis():
+    yaw = 0.6
+    env = _cup_env(("water",), yaw=yaw)
+    start = _centre(env, "water")
+    env.reset(seed=1)
+    x, moved = _slide(env), _centre(env, "water") - start
+    env.close()
+    axis = np.array([np.cos(yaw), np.sin(yaw), 0.0])                             # the slide's x, turned about z
+    assert np.abs(x).max() > 0.01 and np.allclose(moved, x[:, None] * axis[None, :], atol=1e-5)
+
+
+@pytest.mark.compile_heavy
+def test_a_jittered_tray_carries_its_cloth():
+    env = _cup_env(("sheet",), fill="cloth")
+    start = _centre(env, "sheet")
+    env.reset(seed=1)
+    x, moved = _slide(env), _centre(env, "sheet") - start
+    env.close()
+    assert np.abs(x).max() > 0.01 and np.allclose(moved[:, 0], x, atol=1e-5) and np.allclose(moved[:, 1:], 0.0,
+                                                                                           atol=1e-5)
+
+
+def test_carry_names_what_it_can_move():
+    task = gripper_lift_task()
+    task.randomize = [jitter_joint("gripper/lift", by=0.01, carry=["nothing"])]
+    with pytest.raises(EnvError, match="free object or a particle object"):
+        VectorEnv(gripper_lift_scene(2), task, worlds=2, device="cpu", backend="numpy")

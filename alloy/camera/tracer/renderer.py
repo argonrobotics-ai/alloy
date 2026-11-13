@@ -87,6 +87,20 @@ def make_params(st: RenderSettings, width: int, height: int, spp: int, sample_of
     return p
 
 
+def image_worlds(worlds, num_worlds: int) -> np.ndarray:
+    """The world of each image (int32): ``worlds``, or one image per world when None. A world outside
+    0..num_worlds-1 raises ``SimulationError``: the render kernel would read past its per-world arrays (a blank image
+    reported as fine, or a crash)."""
+    if worlds is None:
+        return np.arange(num_worlds, dtype=np.int32)
+    out = np.asarray(worlds, np.int64).reshape(-1)
+    bad = out[(out < 0) | (out >= num_worlds)]
+    if bad.size:
+        from alloy.api.errors import SimulationError  # noqa: PLC0415 - the error Sim.state raises for the same world
+        raise SimulationError(f"world {int(bad[0])} is outside 0..{num_worlds - 1}", "pass world=0 for the first")
+    return out.astype(np.int32)
+
+
 class Renderer:
     """Diffuse path tracer over a :class:`GpuScene`; image i looks into world ``worlds[i]`` (default: one per world)."""
 
@@ -96,7 +110,7 @@ class Renderer:
         self.sc, self.w, self.h = scene, int(width), int(height)
         self.st = settings or RenderSettings()
         self.block_dim = int(block_dim)
-        self.worlds = np.arange(scene.num_worlds, dtype=np.int32) if worlds is None else np.asarray(worlds, np.int32)
+        self.worlds = image_worlds(worlds, scene.num_worlds)
         self.n_img = len(self.worlds)
         dev = scene.device
         self.cams = Cams()

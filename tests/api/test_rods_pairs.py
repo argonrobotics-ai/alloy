@@ -76,7 +76,7 @@ def test_a_wire_dropped_on_a_film_sheet_is_refused_at_build(kind):
         alloy.build(sc, device="cpu")
     e = err.value
     assert "wire (elastic rod) on route rod_vbd and sheet (film sheet) on route cloth_film" in e.message
-    assert "chain route" in e.fix and "paper_a4" in e.fix
+    assert "chain route" in e.fix and "cotton_woven" in e.fix
     _plain(e)
 
 

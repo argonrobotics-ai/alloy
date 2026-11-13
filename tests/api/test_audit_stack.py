@@ -228,6 +228,6 @@ def test_save_to_a_relative_folder_writes_a_robot_path_that_loads(tmp_path: Path
     scene.add_robot("arm", mjcf=_arm(POSITION), pos=(0, 0, 0.6))
     card = scene.save("saved_scene").resolve()
     path = Path(yaml.safe_load(card.read_text(encoding="utf-8"))["robots"][0]["path"])
-    assert path.is_absolute() and path == (tmp_path / "saved_scene" / "robots" / "arm.xml").resolve()
+    assert path == Path("robots/arm.xml") and (tmp_path / "saved_scene" / path).is_file()   # from the card folder
     monkeypatch.chdir(tmp_path.parent)                                         # the card loads from anywhere
     assert "arm" in alloy.Scene.load(card).names()

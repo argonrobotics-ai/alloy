@@ -49,8 +49,9 @@ FIXES: tuple[tuple[str, str], ...] = (
 )
 MAX_BODIES = 3
 SUMMARY_KEYS = ("counts", "by_cause", "s1_upper95", "channel", "ordered_route", "horizon_s", "device", "seconds")
-REPLAY_HOW = ("from alloy.bully import replay_finding; replay_finding(handle, library=...)  # handle: this "
-              "replay's 'handle'; library: alloy.compose.library([your card folders]) if the scene uses them")
+REPLAY_HOW = ("import alloy.audit; from alloy.bully import replay_finding; replay_finding(replay['handle'], "
+              "library=alloy.audit.library(replay.get('library', [])))  # replay: this dict; 'library' lists the "
+              "card folders the scene needs")
 
 
 @dataclass

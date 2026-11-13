@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from dataclasses import dataclass, field
 from collections.abc import Sequence
 from typing import Any
 
@@ -46,7 +45,7 @@ from alloy.integration.mpm_grid import GridGuard, entry_cells, graph_cell_capaci
 from alloy.integration.precision_pin import RungPinWatch, pin_exchange
 from alloy.integration.precision_reach import (CoupledPrecisionContacts, check_isolated, describe_reach,
                                                rearm_each_step)
-from alloy.integration.profiles import IntegrationProfile, profile
+from alloy.integration.profiles import IntegrationProfile, contacts_for, profile
 from alloy.integration.simulation import IntegratedSimulation
 from alloy.integration.stepper import (CONTACT_FREE_DESTINATIONS, dynamic_entries, entry_solvers, make_stepper,
                                       mujoco_solver)
@@ -56,6 +55,7 @@ from alloy.precision.types import PrecisionConfig
 from alloy.route.mjc_core_config import CPU_ROUTE_KEY
 from alloy.scene.steppers import NewtonContacts, fallback_needs_rigid, needs_newton_contacts
 from alloy.scene.types import BuiltScene, EntrySpec
+from alloy.solvers.vbd import pair_mu
 
 log = logging.getLogger("alloy.integration")
 
@@ -65,7 +65,7 @@ ROWS_PER_CONTACT = 4          # njmax growth per appended contact (elliptic/pyra
 L1_INTEGRATORS = ("euler", "implicitfast")
 
 
-@dataclass
+@dataclasses.dataclass
 class Parts:
     """Everything ``wire`` built for one scene (``built`` may carry adjusted entry kwargs)."""
 
@@ -80,9 +80,9 @@ class Parts:
     gap_monitor: GapMonitorLike | None = None
     health: HealthLike | None = None
     topology: TopologyLike | None = None
-    contact_adjusters: list[Any] = field(default_factory=list)    # ContactAdjuster beside the topology (SCR-SC5-1)
-    notes: list[str] = field(default_factory=list)
-    boundary_reach: list[Any] = field(default_factory=list)       # accepted boundary-only reaches (SCR-JOB2-1)
+    contact_adjusters: list[Any] = dataclasses.field(default_factory=list)   # beside the topology (SCR-SC5-1)
+    notes: list[str] = dataclasses.field(default_factory=list)
+    boundary_reach: list[Any] = dataclasses.field(default_factory=list)   # accepted boundary-only reaches (SCR-JOB2-1)
     rung_pin: Any = None                                          # RungPinWatch of a pinned MuJoCo entry (SCR-JOB2-1)
     mpm_grid: GridGuard | None = None                             # rebuildable MPM grids, checked per period
 
@@ -102,11 +102,11 @@ def wire(built: BuiltScene, prof: str | IntegrationProfile = "standard", *,
     use_graph = use_graph and eager_why is None
     _register_adapters()
     cfg = p.precision_config(str(built.model.device))
-    native = cfg.native_contacts
-    notes: list[str] = [f"graphs off: {eager_why}"] if eager_why else []
-    boundary = []
-    if _coupled_precision(built, native, p):              # before any solver is built (SCR-DC5-3, SCR-JOB2-1)
-        boundary = check_isolated(built, dynamic_entries(built), gap_fail_closed=_gap_fail_closed(p))
+    native, notes, boundary = cfg.native_contacts, ([f"graphs off: {eager_why}"] if eager_why else []), []
+    if _coupled_precision(built, native, p):   # before any solver (SCR-DC5-3, SCR-JOB2-1); 'auto' may pick Newton's
+        cfg, boundary = contacts_for(p, cfg, lambda: check_isolated(built, dynamic_entries(built),
+                                                                     gap_fail_closed=_gap_fail_closed(p)), notes)
+        native, boundary = cfg.native_contacts, boundary or []
         notes.extend(f"boundary-only reach (proxy wrench, GapMonitor fails closed): {line}"
                      for line in describe_reach(built, boundary))
     built = _prepare_entries(built, native, p, notes)
@@ -158,7 +158,7 @@ def build_simulation(built: BuiltScene, prof: str | IntegrationProfile = "standa
                                gap_monitor=parts.gap_monitor, health=parts.health, topology=parts.topology,
                                stepper=parts.stepper, use_graph=use_graph, cpu_graph=cpu_graph, seed=seed,
                                contact_adjusters=parts.contact_adjusters)
-    sim.parts = parts
+    sim.parts, sim.pair_mu = parts, pair_mu.install(sim)   # per-world friction of cloth / soft-body contacts
     _spin_per_rigid_step(sim, parts)
     if p.graph == "on":                 # graphs asked for: every key keeps them, no timing choice (lever #3 is "auto")
         sim.graph_choice = None

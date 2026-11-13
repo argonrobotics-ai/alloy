@@ -94,14 +94,22 @@ def _read_group(group: Any) -> dict[str, np.ndarray]:
 class HDF5Writer:
     """Writes episodes into one robomimic-layout HDF5 file, kept readable after every ``write``.
 
+    ``resume=True`` appends to a file an earlier run wrote (same observation and action layout; a file from a
+    killed run is fine, it holds every episode written before). ``next_obs_images=False`` leaves the camera
+    frames out of ``next_obs`` (they are ``obs`` shifted by one step plus one last frame), which halves the
+    image data; robomimic algorithms that read ``next_obs`` images then need the default.
+
     Example: ``with HDF5Writer("lift.hdf5", overwrite=True) as w: w.open(spec); w.write(episode)``;
-    ``w.episodes`` and ``w.samples`` count what was saved."""
+    ``w.episodes`` and ``w.samples`` count what the file holds."""
 
     def __init__(self, path: str | os.PathLike[str], *, compression: str | None = "gzip",
-                 overwrite: bool = False) -> None:
+                 overwrite: bool = False, resume: bool = False, next_obs_images: bool = True) -> None:
+        if resume and overwrite:
+            raise EnvError("resume and overwrite are both set", "pass one: resume=True appends, overwrite=True "
+                           "starts again", field="resume")
         self.path = os.fspath(path)
         self.compression = compression
-        self.overwrite = overwrite
+        self.overwrite, self.resume, self.next_obs_images = overwrite, resume, next_obs_images
         self.episodes = 0
         self.samples = 0
         self.spec: DatasetSpec | None = None
@@ -111,9 +119,12 @@ class HDF5Writer:
     def open(self, spec: DatasetSpec) -> None:
         """Create the file and write the dataset attributes. Example: ``writer.open(spec)``."""
         h5py = _h5py()
+        if os.path.exists(self.path) and self.resume:
+            self._reopen(h5py, spec)
+            return
         if os.path.exists(self.path) and not self.overwrite:
-            raise EnvError(f"{self.path} already exists", "pass overwrite=True, or choose another path",
-                           field="path")
+            raise EnvError(f"{self.path} already exists", "pass overwrite=True to replace it, resume=True to add "
+                           "to it, or choose another path", field="path")
         os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
         self.spec = spec
         self._file = h5py.File(self.path, "w")
@@ -125,6 +136,23 @@ class HDF5Writer:
         self._write_masks([])
         self._file.flush()
         log.info("HDF5 dataset opened: path=%s", self.path)
+
+    def _reopen(self, h5py: Any, spec: DatasetSpec) -> None:
+        """Open the existing file for more episodes, after checking that it holds the same layout."""
+        old, _ = load_hdf5(self.path, episodes=[])
+        same = (old.obs_shapes == spec.obs_shapes and old.obs_dtypes == spec.obs_dtypes
+                and old.action_names == spec.action_names and old.action_mode == spec.action_mode)
+        if not same:
+            raise EnvError(f"{self.path} holds another layout (observations {old.obs_shapes}, actions "
+                           f"{old.action_names}) than this recording", "resume with the env that made it, or "
+                           "choose another path", field="path")
+        self.spec = spec
+        self._file = h5py.File(self.path, "a")
+        data = self._file["data"]
+        demos = sorted(int(k[len(DEMO):]) for k in data if k.startswith(DEMO))
+        self.episodes, self.samples = (demos[-1] + 1 if demos else 0), int(data.attrs.get("total", 0))
+        self._success = [f"{DEMO}{i}" for i in demos if bool(data[f"{DEMO}{i}"].attrs.get("success", False))]
+        log.info("HDF5 dataset reopened: path=%s episodes=%d", self.path, self.episodes)
 
     def write(self, episode: Episode) -> None:
         """Append ``episode`` as ``demo_<n>`` and set ``episode.index``. Example: ``writer.write(episode)``."""
@@ -168,7 +196,7 @@ class HDF5Writer:
     def _write_demo(self, demo: Any, ep: Episode) -> None:
         """Write one episode's datasets and attributes into the new ``demo`` group."""
         demo.attrs.update({"num_samples": ep.length, "success": bool(ep.success), "world": int(ep.world),
-                           "episode_return": ep.episode_return})
+                           "episode_return": ep.episode_return, "invalid": bool(ep.invalid)})
         demo.create_dataset("actions", data=ep.actions.astype(np.float32))
         demo.create_dataset("rewards", data=ep.rewards.astype(np.float32))
         demo.create_dataset("dones", data=ep.dones.astype(np.int64))
@@ -178,7 +206,10 @@ class HDF5Writer:
             demo.create_dataset("states", data=ep.states.astype(np.float32))
         for group, arrays in (("obs", ep.obs), ("next_obs", ep.next_obs)):
             for key, arr in arrays.items():
-                self._write_obs(demo, f"{group}/{key}", arr, key in self.spec.image_keys)
+                image = key in self.spec.image_keys
+                if image and group == "next_obs" and not self.next_obs_images:
+                    continue
+                self._write_obs(demo, f"{group}/{key}", arr, image)
         for key, arr in ep.start.items():
             demo.create_dataset(f"start/{key}", data=np.asarray(arr))
 
@@ -207,12 +238,35 @@ def load_hdf5(path: str | os.PathLike[str], episodes: Sequence[int] | None = Non
 def _read_episode(demo: Any, index: int) -> Episode:
     """Rebuild the ``Episode`` stored in the ``demo`` group. Example: ``_read_episode(f["data/demo_0"], 0)``."""
     return Episode(
-        obs=_read_group(demo["obs"]), next_obs=_read_group(demo["next_obs"]), actions=demo["actions"][()],
+        obs=_read_group(demo["obs"]), next_obs=_read_group(demo["next_obs"]) if "next_obs" in demo else {},
+        actions=demo["actions"][()],
         rewards=demo["rewards"][()], terminated=demo["terminated"][()].astype(bool),
         truncated=demo["truncated"][()].astype(bool), success=bool(demo.attrs["success"]),
         states=demo["states"][()] if "states" in demo else None,
         start=_read_group(demo["start"]) if "start" in demo else {},
-        world=int(demo.attrs["world"]), index=index)
+        world=int(demo.attrs["world"]), index=index, invalid=bool(demo.attrs.get("invalid", False)))
 
 
-__all__ = ["HDF5Writer", "load_hdf5"]
+def copy_hdf5(path: str | os.PathLike[str], writer: Any, episodes: Sequence[int] | None = None) -> int:
+    """Write the episodes of an Alloy HDF5 file (all, or the demo numbers listed) to another ``writer``, one at a
+    time, then close the writer; returns how many. A long recording can go to ``HDF5Writer`` (readable after every
+    episode, resumable) and become a LeRobot dataset at the end.
+
+    Example: ``copy_hdf5("lift.hdf5", LeRobotWriter("out/lift", repo_id="local/lift"))``."""
+    h5py = _h5py()
+    spec, _ = load_hdf5(path, episodes=[])
+    wanted = None if episodes is None else {int(i) for i in episodes}
+    writer.open(spec)
+    count = 0
+    try:
+        with h5py.File(os.fspath(path), "r") as f:
+            for name in _demo_names(f["data"]):
+                if wanted is None or _demo_number(name) in wanted:
+                    writer.write(_read_episode(f["data"][name], _demo_number(name)))
+                    count += 1
+    finally:
+        writer.close()
+    return count
+
+
+__all__ = ["HDF5Writer", "copy_hdf5", "load_hdf5"]

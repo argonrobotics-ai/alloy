@@ -130,9 +130,10 @@ use it commercially.
 ## MCP server
 
 `alloy mcp` serves the engine as Model Context Protocol (MCP) tools over stdio, with nothing beyond
-`pip install alloy-engine`: `list`, `scene`, `build`, `step`, `run`, `state`, `targets`, `reset`, `close`, `check`,
-`render`, `estimate`, `import`, `export`, `vary`, `compose`, `create`, `audit` and `fetch`, the operations of the
-`alloy` command line with the same JSON. To add it to Claude Code:
+`pip install alloy-engine`: `list`, `scene`, `build`, `step`, `run`, `state`, `targets`, `reset`, `drive`, `pose`,
+`wrench`, `settle`, `heater`, `controls`, `close`, `check`, `render`, `estimate`, `import`, `export`, `vary`,
+`compose`, `create`, `audit` and `fetch`, the operations of the `alloy` command line with the same JSON. To add it
+to Claude Code:
 
 ```bash
 claude mcp add alloy -- alloy mcp

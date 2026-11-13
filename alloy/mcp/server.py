@@ -19,6 +19,7 @@ import sys
 from collections.abc import Callable
 from typing import IO, Any
 
+from alloy.cli.errors import bounded
 from alloy.cli.jsonio import json_stdout
 from alloy.cli.session import Session
 from alloy.mcp.tools import INSTRUCTIONS, call_tool, tool_list
@@ -73,42 +74,94 @@ class Server:
         try:
             return call_tool(self.session, name, arguments)
         except KeyError:
-            raise RpcError(INVALID_PARAMS, f"unknown tool {name!r}; tools/list lists them") from None
+            raise RpcError(INVALID_PARAMS, f"unknown tool {bounded(name, 80)!r}; tools/list lists them") from None
 
     def handle(self, message: Any) -> dict[str, Any] | list[dict[str, Any]] | None:
         """The reply to one message (None for notifications); a JSON-RPC batch gets a list of replies."""
         if isinstance(message, list):
+            if not message:                           # JSON-RPC 2.0: an empty batch gets one Invalid Request reply
+                return _error(None, INVALID_REQUEST, "an empty batch []: send at least one request")
             replies = [r for r in (self._one(m) for m in message) if r is not None]
             return replies or None
         return self._one(message)
 
     def _one(self, msg: Any) -> dict[str, Any] | None:
-        if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0" or not isinstance(msg.get("method", ""), str):
-            rid = msg.get("id") if isinstance(msg, dict) else None
-            return _error(rid, INVALID_REQUEST, "not a JSON-RPC 2.0 message")
+        bad = _invalid(msg)
+        if bad is not None:
+            return bad
         if "method" not in msg:
-            return None                               # a response to something we never send; ignore
+            return None                               # a response (result or error) to something we never send
         rid, method, is_request = msg.get("id"), msg["method"], "id" in msg
         if not is_request:
             log.debug("notification %s", method)
             return None
         fn = self.methods.get(method)
         if fn is None:
-            return _error(rid, METHOD_NOT_FOUND, f"method {method!r} is not supported (this server has tools only)")
-        params = msg.get("params") or {}
+            return _error(rid, METHOD_NOT_FOUND,
+                          f"method {bounded(method, 80)!r} is not supported (this server has tools only)")
+        params = msg.get("params")
         try:
-            if not isinstance(params, dict):
-                raise RpcError(INVALID_PARAMS, "params must be an object")
-            return {"jsonrpc": "2.0", "id": rid, "result": fn(params)}
+            if params is not None and not isinstance(params, dict):
+                raise RpcError(INVALID_PARAMS, f"params must be an object, got {type(params).__name__}")
+            return {"jsonrpc": "2.0", "id": rid, "result": fn(params or {})}
         except RpcError as exc:
             return _error(rid, exc.code, exc.message)
         except Exception as exc:  # noqa: BLE001 - the server must keep running
             log.exception("%s failed", method)
-            return _error(rid, INTERNAL_ERROR, f"{type(exc).__name__}: {exc}")
+            return _error(rid, INTERNAL_ERROR, bounded(f"{type(exc).__name__}: {exc}"))
+
+
+def _invalid(msg: Any) -> dict[str, Any] | None:
+    """The Invalid Request reply for a message that is not a JSON-RPC 2.0 request, notification or response; None
+    when it is one. An id must be a string, a whole number or null (JSON-RPC 2.0 section 4)."""
+    if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0":
+        return _error(_valid_id(msg), INVALID_REQUEST, 'not a JSON-RPC 2.0 message: send {"jsonrpc": "2.0", ...}')
+    if "id" in msg and _valid_id(msg) is None and msg["id"] is not None:
+        return _error(None, INVALID_REQUEST, "id must be a string, a whole number or null")
+    if "method" in msg and not isinstance(msg["method"], str):
+        return _error(msg.get("id"), INVALID_REQUEST, "method must be a string, e.g. \"tools/list\"")
+    if "method" not in msg and not ("id" in msg and ("result" in msg or "error" in msg)):
+        return _error(msg.get("id"), INVALID_REQUEST, 'a request needs a method, e.g. {"jsonrpc": "2.0", "id": 1, '
+                                                      '"method": "tools/list"}')
+    return None
+
+
+def _valid_id(msg: Any) -> Any:
+    """``msg["id"]`` when it is a string or a whole number, else None."""
+    rid = msg.get("id") if isinstance(msg, dict) else None
+    if isinstance(rid, str) or (isinstance(rid, int) and not isinstance(rid, bool)):
+        return rid
+    if isinstance(rid, float) and rid.is_integer():
+        return rid
+    return None
 
 
 def _error(rid: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": rid, "error": {"code": code, "message": message}}
+
+
+def _reject_constant(token: str) -> Any:
+    raise ValueError(f"{token} is not a JSON number (JSON has no NaN or Infinity)")
+
+
+def _reply(server: Server, line: str) -> str | None:
+    """The reply line to one message line (None: no reply). Never raises: NaN or Infinity in a message is a parse
+    error, and a reply that cannot be written as JSON becomes an internal error, so the server keeps running."""
+    try:
+        message = json.loads(line, parse_constant=_reject_constant)
+    except ValueError as exc:                         # JSONDecodeError is a ValueError
+        reply: Any = _error(None, PARSE_ERROR, f"not JSON: {getattr(exc, 'msg', exc)}")
+    else:
+        reply = server.handle(message)
+    if reply is None:
+        return None
+    try:
+        return json.dumps(reply, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        log.exception("a reply could not be written as JSON")
+        rid = reply.get("id") if isinstance(reply, dict) else None
+        return json.dumps(_error(rid if isinstance(rid, (str, int)) else None, INTERNAL_ERROR,
+                                 bounded(f"the reply is not valid JSON: {exc}")))
 
 
 def serve(stdin: IO[str], stdout: IO[str], session: Session | None = None) -> int:
@@ -123,14 +176,9 @@ def serve(stdin: IO[str], stdout: IO[str], session: Session | None = None) -> in
                 return 0
             if not line.strip():
                 continue
-            try:
-                message = json.loads(line)
-            except json.JSONDecodeError as exc:
-                reply: Any = _error(None, PARSE_ERROR, f"not JSON: {exc.msg}")
-            else:
-                reply = server.handle(message)
+            reply = _reply(server, line)
             if reply is not None:
-                stdout.write(json.dumps(reply, allow_nan=False) + "\n")
+                stdout.write(reply + "\n")
                 stdout.flush()
     finally:
         server.session.close_all()

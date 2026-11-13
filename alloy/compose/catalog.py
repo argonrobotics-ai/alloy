@@ -95,17 +95,19 @@ class Catalog:
     ``library``: an existing ``CardLibrary`` to use as is (its roots define what is searched); ``store``: where to
     fetch an imported object's missing files (default ``$ALLOY_ASSET_STORE``; ``fetch=False`` never fetches). With no
     imported library and no store, the Hub's objects are listed too and fetched on first use (``fetch=False``: only
-    those already in the fetch cache). Example: ``Catalog(roots=["my_cards"]).search("mug")``."""
+    those already in the fetch cache, unless ``hub_index``: then every object of the Hub's index is listed and the
+    ones not fetched yet say so, as ``alloy.compose.search`` does).
+    Example: ``Catalog(roots=["my_cards"]).search("mug")``."""
 
     def __init__(self, roots: Sequence[str | Path] = (), *, imports: bool = True, library=None,
-                 store: str | None = None, fetch: bool = True) -> None:
+                 store: str | None = None, fetch: bool = True, hub_index: bool = False) -> None:
         from alloy.cards.library import CardLibrary, default_root  # noqa: PLC0415
         from alloy.cards.roots import assets_root  # noqa: PLC0415
 
         if library is None:
             extra = [Path(r).expanduser().resolve() for r in roots]
             self.import_roots = import_roots() if imports else []
-            caches = self._cache_setup(imports, fetch, store)
+            caches = self._cache_setup(imports, fetch or hub_index, store)
             library = CardLibrary(roots=[*extra, default_root(), *caches, *self.import_roots], assets=assets_root())
         else:
             self.import_roots = [r for r in library.roots if r.parent.name == IMPORTS_DIR and (r / "objects").is_dir()]
@@ -117,15 +119,15 @@ class Catalog:
         self._bodies: dict[str, Body] = {}
         log.info("compose catalog: %d objects from %d roots", len(self.entries), len(self.library.search_roots))
 
-    def _cache_setup(self, imports: bool, fetch: bool, store: str | None) -> list[Path]:
+    def _cache_setup(self, imports: bool, listed: bool, store: str | None) -> list[Path]:
         """The fetch caches the library reads (``alloy.cards.roots.fetched_roots``), plus, in Hub mode (no imported
-        library, no store), the Hub's index rows (when fetching) and their libraries' caches. Sets ``fetched_libs``:
+        library, no store), the Hub's index rows (when ``listed``) and their libraries' caches. Sets ``fetched_libs``:
         the caches of libraries with no import root, whose cards count as that library's (``_source``)."""
         from alloy.assets.hub.lazy import catalog_rows, hub_mode, library_roots  # noqa: PLC0415
         from alloy.cards.roots import fetched_roots  # noqa: PLC0415
 
         self.hub = bool(imports) and not self.import_roots and hub_mode(store)
-        self.hub_rows = catalog_rows() if self.hub and fetch else []
+        self.hub_rows = catalog_rows() if self.hub and listed else []
         caches = [*(fetched_roots(self.import_roots) if imports else []),
                   *(library_roots(self.hub_rows) if self.hub else [])]
         caches = list(dict.fromkeys(caches))

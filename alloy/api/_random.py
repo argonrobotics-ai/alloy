@@ -68,7 +68,7 @@ def add_row(scene: Any, name: str, field: str, lo: float, hi: float, when: str =
     for a robot's physical fields and gravity).
 
     Example: ``add_row(scene, "cube", "x", -0.005, 0.005)``."""
-    from alloy.api import _robot_random, _robots, _rods, _worlds  # noqa: PLC0415
+    from alloy.api import _robot_random, _robots, _rods, _worlds, fixtures  # noqa: PLC0415
 
     if not hi >= lo:
         raise SceneError(f"randomize range [{lo}, {hi}] is empty", "pass lo <= hi", field="lo")
@@ -77,6 +77,7 @@ def add_row(scene: Any, name: str, field: str, lo: float, hi: float, when: str =
     if when != "build":
         raise SceneError(f"{name!r}: when={when!r} is for robot fields and gravity; an object's {field!r} is drawn "
                          "at build", "drop when= (the value is drawn once per world, at build)", field="when")
+    name, lo, hi = fixtures.random_target(scene.items, name, field, lo, hi)   # a kinematic fixture's start: its floor
     item = scene._item(name)
     if item["kind"] == "robot":
         return _robots.add_random(item, name, field, lo, hi)
@@ -91,4 +92,21 @@ def add_row(scene: Any, name: str, field: str, lo: float, hi: float, when: str =
                          field="name")
     row = {"field": card_path(name, field), "lo": float(lo), "hi": float(hi)}
     raw = item.get("raw_placement")
-    (raw.setdefault("randomize", []) if raw is not None else item["randomize"]).append(row)
+    _put(scene, name, raw.setdefault("randomize", []) if raw is not None else item["randomize"], row)
+
+
+def _put(scene: Any, name: str, rows: list[dict[str, Any]], row: dict[str, Any]) -> None:
+    """Add ``row`` to an object's randomize rows; an earlier row of the same field is replaced (the later call
+    wins: a card allows one row per field). Replacing a row an earlier ``Scene.randomize`` call made warns, naming
+    both ranges; replacing a row of the object's own card (a recipe or script overriding its base) does not."""
+    from alloy.api import _say  # noqa: PLC0415
+
+    calls = scene.__dict__.setdefault("_randomize_calls", set())     # (object, field) set by randomize calls
+    old = next((r for r in rows if r.get("field") == row["field"]), None)
+    if old is not None:
+        if (name, row["field"]) in calls:
+            _say.warn("%s: randomize %s [%s, %s] replaces the earlier [%s, %s] (one range per field)", name,
+                      row["field"], row["lo"], row["hi"], old.get("lo"), old.get("hi"))
+        rows.remove(old)
+    calls.add((name, row["field"]))
+    rows.append(row)

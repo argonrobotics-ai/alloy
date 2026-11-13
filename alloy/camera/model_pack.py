@@ -22,7 +22,7 @@ import numpy as np
 
 from .card_looks import assigned, fallback_rules
 from .errors import CameraError
-from .from_newton import _shape_color, _shape_mesh, drawn_shapes
+from .from_newton import _model_colors, _shape_mesh, default_rgb, drawn_shapes, palette_index
 from .pbr.pack_io import Frame, Mesh, Pack
 from .scene import Lighting, quat_to_matrix
 from .smooth import corner_normals
@@ -96,8 +96,8 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
     looks (``items``, see item_looks), then the cards' library looks, else shape colours."""
     from alloy._vendor import newton
     from .looks import material_tree
-    colors = model.shape_color.numpy() if getattr(model, "shape_color", None) is not None else None
-    flags = model.shape_flags.numpy()
+    colors, pal = _model_colors(model, drawn_shapes(model)), palette_index(model)  # the fast tracer's colours
+    flags, ty = model.shape_flags.numpy(), model.shape_type.numpy()
     labels, blabels = _labels(model)
     body = model.shape_body.numpy()
     names, specs, fb = [], {}, None
@@ -119,7 +119,7 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
         if name is not None:
             specs.setdefault(name, fb["materials"][name])
         else:
-            rgb = _shape_color(newton, s, colors, int(flags[s]), model.shape_source[s])
+            rgb = default_rgb(newton, s, colors, int(ty[s]), int(flags[s]), model.shape_source[s], int(pal[s]))
             name = f"shape_{'%02x%02x%02x' % tuple(int(round(255 * c)) for c in rgb)}"
             specs.setdefault(name, {"preset": DEFAULT_PRESET, "base_color": list(rgb)})
         names.append(name)

@@ -42,6 +42,10 @@ What it does, in order:
      rigid objects, so a word never picks a soft material (rubber, foam, fabric): a "rubber duck" gets the
      category's or a plastic material, and the result says so. Naming a soft library material (`silicone_40a`)
      tries a soft body; if the engine cannot drop-test it, the result has a `drop_test` error with the fix.
+     `material=` is read in any case and may be several words: `Steel` is `steel`, `stainless steel` picks a
+     stainless card, `Stainless 304` is `stainless_304`. A `material=` that is neither a library material nor a
+     material word (`titanium`) is an error listing the words, and so is a liquid or a granular library material
+     (`water`, sand): create makes a solid and would keep only its density. A word in the text is only a hint.
    - Mass: `mass=` (kg) with `mass_source=` (for example "kitchen scale" or a datasheet). Without it, the
      category's typical mass with its range is used, unless you named a material the category does not have.
      Failing that, the material's density times the mesh volume. That fills the closed mesh, so a hollow object
@@ -62,6 +66,20 @@ A missing citation never stops it: values without one are marked `ESTIMATE` with
 | `device` | where the drop test runs: `cpu` or `cuda:0` (default: the GPU if there is one) |
 | `check=False` / `--no-check` | skip the drop test |
 | `--request FILE` | all of the above as one JSON object (`-` reads stdin), e.g. `{"mesh": "cup.stl", "units": "mm"}` |
+
+### Model files (MJCF, URDF, USD)
+
+A model file becomes one object card per body tree, joints kept:
+
+- A file with one object names its card `name` (default: the file's name), so `Scene.add_object("drawer",
+  "my_drawer")` works after `--name my_drawer`. A file with several objects names them `<name>_<body>`; the result's
+  `objects` lists them.
+- Joints without an actuator stay as passive joints. A URDF has no actuators, so every jointed URDF becomes an
+  articulated object: with a moving joint its base link is fixed in place, with only fixed joints it is one free
+  object. A file with actuators is a robot and is refused: use `Scene.add_robot`.
+- Masses, materials, units (metres) and axes are the file's own. `material`, `mass`, `size`, `units` and `up` cannot
+  be applied to a model file and raise an error that says so; set them in the file. `values` reports each object's
+  mass as the sum of the file's body masses (tag `MODEL`).
 
 ### The result (JSON, `schema: alloy.create/1`)
 
@@ -161,6 +179,8 @@ When a photo or text request fails, the error names the cause and the fix:
 |---|---|
 | needs a token and none is set / refused: the token is not the server's | set `ALLOY_GEN3D_TOKEN` to the server's token |
 | nothing is listening | start the server (`serve.sh` or `python -m alloy.create.serve`); check the port in the URL |
+| answered HTTP 400 | the request was not a generation request (the message says which field); `alloy create` builds it for you |
+| answered without a mesh | the URL is another service: point `ALLOY_GEN3D_URL` at `python -m alloy.create.serve` |
 | cannot reach the generator | check the URL and network, and that the GPU machine is running |
 | dropped the connection and no longer answers | the machine went away (spot GPU machines can be preempted): restart it, wait for `/health`, retry |
 | no answer within 900 s | the server is busy or still loading the models: check `/health` and its log, retry |
@@ -230,8 +250,17 @@ The findings are merged and sorted by severity (`error`, `warn`, `info`). Each f
  "notes": [], "timings_s": {"check_rounds": 44.6, "bully": 318.9, "total": 363.4}}
 ```
 
-A bully finding's `replay` holds a `handle`; `alloy.bully.replay_finding(handle, library=...)` runs that one
-episode alone (pass `alloy.compose.library(["my_objects", "my_scenes"])` when the scene uses your own cards).
+A bully finding's `replay` holds a `handle` and, when the scene uses card folders, `library` (the folders):
+`alloy.bully.replay_finding(replay["handle"], library=alloy.audit.library(replay.get("library", [])))` runs that
+one episode alone.
+
+A scene file's own folder (`my_scenes` for `my_scenes/scenes/scene.yaml`) is always searched, as in `alloy.check`,
+so its generated cards and robot files resolve without `--library`; a check replay command names the file by its
+full path. A scene card that does not load raises `alloy.SceneError` with the line to edit.
+
+Through `alloy audit` and the MCP tool, a scene given as a recipe, Scene JSON, a `.json` file or a robot file is
+first written as cards to a folder that stays, so the replays work after the call: `--cards <folder>`, else a folder
+per scene under `~/.cache/alloy/audit` (`$ALLOY_CACHE/audit`). The reply names it in `cards`.
 `s1_upper95` is the 95 % upper bound on the share of episodes that would reach S1 (3/N when none did).
 
 In Python, `report.summary()` (and `result.summary()` for create) gives the same as a few lines of text.

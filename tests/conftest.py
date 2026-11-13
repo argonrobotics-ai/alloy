@@ -49,8 +49,27 @@ wp.config.quiet = True
 # SCR-WP8-8: users get the MuJoCo C route on CPU by default (alloy.route.mjc_core_config.DEFAULT_CPU_ROUTE); the suite
 # stays on MuJoCo Warp on CPU, which stands in for the GPU kernels (coordinator ruling 2026-11-06 14:18Z). Forced, not
 # setdefault: an ALLOY_CPU_ROUTE=mjc exported in a developer's shell must not move the suite off the Warp kernels. The
-# route's own tests ask for "mjc" per entry (alloy:cpu_route) or per test (monkeypatch).
-os.environ["ALLOY_CPU_ROUTE"] = "warp"
+# route's own tests ask for "mjc" per entry (alloy:cpu_route) or per test (monkeypatch). Opt-in for release tiers
+# (physics, 0.1.3): ALLOY_TEST_CPU_ROUTE=mjc runs the suite on the route pip users get; the merge gate drops it, so
+# gates stay on warp (scripts/merge_gate.py test_env).
+TEST_CPU_ROUTE_ENV = "ALLOY_TEST_CPU_ROUTE"
+
+
+def _test_cpu_route() -> str:
+    """The suite's CPU route: ``$ALLOY_TEST_CPU_ROUTE`` ("mjc" or "warp") when set, else "warp"."""
+    route = os.environ.get(TEST_CPU_ROUTE_ENV, "").strip().lower()
+    if route not in ("", "mjc", "warp"):
+        raise pytest.UsageError(f"{TEST_CPU_ROUTE_ENV}={route!r}: use 'mjc' or 'warp' (unset runs the suite on warp)")
+    return route or "warp"
+
+
+os.environ["ALLOY_CPU_ROUTE"] = _test_cpu_route()
+
+
+def pytest_terminal_summary(terminalreporter) -> None:  # noqa: ANN001 - pytest's TerminalReporter
+    """Which CPU route this run tested, in every log, also under -q (a release tier runs the suite on both)."""
+    how = f"{TEST_CPU_ROUTE_ENV}={os.environ[TEST_CPU_ROUTE_ENV]}" if os.environ.get(TEST_CPU_ROUTE_ENV) else "default"
+    terminalreporter.write_line(f"alloy CPU route: {os.environ['ALLOY_CPU_ROUTE']} ({how})")
 
 REPO = Path(__file__).resolve().parents[1]
 COMPILE_HEAVY_TIMEOUT_S = 180

@@ -26,23 +26,41 @@ def missing_fix() -> str:
 
 def op_compose(session: Any, a: dict[str, Any]) -> dict[str, Any]:
     """Compose scenes; returns ``ComposeResult.to_dict()`` (+ ``saved`` paths with ``out``). An object the request
-    names that no scene could place makes the call fail (top-level ``ok`` false) with the fix (GEO P4)."""
+    names that no scene could place makes the call fail (top-level ``ok`` false) with the reason and fix of each
+    miss (GEO P4); with ``out`` the scenes are saved first, so what was built is kept."""
     from alloy.compose.build import compose  # noqa: PLC0415
-    from alloy.compose.errors import ComposeError  # noqa: PLC0415
 
     request = a.get("spec") if a.get("spec") is not None else a.get("sentence")
     result = compose(request, variations=a.get("variations") or 0, seed=a.get("seed") or 0,
                      check=a.get("check") or "full", device=a.get("device"), roots=a.get("library") or (),
                      robots=a.get("robots") or (), area=a.get("area"), jitter=a.get("jitter"),
                      scene_worlds=a.get("worlds"))
-    missing = sorted({name for scene in result.scenes for name in scene.missing})
-    if missing:
-        raise ComposeError(f"the scene leaves out {', '.join(missing)}: no object on this install matches "
-                           f"{'it' if len(missing) == 1 else 'them'}", missing_fix(), field="sentence")
+    saved = [str(p) for p in result.save(a["out"])] if a.get("out") else []
+    if any(scene.missing for scene in result.scenes):
+        raise missing_error(result, a.get("out"))
     out = result.to_dict()
-    if a.get("out"):
-        out["saved"] = [str(p) for p in result.save(a["out"])]
+    if saved:
+        out["saved"] = saved
     return out
+
+
+def missing_error(result: Any, out: str | None = None) -> Any:
+    """The ``ComposeError`` for scenes that leave something out: each miss with its own reason (no object matches,
+    an amount that does not fit, a pair the engine refuses, a check failure) and where the scenes were saved. Only a
+    miss no object matched gets the fix to use another word.
+
+    Example: ``missing_error(compose("a bin with 2000 ml of water", check="none")).message`` names the 709 ml the
+    bin holds."""
+    from alloy.compose.errors import ComposeError  # noqa: PLC0415
+
+    unmatched = sorted({m for s in result.scenes for m in s.unmatched})
+    reasons = sorted({m for s in result.scenes for m in s.missing if m not in s.unmatched})
+    parts = ([f"{', '.join(unmatched)} (no object on this install matches {'it' if len(unmatched) == 1 else 'them'})"]
+             if unmatched else []) + reasons
+    kept = f"; the scenes that were built are saved in {out} (compose.json lists what each leaves out)" if out else ""
+    fixes = ([missing_fix()] if unmatched else []) + (
+        ["change what the reason names (it says what fits or what to ask for) and compose again"] if reasons else [])
+    return ComposeError(f"the scene leaves out {'; '.join(parts)}{kept}", "; ".join(fixes), field="sentence")
 
 
 OPS: tuple[Op, ...] = (Op(
@@ -71,4 +89,4 @@ OPS: tuple[Op, ...] = (Op(
     {"sentence": "a mug and two cubes on a table", "variations": 1, "out": "my_scenes"},
     read_only=False, engine=True),)
 
-__all__ = ["OPS", "op_compose"]
+__all__ = ["OPS", "missing_error", "op_compose"]

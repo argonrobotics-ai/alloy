@@ -157,8 +157,8 @@ def test_a_lifting_blade_lays_its_end_footprint_and_the_next_run_sets_down_over_
     knife.lift(1, runs, level, 0.0)
     d = knife.downs[0]
     r = ST.read_line(d, h0, f, T.tau_b(task, age + d.t))
-    assert r.count == 1 and r.stages[-1] == (level, 0.0)
-    first = dataclasses.replace(d.slots[-1][0].sole, level=level, touch=0.0)
+    assert r.count == 1 and r.stages[-1] == (level, ST.SET_DOWN_CLEAR)        # nothing over its level: ruling 7
+    first = dataclasses.replace(d.slots[-1][0].sole, level=level, touch=ST.SET_DOWN_CLEAR)
     h = h0.copy()
     ST.knife_fill(first, h, f)
     ends = (np.abs(X - hi) <= MG.HA + 1e-9) & (np.abs(Y) <= MG.HC + 1e-9)

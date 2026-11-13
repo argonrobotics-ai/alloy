@@ -12,7 +12,16 @@ from warp.fem.linalg import symmetric_eigenvalues_qr
 from .contact_solver_kernels import ColoredContacts, make_solve_colored_cell_contacts
 
 _DELASSUS_PROXIMAL_REG = wp.constant(1.0e-6)
-"""Cutoff for the trace of the diagonal block of the Delassus operator to disable constraints"""
+"""Cutoff for the trace of the diagonal block of the Delassus operator to disable constraints
+
+Alloy (delassus-regularization): the number added to each block's diagonal is now ``Config.delassus_regularization``
+(default this constant), passed to ``compute_delassus_diagonal`` as ``proximal_reg``; the eigen solve's stop test keeps
+this constant (it is relative). An absolute epsilon in SI units is wrong for a diagonal that is itself small: a stiff
+solid with quasi-static mass scaling has blocks of about 1e-7 to 1e-9 (brass x1,000 to x64,000; read at x16,000: 1.3e-9
+to 5.5e-9), so 1e-6 made every Gauss-Seidel step about 12-770x too short (mass-scaled brass read 0.43 of its converged
+punch force, 1.00 at 1e-12). A form relative to each block's trace would be unit-free and is the better long-term fix;
+not posted upstream.
+"""
 
 _SLIDING_NEWTON_TOL = wp.constant(1.0e-7)
 """Tolerance for the Newton method to solve for the sliding velocity"""
@@ -170,6 +179,7 @@ def compute_delassus_diagonal(
     strain_batch: wp.array[int],
     mass_multiplicity: wp.array2d[float],
     majorize: bool,
+    proximal_reg: float,  # Alloy (delassus-regularization): added to the diagonal (was _DELASSUS_PROXIMAL_REG)
     delassus_rotation: wp.array[mat55],
     delassus_diagonal: wp.array[vec6],
 ):
@@ -213,7 +223,7 @@ def compute_delassus_diagonal(
         b_v2 = _symmetric_part_op(b_val, wp.vec3(0.0, 0.0, 1.0))
         diag_block += inv_frac * wp.outer(b_v2, b_v2)
 
-    diag_block += _DELASSUS_PROXIMAL_REG * wp.identity(n=6, dtype=float)
+    diag_block += proximal_reg * wp.identity(n=6, dtype=float)  # Alloy (delassus-regularization)
 
     coupling = vec6(0.0)
     for k in range(1, 6):

@@ -45,6 +45,9 @@ PRECISION_IMPRATIO = 300.0       # §3.5 creep rule (elliptic cone)
 FILL_IMPRATIO = 300.0            # SCR-WP3-10: when neither a file nor the route sets one
 FILL_REASON = "Coulomb sliding force independent of speed (A5.speed, SCR-WP3-10)"
 SLIDING_MIN_IMPRATIO = 50.0      # A5.speed passes from 50 (30: -11 %)
+ROBOT_CG_EFFECT = "mujoco:solver=cg:robot_chain"   # a robot file that is a long light chain (alloy.scene.robot_chain)
+ROBOT_CG_REASON = ("a robot file that is a long chain of light bodies: MuJoCo Warp's float32 Newton solver goes "
+                   "non-finite at its first contact (alloy.scene.robot_chain, SAMPLE-CLASSIC C1)")
 RIGID_FAST_EFFECT = "mujoco:rigid=fast"   # the opt-in fast rigid mode (SPEED-S1; WP7's rigid_step flag)
 REDUCE_REASON = ("fast rigid mode (SPEED-S1): box-box face pairs at 4 contacts, not up to 8, on the MuJoCo Warp "
                  "route (alloy.contact.mjw_boxbox_reduce; MuJoCo C keeps mjc_BoxBox's)")
@@ -157,6 +160,9 @@ def mujoco_overrides(effects: set[str] | frozenset[str], has_precision: bool,
                      "definite; Newton went non-finite on T09)")
         out["solver"] = ("newton" if newton_ else "cg", why)
         out["iterations"] = (CG_ITERATIONS, why)
+    if ROBOT_CG_EFFECT in effects:         # over the fast profile's Newton too: that one relies on the CHAIN armature
+        out["solver"] = ("cg", ROBOT_CG_REASON)
+        out["iterations"] = (CG_ITERATIONS, ROBOT_CG_REASON)
     if has_precision:
         fast = FAST_EFFECT in effects        # opt-in fast profile: noslip holds the pairs instead
         out["cone"] = ("elliptic", "precision pairs (§3.5 creep rule, elliptic cone)")
@@ -237,6 +243,7 @@ def solver_kwargs(entry: str, objs: Sequence[TemplateObject], capacities: PackSp
             kw["voxel_size"] = float(min(voxels))
         if mpm_solid.EFFECT in effects:             # a j2 solid: the tight solve its yield plateau needs (GAP #6)
             kw["tolerance"], kw["max_iterations"] = mpm_solid.TOLERANCE, mpm_solid.MAX_ITERATIONS
+            kw["delassus_regularization"] = mpm_solid.DELASSUS_REGULARIZATION   # slice 2b (vendored patch 0015)
     if entry == "sph":
         kw.update(sph_kwargs(objs))
     return kw

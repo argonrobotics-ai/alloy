@@ -66,6 +66,7 @@ class OnsetRefiner:
     period: int = 0                 # periods begun (new_period)
     control_dt: float = 0.0         # [s], from attempt()
     last: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=np.int64))  # per world: period of its re-run
+    parked: np.ndarray | None = None    # bool [W]: worlds the trigger never arms (held still, ``parked.py``)
 
     def new_period(self) -> None:
         self.level, self.pending, self.period = 0, False, self.period + 1
@@ -76,7 +77,10 @@ class OnsetRefiner:
         if self.last.shape != (world_count,):
             self.last = np.full(world_count, -(2**62), dtype=np.int64)
         quiet = math.ceil(self.policy.onset_cooldown_s / self.control_dt - 1e-9) if self.control_dt > 0 else 0
-        return ((self.last == self.period) | (self.period - self.last > quiet)).astype(np.int32)
+        armed = ((self.last == self.period) | (self.period - self.last > quiet)).astype(np.int32)
+        if self.parked is not None and self.parked.shape == armed.shape:
+            armed[self.parked] = 0                 # a parked world is held: what it does in an exchange is no event
+        return armed
 
     def wants_rerun(self, report: "CouplingReport") -> bool:
         """Some world escalated and every escalated world is a force jump (no side effects; only armed worlds are

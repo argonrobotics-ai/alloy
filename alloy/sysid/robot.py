@@ -45,6 +45,22 @@ def resolve(robot: str | Path) -> Path:
                      f"pass a robot file (MJCF, URDF or USD) or one of {names}", field="robot")
 
 
+def actuator_joints(robot: str | Path) -> dict[str, str]:
+    """{actuator name: joint name} of an MJCF robot's named actuators whose name is not also a joint's, so a
+    recording labelled by actuator can be read by joint ({} for other files).
+    Example: ``actuator_joints("panda")["actuator1"]`` -> ``"joint1"``."""
+    try:
+        path = resolve(robot)
+        root = ET.parse(path).getroot() if path.suffix.lower() in (".xml", ".mjcf") else None
+    except (SysidError, ET.ParseError, OSError):
+        return {}                                   # the bench build reports a bad robot, with its fix
+    if root is None:
+        return {}
+    joints = {j.get("name") for j in root.iter("joint")}
+    pairs = {a.get("name"): a.get("joint") for s in root.findall("actuator") for a in s}
+    return {a: j for a, j in pairs.items() if a and j and a not in joints}
+
+
 def bench_mjcf(path: Path) -> tuple[str, list[str]]:
     """``(MJCF text, notes)``: the file's robot alone on a stand (module docstring). File references are made
     absolute, so the text loads from anywhere. Example: ``bench_mjcf(resolve("go2"))[1]``."""
@@ -123,4 +139,4 @@ def bench_scene(robot: str | Path, worlds: int, dt: float) -> tuple[Any, list[st
     return scene, notes
 
 
-__all__ = ["LIFT", "NAME", "bench_mjcf", "bench_scene", "resolve"]
+__all__ = ["LIFT", "NAME", "actuator_joints", "bench_mjcf", "bench_scene", "resolve"]

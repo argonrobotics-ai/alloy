@@ -24,13 +24,15 @@ class StateIO:
         self.qd_start = m.joint_qd_start.numpy() if m.joint_count else np.zeros(1, np.int64)
         self.target_start = getattr(m, "joint_target_q_start", None)
         self.target_start = self.target_start.numpy() if self.target_start is not None else self.q_start
-        self.acts = Actuators.from_model(m, index.robot_joints, self.qd_start)
+        self.acts = Actuators.from_model(m, index.robot_joints, self.qd_start, index.joint_short or None)
+        self.controls0: dict[str, np.ndarray] | None = None    # targets and ctrl before the first command (reset)
         self.limits = _targets.Limits.from_model(m, self.qd_start)       # position targets stop at the joint's range
         from alloy._vendor import newton  # noqa: PLC0415 - the engine is loaded once a Sim exists
 
         self.active_flag = int(newton.ParticleFlags.ACTIVE)
         mj = getattr(m, "mujoco", None)
         self.dof_ref = mj.dof_ref.numpy() if mj is not None and hasattr(mj, "dof_ref") else None
+        self.joint_type = m.joint_type.numpy() if m.joint_count else np.zeros(0, np.int32)
         built = getattr(engine, "built", None)
         self.rods = _rods.rod_lines(built) if built is not None and hasattr(built, "handles") else {}
         self.wrench_rows: set[int] = set()
@@ -110,47 +112,109 @@ class StateIO:
 
         Joints driven from joint targets (MJCF ``<position>`` / ``<velocity>``) get ``joint_target_q`` / ``_qd``;
         joints with a ``<general>`` servo get MuJoCo ``ctrl`` (see ``alloy.api._actuators``). A position target stops
-        at the joint's range (``_targets.Limits``); a joint that nothing drives raises."""
-        ctrl = self.engine.control
-        arr = ctrl.joint_target_q if kind == "position" else ctrl.joint_target_qd
-        host = arr.numpy() if arr is not None else None
-        start = self.target_start if kind == "position" else self.qd_start
+        at the joint's range (``_targets.Limits``); a joint that nothing drives, or whose servo takes the other kind,
+        raises. A ``<general>`` servo's ctrl is MuJoCo's: gear x (the target, plus the joint's ref for a position).
+        A body with several MJCF joints loads as one joint ("<a>_<b>") of one coordinate per MJCF joint: it takes one
+        value per coordinate, in the file's order (``(n,)`` or ``(worlds, n)``), each to its own servo. A fixed
+        joint has no coordinate and raises."""
+        self._keep_controls()
+        arr = self._target_array(kind)
+        host = arr.numpy().copy() if arr is not None else None   # a copy: a call that raises writes nothing (on the
+        start = self.target_start if kind == "position" else self.qd_start      # CPU numpy() is the array itself)
         direct: dict[int, np.ndarray] = {}
         for name, value in targets.items():
             j = self.index.joint(name)
-            vals = _per_world(value, self.index.worlds, name)
-            if kind == "position":
-                vals = self.limits.clamp(name, j, vals, self._ctrl_span(j))
-            servo = (self.acts.position if kind == "position" else self.acts.velocity).get(j)
-            if servo is not None:
-                direct[servo] = vals + (self._ref(servo) if kind == "position" else 0.0)
-            elif host is not None and (j in self.acts.joint_target or self.limits.driven(j, kind, self.acts.stride)):
-                host[start[self.index.per_world(j, "joint")]] = vals       # no actuator table: Newton's own targets
-            else:
-                raise _not_driven(name, kind, self.acts.actuated(j))
+            per_axis = self._axis_values(name, j, value)
+            for k in range(per_axis.shape[1]):
+                self._target_axis((name, j, k), per_axis[:, k], kind, (host, start), direct)
         if direct:
             self._write_ctrl(direct)
         if host is not None:
             arr.assign(host)
 
+    def _target_array(self, kind: str) -> Any:
+        ctrl = self.engine.control
+        return ctrl.joint_target_q if kind == "position" else ctrl.joint_target_qd
+
+    def _route(self, name: str, j: int, kind: str, has_targets: bool, axis: int = 0) -> int | None:
+        """The servo (actuator row) that takes coordinate ``axis`` of joint ``j``'s ``kind`` target, None for Newton's
+        own joint target; raises when nothing drives it that way, and for a fixed joint (no coordinate)."""
+        if int(self.qd_start[j + 1] - self.qd_start[j]) == 0:
+            raise _fixed(name)
+        dof = int(self.qd_start[j]) + axis
+        servo = (self.acts.position_dof if kind == "position" else self.acts.velocity_dof).get(dof)
+        if servo is not None:
+            return servo
+        if kind not in self._kinds(dof, kind):
+            raise _other_kind(name, kind, self._kinds(dof, kind))
+        if has_targets and (dof in self.acts.target_dofs or self.limits.driven(j, kind, self.acts.stride, axis)):
+            return None
+        raise _not_driven(name, kind, self.acts.actuated(j))
+
+    def ramps(self, targets: Mapping[str, Any]) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+        """``Sim.run``'s position targets as ``{joint: (start, end)}``, (worlds,) values each: a value holds, a
+        (start, end) pair ramps. Checked as ``set_targets`` checks a target (name, shape, finite, driven) before the
+        run steps, so a run too short for one period refuses a bad target too. Example:
+        ``io.ramps({"lift": (0.0, 0.12)})``."""
+        w, out, has_targets = self.index.worlds, {}, self._target_array("position") is not None
+        for name, value in targets.items():
+            a, b = value if isinstance(value, tuple) and len(value) == 2 else (value, value)
+            out[name] = (_per_world(a, w, name), _per_world(b, w, name))
+            self._route(name, self.index.joint(name), "position", has_targets)
+        return out
+
+    def _axis_values(self, name: str, joint: int, value: Any) -> np.ndarray:
+        """``value`` as (worlds, axes): one axis for a joint of one coordinate (and for a ball or free joint, as
+        before), one per coordinate for a body's several MJCF joints; a fixed joint raises."""
+        n = int(self.qd_start[joint + 1] - self.qd_start[joint])
+        if n == 0:
+            raise _fixed(name)
+        worlds = self.index.worlds
+        if n == 1 or int(self.joint_type[joint]) != D6_JOINT:
+            return _per_world(value, worlds, name)[:, None]
+        try:
+            v = np.asarray(value, dtype=np.float64)
+        except (TypeError, ValueError):
+            v = np.full(1, np.nan)
+        if (v.shape == (n,) or v.shape == (worlds, n)) and np.isfinite(v).all():
+            return np.broadcast_to(v, (worlds, n)).copy()
+        raise SimulationError(f"joint {name!r} is {n} MJCF joints on one body, one coordinate each (named in the "
+                              f"file's order), so its target is {n} finite values; got {value!r}",
+                              f"pass {n} values, ({n},) or ({worlds}, {n}), or give each MJCF joint its own nested "
+                              "body to drive it by its own name", field=name)
+
+    def _target_axis(self, where: tuple[str, int, int], vals: np.ndarray, kind: str, out: tuple[Any, Any],
+                     direct: dict[int, np.ndarray]) -> None:
+        """One coordinate's target: its own servo's ctrl, or the joint target array at that coordinate."""
+        name, j, k = where
+        host, start = out
+        if kind == "position":
+            vals = self.limits.clamp(name, j, vals, self._ctrl_span(j, k), axis=k)
+        servo = self._route(name, j, kind, host is not None, k)
+        if servo is not None:
+            direct[servo] = self.acts.gear_of(servo) * (vals + (self._ref(servo) if kind == "position" else 0.0))
+        else:
+            host[start[self.index.per_world(j, "joint")] + k] = vals    # no actuator table: Newton's own targets
+
     def set_controls(self, controls: Mapping[str, Any]) -> None:
         """Raw MuJoCo ``ctrl`` per actuator name ("<robot>/<actuator>" or a unique "<actuator>"). The ctrl of an MJCF
         ``<position>`` / ``<velocity>`` actuator is the joint position (MuJoCo's qpos) / velocity it servos to, and the
-        engine drives those from joint targets, so it is written there."""
+        engine drives those from joint targets, so it is written there (divided by the actuator's gear, as MuJoCo's
+        actuator length is gear x the joint value)."""
+        self._keep_controls()
         rows, ctrl = {}, self.engine.control
         for name, value in controls.items():
-            if name not in self.acts.names:
-                raise UnknownNameError(f"no actuator named {name!r}", f"use one of {sorted(self.acts.names)[:20]}",
-                                       field=name)
-            row, vals = self.acts.names[name], _per_world(value, self.index.worlds, name)
+            row, vals = self._actuator(name), _per_world(value, self.index.worlds, name)
             joint, kind = self.acts.target_rows.get(row, (None, None))
             if joint is None:
                 rows[row] = vals
-            elif kind == "position":
-                _targets.write(ctrl.joint_target_q, self.target_start[self.index.per_world(joint, "joint")],
-                               vals - self._ref(row))
-            elif kind == "velocity":
-                _targets.write(ctrl.joint_target_qd, self.qd_start[self.index.per_world(joint, "joint")], vals)
+            elif kind in ("position", "velocity"):          # its own coordinate of the joint (several on one body)
+                axis = self.acts.dof_of_row[row] - int(self.qd_start[joint])
+                arr, start = ((ctrl.joint_target_q, self.target_start) if kind == "position"
+                              else (ctrl.joint_target_qd, self.qd_start))
+                ref = self._ref(row) if kind == "position" else 0.0
+                _targets.write(arr, start[self.index.per_world(joint, "joint")] + axis,
+                               vals / self.acts.gear_of(row) - ref)
             else:
                 raise SimulationError(f"actuator {name!r} is driven from joint targets, and its gains are neither a "
                                       "position nor a velocity servo's", "drive its joint with sim.set_targets",
@@ -206,6 +270,51 @@ class StateIO:
                 st.body_f.assign(host)
         self.wrench_rows.clear()
 
+    def after_reset(self) -> None:
+        """``sim.reset``: loads off, joint targets and ctrl back to the start, and both of the engine's states alike.
+        Example: ``io.after_reset()``."""
+        self.clear_wrenches()
+        self._restore_controls()
+        self.match_states()
+
+    def save_controls(self) -> None:
+        """Take the joint targets and ctrl now as those ``sim.reset`` returns to (``sim.settle``, and before the first
+        command). Example: ``io.save_controls()``."""
+        self.controls0 = {k: a.numpy().copy() for k, a in self._control_arrays().items()}
+
+    def _keep_controls(self) -> None:
+        if self.controls0 is None:
+            self.save_controls()
+
+    def _restore_controls(self) -> None:
+        """The targets and ctrl of the start: a reset no longer steps toward the last command (a robot snapped back
+        to its last targets after ``sim.reset()``)."""
+        for key, arr in self._control_arrays().items():
+            if self.controls0 is not None and key in self.controls0:
+                arr.assign(self.controls0[key])
+
+    def _control_arrays(self) -> dict[str, Any]:
+        ctrl = self.engine.control
+        mj = getattr(ctrl, "mujoco", None)
+        arrays = {"q": getattr(ctrl, "joint_target_q", None), "qd": getattr(ctrl, "joint_target_qd", None),
+                  "ctrl": getattr(mj, "ctrl", None) if mj is not None else None}
+        return {k: a for k, a in arrays.items() if a is not None}
+
+    def _kinds(self, dof: int, kind: str) -> set[str]:
+        """The target kinds the coordinate's servos take (``{kind}`` when none is known: a motor or Newton's own
+        gains)."""
+        kinds = set(self.acts.target_dofs.get(dof, set()))
+        kinds |= {k for k in ("position", "velocity") if dof in getattr(self.acts, f"{k}_dof")}
+        return kinds or {kind}
+
+    def _actuator(self, name: str) -> int:
+        if name in self.acts.names:
+            return self.acts.names[name]
+        if name in self.acts.ambiguous:
+            raise UnknownNameError(f"actuator name {name!r} is in more than one robot",
+                                   f"name the robot: one of {self.acts.ambiguous[name]}", field=name)
+        raise UnknownNameError(f"no actuator named {name!r}", f"use one of {sorted(self.acts.names)[:20]}", field=name)
+
     def match_states(self) -> None:
         """After ``sim.reset``: the engine's other state (``_next``) takes every array of ``state``. The engine swaps
         the two every exchange and the reset restores ``state`` alone, so a row no solver writes (a kinematic body in
@@ -225,14 +334,14 @@ class StateIO:
                                    "drop at= for a body", field=name)
         return int(self.rods[name].bodies[0 if at == "start" else -1])
 
-    def _ctrl_span(self, joint: int) -> tuple[float, float] | None:
+    def _ctrl_span(self, joint: int, axis: int = 0) -> tuple[float, float] | None:
         """The ctrl range of the joint's position servo as joint targets (ctrl is MuJoCo's qpos: minus the joint's
         ref), or None when the robot file gives the servo none."""
-        row, lo, hi = self.acts.ctrl_span.get(joint, (None, 0.0, 0.0))
+        row, lo, hi = self.acts.span_dof.get(int(self.qd_start[joint]) + axis, (None, 0.0, 0.0))
         if row is None:
             return None
-        ref = float(self._ref(row)[0])
-        return lo - ref, hi - ref
+        ref, g = float(self._ref(row)[0]), self.acts.gear_of(row)
+        return tuple(sorted((lo / g - ref, hi / g - ref)))
 
     def _ref(self, row: int) -> np.ndarray:
         dof = self.acts.dof_of_row[row]
@@ -275,14 +384,32 @@ def plastic_strain(engine: Any) -> tuple[np.ndarray, np.ndarray] | None:
     return found
 
 
+D6_JOINT = 6        # newton.JointType.D6: a body's several MJCF joints, one coordinate each
+
+
+def _fixed(name: str) -> SimulationError:
+    return SimulationError(f"joint {name!r} is fixed: it has no coordinate, so a target cannot move it (its slot "
+                           "would be the next joint's)", "drive a moving joint; a fixed joint's .q is empty",
+                           field=name)
+
+
+def _other_kind(name: str, kind: str, kinds: set[str]) -> SimulationError:
+    other = " and ".join(sorted(kinds))
+    return SimulationError(f"joint {name!r} is driven by a {other} servo, so a {kind} target does nothing",
+                           f"use sim.set_targets(..., kind={sorted(kinds)[0]!r}), or add a <{kind}> actuator for it to "
+                           "the robot's MJCF", field=name)
+
+
 def _not_driven(name: str, kind: str, actuated: bool) -> SimulationError:
     if actuated:
         return SimulationError(f"joint {name!r} has an actuator that does not take {kind} targets (a motor, or a "
                                "<general> actuator that is not a servo)", "drive it with sim.set_controls({actuator: "
                                "value}) (names: sim.names()['actuators'])", field=name)
     return SimulationError(f"joint {name!r} has no actuator, so a {kind} target cannot move it",
-                           f"add <{kind} joint=\"...\" kp=\"...\"/> for it to the robot's MJCF <actuator> block",
-                           field=name)
+                           f"give the joint a servo in the robot file. MJCF: add <{kind} joint=\"...\" kp=\"...\"/> "
+                           "to its <actuator> block. USD: a PhysicsDriveAPI stiffness (damping for a velocity "
+                           "target) on the joint. A URDF has no servo gains (a <transmission> names an interface "
+                           "only): convert it to MJCF and add the actuator there", field=name)
 
 
 def _per_world_vec(value: Any, worlds: int, name: str) -> np.ndarray:
@@ -296,10 +423,18 @@ def _per_world_vec(value: Any, worlds: int, name: str) -> np.ndarray:
 
 
 def _per_world(value: Any, worlds: int, name: str) -> np.ndarray:
-    v = np.asarray(value, dtype=np.float64)
-    if v.shape == ():
-        return np.full(worlds, float(v))
-    if v.shape == (worlds,):
-        return v
-    raise UnknownNameError(f"target for {name!r} has shape {v.shape}, expected () or ({worlds},)",
-                           "pass one number for every world or one per world", field=name)
+    """A target or control: one number for every world or one per world, finite, as (worlds,) float64. A NaN
+    passed the range clamp and reached MuJoCo's ctrl, reported as "held at the limit"."""
+    try:
+        v = np.asarray(value, dtype=np.float64)
+    except (TypeError, ValueError):
+        raise SimulationError(f"the value for {name!r} is not a number: {value!r}",
+                              "pass a number (m or rad) for every world, or a list with one per world",
+                              field=name) from None
+    if v.shape not in ((), (worlds,)):
+        raise SimulationError(f"the value for {name!r} has shape {v.shape}, expected () or ({worlds},)",
+                              f"pass one number for every world or one per world ({worlds} values)", field=name)
+    if not np.isfinite(v).all():
+        raise SimulationError(f"the value for {name!r} is not finite: {v.tolist()}",
+                              "pass finite numbers: NaN or inf would reach the actuator as it is", field=name)
+    return np.full(worlds, float(v)) if v.shape == () else v

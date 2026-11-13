@@ -25,8 +25,17 @@ class MissingExtraError(ImporterError):
     """A mesh-processing dependency is not installed (they live in the optional ``import`` extra)."""
 
     def __init__(self, module: str) -> None:
-        super().__init__("<importer>", "deps", f"module {module!r} is missing: pip install 'alloy[import]' "
-                                               f"(or pip install {module})")
+        super().__init__("<importer>", "deps", f"module {module!r} is missing: pip install "
+                                               f"'alloy-engine[import]' (or pip install {pip_name(module)})")
+
+
+#: import name -> pip name, where they differ
+PIP_NAMES = {"skimage": "scikit-image", "PIL": "pillow", "fast_simplification": "fast-simplification"}
+
+
+def pip_name(module: str) -> str:
+    """The pip package that provides ``module``. Example: ``pip_name("skimage") == "scikit-image"``."""
+    return PIP_NAMES.get(module.split(".")[0], module.split(".")[0])
 
 
 def need(module: str):

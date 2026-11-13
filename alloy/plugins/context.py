@@ -47,6 +47,8 @@ class PluginContext:
     contacts: Any = None                     # newton.Contacts of the current step, or None (solver-native contacts)
     contact_force: Any = None                # wp.array[spatial_vector]: per contact of ``contacts``, the force on
                                              # shape0 in world frame; set when a plug-in has ``needs_contacts``
+    names: Any = None                        # the Scene's names (alloy.api.names.NameIndex) under alloy.build, so
+                                             # bodies("arm/finger") / joints() take Scene names too; None: raw labels
     time: wp.array = field(init=False)       # [W] float64 time [s] since the world's last reset, advanced every step
 
     def __post_init__(self) -> None:
@@ -102,6 +104,33 @@ class PluginContext:
         return _matches(list(getattr(self.model, f"{kind}_label")), label).size > 0
 
     def _per_world(self, kind: str, label: str) -> wp.array:
+        scene = self._scene_name(kind, label)
+        if scene is not None:
+            return wp.array(scene.astype(np.int32), dtype=wp.int32, device=self.device)
+        return self._raw_per_world(kind, label)
+
+    def _scene_name(self, kind: str, label: str) -> np.ndarray | None:
+        """Per-world indices of a Scene name ("<robot>/<part>", an object name), or None when ``label`` is not one.
+        A label that is a Scene name and also a raw label of other items raises (never a silent pick)."""
+        table = {"body": "bodies", "joint": "joints"}.get(kind)
+        names = getattr(self.names, table, None) if table and self.names is not None else None
+        if not names or label not in names:
+            return None
+        out = np.asarray(self.names.per_world(names[label], kind), np.int64)
+        raw = _matches(list(getattr(self.model, f"{kind}_label")), label)
+        if raw.size:
+            try:
+                same = np.array_equal(self._raw_per_world(kind, label).numpy(), out)
+            except PluginError:
+                same = False
+            if not same:
+                lab = list(getattr(self.model, f"{kind}_label"))
+                raise PluginError(f"{kind} {label!r} is the Scene name of {kind} {int(out[0])} "
+                                  f"({lab[int(out[0])]!r}) and also the raw label of {[lab[int(i)] for i in raw[:4]]}:"
+                                  f" rename the scene object, or pass the full raw label of the one you mean")
+        return out
+
+    def _raw_per_world(self, kind: str, label: str) -> wp.array:
         idx = _matches(list(getattr(self.model, f"{kind}_label")), label)
         where = getattr(self.model, f"{kind}_world").numpy()
         out = np.full(self.world_count, -1, np.int64)
@@ -111,12 +140,18 @@ class PluginContext:
                 continue                      # global items (ground plane) belong to no world
             if out[w] >= 0:
                 raise PluginError(f"{kind} label {label!r} appears twice in world {w}: give each {kind} a unique "
-                                  f"label in the world template")
+                                  f"label in the world template, or use its Scene name{self._scene_hint(kind)}")
             out[w] = i
         if (out < 0).any():
             raise PluginError(f"no {kind} labelled {label!r} in world {int(np.argmax(out < 0))}; {kind} labels in "
-                              f"world 0: {self.labels(kind)[:30]}. Pass label= when you add it to the builder")
+                              f"world 0: {self.labels(kind)[:30]}{self._scene_hint(kind)}. Pass one of them, or "
+                              f"label= when you add it to the builder")
         return wp.array(out.astype(np.int32), dtype=wp.int32, device=self.device)
+
+    def _scene_hint(self, kind: str) -> str:
+        table = {"body": "bodies", "joint": "joints"}.get(kind)
+        names = getattr(self.names, table, None) if table and self.names is not None else None
+        return f"; Scene names: {sorted(names)[:30]}" if names else ""
 
 
 __all__ = ["PluginContext"]

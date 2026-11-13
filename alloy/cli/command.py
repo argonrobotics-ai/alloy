@@ -16,6 +16,7 @@ worlds); 2 it could not run (the JSON says what to change). Examples::
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections.abc import Sequence
@@ -26,7 +27,7 @@ from alloy.cli.errors import RequestError, error_payload
 from alloy.cli.jsonio import dumps, json_stdout, loads_request
 from alloy.cli.registry import OPS, passed, respond
 from alloy.cli.session import Session
-from alloy.cli.spec import add_arguments, describe, flags_to_args
+from alloy.cli.spec import add_arguments, dash_values, describe, flags_to_args
 
 EXAMPLES = __doc__.split("Examples::", 1)[1]
 
@@ -85,8 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None, stdout: IO[str] | None = None) -> int:
     """Entry point of the ``alloy`` console script. ``stdout``: where the JSON goes (default: the real stdout, with
     everything else that prints redirected to stderr). Example: ``main(["list", "scenes"])``."""
+    parser = build_parser()
     try:
-        args = build_parser().parse_args(argv)
+        args = parser.parse_args(dash_values(parser, sys.argv[1:] if argv is None else argv))
     except RequestError as exc:
         return _emit({"ok": False, "op": None, "error": error_payload(exc)}, stdout, False)
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, stream=sys.stderr,
@@ -152,11 +154,22 @@ def read_requests(text: str) -> list[Any]:
     if not stripped:
         raise RequestError("no requests given", '[{"op": "build", "scene": "..."}, {"op": "step", "steps": 10}]',
                            field="source")
-    if stripped[0] in "[{" and "\n{" not in stripped:
-        data = loads_request(stripped, "batch")
-        return data if isinstance(data, list) else [data]
-    return [loads_request(line, f"batch line {i + 1}") for i, line in enumerate(stripped.splitlines())
-            if line.strip()]
+    try:                                       # the whole text as one JSON document (any layout) first
+        data = json.loads(stripped)
+    except json.JSONDecodeError:
+        lines = [(i, line) for i, line in enumerate(stripped.splitlines()) if line.strip()]
+        if len(lines) < 2 or not _is_json(lines[0][1]):
+            loads_request(stripped, "batch")   # not JSON lines either: raises, saying where the document breaks
+        return [loads_request(line, f"batch line {i + 1}") for i, line in lines]
+    return data if isinstance(data, list) else [data]
+
+
+def _is_json(text: str) -> bool:
+    try:
+        json.loads(text)
+    except json.JSONDecodeError:
+        return False
+    return True
 
 
 def run_batch(session: Session, source: str, keep_going: bool = False) -> dict[str, Any]:

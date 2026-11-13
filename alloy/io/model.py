@@ -70,6 +70,7 @@ class IOShape:
     convex: bool = True             # mesh collision uses the convex hull
     collide: bool = True
     visible: bool = True
+    solref: tuple[float, float] | None = None   # MuJoCo contact (time constant s, damping ratio); None = unknown
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,7 @@ class IOBody:
     shapes: tuple[IOShape, ...] = ()
     motion: Motion = "dynamic"
     group: str = ""                 # owning object or robot name
+    gravcomp: float = 0.0           # MuJoCo gravity compensation (1 = the body's weight is cancelled)
 
 
 @dataclass(frozen=True)
@@ -108,6 +110,11 @@ class IOJoint:
     stiffness: float = 0.0          # position-drive gain (N/m or N·m/rad), 0 = no drive
     drive_damping: float = 0.0      # velocity gain of the drive
     q0: float = 0.0                 # initial coordinate
+    spring: float = 0.0             # passive spring stiffness about ``spring_ref`` (N/m or N·m/rad)
+    spring_ref: float = 0.0         # coordinate where the passive spring is relaxed
+    drive_dampratio: float = 0.0    # MuJoCo ``dampratio`` of a position servo (used when ``drive_damping`` is 0)
+    motor_gear: float | None = None  # a force/torque motor on the joint (MuJoCo ``<motor gear=>``); None = none
+    ctrl_range: tuple[float, float] | None = None   # control range of the joint's actuator
     actuated: bool = False          # an actuator drives this joint (a robot joint)
 
 
@@ -120,6 +127,17 @@ class IOEquality:
     body1: str
     body2: str | None
     anchor: Pose = IDENTITY
+
+
+@dataclass(frozen=True)
+class IOPair:
+    """One explicit contact pair between two shapes (MuJoCo ``<contact><pair>``): its friction, and its restitution
+    when the pair's contact damping gives one."""
+
+    shape1: str
+    shape2: str
+    mu: float
+    restitution: float | None = None
 
 
 @dataclass(frozen=True)
@@ -150,6 +168,8 @@ class IOModel:
     gravity: tuple[float, float, float] = (0.0, 0.0, -9.81)
     timestep: float | None = None
     unmapped: list[Unmapped] = field(default_factory=list)
+    pairs: list[IOPair] = field(default_factory=list)
+    unwritable: dict[str, str] = field(default_factory=dict)    # child body -> joint the writers cannot express
 
     def body(self, name: str) -> IOBody:
         """The body called ``name``; raises KeyError listing the known names."""

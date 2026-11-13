@@ -288,3 +288,29 @@ def test_loop_counts_what_the_recorder_wrote():
     keys = ScriptKeys.parse("enter w enter")                     # the first enter has no episode to save
     stats = teleop_loop(session, KeyboardTeleop(["a"], keys=keys), realtime=False)
     assert stats == {"steps": 1, "saved": 1, "discarded": 0}
+
+
+def test_spacemouse_links_columns_and_takes_discard_and_quit_from_keys():
+    held = bytes([3, 1, 0])                                      # left button down
+    dev = sm.SpaceMouseTeleop(NAMES, axes={"z": ("gripper/lift", 1.0)}, buttons={"left": (1, 1.0), "right": (1, -1.0)},
+                              link={"gripper/close_left": ["gripper/close_right"]}, device=FakeHid([held]),
+                              keys=ScriptKeys.parse(". backspace space enter esc"))
+    assert dev.read().action.tolist() == [0.0, 1.0, 1.0]         # one button, both fingers
+    cmd = dev.read()
+    assert cmd.discard and not cmd.save and not cmd.quit and cmd.action.tolist() == [0.0, 1.0, 1.0]
+    assert dev.read().action.tolist() == [0.0, 0.0, 0.0]         # space zeroes this step
+    assert dev.read().save and dev.read().quit
+    assert "linked to gripper/close_left" in dev.help() and "backspace" in dev.help()
+    plain = sm.SpaceMouseTeleop(NAMES, axes={"z": (0, 1.0)}, device=FakeHid([bytes([3, b]) for b in range(4)]))
+    cmds = [plain.read() for _ in range(4)]
+    assert not any(c.discard or c.quit for c in cmds) and "there is no discard" in plain.help()
+    with pytest.raises(EnvError):
+        sm.SpaceMouseTeleop(NAMES, axes={"z": (0, 1.0)}, link={"nope": [1]}, device=FakeHid([]))
+
+
+def test_spacemouse_keys_end_and_discard_in_the_loop():
+    dev = sm.SpaceMouseTeleop(NAMES, axes={"z": (0, 1.0)}, device=FakeHid([]),
+                              keys=ScriptKeys.parse(".*3 backspace .*2 esc .*5"))
+    session = FakeSession()
+    stats = teleop_loop(session, dev, realtime=False)
+    assert stats["steps"] == 5 and session.finishes == [False, False] and stats["discarded"] == 1

@@ -82,14 +82,16 @@ class _MjcfWriter:
             el.set("density", num(self.density))
 
     def inertial(self, el: ET.Element, b: IOBody) -> None:
-        """Robots keep their authored inertials; objects get mass from geom densities (card semantics), except a
-        body with no colliding volume, which keeps its own mass so MuJoCo accepts it."""
-        if not self.robot and any(s.collide and shape_volume(s) > 0 for s in b.shapes):
+        """Every body keeps the mass, centre of mass and inertia the source gave it (a group's average density would
+        move mass between its bodies). A body without a mass gets it from its geoms' density when it has colliding
+        volume, else 1e-6 kg so MuJoCo accepts it."""
+        if b.mass <= 0 and not self.robot and any(s.collide and shape_volume(s) > 0 for s in b.shapes):
             return
         m, i = max(b.mass, 1e-6), np.asarray(b.inertia, np.float64)
-        if b.mass <= 0:
-            i = np.eye(3) * 1e-9
-            self.io.note("mjcf", b.name, "massless body given 1e-6 kg so MuJoCo accepts it")
+        if b.mass <= 0 or not np.all(np.linalg.eigvalsh(i) > 0):
+            i = np.eye(3) * (1e-9 if b.mass <= 0 else 1e-6 * m)
+            self.io.note("mjcf", b.name, "massless body given 1e-6 kg so MuJoCo accepts it" if b.mass <= 0 else
+                         "the source gives this body no usable inertia: a small one is written")
         ET.SubElement(el, "inertial", pos=_txt(b.com), mass=num(m),
                       fullinertia=_txt((i[0, 0], i[1, 1], i[2, 2], i[0, 1], i[0, 2], i[1, 2])))
 
@@ -106,7 +108,8 @@ class _MjcfWriter:
             jel.set("axis", _txt(quat_rotate(frame[3:], j.axis)))
         if j.lower is not None and j.upper is not None:
             jel.set("range", _txt((j.lower, j.upper)))
-        for attr, v in (("damping", j.damping), ("frictionloss", j.friction), ("armature", j.armature)):
+        for attr, v in (("damping", j.damping), ("frictionloss", j.friction), ("armature", j.armature),
+                        ("stiffness", j.spring), ("springref", j.spring_ref if j.spring else 0.0)):
             if v:
                 jel.set(attr, num(v))
         if j.q0:
@@ -116,6 +119,8 @@ class _MjcfWriter:
         """One body at ``rel`` (its frame in the parent body's frame) with its inertial, joint and geoms."""
         el = ET.SubElement(parent, "body", name=b.name)
         _pose_attrs(el, rel)
+        if b.gravcomp:
+            el.set("gravcomp", num(b.gravcomp))
         self.inertial(el, b)
         if j is None and parent is self.world and not self.g.fixed_base:
             ET.SubElement(el, "freejoint", name=f"{b.name}_free")
@@ -164,14 +169,22 @@ class _MjcfWriter:
 
     def actuators(self) -> None:
         joints = ([self.g.base_joint] if self.g.base_joint is not None else []) + list(self.g.joints)
-        driven = [j for j in joints if j.kind in ("revolute", "prismatic") and j.stiffness > 0]
-        if not driven:
+        hinged = [j for j in joints if j.kind in ("revolute", "prismatic")]
+        driven = [j for j in hinged if j.stiffness > 0]
+        motors = [j for j in hinged if j.motor_gear is not None and j.stiffness <= 0]
+        if not driven and not motors:
             return
         act = ET.SubElement(self.root, "actuator")
+        for j in motors:
+            a = ET.SubElement(act, "motor", name=f"{j.name}_act", joint=j.name, gear=num(j.motor_gear))
+            if j.ctrl_range is not None:
+                a.set("ctrlrange", _txt(j.ctrl_range))
         for j in driven:
             a = ET.SubElement(act, "position", name=f"{j.name}_act", joint=j.name, kp=num(j.stiffness))
             if j.drive_damping:
                 a.set("kv", num(j.drive_damping))
+            elif j.drive_dampratio:
+                a.set("dampratio", num(j.drive_dampratio))
             if j.effort is not None:
                 a.set("forcerange", _txt((-j.effort, j.effort)))
 
@@ -189,7 +202,7 @@ def group_mjcf(io: IOModel, g: Group, *, robot: bool = False, density: float | N
 
 def write_group_mjcf(io: IOModel, g: Group, path: str | Path, *, robot: bool = False,
                      density: float | None = None) -> Path:
-    """Write :func:`group_mjcf` to ``path``; MuJoCo must load it (raises ValueError with MuJoCo's message)."""
+    """Write :func:`group_mjcf` to ``path``; MuJoCo must load it (raises ImportFileError with MuJoCo's message)."""
     import mujoco  # noqa: PLC0415
 
     path = Path(path)
@@ -200,5 +213,7 @@ def write_group_mjcf(io: IOModel, g: Group, path: str | Path, *, robot: bool = F
     try:
         mujoco.MjModel.from_xml_path(str(path))
     except Exception as exc:  # noqa: BLE001
-        raise ValueError(f"generated MJCF {path} does not load in MuJoCo: {exc}") from exc
+        raise ImportFileError(f"the MJCF written for {g.name!r} ({path}) does not load in MuJoCo: {exc}",
+                              "load the source file directly instead (scene.add_robot(name, path) or "
+                              "alloy.load(path)), and report this file: the writer should handle it") from exc
     return path

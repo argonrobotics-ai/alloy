@@ -58,6 +58,7 @@ from alloy.precision import health_joint
 from alloy.precision.health_energy_gain import EnergyGain, energy_ref
 from alloy.precision import health_failure as hf
 from alloy.precision import health_kernels as hk
+from alloy.precision import health_native
 from alloy.precision.health_work import book_work
 from alloy.precision import health_physics as hp
 from alloy.precision import health_reset
@@ -71,7 +72,7 @@ from alloy.precision.health_soft_pen import SoftPen
 from alloy.precision.cloth_stretch import RangeChecks
 from alloy.precision.self_contact import report_fields as sc_fields, state_arrays as sc_state_arrays
 from alloy.precision.health_start import StartChecks
-from alloy.precision.health_plugin import PluginChecks
+from alloy.precision.health_plugin import PluginChecks, ShareCheckMixin
 from alloy.precision.health_setup import (
     WeldLimits, coord_worlds, energy_model, energy_scale_floor, shape_thickness, unjudged_world, weld_table,
 )
@@ -125,7 +126,7 @@ def _accum(world_count: int, device) -> hk.Accum:
                         ("pen_shape_a", wp.int32), ("pen_shape_b", wp.int32), ("pen_particle", wp.int32),
                         ("cut_front", wp.float32), ("cut_front_hit", wp.int32),
                         ("plug_check", wp.int32), ("plug_depth", wp.float32),
-                        ("joint_m", wp.float32), ("stretch_fail", wp.int32),
+                        ("joint_m", wp.float32), ("stretch_fail", wp.int32), ("pen_native_flag", wp.float32),
                         ("joint_rad", wp.float32), ("joint_fail", wp.int32), ("iters", wp.int32),
                         ("residual", wp.float32), ("energy", wp.float64)):
         setattr(acc, name, wp.zeros(world_count, dtype=dtype, device=device))
@@ -145,7 +146,7 @@ def _limits(t: Thresholds, check_energy: bool, static_flags: int, native_pen_fla
     return lim
 
 
-class HealthMonitor:
+class HealthMonitor(ShareCheckMixin):
     """``HealthLike``: per-world health records for one Model (all worlds of one pack)."""
 
     def __init__(self, model: newton.Model, cfg: CheckPolicy, *, precision_pairs: Sequence[PrecisionPairSpec] = (),
@@ -165,6 +166,7 @@ class HealthMonitor:
         self._latched, self._bad = (wp.zeros(self.world_count, dtype=wp.int32, device=self.device) for _ in range(2))
         self._thick = wp.array(shape_thickness(model), dtype=wp.float32, device=self.device)
         self._pair_mark = wp.zeros(max(model.shape_count, 1), dtype=wp.int32, device=self.device)   # health_pen
+        self._shape_allow = wp.zeros(model.shape_count, dtype=wp.float32, device=self.device)  # soft on purpose
         self._solids, _ = build_solids(model, self.device)  # rigid thin-part rule: body solids along the normal
         self._cut_blade = wp.zeros(0, dtype=wp.int32, device=self.device)      # SCR-SC5-3, set_cut_front
         self._soft_world = model.particle_world                               # skip_soft_contacts
@@ -198,7 +200,7 @@ class HealthMonitor:
         self._energy_on = "energy" not in cfg.skip and (energy == "on" or (energy == "auto" and is_passive(model)))
         static = int(HealthFlags.DET_DOWNGRADED) if downgraded else 0
         self._lim = _limits(self.thresholds, self._energy_on, static, bool(cfg.native_pen_flags))
-        self._lim.pen_dwell_s = cfg.native_pen_dwell_s          # GAP-E1; native_pen_hard goes to check_mjw_contacts
+        self._lim.pen_dwell_s = cfg.native_pen_dwell_s          # GAP-E1; native_pen_hard goes to health_native
         self._energy = energy_model(model)
         if body_active is not None:
             self.set_body_active(body_active)
@@ -256,7 +258,7 @@ class HealthMonitor:
         self._check_state(state_out)
         if contacts is not None:
             self._check_contacts(contacts, state_out)
-        self._check_mjw_contacts(state_out)
+        health_native.check_native(self, state_out)         # MuJoCo's own contacts (GAP-E1)
         self._plugins.launch(self._acc)
         self._check_sources()
         if self._soft_pen is not None:        # PEN_FAIL: a soft body's particle inside another soft body
@@ -327,21 +329,6 @@ class HealthMonitor:
                                            if s.kind == "over" and not (self._rigid_unused and s.rigid)]
         for src in self._contact_sources[key]:
             self._launch_source(src)
-
-    def _check_mjw_contacts(self, state: newton.State) -> None:
-        """Penetration from each SolverMuJoCo's MuJoCo Warp contacts of the last step (device only, capturable)."""
-        m, pen_fail = self.model, float(self.thresholds.pen_fail_m)
-        body_q = state.body_q if state.body_q is not None else self._empty[wp.transform]
-        for src in self._mjw_contacts:
-            d = src.data
-            wp.launch(hk.check_mjw_contacts, dim=int(d.naconmax),
-                      inputs=[d.nacon, d.contact.dist, d.contact.worldid, d.contact.geom, src.geom_shape, self._thick,
-                              self._pair_mark, self.world_count, pen_fail, float(self.cfg.native_pen_hard),
-                              d.contact.frame, self._solids, m.shape_type, m.shape_scale,
-                              m.shape_transform, m.shape_body, body_q, self._acc], device=self.device)
-            wp.launch(hf.resolve_native, dim=self.world_count, inputs=[d.contact.geom, src.geom_shape, self._acc],
-                      device=self.device)
-            self._mark_pen_measured()
 
     def _mark_pen_measured(self) -> None:
         wp.launch(hk.mark_pen_measured, dim=self.world_count, inputs=[self.world_count, self._acc], device=self.device)

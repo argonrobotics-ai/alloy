@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pour-v0: water pours from a spout (Scene.add_pour, 100 ml at 100 ml/s); move a bowl under the stream to catch it.
 
-Liquids reset all worlds together (``env.together``): every episode ends at max_steps. A GPU is strongly advised.
+Each world resets on its own (a liquid has per-world resets); every episode ends at max_steps, so reward and success
+come from the particle count inside the cup at the end. A GPU is strongly advised.
 Run: python examples/envs/08_pour.py [num_envs]
 """
 import json

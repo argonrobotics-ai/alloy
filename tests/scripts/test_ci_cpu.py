@@ -4,6 +4,7 @@
 - ALLOY_CI_DIST picks the xdist mode (default loadfile); an unknown mode fails before anything runs.
 - ALLOY_CI_SKIP_ANALYTIC=1 skips the analytic suite and prints no "analytic suite exit" line.
 - The "ci_cpu: pytest exit N" line the merge gate reads is unchanged.
+- Both suites run on the warp CPU route, or on ALLOY_TEST_CPU_ROUTE's (release tiers; tests/conftest.py).
 A fake PYTHON records each call, so nothing real runs."""
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ def _run(tmp_path: Path, *args: str, **env: str) -> tuple[subprocess.CompletedPr
     fake.write_text(_FAKE)
     fake.chmod(0o755)
     log = tmp_path / "calls.log"
-    base = {k: v for k, v in os.environ.items() if not k.startswith("ALLOY_CI_")}
+    base = {k: v for k, v in os.environ.items() if not k.startswith("ALLOY_CI_") and k != "ALLOY_TEST_CPU_ROUTE"}
     base.update(PYTHON=str(fake), CI_FAKE_LOG=str(log), ALLOY_CI_SKIP_WARM="1", ALLOY_CI_OUT=str(tmp_path / "out"))
     (tmp_path / "out").mkdir(exist_ok=True)
     proc = subprocess.run(["bash", str(SCRIPT), *args], env={**base, **env}, capture_output=True, text=True,
@@ -96,3 +97,12 @@ def test_ci_runs_on_the_warp_cpu_route(tmp_path: Path) -> None:
     assert proc.returncode == 0, proc.stderr
     routes = (tmp_path / "calls.log.route").read_text().split()
     assert len(routes) == len(calls) >= 1 and set(routes) == {"warp"}
+
+
+def test_the_release_opt_in_moves_both_suites(tmp_path: Path) -> None:
+    """ALLOY_TEST_CPU_ROUTE=mjc (a release tier on the route pip users get) moves pytest and the analytic suite."""
+    proc, calls = _run(tmp_path, ALLOY_TEST_CPU_ROUTE="mjc", ALLOY_CPU_ROUTE="warp")
+    assert proc.returncode == 0, proc.stderr
+    routes = (tmp_path / "calls.log.route").read_text().split()
+    assert len(routes) == len(calls) >= 1 and set(routes) == {"mjc"}
+    assert "ci_cpu: CPU route mjc" in proc.stdout

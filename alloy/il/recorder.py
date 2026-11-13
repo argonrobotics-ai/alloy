@@ -29,6 +29,7 @@ import numpy as np
 from alloy.envs.errors import EnvError
 from alloy.il.episode import DatasetSpec, Episode, Writer
 from alloy.il.snapshot import WorldSnapshot
+from alloy.il.support import labels, require_vector_env, unrestorable
 
 log = logging.getLogger("alloy.il")
 
@@ -40,12 +41,21 @@ class Recorder:
 
     def __init__(self, env: Any, writers: Sequence[Writer], *, task: str | None = None,
                  keep: str | Callable[[Episode], bool] = "success", states: bool = True,
-                 max_episodes: int | None = None, env_kwargs: dict[str, Any] | None = None) -> None:
+                 max_episodes: int | None = None, env_kwargs: dict[str, Any] | None = None,
+                 manual: bool = False) -> None:
+        require_vector_env(env, "Recorder")
         if not callable(keep) and keep not in KEEP:
             raise EnvError(f"keep is {keep!r}", f"use one of {KEEP} or a function of the Episode", field="keep")
         self.env, self.writers, self.keep, self.max_episodes = env, list(writers), keep, max_episodes
+        self.manual = manual                               # the operator decides: see ``finish`` (teleop sets it)
+        self.world_quota: int | None = None                # save at most this many episodes per world (evaluate)
         self.num_envs, self.xp = int(env.num_envs), env.xp
+        self._ended = np.zeros(self.num_envs, np.int64)    # episodes each world ended since the last full reset
         self.snapshot = WorldSnapshot(env) if states else None
+        why = unrestorable(env, self.snapshot.has_particles) if self.snapshot is not None else None
+        if why is not None:
+            log.warning("Recorder: %s; Episode.states and Episode.start lack that part and replay refuses this "
+                        "env (the actions, observations and rewards are recorded in full)", why)
         self.spec = self._spec(task, env_kwargs or {})
         for w in self.writers:
             w.open(self.spec)
@@ -71,12 +81,17 @@ class Recorder:
         env = self.env
         single = env.single_observation_space
         parts = dict(single.spaces) if hasattr(single, "spaces") else {"state": single}
+        groups = tuple(getattr(env, "obs_groups", ()))
+        named = {g: labels(env, g) for g in groups if g in parts} or {"state": labels(env, None)}
+        named = {k: v for k, v in named.items() if k in parts and len(parts[k].shape) == 1
+                 and len(v) == int(parts[k].shape[0])}
         return DatasetSpec(
             env=str(env.task.name), task=task if task is not None else str(env.task.name),
             fps=1.0 / float(env.sim.dt),
             obs_shapes={k: tuple(int(n) for n in s.shape) for k, s in parts.items()},
             obs_dtypes={k: str(np.dtype(s.dtype)) for k, s in parts.items()},
-            obs_names=list(env.obs_names()), action_names=list(env.action_names()),
+            obs_names=list(next(iter(named.values()), [])), obs_key_names=named,
+            action_names=list(env.action_names()),
             action_mode=str(env.writer.spec.mode),
             state_names=self.snapshot.flat_names() if self.snapshot is not None else [],
             device=str(env.device), alloy_version=str(alloy.__version__), env_kwargs=dict(env_kwargs))
@@ -93,6 +108,8 @@ class Recorder:
         obs, info = self.env.reset(seed=seed, options=options)
         mask = (options or {}).get("reset_mask")
         mask = np.ones(self.num_envs, bool) if mask is None else np.asarray(self.xp.to_numpy(mask), bool)
+        if mask.all():
+            self._ended[:] = 0
         self._restart(mask, self._host(obs))
         return obs, info
 
@@ -120,7 +137,9 @@ class Recorder:
 
     def finish(self, save: bool = True) -> Any:
         """End every world's running episode now (teleoperation: the operator decides), write them when ``save``
-        (whatever ``keep`` says; their last step is marked truncated), reset the env and return the new observation.
+        (their last step is marked truncated), reset the env and return the new observation. ``save=True`` is the
+        operator's approval: it saves an episode that did not pass the success check under ``keep="success"``. A
+        ``keep`` function still decides, and an INVALID episode is saved only with ``keep="all"``.
 
         Example: ``obs = rec.finish(save=True)``."""
         self._require_ready()
@@ -163,7 +182,7 @@ class Recorder:
             self._idle = (self._idle & ~woke) | done       # next_step: the reset happens in the following step,
             begins = woke                                  # whose action is void; disabled: until reset(mask)
         self._obs = obs_np
-        self._state = self.snapshot.capture() if self.snapshot is not None else None
+        self._state = self.snapshot.capture(randomized=bool(begins.any())) if self.snapshot is not None else None
         self._mark_begin(begins)
         self._trim()
 
@@ -179,7 +198,7 @@ class Recorder:
         self._idle = self._idle & ~mask
         self._bad[mask] = False
         self._obs = obs_np
-        self._state = self.snapshot.capture() if self.snapshot is not None else None
+        self._state = self.snapshot.capture(randomized=True) if self.snapshot is not None else None
         self._mark_begin(mask)
         self._trim()
 
@@ -204,7 +223,9 @@ class Recorder:
         self.invalid += int((mask & self._bad).sum())
         for w in np.flatnonzero(mask):
             episode = self._episode(int(w), bool(success[w]) and not self._bad[w])   # frozen: no success
-            if not (force or self._keeps(episode)) or self.full:
+            over = self.world_quota is not None and self._ended[w] >= self.world_quota
+            self._ended[w] += 1
+            if over or not self._keeps(episode, force) or self.full:
                 self.dropped += 1
                 continue
             episode.index = self.saved
@@ -212,16 +233,24 @@ class Recorder:
                 writer.write(episode)
             self.saved += 1
 
-    def _keeps(self, episode: Episode) -> bool:
+    def _keeps(self, episode: Episode, force: bool) -> bool:
+        """``force``: the operator approved it (``finish(save=True)``). Otherwise, in ``manual`` mode an episode
+        the env ended is kept only when it succeeded: a timed-out attempt nobody approved is not a demonstration."""
+        if self.manual and not force and not episode.success:
+            return False
         if callable(self.keep):
             return bool(self.keep(episode))
-        return episode.success or self.keep == "all"
+        if self.keep == "all":
+            return True
+        return (episode.success or force) and not episode.invalid
 
     def _episode(self, w: int, success: bool) -> Episode:
         frames = self._frames[int(self._begin[w]) - self._base:]
         stack = lambda key: np.stack([f[key][w] for f in frames])                      # noqa: E731
-        obs = {k: np.stack([f["obs"][k][w] for f in frames]) for k in frames[0]["obs"]}
-        nxt = {k: np.stack([f["next_obs"][k][w] for f in frames]) for k in frames[0]["next_obs"]}
+        # one (T + 1, ...) array per key: obs is its first T rows and next_obs its last T (views, not two copies)
+        both = {k: np.stack([frames[0]["obs"][k][w], *(f["next_obs"][k][w] for f in frames)])
+                for k in frames[0]["obs"]}
+        obs, nxt = {k: v[:-1] for k, v in both.items()}, {k: v[1:] for k, v in both.items()}
         states = stack("state") if frames[0]["state"] is not None else None
         return Episode(obs=obs, next_obs=nxt, actions=stack("action"), rewards=stack("reward"),
                        terminated=stack("terminated"), truncated=stack("truncated"), success=success, states=states,
@@ -244,7 +273,11 @@ class Recorder:
 
     def _action(self, actions: Any) -> np.ndarray:
         a = np.array(self.xp.to_numpy(self.xp.asarray(actions, "float32")), np.float32)
-        return a if self.spec.action_mode == "absolute" else np.clip(a, -1.0, 1.0)
+        if self.spec.action_mode != "absolute":
+            return np.clip(a, -1.0, 1.0)
+        writer = self.env.writer                           # absolute: the env clips to the ActionSpec's low / high
+        low, high = getattr(writer, "low_np", None), getattr(writer, "high_np", None)
+        return a if low is None or high is None else np.clip(a, low, high).astype(np.float32, copy=False)
 
     def _flat_state(self) -> np.ndarray | None:
         return self.snapshot.flat(self._state) if self.snapshot is not None and self._state is not None else None

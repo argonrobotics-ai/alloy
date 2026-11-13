@@ -41,11 +41,30 @@ class SessionError(AlloyAPIError, LookupError):
     """A simulation id that is not open, or too many open simulations. Example: ``step`` with ``sim="nope"``."""
 
 
+#: longest message or fix a reply carries: an error echoing a huge input (a 1 MB id) stays small
+MAX_TEXT = 4000
+
+
+def bounded(text: Any, limit: int = MAX_TEXT) -> Any:
+    """``text`` cut to ``limit`` characters with a note of how much was left out (non-strings unchanged).
+
+    Example: ``len(bounded("x" * 10_000)) < 4100``."""
+    if not isinstance(text, str) or len(text) <= limit:
+        return text
+    return f"{text[:limit]}... ({len(text) - limit} more characters)"
+
+
 def error_payload(exc: BaseException) -> dict[str, Any]:
-    """JSON form of ``exc``: ``{"type", "message", "fix", "field"}``. API errors keep their own fix; engine errors
-    get the API's remedy table; anything unexpected is logged with its traceback and says how to report it.
+    """JSON form of ``exc``: ``{"type", "message", "fix", "field"}``, each text at most ``MAX_TEXT`` characters.
+    API errors keep their own fix; engine errors get the API's remedy table; anything unexpected is logged with its
+    traceback and says how to report it.
 
     Example: ``error_payload(FileNotFoundError("x.xml"))["fix"]``."""
+    payload = _payload(exc)
+    return {k: bounded(v, 200 if k == "field" else MAX_TEXT) for k, v in payload.items()}
+
+
+def _payload(exc: BaseException) -> dict[str, Any]:
     if isinstance(exc, AlloyAPIError):
         d = exc.to_dict()
         return {"type": d["error"], "message": d["message"], "fix": d["fix"], "field": d["field"]}

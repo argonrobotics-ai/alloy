@@ -35,7 +35,7 @@ passes, then the full check.
 ```python
 from dataclasses import dataclass
 import warp as wp
-import newton
+from alloy._vendor import newton        # Alloy's own copy of Newton; a pip install has no top-level `newton`
 from alloy.plugins import ForcePlugin, Forces, Law, LawResult, TestScene, body_xform
 from alloy.plugins.funcs import add_wrench
 
@@ -72,6 +72,9 @@ class Drag(ForcePlugin):
     def laws(self):                                 # what must be true
         return [Law("terminal_velocity", check_terminal)]
 ```
+
+With `falling_box` and `check_terminal` from section 6 below it, this is one whole file that passes `python -m
+alloy.plugins check drag.py --quick`.
 
 Config field types: `str`, `int`, `float`, `bool`, `None`, and tuples/lists of them (vectors as tuples).
 `Drag(coefficient=2.0)`, `Drag({"coefficient": 2.0})` and `Drag(Drag.Config(coefficient=2.0))` are the same.
@@ -111,7 +114,8 @@ Register arrays in `setup`:
 - `self.x = self.add_state("x", ctx.zeros((ctx.world_count, ...)))`: anything the next step reads (reservoirs,
   volumes, ink maps, sensor readings). First dimension = worlds. Snapshotted, reset, rolled back and digested.
 - `self.u = self.add_input("u", ctx.zeros(ctx.world_count))`: a command the user sets between periods with
-  `plugin.set_input("u", value_or_per_world_values)`.
+  `plugin.set_input("u", value_or_per_world_values)`. `sim.reset()` returns it to its value at the build (or at the
+  last `sim.settle`), as joint targets.
 
 ## 4. Conventions and helpers
 

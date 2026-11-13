@@ -249,3 +249,60 @@ def test_force_on_sums_with_the_right_sign_per_pair() -> None:
     assert alloy.viewer.force_on(sim, "table") == pytest.approx([0, 0, -0.3 * g], abs=0.02 * 0.3 * g)
     with pytest.raises(alloy.UnknownNameError):
         alloy.viewer.force_on(sim, "blok")
+
+
+def test_force_on_says_once_that_cloth_loads_are_not_counted(caplog):
+    """force_on reads MuJoCo's rigid contacts only: with a cloth (or soft, liquid, sand) route in the sim it says so,
+    once per sim; a rigid scene stays silent (audit T2-010)."""
+    from alloy.viewer._contacts import force_on
+
+    rigid = alloy.build(_scene(_starts([REST_Z])), device="cpu", seed=0)
+    with caplog.at_level("WARNING", logger="alloy.viewer"):
+        force_on(rigid, "block")
+    assert not [r for r in caplog.records if "rigid contacts only" in r.getMessage()]
+    scene = _scene(_starts([REST_Z]))
+    scene.add_cloth("sheet", size=(0.1, 0.1), pos=(0.2, 0.0, TOP + 0.05), resolution=4, mass=0.01)
+    soft = alloy.build(scene, device="cpu", seed=0)
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="alloy.viewer"):
+        force_on(soft, "block")
+        force_on(soft, "block")
+    notes = [r.getMessage() for r in caplog.records if "rigid contacts only" in r.getMessage()]
+    assert len(notes) == 1 and "cloth" in notes[0]
+
+
+ROVER = """<mujoco model="rover"><worldbody>
+  <body name="chassis" pos="0.20 0 0.43"><freejoint name="root"/>
+    <geom type="box" size="0.05 0.05 0.03" mass="1.0"/>
+    <body name="arm" pos="0 0 0.05">
+      <joint name="j1" type="hinge" axis="0 1 0" range="-1.5 1.5" damping="2.0"/>
+      <geom type="sphere" size="0.02" mass="0.5"/>
+    </body>
+  </body></worldbody></mujoco>"""
+
+
+@pytest.mark.compile_heavy
+def test_force_on_a_robot_or_rod_name_counts_all_its_parts() -> None:
+    """A robot's or a chain rod's own name used to read (0, 0, 0): its contacts are listed under "<name>/<part>"."""
+    scene = alloy.Scene(worlds=1, dt=0.01)
+    scene.add_ground()
+    scene.add_box("table", size=(1.0, 1.0, 0.4), pos=(0, 0, 0.2), static=True)
+    scene.add_robot("rover", mjcf=ROVER)
+    scene.add_rod("cable", length=0.30, radius=0.01, segments=5, pos=(-0.20, 0, 0.41), mass=0.2, route="chain")
+    sim = alloy.build(scene, device="cpu", seed=0)
+    sim.step(120)
+    g = 9.81
+    rover, cable = alloy.viewer.force_on(sim, "rover"), alloy.viewer.force_on(sim, "cable")
+    assert rover == pytest.approx([0, 0, 1.5 * g], abs=0.05)
+    assert cable == pytest.approx([0, 0, 0.2 * g], abs=0.05)
+    assert alloy.viewer.force_on(sim, "table") == pytest.approx([0, 0, -1.7 * g], abs=0.1)
+    parts = [n for n in sim.names()["bodies"] if n.startswith("rover/")]
+    assert sum(alloy.viewer.force_on(sim, p) for p in parts) == pytest.approx(rover, abs=1e-9)
+    assert alloy.viewer.force_on(sim, "rover/chassis") == pytest.approx(rover, abs=1e-9)   # the arm touches nothing
+
+
+def test_belongs_matches_parts_not_name_prefixes() -> None:
+    from alloy.viewer._contacts import _belongs
+
+    assert _belongs("arm", "arm") and _belongs("arm/link1", "arm")
+    assert not _belongs("arm2", "arm") and not _belongs("arm2/link1", "arm") and not _belongs("arm", "arm/link1")

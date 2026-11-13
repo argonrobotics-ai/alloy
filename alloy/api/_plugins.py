@@ -40,12 +40,13 @@ def build_engine(built: Any, profile: str, *, seed: int, plugins: Sequence[Any] 
     parts = wiring.wire(built, p, stepper=stepper_for(built))       # plug-ins only (a film on a static plate)
     try:
         made = [_make(x, parts.built) for x in plugins]
-        host = PluginHost(parts.built.model, made, control_dt=parts.built.control_dt)
+        host = PluginHost(parts.built.model, made, control_dt=parts.built.control_dt, names=_names(parts.built))
         host.install(parts.stepper)
     except AlloyAPIError:
         raise
     except (PluginError, ValueError, TypeError) as exc:
-        raise BuildError(f"plug-in setup failed: {exc}", _FIX, field="plugins") from exc
+        fix = getattr(exc, "fix", "") or _FIX           # a PluginError names its own change
+        raise BuildError(f"plug-in setup failed: {exc}", fix, field="plugins") from exc
     use_graph, cpu_graph = _graphs(wiring, parts.built, p)
     sim = IntegratedSimulation(parts.built, precision=parts.precision, contact_layer=parts.contact_layer,
                                gap_monitor=parts.gap_monitor, health=parts.health, topology=parts.topology,
@@ -54,6 +55,17 @@ def build_engine(built: Any, profile: str, *, seed: int, plugins: Sequence[Any] 
     sim.parts, sim.plugins = parts, host
     log.info("plug-ins in the simulation: %s", sorted(host.plugins))
     return sim
+
+
+def _names(built: Any) -> Any:
+    """The Scene's names for the plug-ins (``ctx.bodies("arm/finger")``); None when the scene has none to give."""
+    from alloy.api.names import NameIndex  # noqa: PLC0415
+
+    try:
+        return NameIndex.from_built(built)
+    except (AttributeError, KeyError, ValueError) as exc:
+        log.warning("plug-ins get raw body labels only (no Scene names): %s", exc)
+        return None
 
 
 def check(plugins: Sequence[Any]) -> list[Any]:

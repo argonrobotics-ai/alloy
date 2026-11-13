@@ -27,11 +27,13 @@ from alloy.sysid.recording import Recording, load_csv, make_episode
 HDF5_SUFFIXES = (".h5", ".hdf5", ".hdf")
 
 
-def load_recording(path: str | Path, joints: list[str] | None = None, columns: list[int] | None = None) -> Recording:
-    """Read ``path`` by its kind. Example: ``load_recording("take.csv")``, ``load_recording("my_dataset/")``."""
+def load_recording(path: str | Path, joints: list[str] | None = None, columns: list[int] | None = None,
+                   aliases: dict[str, str] | None = None) -> Recording:
+    """Read ``path`` by its kind. ``joints``, ``columns`` and ``aliases`` are ``load_lerobot``'s.
+    Example: ``load_recording("take.csv")``, ``load_recording("my_dataset/")``."""
     path = Path(str(path)).expanduser()
     if path.is_dir():
-        return load_lerobot(path, joints, columns)
+        return load_lerobot(path, joints, columns, aliases)
     if not path.is_file():
         raise SysidError(f"recording {str(path)!r} does not exist", "pass a CSV or HDF5 file or a LeRobot dataset "
                          "folder", field="data")
@@ -98,8 +100,12 @@ def _names(raw: Any) -> list[str] | None:
     return [x.decode() if isinstance(x, bytes) else str(x) for x in np.asarray(raw).reshape(-1).tolist()]
 
 
-def load_lerobot(folder: str | Path, joints: list[str] | None = None, columns: list[int] | None = None) -> Recording:
-    """Read a LeRobot dataset folder (module docstring). Example: ``load_lerobot("data/so100_take")``."""
+def load_lerobot(folder: str | Path, joints: list[str] | None = None, columns: list[int] | None = None,
+                 aliases: dict[str, str] | None = None) -> Recording:
+    """Read a LeRobot dataset folder (module docstring). ``joints``: the joint of each ``action`` column (default:
+    the dataset's action names, an actuator name replaced by its joint through ``aliases``); ``columns``: the
+    ``observation.state`` column of each joint (default: the state columns named after the joints, as an
+    ``alloy.il`` recording's ``<joint>.q``). Example: ``load_lerobot("data/so100_take")``."""
     folder = Path(folder)
     info_path = folder / "meta" / "info.json"
     if not info_path.is_file():
@@ -124,18 +130,22 @@ def load_lerobot(folder: str | Path, joints: list[str] | None = None, columns: l
     col = {k: np.concatenate([np.asarray(t.column(k).to_pylist(), np.float64) for t in tables]) for k in wanted}
     action, state = col["action"].reshape(len(col["timestamp"]), -1), col["observation.state"].reshape(
         len(col["timestamp"]), -1)
+    names = joints or _feature_names(info, "action") or _feature_names(info, "observation.state")
+    names = None if names is None else [(aliases or {}).get(_strip(n), _strip(n)) for n in names]
+    if columns is None:
+        columns = _named_columns(names, _feature_names(info, "observation.state"), state.shape[1])
     if columns is not None:
         state = state[:, list(columns)]
-    names = joints or _feature_names(info, "action") or _feature_names(info, "observation.state")
     if action.shape[1] != state.shape[1] or names is None or len(names) != action.shape[1]:
         raise SysidError(f"{folder.name}: `action` has {action.shape[1]} columns, `observation.state` "
                          f"{state.shape[1]}, and {0 if names is None else len(names)} joint names are known",
-                         "sysid needs one joint target and one joint position per joint: pass joints=[...] "
-                         "(CLI --joints) in column order, and columns=[...] (--state-columns) to pick the joint "
-                         "positions out of a longer state", field="data")
+                         "sysid needs one joint target and one joint position per joint. Name the joint of each "
+                         "action column and the state column that holds its position: alloy.sysid.fit(robot, data, "
+                         "column_names=[...], state_columns=[...]); command line --column-names a,b "
+                         "--state-columns 0,2; load_recording(data, joints=[...], columns=[...])", field="data")
     episodes = [make_episode(col["timestamp"][m], action[m], state[m])
                 for m in (col["episode_index"] == e for e in np.unique(col["episode_index"]))]
-    rec = Recording([_strip(n) for n in names], episodes, source=str(folder))
+    rec = Recording(list(names), episodes, source=str(folder))
     rec.notes.append("LeRobot dataset: `action` read as absolute joint targets, `observation.state` as positions")
     return rec
 
@@ -147,10 +157,24 @@ def _feature_names(info: dict[str, Any], key: str) -> list[str] | None:
     return [str(n) for n in names] if isinstance(names, (list, tuple)) and names else None
 
 
+def _named_columns(joints: list[str] | None, state_names: list[str] | None, width: int) -> list[int] | None:
+    """The state column named after each joint (``"arm/elbow.q"`` or ``"elbow.pos"`` for ``"elbow"``), or None
+    when the state is not labelled per column or a joint has no column of its name."""
+    if joints is None or state_names is None or len(state_names) != width:
+        return None
+    position = [None if n.endswith((".qd", ".vel")) else _strip(n) for n in state_names]
+    if any(position.count(j) != 1 for j in joints):
+        return None
+    return [position.index(j) for j in joints]
+
+
 def _strip(name: str) -> str:
-    """A joint name without a ``.pos`` suffix or a ``robot/`` prefix (``"shoulder_pan.pos"`` -> ``"shoulder_pan"``)."""
+    """A joint name without a ``.pos`` / ``.q`` suffix or a ``robot/`` prefix (``"arm/pan.pos"`` -> ``"pan"``)."""
     name = name.rsplit("/", 1)[-1]
-    return name[:-4] if name.endswith(".pos") else name
+    for suffix in (".pos", ".q"):
+        if name.endswith(suffix):
+            return name[:-len(suffix)]
+    return name
 
 
 __all__ = ["load_hdf5", "load_lerobot", "load_recording", "save_hdf5"]

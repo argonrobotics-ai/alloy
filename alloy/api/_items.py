@@ -75,14 +75,41 @@ def _mesh_spec(path: Any, vertices: Any, faces: Any) -> dict[str, Any]:
                          "pass vertices=np.array([[x, y, z], ...]), faces=np.array([[i, j, k], ...])", field="faces")
     if f.size and (f.min() < 0 or f.max() >= len(v)):
         raise SceneError("faces index outside the vertex list", "use 0-based vertex indices", field="faces")
+    bad = int((~np.isfinite(v)).sum())
+    if bad:
+        raise SceneError(f"vertices hold {bad} non-finite coordinate(s) (NaN or inf)",
+                         "give every vertex finite x, y, z coordinates in metres", field="vertices")
     return {"vertices": v.tolist(), "faces": f.astype(int).tolist()}
+
+
+def mixed_winding_edges(vertices: Any, faces: Any) -> int:
+    """Edges that both of their faces run the same way, in a closed mesh (0 for a consistently wound or an open
+    mesh): such a mesh's signed volume, so the mass a body gets from it, is wrong (half a cube's faces flipped: 0).
+    Vertices at the same coordinates are merged first, as an OBJ repeats them along its texture seams.
+
+    Example: ``mixed_winding_edges(v, f)`` -> 0 for ``trimesh.creation.box()``'s vertices and faces."""
+    import numpy as np  # noqa: PLC0415
+
+    from alloy.cards.geometry import MeshData, edge_report  # noqa: PLC0415
+
+    v, f = np.asarray(vertices, dtype=float).reshape(-1, 3), np.asarray(faces, dtype=np.int64).reshape(-1, 3)
+    if not len(f):
+        return 0
+    _, same = np.unique(v, axis=0, return_inverse=True)
+    open_edges, twice = edge_report(MeshData(v, same.reshape(-1)[f]))
+    return twice if open_edges == 0 else 0
+
+
+#: robot file suffix -> importer (a .usdz package opens as any USD stage does)
+ROBOT_KINDS = {".xml": "mjcf", ".mjcf": "mjcf", ".urdf": "urdf", ".usd": "usd", ".usda": "usd", ".usdc": "usd",
+               ".usdz": "usd"}
 
 
 def _robot_kind(path: str) -> str:
     """mjcf / urdf / usd from a robot file's suffix. Example: ``_robot_kind("arm.xml")`` -> "mjcf"."""
     suffix = Path(path).suffix.lower()
-    kinds = {".xml": "mjcf", ".mjcf": "mjcf", ".urdf": "urdf", ".usd": "usd", ".usda": "usd", ".usdc": "usd"}
-    if suffix not in kinds or not Path(path).is_file():
-        raise SceneError(f"robot file {path!r} not found or not .xml/.urdf/.usd",
-                         "pass an existing MJCF (.xml), URDF (.urdf) or USD file", field="path")
-    return kinds[suffix]
+    if suffix not in ROBOT_KINDS or not Path(path).is_file():
+        raise SceneError(f"robot file {path!r} not found or not {'/'.join(ROBOT_KINDS)}",
+                         "pass an existing MJCF (.xml), URDF (.urdf) or USD (.usd/.usda/.usdc/.usdz) file",
+                         field="path")
+    return ROBOT_KINDS[suffix]

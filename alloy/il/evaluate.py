@@ -22,6 +22,7 @@ from typing import Any
 import numpy as np
 
 from alloy.envs.errors import EnvError
+from alloy.il.support import require_vector_env
 
 
 @dataclass
@@ -95,15 +96,30 @@ def evaluate(env: Any, policy: Callable[[Any], Any], episodes: int = 100, *, see
     at every step, because the env's reset clears the health record ``sim.health()`` reads.
 
     Example: ``evaluate(env, lambda obs: env.action_space.sample(), episodes=32).success_rate``."""
-    base = getattr(env, "env", env)                       # a Recorder keeps its VectorEnv in .env
+    recorder = env if hasattr(env, "world_quota") else None
+    base = recorder.env if recorder is not None else env   # a Recorder keeps its VectorEnv in .env
+    require_vector_env(base, "evaluate")
     if base.autoreset != "same_step":
         raise EnvError(f"evaluate needs autoreset='same_step', this env has {base.autoreset!r}",
                        "build the env with the default autoreset", field="autoreset")
     if episodes < 1:
         raise EnvError(f"episodes is {episodes}", "pass a positive number of episodes", field="episodes")
-    worlds, to_np = int(base.num_envs), base.xp.to_numpy
+    worlds = int(base.num_envs)
     per_world = math.ceil(episodes / worlds)
     budget = max_steps if max_steps is not None else per_world * (int(base.task.max_steps) + 1)
+    if recorder is None:
+        return _rollouts(env, base, policy, per_world, budget, seed)
+    quota, recorder.world_quota = recorder.world_quota, per_world      # it keeps the counted episodes, no others
+    try:
+        return _rollouts(env, base, policy, per_world, budget, seed)
+    finally:
+        recorder.world_quota = quota
+
+
+def _rollouts(env: Any, base: Any, policy: Callable[[Any], Any], per_world: int, budget: int,
+              seed: int | None) -> EvalResult:
+    """Step until every world has ended ``per_world`` episodes; later episodes of a world are not counted."""
+    worlds, to_np = int(base.num_envs), base.xp.to_numpy
     count = np.zeros(worlds, np.int64)
     bad = np.zeros(worlds, bool)                          # worlds INVALID at some step of their running episode
     rows: list[tuple[np.ndarray, ...]] = []

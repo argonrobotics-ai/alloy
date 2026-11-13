@@ -30,6 +30,18 @@ def test_public_names_resolve_and_are_cached():
         assert getattr(api, name) is not None
 
 
+def test_the_object_list_is_public_like_materials_and_scenes():
+    """``alloy.objects()`` lists the object cards on disk in a fresh process, as ``alloy.materials()`` and
+    ``alloy.scenes()`` list theirs (it was reachable only through an explicit ``alloy.api.catalog`` import)."""
+    import subprocess
+    import sys
+
+    code = ("import alloy; names = alloy.objects(); "
+            "print('aa_cell' in names, 'cube_beech_30' in names, alloy.api.objects is alloy.objects)")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert out.stdout.strip().splitlines()[-1] == "True True True"
+
+
 def test_no_public_name_is_a_subpackage():
     subpackages = {m.name for m in pkgutil.iter_modules(alloy.__path__)}
     assert not set(_lazy.PUBLIC) & subpackages

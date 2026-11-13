@@ -28,7 +28,8 @@ except ImportError:                                 # the wrapper then raises a 
 
 from alloy.envs import spaces
 from alloy.envs.errors import EnvError
-from alloy.envs.wrappers._common import EpisodeTally, image_keys, require, require_torch_env, state_groups
+from alloy.envs.wrappers._common import (EpisodeTally, image_keys, require, require_same_step, require_torch_env,
+                                         state_groups)
 
 log = logging.getLogger("alloy.envs")
 CRITIC = "critic"
@@ -40,14 +41,16 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
     """Wraps a torch-backend ``VectorEnv`` as a skrl environment (observations, state, rewards as torch tensors).
 
     ``step`` returns rewards, terminated and truncated as ``(num_envs, 1)`` tensors, as skrl expects. Worlds restart
-    inside ``step`` (the env's same-step autoreset), so ``reset`` is only needed once; later calls give back the
-    current observation. ``tally`` counts finished episodes and successes; ``take_stats()`` reads and clears it.
+    inside ``step`` (the env's same-step autoreset). ``reset`` restarts every world, except right after a step that
+    ended an episode (skrl resets a single env then, and the env has already restarted it). ``seed(s)`` restarts every
+    world from seed ``s``. ``tally`` counts finished episodes and successes; ``take_stats()`` reads and clears it.
 
     Example: ``env = SkrlEnv(make("GripperLift-v0", num_envs=64, backend="torch"))``."""
 
     def __init__(self, env: Any) -> None:
         require("skrl")
         require_torch_env(env, "skrl")
+        require_same_step(env, "skrl")
         if image_keys(env):
             raise EnvError("the skrl wrapper does not support camera observations yet",
                            "use an environment without cameras (a state-only task)", field="cameras")
@@ -56,7 +59,7 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         self._tdevice = env.xp.tdevice
         self._obs: Any = None
         self._return_sum = 0.0
-        self._started = False
+        self._just_restarted = False                 # the last step ended an episode (the env restarted it)
         self._observation_space: Any = None
         self._state_space: Any = None
 
@@ -96,20 +99,28 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
     # --- skrl's methods --------------------------------------------------------------------------------------------
 
     def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
-        """Reset every world once; later calls return the current observation (worlds restart inside ``step``).
+        """Restart every world (step and return counters too), unless the last step ended an episode: the env has
+        restarted that world already, so its first observation is returned as it is.
 
-        Example: ``obs, info = env.reset()``."""
-        if not self._started:
+        Example: ``obs, _ = env.reset()``."""
+        if not self._just_restarted or self._obs is None:
             self._obs, _ = self._env.reset()
-            self._started = True
+        self._just_restarted = False
         return self._current()[0], {}
+
+    def seed(self, seed: int = 0) -> int:
+        """Seed the env's randomisation and action sampler and restart every world from that seed (as
+        ``make(..., seed=seed)``). Example: ``env.seed(3)``."""
+        self._obs, _ = self._env.reset(seed=seed)
+        self._just_restarted = False
+        return seed
 
     def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Step every world with a ``(num_envs, actions)`` tensor; nothing is copied through NumPy.
 
         Returns ``(observation, reward, terminated, truncated, info)``; the last three tensors are ``(num_envs, 1)``.
         Example: ``obs, rew, term, trunc, info = env.step(torch.zeros(64, 3))``."""
-        if not self._started:
+        if self._obs is None:
             self.reset()
         if actions.device != self._tdevice:
             actions = actions.to(self._tdevice)
@@ -117,6 +128,7 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         frozen = info["invalid"]                       # an INVALID world ends for good: no time-limit bootstrap
         terminated, truncated = terminated | frozen, truncated & ~frozen
         self._count(info)
+        self._just_restarted = bool((terminated | truncated).any())
         n = self.num_envs
         # skrl adds its bootstrap to the reward in place, so it gets a copy, never the env's own buffer
         info = self._with_bootstrap(info)
@@ -129,9 +141,9 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         tensors: the last observation where an episode ended, the returned one elsewhere."""
         if "final_obs" not in info:
             return info
-        done = info["_final_obs"].view(self.num_envs, 1)
         final = state_groups(self._env, info["final_obs"])
         now_obs, now_state = self._current()
+        done = info["_final_obs"].view((self.num_envs,) + (1,) * (now_obs.dim() - 1))   # (n, 1) or (n, 1, 1)
         out = dict(info)
         out[BOOTSTRAP_OBS] = torch.where(done, final["policy"], now_obs)
         if now_state is not None:
@@ -174,15 +186,14 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
     # --- helpers ---------------------------------------------------------------------------------------------------
 
     def _current(self) -> tuple[torch.Tensor, torch.Tensor | None]:
-        if self._obs is None:
+        if self._obs is None:                        # the spaces were asked for before any reset
             self._obs, _ = self._env.reset()
-            self._started = True
         groups = state_groups(self._env, self._obs)
         return groups["policy"], groups.get(CRITIC)
 
     @staticmethod
     def _box_of(batch: torch.Tensor) -> Any:
-        return spaces.box(-float("inf"), float("inf"), (int(batch.shape[1]),))
+        return spaces.box(-float("inf"), float("inf"), tuple(int(d) for d in batch.shape[1:]))
 
     def _count(self, info: dict[str, Any]) -> None:
         ended, _ = self.tally.add(info)

@@ -43,6 +43,25 @@ One question per page, answered in the first paragraph, with code that runs as w
 - [How do I simulate pouring a liquid with a robot arm?](docs/public/how-to/pour-liquid-robot-arm.md)
 - [How do I record a dataset of robot demonstrations?](docs/public/how-to/make-a-dataset.md)
 - [How do I evaluate a trained policy on held-out seeds?](docs/public/how-to/evaluate-checkpoint.md)
+- [Which simulator can put robots, cloth and liquids in the same scene?](docs/public/answers/robots-cloth-liquids-one-scene.md)
+- [What open-source GPU-parallel physics engines are there for reinforcement learning?](docs/public/answers/gpu-parallel-engines-for-rl.md)
+- [Which physics engines are built on MuJoCo Warp or Newton?](docs/public/answers/built-on-mujoco-warp-or-newton.md)
+- [Is there a physics engine with an MCP server for AI agents?](docs/public/answers/mcp-server-physics-engine.md)
+- [Which simulators handle deformable object manipulation: cloth, rope and soft bodies?](docs/public/answers/deformable-object-manipulation.md)
+- [Which open-source simulators for robot learning install with pip?](docs/public/answers/pip-installable-simulators.md)
+- [Which simulators that read MuJoCo models also support liquids and sand?](docs/public/answers/mujoco-models-with-liquids-and-sand.md)
+- [How can I tell whether a physics simulation blew up during RL training?](docs/public/answers/did-my-simulation-blow-up.md)
+- [Which pip-installable Python physics engine supports robot manipulation with soft bodies?](docs/public/answers/soft-body-manipulation-python.md)
+- [How do I generate imitation-learning data for a task with liquids?](docs/public/how-to/imitation-data-with-liquids.md)
+- [Which open-source engines do multi-physics robot simulation?](docs/public/answers/open-source-multi-physics-engines.md)
+- [Which simulators support sand and granular materials for robot learning?](docs/public/answers/sand-and-granular-materials.md)
+- [Which new robotics simulators were released in 2026?](docs/public/answers/new-robotics-simulators-2026.md)
+- [How do I load a MuJoCo MJCF robot into a scene with cloth or liquid?](docs/public/how-to/mjcf-robot-with-cloth-or-liquid.md)
+- [How do I use a GPU-parallel simulator with the Gymnasium vector API?](docs/public/how-to/gymnasium-vector-api.md)
+- [How do I record a LeRobot dataset from simulation?](docs/public/how-to/lerobot-dataset.md)
+- [How do I randomise friction and mass across parallel worlds?](docs/public/how-to/randomise-parallel-worlds.md)
+- [How do I simulate squeezing a soft object between two fingers?](docs/public/how-to/squeeze-soft-object.md)
+- [What do Alloy's error messages mean and what should I change?](docs/public/answers/error-messages.md)
 
 ## Start here
 
@@ -75,6 +94,7 @@ One question per page, answered in the first paragraph, with code that runs as w
 - [Imitation learning](docs/guide/imitation.md): record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation, replay, policy evaluation (no training code)
 - [RL libraries](docs/guide/rl.md): wrappers for rsl_rl, Stable-Baselines3 and skrl, a one-command PPO train, an arm pick env (PickCube-v0), observation groups, task-space actions, noise / delay / history layers, actuator models
 - [Legged locomotion](docs/guide/locomotion.md): the Go2 velocity environment on flat ground or on rough terrain tiles with a level curriculum (commands, pushes, gravity / accelerometer / foot-contact observations), `python -m alloy.envs.loco.train` (a blind policy: no height scan, no stairs or gaps; no actuator model; one rough-terrain training run measured)
+- [Isaac Lab](docs/guide/isaaclab.md): run an unmodified Isaac Lab 3.0 task on Alloy with `physics=alloy` (tasks that offer Newton MuJoCo Warp): install beside Isaac Lab, the switch, settings, health checks, what is verified and what is not
 - [System identification](docs/guide/sysid.md): fit a simulated robot's joint gains, damping, friction and delay to a recording of your real robot (opt-in), report, apply, what is not covered
 - [Scene builder](docs/guide/compose.md): a sentence in, a physics-checked scene and variations out
 - [Scene variants](docs/guide/variants.md): alloy.vary / `alloy vary`: n copies of a scene with free objects moved and textures swapped within a family, JSON in and out

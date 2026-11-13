@@ -68,8 +68,9 @@ def _forces(solver, x: np.ndarray, x_prev: np.ndarray | None = None, dt: float =
     for g in m.particle_color_groups:
         wp.launch(OM.accumulate_ortho_membrane, dim=g.size,
                   inputs=[dt, g, pos, prev, m.tri_indices, m.tri_areas, m.alloy.tri_ortho_k, m.alloy.tri_ortho_dm,
-                          solver.particle_adjacency, solver.particle_cloth_piece, solver.piece_near_self_contact,
-                          solver.piece_near_body_contact], outputs=[f, H], device=m.device)
+                          m.alloy.tri_ortho_h, solver.particle_adjacency, solver.particle_cloth_piece,
+                          solver.piece_near_self_contact, solver.piece_near_body_contact], outputs=[f, H],
+                  device=m.device)
     return f.numpy().astype(np.float64), H.numpy().astype(np.float64)
 
 
@@ -93,21 +94,166 @@ def test_the_card_routes_to_the_membrane_and_newtons_is_off(coupon):
                                len(k), rtol=1e-6)
 
 
-def test_the_router_still_picks_style3d_for_a_woven_card_alone(tmp_path):
-    """Opt-in only: without the route override D16 still sends a lone anisotropic sheet to Style3D."""
-    s, _ = _scene(tmp_path, arm="A")
+def test_a_woven_grid_sheet_routes_to_the_membrane_by_default(tmp_path):
+    """The default (D16 after gap #3): a woven card on an add_cloth sheet (a warp / weft grid) goes to CLOTH_VBD with
+    the orthotropic membrane, alone or beside a free body, and no route override; routes() says why."""
+    for beside in (False, True):
+        s, fab = _scene(tmp_path / str(beside), arm="A")
+        if beside:
+            s.add_box("block", size=(0.02, 0.02, 0.02), pos=(0.3, 0.0, 0.05), mass=0.05)
+        sim = alloy.build(s, device="cpu")
+        r = sim.routes()["c"]
+        assert r["route"] == "cloth_vbd" and "woven grid sheet" in " ".join(r["reasons"]), r
+        k = _vbd(sim).model.alloy.tri_ortho_k.numpy()
+        np.testing.assert_allclose(k[:, :2], [[FR.tensile(fab, "warp"), FR.tensile(fab, "weft")]] * len(k), rtol=1e-6)
+        sim.close()
+
+
+def test_an_isotropic_sheet_has_no_woven_rows_or_callback():
+    """The add_cloth default card (cotton_woven: youngs / poisson, no elastic.cloth) is untouched by the woven default:
+    cloth_vbd as before, Newton's membrane on, no orthotropic rows and no membrane callback on its solver."""
+    s = alloy.Scene(dt=0.01)
+    s.add_ground()
+    s.add_cloth("c", size=(0.04, 0.03), pos=(0, 0, 0.31), resolution=(4, 3))
     sim = alloy.build(s, device="cpu")
-    assert sim.routes()["c"]["route"] == "cloth_style3d"
+    r, solver = sim.routes()["c"], _vbd(sim)
+    m = solver.model
+    assert r["route"] == "cloth_vbd" and "woven" not in " ".join(r["reasons"])
+    assert np.all(m.tri_materials.numpy()[:, 0] > 0.0)
+    k = getattr(getattr(m, "alloy", None), "tri_ortho_k", None)
+    assert k is None or not np.any(k.numpy())
+    callbacks = solver._colour_callbacks + solver._colour_callbacks_after
+    assert not any(isinstance(c, OM.OrthoMembrane) for c in callbacks)
     sim.close()
 
 
-def test_a_woven_card_beside_another_entry_needs_the_opt_in(tmp_path):
-    """Beside a free body D16 sends the anisotropic card to CLOTH_VBD; without the route override that stays an error
-    (it names the opt-in), so no scene changes behaviour without asking."""
-    s, _ = _scene(tmp_path, arm="A")
+def _mesh_sheet(s, v, t):
+    it = s.items["c"]
+    it["shape"] = {"mesh": {"path": "", "sha256": "", "scale": [1.0, 1.0, 1.0], "collision": "convex"}}
+    it["mesh"] = {"vertices": np.asarray(v).tolist(), "faces": np.asarray(t).tolist()}
+    it["card_extra"].setdefault("budget", {})["particles"] = len(v)
+
+
+def test_a_woven_mesh_sheet_keeps_the_opt_in(tmp_path):
+    """A woven card on a mesh (not a grid sheet) keeps the old rule: Style3D alone, and beside a free body CLOTH_VBD
+    only with the route override (the error names it)."""
+    from bench.scenarios import fabric_drape as FD
+
+    v, t = FD.specimen_mesh(0.05, 0.008, 7, "r6")
+    s, _ = _scene(tmp_path / "alone", arm="A")
+    _mesh_sheet(s, v, t)
+    sim = alloy.build(s, device="cpu")
+    assert sim.routes()["c"]["route"] == "cloth_style3d"
+    sim.close()
+    s, _ = _scene(tmp_path / "beside", arm="A")
+    _mesh_sheet(s, v, t)
     s.add_box("block", size=(0.02, 0.02, 0.02), pos=(0.3, 0.0, 0.05), mass=0.05)
     with pytest.raises(alloy.BuildError, match="opt-in orthotropic membrane"):
         alloy.build(s, device="cpu")
+
+
+def _hex(edge: float = 0.008, radius: float = 0.05, seed: int = 7):
+    from bench.scenarios import fabric_drape as FD
+
+    v, t = FD.specimen_mesh(radius, edge, seed, "r6")
+    return np.asarray(v, np.float64), np.asarray(t, np.int64)
+
+
+def _neighbour_pairs(t):
+    edge, pairs = {}, []
+    for i, tri in enumerate(t.tolist()):
+        for a, c in ((tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])):
+            j = edge.setdefault((min(a, c), max(a, c)), i)
+            if j != i:
+                pairs.append((j, i))
+    return np.array(pairs)
+
+
+def _rim(t):
+    """Vertex ids on edges that belong to one triangle only."""
+    e = np.sort(np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]), axis=1)
+    u, n = np.unique(e, axis=0, return_counts=True)
+    return u[n == 1]
+
+
+def test_the_yarn_split_alternates_and_balances():
+    """On the R6 jittered-hex disc neighbours carry different yarns across at least 85 % of the inner edges (odd rings
+    of triangles keep the rest), each yarn gets half the area within 2 %, and an exact hex lattice alternates fully."""
+    v, t = _hex()
+    side = OM.yarn_split(t)
+    pairs = _neighbour_pairs(t)
+    d1, d2 = v[t[:, 1]] - v[t[:, 0]], v[t[:, 2]] - v[t[:, 0]]
+    area = 0.5 * np.abs(d1[:, 0] * d2[:, 1] - d2[:, 0] * d1[:, 1])
+    assert set(np.unique(side)) == {-1, 1}
+    assert np.mean(side[pairs[:, 0]] != side[pairs[:, 1]]) > 0.85
+    assert abs(area[side > 0].sum() / area.sum() - 0.5) < 0.02
+    inner = np.setdiff1d(np.arange(len(v)), np.unique(_rim(t)))            # every inner vertex keeps both yarns
+    for sign in (1, -1):
+        assert np.all(np.isin(inner, np.unique(t[side == sign])))
+    n = 6                                                # an exact triangle lattice: rows of up / down triangles
+    idx = lambda i, j: i * (n + 1) + j                   # noqa: E731
+    lat = np.array([tri for i in range(n) for j in range(n) for tri in (
+        (idx(i, j), idx(i + 1, j), idx(i, j + 1)), (idx(i + 1, j), idx(i + 1, j + 1), idx(i, j + 1)))])
+    lp, ls = _neighbour_pairs(lat), OM.yarn_split(lat)
+    assert np.all(ls[lp[:, 0]] != ls[lp[:, 1]])
+
+
+def _yarn_strain(x, t, dm):
+    d1, d2 = x[t[:, 1]] - x[t[:, 0]], x[t[:, 2]] - x[t[:, 0]]
+    wu, wv = d1 * dm[:, [0]] + d2 * dm[:, [2]], d1 * dm[:, [1]] + d2 * dm[:, [3]]
+    return np.linalg.norm(wu, axis=1) - 1.0, np.linalg.norm(wv, axis=1) - 1.0
+
+
+def test_a_yarn_preserving_shape_strains_a_hex_mesh_to_first_order():
+    """The cause of the lock (gap #3): x(u, v) = a(u) + b(v) with unit-speed arcs keeps every yarn's length while the
+    yarn angle varies. A warp / weft grid's triangles read its yarn strain to second order in the cell (the chord of
+    an arc: (h / R)^2 / 24), a hex mesh's to first order, 5x or more above the grid at 8 mm; hence the split."""
+    from alloy.scene.emitters.common import grid_mesh
+
+    R, h = 0.05, 0.008
+
+    def shape(uv):
+        return np.column_stack([R * np.sin(uv[:, 0] / R), R * np.sin(uv[:, 1] / R),
+                                R * (2.0 - np.cos(uv[:, 0] / R) - np.cos(uv[:, 1] / R))])
+
+    g = grid_mesh(0.096, 0.096, h)
+    gu, gt = g.vertices[:, :2].astype(np.float64), g.indices.reshape(-1, 3)
+    eu, ev = _yarn_strain(shape(gu), gt, OM.panel_dm_inv(gu, gt))
+    chord = (h / R) ** 2 / 24.0
+    np.testing.assert_allclose(np.abs(np.concatenate([eu, ev])), chord, rtol=0.05)
+    v, t = _hex(h)
+    hu, hv = _yarn_strain(shape(v[:, :2]), t, OM.panel_dm_inv(v[:, :2], t))
+    rms = float(np.sqrt(np.mean(np.concatenate([hu, hv]) ** 2)))
+    assert rms > 5.0 * chord, (rms, chord)
+
+
+def test_the_split_constants_are_the_measured_ones():
+    """SPLIT and H_FLOOR carry the default on meshes without warp / weft edges, and only GPU drape rows measured them
+    (R6 / D03M arm O on the hex disc, notes in docs/known_gaps/cloth-woven-drape-isotropic.md): SPLIT sets the drape
+    (Petrak F1 0.334 at 0.90, 0.263 at 0.99, 0.245 at 0.998) and 1.0 leaves zero-energy modes; H_FLOOR 0 let one F1
+    world of 16 blow up at 60 iterations. A change to either needs those rows again (AUDIT-BENCH, 2026-11-10)."""
+    assert (OM.SPLIT, OM.H_FLOOR) == (0.99, 0.2)
+
+
+def test_a_hex_mesh_sheet_gets_split_rows_that_keep_the_cards_pair(tmp_path):
+    """On a mesh without warp / weft edges each triangle carries one yarn at (1 + SPLIT) and the other at (1 - SPLIT)
+    of the card's stiffness: per triangle the two add up to the card's pair, and the readback check passes."""
+    s, fab = _scene(tmp_path)
+    v, t = _hex()
+    _mesh_sheet(s, np.column_stack([v[:, :2], np.zeros(len(v))]), t)
+    sim = alloy.build(s, device="cpu")
+    k = _vbd(sim).model.alloy.tri_ortho_k.numpy()
+    ku, kv = FR.tensile(fab, "warp"), FR.tensile(fab, "weft")
+    ru, rv = k[:, 0] / ku, k[:, 1] / kv
+    np.testing.assert_allclose(ru + rv, 2.0, rtol=1e-6)
+    np.testing.assert_allclose(np.abs(ru - rv), 2.0 * 0.99, rtol=1e-5)          # SPLIT
+    np.testing.assert_allclose(k[:, 2], fab["shear_G_N_m"], rtol=1e-6)
+    h = _vbd(sim).model.alloy.tri_ortho_h.numpy()                              # the given-up yarn, Hessian only
+    warp = ru > 1.0
+    np.testing.assert_allclose(h[warp, 1], 0.2 * 0.99 * kv, rtol=1e-6)          # H_FLOOR x SPLIT x k
+    np.testing.assert_allclose(h[~warp, 0], 0.2 * 0.99 * ku, rtol=1e-6)
+    assert np.all(h[warp, 0] == 0.0) and np.all(h[~warp, 1] == 0.0)
+    sim.close()
 
 
 def _rest(solver):

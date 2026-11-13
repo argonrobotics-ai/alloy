@@ -43,15 +43,17 @@ class Limits:
         return cls(host("joint_limit_lower", -np.inf), host("joint_limit_upper", np.inf), host("joint_target_ke", 0.0),
                    host("joint_target_kd", 0.0), np.asarray(qd_start))
 
-    def _dof(self, joint: int) -> int:
-        return int(self.qd_start[joint])
+    def _dof(self, joint: int, axis: int = 0) -> int:
+        return int(self.qd_start[joint]) + axis
 
-    def clamp(self, name: str, joint: int, values: np.ndarray, ctrl: tuple[float, float] | None = None) -> np.ndarray:
+    def clamp(self, name: str, joint: int, values: np.ndarray, ctrl: tuple[float, float] | None = None,
+              axis: int = 0) -> np.ndarray:
         """``values`` (worlds,) held inside the joint's range, each world's target on its own (the range is the robot
         file's, one for every world); a joint without a range (or one whose lower limit is not below its upper)
         passes through. ``ctrl``: the position servo's own ctrl range in the targets' frame, when the file gives
-        one; the wider of the two holds. Example: ``limits.clamp("elbow", j, vals)``."""
-        d = self._dof(joint)
+        one; the wider of the two holds. ``axis``: the dof within a joint of several (a body with several MJCF
+        joints). Example: ``limits.clamp("elbow", j, vals)``."""
+        d = self._dof(joint, axis)
         if d >= len(self.lower) or d >= len(self.upper) or not self.lower[d] < self.upper[d]:
             return values
         lo, hi = float(self.lower[d]), float(self.upper[d])
@@ -65,11 +67,11 @@ class Limits:
                       name, lo, hi)
         return out
 
-    def driven(self, joint: int, kind: str, actuators: int) -> bool:
+    def driven(self, joint: int, kind: str, actuators: int, axis: int = 0) -> bool:
         """Whether Newton's own joint target moves the joint when the model has no actuator table (``actuators`` 0):
         its position gain for a position target, its velocity gain for a velocity one.
         Example: ``limits.driven(j, "position", 0)``."""
-        d = self._dof(joint)
+        d = self._dof(joint, axis)
         gain = self.ke if kind == "position" else self.kd
         return not actuators and d < len(gain) and float(gain[d]) > 0.0
 

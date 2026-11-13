@@ -99,9 +99,11 @@ def test_a_moved_world_steps_as_in_its_own_pack(packs) -> None:
     assert z < 0.10                                      # resting on the cloth, not falling: contact in play
 
 
-def test_a_randomized_world_is_refused_until_its_parameters_move() -> None:
-    """S1 moves state, not per-world Model parameters: a world whose randomized mass differs from the slot's is
-    refused (the caller re-runs as today); the box's per-world start position alone is not a parameter."""
+def test_a_randomized_world_moves_with_its_parameters() -> None:
+    """Was ``test_a_randomized_world_is_refused_until_its_parameters_move`` (S1 moved state only and refused a world
+    whose randomized mass differed from the slot's). S1b moves the per-world Model rows with the world
+    (alloy.coupling.world_clock_params; its laws: test_world_clock_params.py): the slot holds world 2's mass and
+    inertia and its state, and a transfer told not to move parameters (the way back) still refuses rows that differ."""
     def scene(worlds):
         sc = alloy.Scene(worlds=worlds, dt=0.01)
         sc.add_ground()
@@ -110,8 +112,14 @@ def test_a_randomized_world_is_refused_until_its_parameters_move() -> None:
         return alloy.build(sc, device="cpu", seed=3)
     a, b = scene(3), scene(1)
     try:
+        mass = a.engine.model.body_mass.numpy()
+        assert mass[2] != b.engine.model.body_mass.numpy()[0]
         with pytest.raises(TransferError, match="per-world model parameters differ"):
-            WorldTransfer(a.engine, b.engine).copy(2, 0)
+            WorldTransfer(a.engine, b.engine, params="same").copy(2, 0)
+        WorldTransfer(a.engine, b.engine).copy(2, 0)
+        assert b.engine.model.body_mass.numpy()[0] == mass[2]
+        assert np.array_equal(b.engine.model.body_inertia.numpy()[0], a.engine.model.body_inertia.numpy()[2])
+        assert _same(_world_words(b.engine, 0), _world_words(a.engine, 2)) == []
     finally:
         a.close()
         b.close()

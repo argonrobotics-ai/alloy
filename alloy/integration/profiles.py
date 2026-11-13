@@ -16,13 +16,15 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
+from alloy.core.errors import AssemblyError
 from alloy.coupling.types import SchedulerPolicy
 from alloy.precision.types import PrecisionConfig
 from alloy.scene.steppers import ContactBudget
 
-__all__ = ["IntegrationProfile", "PROFILES", "profile"]
+__all__ = ["IntegrationProfile", "PROFILES", "contacts_for", "profile"]
 
 GraphMode = Literal["auto", "on", "off"]
 PartMode = Literal["auto", "always", "never"]
@@ -35,6 +37,8 @@ class IntegrationProfile:
     name: str
     preset: Literal["fast", "standard", "precision", "reference"] = "standard"
     native_contacts: Literal["mujoco", "newton"] | None = None   # None: the preset's (PrecisionConfig default)
+    contacts_auto: bool = False         # the API's contacts='auto': precision pairs MuJoCo's contacts cannot isolate
+    #                                     switch the scene to Newton's (``contacts_for``); False: the refusal stands
     graph: GraphMode = "auto"           # auto: CUDA graphs on CUDA, eager on CPU; on: CPU graphs too; off: eager
     contact_layer: PartMode = "auto"    # auto: precision pairs, or any scene MuJoCo does not collide on its own
     gap_monitor: PartMode = "auto"      # auto: when the layer has precision pairs
@@ -89,3 +93,21 @@ def profile(name: str | IntegrationProfile = "standard", **overrides) -> Integra
     if base is None:
         raise ValueError(f"unknown integration profile {name!r}; expected one of {sorted(PROFILES)}")
     return dataclasses.replace(base, **overrides) if overrides else base
+
+
+def contacts_for(p: IntegrationProfile, cfg: PrecisionConfig, check: Callable[[], Any],
+                 notes: list[str]) -> tuple[PrecisionConfig, Any]:
+    """(cfg, ``check()``): ``check`` is the MuJoCo precision stream's isolation check (``check_isolated``). Under the
+    API's contacts='auto' (``p.contacts_auto``, no ``native_contacts`` asked for) a refusal switches the scene to
+    Newton's contact pipeline, with a note, instead of failing the build (a cable beside a USB plug and
+    port); any other caller, and one that asked for MuJoCo's contacts, gets the refusal."""
+    try:
+        return cfg, check()
+    except AssemblyError as exc:
+        if not p.contacts_auto or p.native_contacts is not None:
+            raise
+        why = str(exc).split(": ", 1)[-1]
+        notes.append(f"contacts auto: Newton's contact pipeline, since MuJoCo's cannot serve this scene's precision "
+                     f"pairs ({why[:300]})")
+        return dataclasses.replace(cfg, native_contacts="newton"), None
+

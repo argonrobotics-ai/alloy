@@ -24,11 +24,12 @@ or the last reset. Before the fix no rigid or robot contact raised either flag. 
   0.88 mm).
 - A frozen world shows its last good state, so `max_penetration_m` beside PEN_FAIL can read less than the depth
   that failed. That depth is `peak_penetration_m`, and it is in the world's `problem` text.
-- A robot file whose contacts are soft on purpose rests deeper than 1 cm and reads INVALID while it stands still.
-  MuJoCo Menagerie's ANYmal C is one: its feet (`solimp` 0.015) rest 17.2 mm into the floor, and plain MuJoCo C
-  reads the same depth. So the physics matches MuJoCo, and it is this health rule that freezes the world. To see
-  it: `sim = alloy.load("<menagerie>/anybotics_anymal_c/scene.xml", worlds=2, device="cpu")`, `sim.step(100)`,
-  then `sim.check()["ok"]` is False, with PEN_FAIL and START_PEN.
+- A robot file whose contacts are soft on purpose rests deeper than 1 cm and reads INVALID while it stands still,
+  unless the scene names it in `scene.relax_contact_depth` (Workaround). MuJoCo Menagerie's ANYmal C is one: its
+  feet (`solimp` 0.015) rest 17.2 mm into the floor, and plain MuJoCo C reads the same depth. So the physics
+  matches MuJoCo, and it is this health rule that freezes the world. To see it:
+  `sim = alloy.load("<menagerie>/anybotics_anymal_c/scene.xml", worlds=2, device="cpu")`, `sim.step(100)`, then
+  `sim.check()["ok"]` is False, with PEN_FAIL and START_PEN.
 - A legged robot that falls and stays down can read INVALID. Three biped files run with no policy (an H1, a simple
   humanoid and a Cassie) fell in every world, and their links then lay 2.0 to 3.1 cm into the floor, past the 1 cm
   limit: after 4 s, 976, 419 and 14 of 1,024 worlds were frozen (one L4). They lay as deep before the fix, when
@@ -65,6 +66,16 @@ how long a contact has been past its limit. Which flags were raised earlier in a
 - Two parts that press into each other by design (a sprung connector finger on its card) mark the pair instead:
   `relax_designed_overlap(sim.engine, [(("finger", "card"), "0.85 mm preload")])` from `alloy.precision.health_pen`
   lifts the thin-part limit between those two only; against every other shape it still applies.
+- Contacts a robot file makes soft on purpose: `scene.relax_contact_depth("anymal")` (a robot, one of its bodies
+  `"anymal/LF_SHANK"`, or an object) judges each of its contacts by the depth past the contact's own MJCF `solimp`
+  width, when that is wider than MuJoCo's 1 mm default; contacts at the default keep the rule. ANYmal C's feet
+  (`solimp="0.015 1 0.03"`: 30 mm) then stand OK with `sim.check()["ok"]` True on the CPU, and `max_penetration_m`
+  still reads the true 17.2 mm (`sim.check()` lists that depth as a warning). `depth=` states the allowance in
+  metres instead. PEN_WARN fires 1 mm past the allowance, PEN_FAIL 1 cm past it for 0.1 s, START_PEN alike. For
+  a file you would `alloy.load`, take an editable copy: `scene = alloy.Scene.load(path)` (Menagerie's scene.xml
+  names the robot `"scene"`: `scene.names()`), `scene.relax_contact_depth("scene")`, `alloy.build(scene)`
+  (`tests/precision/test_health_pen_soft_relax.py`). `scene.to_json()` keeps the relax; `scene.save()`'s cards do
+  not (it warns).
 - Lower `dt`, lighter loads or stiffer contact materials reduce the depth itself.
 - For the ANYmal C above (measured standing, CPU): in a copy of `anymal_c.xml` delete the feet's
   `solimp="0.015 1 0.03"` (MuJoCo's default contact stiffness then applies) and raise the base from z 0.62 to 0.64
@@ -75,5 +86,4 @@ how long a contact has been past its limit. Which flags were raised earlier in a
 
 ## Planned fix
 A "seen since reset" flag list beside the current flags, so a PEN_WARN raised during a run is visible at its end
-(in work under audit finding ERR-11). A public option to relax the depth limit for a robot file with soft
-contacts comes in a later release; today there is none. Not scheduled: a shorter dwell for stiff contacts.
+(in work under audit finding ERR-11). Not scheduled: a shorter dwell for stiff contacts.

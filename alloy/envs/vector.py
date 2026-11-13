@@ -31,6 +31,7 @@ from typing import Any
 
 import numpy as np
 
+from alloy.coupling.world_clock_writes import refuse_world_clock
 from alloy.envs import spaces
 from alloy.envs.actions import ActionWriter
 from alloy.envs.backend import pick_backend
@@ -67,8 +68,11 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
             raise EnvError(f"autoreset is {autoreset!r}", f"use one of {AUTORESET}", field="autoreset")
         self._owns_sim = not hasattr(sim, "engine")
         self.sim = _build(sim, worlds, device, seed, profile) if self._owns_sim else sim
+        refuse_world_clock(self.sim, "VectorEnv")     # its own writes bypass Sim (world_clock_writes)
         if self.task.on_build is not None:
             self.task.on_build(self.sim)
+            self.sim.engine._initial.save(self.sim.engine.state)   # its edits are the start every reset returns to
+            self.sim._rebase()
         if self.task.settle > 0:                       # objects start at rest, not a few mm above it
             self.sim.settle(self.task.settle)
         self.num_envs, self.device = int(self.sim.worlds), str(self.sim.device)
@@ -76,7 +80,9 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         self.metadata = {**type(self).metadata, "autoreset_mode": _mode(autoreset)}
         self.xp = pick_backend(backend, self.device)
         self.layout = Layout.from_sim(self.sim)
-        self._rows = Rows(self.layout, self.xp)
+        items = getattr(getattr(self.sim, "scene", None), "items", {})
+        self._rows = Rows(self.layout, self.xp, anchors=getattr(self.sim.engine, "_alloy_anchors", {}),
+                          pours=[n for n, it in items.items() if it.get("pour")])
         engine = self.sim.engine
         self.writer = _make_writer(self.task.action_spec(), self.layout, engine, self.xp)
         self.layers = list(self.task.layers)           # () by default: then nothing below changes a value
@@ -95,6 +101,8 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         self.start = StartState(engine, self.layout, self.xp)
         self.stats = EpisodeStats(self.num_envs, self.writer.size, self.xp)
         self._pending = self.xp.zeros(self.num_envs, "bool")
+        self._ended = self.xp.zeros(self.num_envs, "bool")            # autoreset="disabled": ended, not yet reset
+        self._ended_flags = (self._ended, self._ended)                # (terminated, truncated) when each ended
         self.invalid_episodes = self.xp.zeros(self.num_envs, "int32")   # per world, kept across resets
         self.together = not per_world_reset(engine)
         if self.together:
@@ -164,11 +172,13 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
                 return vec
             out = {"state": vec}
         model, state = self._camera_source(), self.sim.engine.state
+        from alloy.camera import Camera  # noqa: PLC0415
         for name, cam in self.cameras.items():
-            if self.xp.name == "torch":
-                out[name] = cam.render_torch(model, state).clone()
+            src = (model, state) if isinstance(cam, Camera) else (self.sim, None)   # sensors of the physics (tactile)
+            if self.xp.name == "torch":                                             # read the Sim, not the picture
+                out[name] = cam.render_torch(*src).clone()
             else:
-                out[name] = cam.render(model, state).numpy().copy()    # on the CPU .numpy() is the camera's buffer
+                out[name] = cam.render(*src).numpy().copy()    # on the CPU .numpy() is the camera's buffer
         return out
 
     # --- Gymnasium API ---------------------------------------------------------------------------------------------
@@ -198,8 +208,11 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         frozen = self.xp.any(invalid)                  # a frozen world earns only its penalty and shows zeros
         if frozen:
             reward, terms = _void(reward, invalid), {k: _void(v, invalid) for k, v in terms.items()}
-            self.invalid_episodes = self.invalid_episodes + (invalid & ~self._pending)   # next_step: counted once
+            self.invalid_episodes = self.invalid_episodes + (invalid & ~self._pending & ~self._ended)   # once
         reward = reward + self.task.invalid_penalty * self.xp.float(invalid)
+        fresh = None
+        if self.autoreset == "disabled":
+            reward, terminated, truncated, fresh = self._hold_ended(reward, terminated, truncated)
         self.stats.add(reward)
         obs = self._observe(s)
         if frozen:
@@ -207,10 +220,11 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         info: dict[str, Any] = {"success": success, "invalid": invalid, "terms": terms, "targets": clipped}
         done = terminated | truncated
         if self.autoreset == "next_step" and self.xp.any(self._pending):
-            obs, reward, terminated, truncated = self._finish_pending(obs, reward, terminated, truncated)
+            obs, reward, terminated, truncated = self._finish_pending(obs, reward, terminated, truncated, info)
             done = terminated | truncated
-        if self.xp.any(done):
-            info["episode"], info["_episode"] = self.stats.summary(success), done
+        ended = done if fresh is None else fresh                   # disabled: each episode reported once
+        if self.xp.any(ended):
+            info["episode"], info["_episode"] = self.stats.summary(success), ended
             info["episode"]["invalid"] = self.xp.copy(invalid)
             if self.autoreset == "same_step":
                 info["final_obs"], info["_final_obs"] = obs, done
@@ -246,11 +260,30 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
             truncated = truncated | invalid
         return terminated, truncated & ~terminated, success, invalid
 
-    def _finish_pending(self, obs: Any, reward: Any, terminated: Any, truncated: Any) -> tuple[Any, Any, Any, Any]:
-        """next_step autoreset: worlds that ended last step restart now; their step's action and reward are void."""
+    def _finish_pending(self, obs: Any, reward: Any, terminated: Any, truncated: Any,
+                        info: dict[str, Any]) -> tuple[Any, Any, Any, Any]:
+        """next_step autoreset: worlds that ended last step restart now; their step's action, reward and info are void
+        (``info["targets"]``: the targets in force after their reset)."""
         p, xp = self._pending, self.xp
         self.reset_worlds(p)
+        info["success"], info["invalid"] = info["success"] & ~p, info["invalid"] & ~p
+        info["terms"] = {k: xp.where(p, 0.0, v) for k, v in info["terms"].items()}
+        w = getattr(self.writer, "inner", self.writer)
+        if hasattr(w, "target") and hasattr(w, "rows"):
+            info["targets"] = xp.where(p[:, None], xp.view(w.target)[w.rows], info["targets"])
         return self._observe(self.state, only=p), xp.where(p, 0.0, reward), terminated & ~p, truncated & ~p
+
+    def _hold_ended(self, reward: Any, terminated: Any, truncated: Any) -> tuple[Any, Any, Any, Any]:
+        """autoreset="disabled": a world that ended stays ended (its flags, reward 0, no new episode report) until
+        ``reset(options={"reset_mask": ...})`` restarts it. Returns the worlds that ended at this step."""
+        xp, e = self.xp, self._ended
+        terminated = xp.where(e, self._ended_flags[0], terminated)
+        truncated = xp.where(e, self._ended_flags[1], truncated)
+        fresh = (terminated | truncated) & ~e
+        self._ended_flags = (xp.where(fresh, terminated, self._ended_flags[0]),
+                             xp.where(fresh, truncated, self._ended_flags[1]))
+        self._ended = e | fresh
+        return xp.where(e, 0.0, reward), terminated, truncated, fresh
 
     def reset_worlds(self, mask: Any) -> None:
         """Reset the worlds in the bool (W,) ``mask`` to their start state; the others keep running."""
@@ -272,15 +305,21 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         self.writer.reset(mask)
         if self.randomizer.jitters:
             self.randomizer.apply(mask)
+            if hasattr(self.writer, "hold"):                 # an actuator model: hold the jittered start
+                self.writer.hold(mask)
             if hasattr(engine.health, "reset_reference"):        # energy reference of the jittered start
                 with wp.ScopedDevice(self.device):
                     engine.health.reset_reference(engine.state, wmask)
         self.start.capture(mask)
         self.goals.resample(mask)
+        for cam in self.cameras.values():             # per-world sensor state (tactile stick-slip) restarts with
+            if "worlds" in _params(getattr(cam, "reset", None)):   # its world only
+                cam.reset(worlds=mask)
         for layer in self.layers:
             layer.on_reset(mask)
         self.stats.reset(mask)
         self._pending = self._pending & ~mask
+        self._ended = self._ended & ~mask
 
     def render(self) -> Any:
         """``render_mode="rgb_array"``: an (H, W, 3) uint8 image of world 0. Example: ``env.render()``."""
@@ -305,7 +344,9 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
 
     def _policy_action(self, actions: Any) -> Any:
         a = self.xp.asarray(actions, "float32")
-        return a if self.writer.spec.mode == "absolute" else self.xp.clip(a, -1.0, 1.0)
+        if self.writer.spec.mode != "absolute":
+            return self.xp.clip(a, -1.0, 1.0)
+        return self.xp.clip(a, self.writer.low, self.writer.high)      # as the writer applies it
 
     def _require_open(self) -> None:
         if self.closed:
@@ -322,12 +363,23 @@ def per_world_reset(engine: Any) -> bool:
     return not tuple(getattr(snap, "whole_arrays", ()) or ())
 
 
+def _params(fn: Any) -> tuple[str, ...]:
+    """Parameter names of ``fn`` (empty when it is not a function)."""
+    import inspect  # noqa: PLC0415
+
+    try:
+        return tuple(inspect.signature(fn).parameters) if callable(fn) else ()
+    except (TypeError, ValueError):
+        return ()
+
+
 def _obs_space(obs: Any, cameras: set[str]) -> Any:
     """The single-world observation space of ``obs``: a Box, or a Dict of state Boxes and uint8 image Boxes."""
     if not isinstance(obs, dict):
-        return spaces.box(-np.inf, np.inf, (int(obs.shape[1]),))
+        return spaces.box(-np.inf, np.inf, tuple(int(d) for d in obs.shape[1:]))   # (D,), or (H, D) unflattened
     return spaces.dict_space({k: spaces.box(0, 255, tuple(v.shape[1:]), np.uint8) if k in cameras
-                              else spaces.box(-np.inf, np.inf, (int(v.shape[1]),)) for k, v in obs.items()})
+                              else spaces.box(-np.inf, np.inf, tuple(int(d) for d in v.shape[1:]))
+                              for k, v in obs.items()})
 
 
 def _make_writer(spec: Any, layout: Layout, engine: Any, xp: Any) -> Any:

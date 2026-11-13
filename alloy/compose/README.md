@@ -10,7 +10,7 @@ import alloy.api, alloy.compose
 result = alloy.compose.compose("a mug, a spoon and three wooden cubes on a table", variations=4)
 print(result.ok)                # the base scene passed the full check and has every object asked for
 print(result.summary())         # one line per scene
-result.save("my_scenes")        # my_scenes/scenes/scene.yaml, scene_v01.yaml ... + compose.json
+paths = result.save("my_scenes")   # [my_scenes/scenes/scene.yaml, scene_v01.yaml, ..., compose.json]: scenes first
 sim = alloy.api.build(result.scene(0), worlds=64)     # result.scene(i) is an editable alloy.Scene
 ```
 
@@ -105,9 +105,9 @@ r.scenes[0].soft["settle_s"]    # how long the scene takes to settle (a drape fa
 | `pour 150 ml of water from a jar tilted at 30 deg/s into a bin` (`tilted to 100 degrees`) | the jar, filled and held still (kinematic) with its lip over the bin, and the tilt as data: `alloy.compose.tilt(sim, row)` drives it |
 | `a pile of 300 g of sand`, `a pile of rice on a tray` | grains that slump to their angle of repose (the material's sourced friction angle) |
 | `a towel`, `a 50 x 30 cm towel`, `a towel folded in half`, `a towel draped over a mug`, `a towel hanging over the edge of the table` | a cloth sheet: flat, folded in half (two layers), falling over an object, or with 40 % past a table edge |
-| `a cotton cloth`, `a polyester cloth`, `a plastic sheet` (`film`, `plastic wrap`), `a napkin`, `a sheet of paper` (A4), `kraft paper` (`brown paper`), `wrapping paper` (`gift wrap`, `packing paper`), `paperboard` (`chipboard`), `scored paper` (folds on its crease) | the library sheet of that name (cloth, film, paper); `rag`, `blanket`, `tablecloth` use the closest one, listed in `estimated` |
+| `a cotton cloth`, `a polyester cloth`, `a plastic sheet` (`film`, `plastic wrap`), `a napkin`, `a sheet of paper` (A4), `kraft paper` (`brown paper`), `wrapping paper` (`gift wrap`, `packing paper`), `paperboard` (`chipboard`), `scored paper` (folds on its crease; the library sheet at its own 30 x 30 cm, not resized or folded by the builder) | the library sheet of that name (cloth, film, paper); `rag`, `blanket`, `tablecloth` use the closest one, listed in `estimated` |
 | `a gift bag` (`paper bag`, `kraft bag`, `shopping bag`), `a bottom board in a gift bag` (`bag insert`), `a box in a gift bag`, `a plastic bag` | a library film object, placed like any object: the open kraft gift bag standing on its bottom, its chipboard bottom board centred on the bag's bottom, a flat plastic carrier bag |
-| `a 1 m usb cable`, `a 3 mm cable`, `a rope plugged into a jar`, `a cable from the laptop to the monitor` | a cable laid in a loose curve (or `straight`), its ends welded to the objects named |
+| `a 1 m usb cable`, `a 3 mm cable`, `a rope plugged into a jar`, `a cable from the laptop to the monitor` | a cable laid in a loose curve (or `straight`), its ends welded to the objects named, each end to a different object (`two mugs and a rope from a mug to a mug` joins the two mugs); more cables lie clear of each other (`two ropes from a mug to a jar` run side by side) |
 | `a robot arm next to a bin of rice and a mug` | the library Franka Panda (the robot alone) at the table edge |
 
 A tilting pour, run (the scene is at rest until you drive it; `examples/compose/tilt_pour.py` runs it and reports
@@ -125,7 +125,9 @@ traj = sim.run(plan["duration_s"] + 1.5, record=[plan["liquid"], plan["vessel"]]
 
 Amounts: ml, l, cl, g, kg, `full`, `half full`, `a little`; with none, a fill takes 60 % of the container's depth and
 a pile 100 ml. Unknown liquids with water's properties (milk, juice, coffee, tea, wine) are made as water and listed
-in `estimated`; other unknown materials are an error listing what exists.
+in `estimated`; other unknown materials ("200 ml of detergent", "pour coolant into a mug") are an error listing what
+exists. A container that is filled or poured into is a card with a cavity ("a tube with 5 ml of water": the sample
+tube, not the tube rack).
 
 Never a block dropped into a container: a flat block striking a floor throws pressure jets out of the cup. A fill
 starts resting inside its container and a pour is a stream.
@@ -180,6 +182,9 @@ A robot stands at the middle of the table's near edge (-x) facing +x; a second o
 area is the part of the table within `reach` (default 0.8 m) in front of the robots. The load checks after each
 placement include the robot's links. Without robots, `area=(x0, y0, x1, y1)` limits where objects go. Both are also
 spec fields (`"robots": [...]`, `"area": [...]`) and command-line flags (`--robot arm.xml`, `--area X0 Y0 X1 Y1`).
+A robot file is a path under a card root (`robots/emb_e2_panda/scene.xml`), an absolute path or a path from the
+current folder. One that is missing or not readable XML is an error naming it (field `robots`) before anything is
+placed, in every check mode; with the load checks on, so is one the engine cannot assemble on the bare table.
 
 ## Using a saved scene
 
@@ -190,6 +195,8 @@ report = alloy.check("my_scenes/scenes/scene.yaml", library=alloy.compose.librar
 
 The floor support is a generated card (`objects/compose_floor.yaml`) saved next to the scenes, so the folder loads
 on its own. Imported objects need their files on disk: `compose` fetches the ones it uses when `$ALLOY_ASSET_STORE`
-is set; `search` never downloads and says when an object's files are missing. Fetched files go into the import root
+is set; `search` never downloads an object and says when an object's files are missing (on a fresh install it lists
+the object library on the Hugging Face Hub from its index, each object with the `alloy fetch` that gets it). Fetched
+files go into the import root
 when it is a writable checkout, else (cards installed with the package) into `$ALLOY_CACHE/imports/<source>` or
 `~/.cache/alloy/imports/<source>`; `alloy.compose.library()` and `load_scene()` include those cache folders.

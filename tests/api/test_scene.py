@@ -94,7 +94,11 @@ def test_cards_validate_and_hold_the_overrides(tmp_path):
     assert lib.material("abs_for_ball").surface.mu_static.value == pytest.approx(0.9)
     assert lib.object("towel").budget.particles == 20 * 16
     assert {(p.a, p.b) for p in card.pairs} == {("abs_for_cube", "pad_for_block")}
-    assert lib.has_pair("abs_for_cube", "plywood_marine")     # sourced pairs follow a mass-only override
+    from alloy.scene.pairs import pair_card       # sourced pairs follow a mass-only override (pairs_from, S2-010)
+
+    copied, base = pair_card(lib, (), "abs_for_cube", "plywood_marine"), lib.pair("abs", "plywood_marine")
+    assert copied is not None and copied.mu_dynamic == base.mu_dynamic
+    assert lib.material("abs_for_cube").pairs_from == "abs"
 
 
 def test_set_friction_rejects_robots_and_shared_materials(tmp_path):

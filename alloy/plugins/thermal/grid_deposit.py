@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import warp as wp
 
-from alloy.plugins.thermal.grid_cap import Bead, Cap, cap_of, centre, held, in_cap, locate
+from alloy.plugins.thermal.grid_cap import Bead, Cap, cap_of, centre, circle_of, fused_toes, held, in_cap, locate
 from alloy.plugins.thermal.grid_kernels import BIG, Arc, Grid, Table, lookup, width
 
 
@@ -131,18 +131,25 @@ def fill_slice(g: Grid, bead: Bead, mass: wp.array(dtype=float), cell: wp.array2
                toes: wp.array2d(dtype=wp.vec2), temp: wp.array2d(dtype=float), w: int, ix: int, at: wp.vec3,
                ay: int, az: int, h_new: float, t_new: float) -> wp.float64:
     """Fill slice ix's air cells while its budget holds half the next cell: nearest the anchor (model 0) or inside
-    the slice's cap nearest the root (model 1). New cells at ``h_new`` / ``t_new``; returns the mass filled [kg]."""
+    the slice's cap nearest the root (models 1 and 2; the surface model's reshape moves the liquid to its surface).
+    New cells at ``h_new`` / ``t_new``; returns the mass filled [kg]."""
     root = bead.root
     cap = Cap()
     cap.root = root
-    if bead.model == 1:
+    if bead.model >= 1:
         if bead.root_at_anchor == 1:
             root = wp.vec2(at[1], g.ez[az])
         step = 0.5 * wp.min(width(g, 1, ay), width(g, 2, az))
-        cap = cap_of(g, bead, cell, peak, temp, toes, w, ix, root, step, held(g, bead, cell, budget, w, ix, root))
+        area = held(g, bead, cell, budget, w, ix, root)
+        if bead.model == 1:
+            cap = cap_of(g, bead, cell, peak, temp, toes, w, ix, root, step, area)
+        else:                                         # the surface model: fusion and wetting here, as the cap's;
+            t = fused_toes(g, bead, cell, peak, temp, toes, w, ix, root, step)    # its overflow in its reshape
+            toes[w, ix] = t
+            cap = circle_of(bead, root, t[0], t[1], area)
     root = cap.root
     box = wp.vec2(at[1], at[2])                       # the scan box: around the anchor, or the cap's root
-    if bead.model == 1:
+    if bead.model >= 1:
         box = root
     y0 = locate(g, 1, box[0] - bead.reach)
     y1 = locate(g, 1, box[0] + bead.reach) + 1
@@ -159,7 +166,7 @@ def fill_slice(g: Grid, bead: Bead, mass: wp.array(dtype=float), cell: wp.array2
                 if cell[w, c] == 0:
                     x3 = centre(g, ix, y, z)
                     v = wp.vec2(x3[1] - at[1], x3[2] - at[2])
-                    if bead.model == 1:
+                    if bead.model >= 1:
                         x2 = wp.vec2(x3[1], x3[2])
                         s = wp.length(x2 - root)
                         if s < best_s and in_cap(x2, cap, bead):

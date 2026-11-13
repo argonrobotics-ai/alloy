@@ -165,6 +165,7 @@ class HealthFlags(enum.IntFlag):
     SELF_CONTACT_OVERFLOW = 1 << 22   # VBD self-contact pairs dropped over their row buffers (gap #13; self_contact.py)
     FAST_CONTACT = 1 << 23    # a body closed > 5 mm in one step on a static part thin enough to pass (GAP-E2; health_tunnel.py)
     TUNNEL = 1 << 24          # a body passed through a static shape (INVALID; GAP-E2; health_tunnel.py)
+    QUASI_STATIC = 1 << 25    # a mass-scaled j2 solid moved fast enough that its scaled inertia shows (GAP #6)
 
 
 class Severity(enum.IntEnum):

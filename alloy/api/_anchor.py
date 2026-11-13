@@ -141,13 +141,9 @@ def anchor(card: str, roots: tuple[str, ...], mode: str) -> np.ndarray:
 
 def local_box(card: str, roots: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray] | None:
     """(lo, hi) of the card's geometry in its body frame, or None. Example: ``local_box("peg_d12", ())``."""
-    from alloy.api import catalog  # noqa: PLC0415
-    from alloy.api._build import fetch_imported  # noqa: PLC0415
     from alloy.cards import types as ct  # noqa: PLC0415
 
-    lib = _library(roots, os.environ.get("ALLOY_ASSETS"), os.environ.get("ALLOY_CACHE"),
-                   tuple(str(r) for r in catalog.fetched_roots()))
-    fetch_imported(lib, [card])                               # its mesh, from the store or the Hub, as a build does
+    lib = card_library(roots, [card])                         # its mesh, from the store or the Hub, as a build does
     obj = lib.peek_object(card)
     s = obj.shape
     if isinstance(s, ct.Primitive):
@@ -163,6 +159,19 @@ def local_box(card: str, roots: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray
         return None
     v = np.asarray(mesh.vertices, np.float64)
     return v.min(axis=0), v.max(axis=0)
+
+
+def card_library(roots: Sequence[str], cards: Sequence[str] = ()) -> Any:
+    """The card library of ``roots`` (cached), with the meshes of the imported ``cards`` fetched (from the store or
+    the Hub) as a build fetches them. Example: ``card_library([], ["peg_d12"]).peek_object("peg_d12")``."""
+    from alloy.api import catalog  # noqa: PLC0415
+    from alloy.api._build import fetch_imported  # noqa: PLC0415
+
+    lib = _library(tuple(str(r) for r in roots), os.environ.get("ALLOY_ASSETS"), os.environ.get("ALLOY_CACHE"),
+                   tuple(str(r) for r in catalog.fetched_roots()))
+    if cards:
+        fetch_imported(lib, list(cards))
+    return lib
 
 
 def _primitive_box(p: Any) -> tuple[np.ndarray, np.ndarray] | None:

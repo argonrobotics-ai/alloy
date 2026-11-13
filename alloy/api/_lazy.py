@@ -29,6 +29,7 @@ EXPORTS: dict[str, str] = {
     "estimate": "_estimate",
     "vary": "_vary",
     "materials": "catalog",
+    "objects": "catalog",
     "scenes": "catalog",
     "AlloyAPIError": "errors",
     "SceneError": "errors",

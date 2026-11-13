@@ -40,9 +40,11 @@ def choose(spec: SceneSpec, catalog, rng: np.random.Generator | None = None, *, 
     """A card per item (see the module docstring); ``ComposeError`` when no item has a placeable match."""
     out = Choice()
     soft = soft_queries(spec)
+    holders = fill_targets(spec)
     for item in spec.items:
         if item.query not in out.cards and item.query not in soft:
-            out.cards[item.query] = choose_one(item, catalog, rng if swap else None, out.notes)
+            out.cards[item.query] = choose_one(item, catalog, rng if swap else None, out.notes,
+                                               holds=item.query in holders)
     if not any(out.cards.values()) and not soft:
         raise ComposeError(f"no placeable object for any of {[i.query for i in spec.items]}",
                            "use other nouns: alloy.compose.search('<noun>') lists what exists and what can be placed",
@@ -59,6 +61,24 @@ def soft_queries(spec: SceneSpec) -> set[str]:
     return out
 
 
+def fill_targets(spec: SceneSpec) -> set[str]:
+    """Queries of the containers a liquid or grain fills or pours into: their card must have a cavity.
+
+    Example: ``fill_targets(parse("a tube with 5 ml of water")) == {"tube"}``."""
+    return {i.target for i in spec.items if i.soft is not None and i.target and i.soft.kind in ("liquid", "grain")
+            and i.soft.form in ("fill", "pour")}
+
+
+def _hollow(catalog, name: str) -> bool:
+    """True when placeable object ``name`` has a cavity a fill can stand in (not a solid or a convex-hull shape)."""
+    from alloy.compose.soft.interior import measure  # noqa: PLC0415 - the soft package imports this module
+    from alloy.compose.soft.vessel import SOLID_COLLISION  # noqa: PLC0415
+
+    body = catalog.body(name)
+    shape = catalog.library.peek_object(name).shape
+    return getattr(shape, "collision", "") not in SOLID_COLLISION and measure(body.vertices, body.faces) is not None
+
+
 def _no_match_hint() -> str:
     """What to do when no object matches: the ``import`` extra on a base install (the Hub holds most objects), else
     another word (GEO P4)."""
@@ -69,9 +89,12 @@ def _no_match_hint() -> str:
     return "try another word (alloy.compose.search lists names)"
 
 
-def choose_one(item: ItemSpec, catalog, rng: np.random.Generator | None, notes: list[str]) -> str | None:
+def choose_one(item: ItemSpec, catalog, rng: np.random.Generator | None, notes: list[str], *,
+               holds: bool = False) -> str | None:
     """Draw from the best-scoring tier, reading (and fetching) only the card drawn; an unplaceable draw is dropped
-    and the draw repeated, down the ranking."""
+    and the draw repeated, down the ranking. ``holds``: the item is filled or poured into, so a card with a cavity
+    wins over one without ("a tube with 5 ml of water": the sample tube, not the tube rack); with none, the first
+    placeable card is kept and the fill says why it cannot hold anything."""
     if item.object is not None:
         info = catalog.info(item.object)
         if not info.placeable:
@@ -84,14 +107,20 @@ def choose_one(item: ItemSpec, catalog, rng: np.random.Generator | None, notes: 
     skipped: list[tuple[str, str]] = []
     floor = matches[0].score - TIER                  # never fall back to a weaker meaning ("apple" -> a game box)
     matches = [m for m in matches if m.score > floor]
+    solid = None
     while matches:
         tier = _sized(item, [m.name for m in matches], catalog, rng)
         name = tier[0] if rng is None else tier[int(rng.integers(len(tier)))]
         info = catalog.info(name)
-        if info.placeable and not (info.sheet and not _named(item, name)):
-            return name
-        skipped.append((name, info.reason or "a flat sheet: ask for it as cloth ('a sheet of kraft paper')"))
         matches = [m for m in matches if m.name != name]
+        if not info.placeable or (info.sheet and not _named(item, name)):
+            skipped.append((name, info.reason or "a flat sheet: ask for it as cloth ('a sheet of kraft paper')"))
+        elif not holds or _hollow(catalog, name):
+            return name
+        else:
+            solid = solid or name
+    if solid is not None:
+        return solid
     notes.append(f"{item.query}: the best matches cannot be placed: "
                  + "; ".join(f"{n} ({why})" for n, why in skipped[:3]))
     return None
@@ -114,4 +143,4 @@ def _sized(item: ItemSpec, tier: list[str], catalog, rng: np.random.Generator | 
     return ok[:max(1, len(ok) // 2)] if rng is not None else ok[:1]
 
 
-__all__ = ["Choice", "choose", "choose_one", "soft_queries"]
+__all__ = ["Choice", "choose", "choose_one", "fill_targets", "soft_queries"]

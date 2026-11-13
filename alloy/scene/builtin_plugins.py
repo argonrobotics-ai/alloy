@@ -19,6 +19,7 @@ from __future__ import annotations
 import importlib
 import logging
 import os
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -37,7 +38,12 @@ from alloy.scene.emitters.dispatch import ROUTE_EMITTER
 
 log = logging.getLogger("alloy.scene")
 
-SOLREF_SHORTHAND = "MJCF shorthand read as dampratio 0 by Newton; write both values"
+SOLREF_DAMPRATIO = ("a solref-type value with a positive time constant has dampratio 0 or below, which MuJoCo's "
+                    "positive form cannot use: its stiffness goes as 1 / dampratio^2 (a one-value solref is read "
+                    "here as dampratio 0, not as MuJoCo's 1)")
+SOLREF_FIX = ('write a dampratio above 0, such as solref="0.02 1" (MuJoCo\'s default); for a stiff or undamped '
+              'contact or limit use the direct form, solref="-k -b" (stiffness k in N/m, damping b in N s/m, '
+              'both written negative; "-k 0" is undamped)')
 RIGID_OWNS = frozenset({"body", "joint", "shape"})
 PARTICLE_OWNS = frozenset({"particle", "tri", "tet", "edge"})
 
@@ -171,12 +177,15 @@ def check_solref(model) -> None:
     """SCR-SC6-2: MuJoCo reads a one-value solref-type MJCF attribute as (t, 1); Newton (pin ac7f7830) reads the geom
     `solref` and joint `solreflimit` shorthand as (t, 0) on its `mujoco:` attribute path, an undamped constraint (a
     UR10e + 2F-85 world froze or flailed, SC6). A positive time constant with dampratio <= 0 raises RouteError naming
-    each joint/geom; nothing is padded. Direct (t <= 0) and unauthored (0, 0) values pass."""
+    each joint/geom, whether one value or two were written (the model cannot tell them apart), with its own fix
+    (SAMPLE-CLASSIC C3); nothing is padded. Direct (t <= 0) and unauthored (0, 0) values pass."""
     bad = [f"{name} on {_owner(model, name, int(i))} = ({v[i, 0]:g}, {v[i, 1]:g})"
            for name, v in _solref_arrays(model) for i in np.flatnonzero((v[:, 0] > 0.0) & (v[:, 1] <= 0.0))]
     if bad:
         more = f" (+{len(bad) - 8} more)" if len(bad) > 8 else ""
-        raise RouteError(f"{SOLREF_SHORTHAND}: {'; '.join(bad[:8])}{more}")
+        err = RouteError(f"{SOLREF_DAMPRATIO}: {'; '.join(bad[:8])}{more}")
+        err.fix = SOLREF_FIX     # the API shows it as the error's fix (alloy.api.errors.wrap), not RouteError's
+        raise err
 
 
 def _solref_arrays(model):
@@ -309,7 +318,7 @@ def _mpm(view: ModelView, kw: Mapping[str, Any]) -> SolverBase:
     if fallback is not None:
         config = cls.Config(**{**cfg, "grid_type": "sparse"})
     hb = len(hb_particles(view))                # Herschel-Bulkley pastes: the subclass, else the stock solver
-    solver = SolverRheologyMPM(view, config) if hb else cls(view, config)
+    solver = _new_mpm_solver(SolverRheologyMPM if hb else cls, view, config)
     # mid-run, a dense grid switches to sparse only with one world: with separate worlds Newton's next step failed
     # to rebind the collision fields on CUDA (WP13's L4 log, 64 worlds, 11-07)
     why = ("no sparse grid to fall back to (separate worlds on the CPU)" if cpu_worlds else
@@ -319,6 +328,28 @@ def _mpm(view: ModelView, kw: Mapping[str, Any]) -> SolverBase:
     G.warn_sparse_ground(solver, view)
     mpm_solid.install_notes(solver, view, config.grid_type)
     return solver
+
+
+MPM_SHAPE_FIX = ("give every object that can touch the sand, soil or paste a box, sphere, capsule, cylinder, cone or "
+                 "mesh shape (add_mesh with collision='convex', 'decompose', 'sdf' or 'mesh'); heightfields, "
+                 "ellipsoids and Gaussian splats are not MPM colliders")
+
+
+def _new_mpm_solver(cls: type, view: ModelView, config: Any) -> SolverBase:
+    """``cls(view, config)``. A collision shape Newton cannot mesh as an MPM collider (its NotImplementedError "Shape
+    type N not supported") becomes a RouteError naming the shape type, with ``MPM_SHAPE_FIX`` as its fix:
+    the API raises it as a BuildError. Example: ``_new_mpm_solver(SolverImplicitMPM, view, config)``."""
+    try:
+        return cls(view, config)
+    except NotImplementedError as exc:
+        found = re.search(r"Shape type (\d+)", str(exc))
+        if found is None:
+            raise
+        kind = int(found.group(1))
+        name = newton.GeoType(kind).name if kind in {int(g) for g in newton.GeoType} else str(kind)
+        err = RouteError(f"sand, soil or paste (MPM) cannot collide with this scene's {name.lower()} shape")
+        err.fix = MPM_SHAPE_FIX
+        raise err from exc
 
 
 def _mpm_attributes(builder: newton.ModelBuilder) -> None:

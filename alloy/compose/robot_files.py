@@ -5,7 +5,8 @@ objects (Alloy's library embodiments are whole task scenes: arm, table, floor an
 ``robot_only`` keeps the worldbody bodies whose tree has a hinge or slide joint (the robot) and drops the rest:
 world geoms (floor planes, tables), bodies without joints (scenery) and free bodies (loose objects), with the
 contact pairs, equalities, actuators, sensors and keyframes that name them. Mesh files and licences are copied
-with it, so a saved scene folder loads on its own.
+with it, so a saved scene folder loads on its own. ``robot_file`` checks a robot's file before anything is placed:
+it must exist and, for MJCF and URDF, be readable XML.
 
 Example::
 
@@ -23,7 +24,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import replace
 from pathlib import Path
 
-from alloy.compose.spec import RobotSpec
+from alloy.compose.spec import ComposeError, RobotSpec
+from alloy.core.errors import CardError
 
 _FILE = re.compile(r"\bfile=\"([^\"]+)\"")
 _REFS = ("body", "body1", "body2", "geom", "geom1", "geom2", "joint", "joint1", "joint2", "site", "objname", "tendon")
@@ -56,6 +58,37 @@ def robot_only(text: str) -> tuple[str, list[str]]:
     for key in root.findall("keyframe"):
         root.remove(key)
     return ET.tostring(root, encoding="unicode"), dropped
+
+
+_PATH_FIX = ("give a robot file that exists: an MJCF (.xml), URDF or USD file by its path, or a library path such as "
+             "'robots/emb_e2_panda/scene.xml'")
+
+
+def robot_file(spec: RobotSpec, library) -> RobotSpec:
+    """``spec`` once its file is found (under a card root, absolute, or from the current folder: then made absolute so
+    the saved scene finds it) and, for MJCF and URDF, read as XML. Raises ``ComposeError`` (field "robots") naming
+    the file otherwise, so a broken robot is never blamed on the objects placed beside it.
+
+    Example: ``robot_file(RobotSpec("missing.xml"), lib)`` raises "robot file 'missing.xml' is not found"."""
+    try:
+        src = library.asset_path(spec.path)
+    except CardError as exc:                           # the path exists under two roots
+        raise ComposeError(f"robot file {spec.path!r}: {exc.message}", "give the robot file by its absolute path",
+                           field="robots") from exc
+    here = Path(spec.path).expanduser()
+    if src is None and here.is_file():
+        src = here.resolve()
+        spec = replace(spec, path=str(src))
+    if src is None or not Path(src).is_file():
+        raise ComposeError(f"robot file {spec.path!r} is not found", _PATH_FIX, field="robots")
+    if spec.kind in ("mjcf", "urdf"):
+        try:
+            ET.parse(src)
+        except ET.ParseError as exc:
+            raise ComposeError(f"robot file {spec.path!r} is not readable XML ({exc})",
+                               f"fix the file (it must be a whole {spec.kind.upper()} document) or give another robot",
+                               field="robots") from exc
+    return spec
 
 
 def robot_copy(spec: RobotSpec, library, out: dict[str, bytes]) -> tuple[RobotSpec, str]:
@@ -96,4 +129,4 @@ def _normal(rel: str) -> str:
     return "/".join(parts)
 
 
-__all__ = ["robot_copy", "robot_only"]
+__all__ = ["robot_copy", "robot_file", "robot_only"]

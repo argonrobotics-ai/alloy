@@ -72,6 +72,9 @@ class Task:
                            field="max_steps")
         if self.on_invalid not in INVALID_MODES:
             raise EnvError(f"on_invalid is {self.on_invalid!r}", f"use one of {INVALID_MODES}", field="on_invalid")
+        if not isinstance(self.cameras, Mapping) or not all(isinstance(k, str) for k in self.cameras):
+            raise EnvError(f"cameras is a {type(self.cameras).__name__}, not a dict of names to cameras",
+                           "pass Task(cameras={\"front\": cam}): the name is the observation key", field="cameras")
         self._validate_groups()
         for layer in self.layers:
             if not hasattr(layer, "attach"):

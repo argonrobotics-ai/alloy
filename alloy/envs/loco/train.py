@@ -95,6 +95,7 @@ def train(num_envs: int = 4096, iterations: int = 400, seed: int = 0, out: str =
     Example: ``train(num_envs=4096, iterations=400, out="runs/go2")["evaluation"][0]``."""
     from alloy.envs.wrappers import wrap  # noqa: PLC0415
     from alloy.envs.wrappers._common import require  # noqa: PLC0415
+    from alloy.envs.wrappers.train_rsl_rl import learn_reporting  # noqa: PLC0415
 
     require("rsl_rl")
     from rsl_rl.runners import OnPolicyRunner  # noqa: PLC0415
@@ -108,11 +109,9 @@ def train(num_envs: int = 4096, iterations: int = 400, seed: int = 0, out: str =
     cfg["obs_groups"] = venv.default_obs_groups()
     runner = OnPolicyRunner(venv, cfg, log_dir=out, device=str(venv.device))
     checkpoint, curve = os.path.join(out, "model_last.pt"), os.path.join(out, "curve.jsonl")
-    done, t0 = 0, time.perf_counter()
-    while done < iterations:
-        chunk = min(REPORT_EVERY, iterations - done)
-        runner.learn(num_learning_iterations=chunk, init_at_random_ep_len=done == 0)
-        done += chunk
+    t0 = time.perf_counter()
+
+    def report(done: int) -> None:
         row = {"iter": done, "minutes": round((time.perf_counter() - t0) / 60, 2),
                "samples": done * STEPS_PER_ENV * num_envs, **tally.take()}
         if hasattr(env, "levels"):
@@ -120,7 +119,9 @@ def train(num_envs: int = 4096, iterations: int = 400, seed: int = 0, out: str =
         print(json.dumps(row), flush=True)
         with open(curve, "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
-        runner.save(checkpoint)
+        runner.save(checkpoint)                  # records iter = iterations done
+
+    learn_reporting(runner, iterations, REPORT_EVERY, report, random_start=True)
     rows = evaluate(venv, runner.get_inference_policy(device=str(venv.device)))
     minutes = round((time.perf_counter() - t0) / 60, 2)
     venv.close()

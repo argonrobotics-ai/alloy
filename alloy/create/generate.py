@@ -94,7 +94,13 @@ def _remote(url: str, photo: str | None, text: str | None, work: Path, seed: int
     if "error" in data:
         raise CreateError(f"the generation server failed: {data['error']}", data.get("fix", "check the server log"),
                           field="input")
-    (work / "mesh.obj").write_bytes(base64.b64decode(data["mesh_obj_b64"]))
+    try:
+        mesh = base64.b64decode(data["mesh_obj_b64"], validate=True)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CreateError(f"the server at {url} answered without a mesh (keys {sorted(data)[:6]}): it is not an "
+                          "alloy.create generation server, or an older one", f"point {URL_ENV} at a machine running "
+                          "`python -m alloy.create.serve` (GET <url>/health lists its models)", field="input") from exc
+    (work / "mesh.obj").write_bytes(mesh)
     if data.get("image_png_b64"):
         (work / "image.png").write_bytes(base64.b64decode(data["image_png_b64"]))
     return {"mesh": str(work / "mesh.obj"), "image": str(work / "image.png") if data.get("image_png_b64") else None,

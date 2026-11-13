@@ -31,6 +31,7 @@ from alloy.scene.emitters.common import TriMesh, add_primitive, load_hulls, load
 
 log = logging.getLogger("alloy.scene")
 
+CONVEX_SOURCE_MAX = 50_000      # vertices: a larger collision="convex" mesh goes to Newton as its capped hull
 FIXTURE_GROUP = "kinematic_fixture"          # decision number: the kinematic fixture a part belongs to (1, 2, ...)
 FIXTURE_ROOT = "kinematic_fixture_root"      # decision number 1.0: the part whose body carries the others
 
@@ -49,6 +50,8 @@ def emit_rigid(b: newton.ModelBuilder, obj: ResolvedObject, d: RouteDecision) ->
         return
     body = -1 if static else b.add_body(label=card.name, is_kinematic=card.motion == "kinematic")
     _add_shapes(b, body, obj, cfg)
+    if body >= 0 and card.motion == "dynamic" and isinstance(card.shape, MeshSource):
+        _require_mass(b, body, card.shape, card.name)
     if body >= 0 and card.motion == "kinematic":
         log.debug("%s: kinematic body %d", card.name, body)
 
@@ -70,13 +73,40 @@ def _add_shapes(b: newton.ModelBuilder, body: int, obj: ResolvedObject,
 
 def _add_mesh(b: newton.ModelBuilder, body: int, src: MeshSource, cfg: newton.ModelBuilder.ShapeConfig,
               name: str) -> None:
-    mesh = newton_mesh(load_mesh(src))
-    if src.collision == "convex":
+    raw = load_mesh(src)
+    mesh = newton_mesh(raw)
+    if src.collision == "convex" and len(raw.vertices) > CONVEX_SOURCE_MAX:
+        _add_large_convex(b, body, raw, mesh, cfg, name)
+    elif src.collision == "convex":
         b.add_shape_convex_hull(body, mesh=mesh, cfg=cfg, label=name)
     elif src.collision in ("mesh", "sdf"):
         b.add_shape_mesh(body, mesh=mesh, cfg=cfg, label=name)
     else:
         raise AssemblyError(f"{name}: unknown collision mode {src.collision!r} (convex, decompose, mesh, sdf)")
+
+
+def _add_large_convex(b: newton.ModelBuilder, body: int, raw: TriMesh, mesh: newton.Mesh,
+                      cfg: newton.ModelBuilder.ShapeConfig, name: str) -> None:
+    """A convex mesh of more than CONVEX_SOURCE_MAX vertices (a raw scan): its collision shape is the hull MuJoCo
+    collides with anyway (``Mesh.maxhullvert`` vertices), carrying the whole mesh's mass, centre and inertia
+    (``Mesh.compute_convex_hull`` keeps them), and the mesh itself is a display-only shape. Newton
+    builds the support adjacency of a convex source vertex by vertex, which ran past 19 min on a 655,362-vertex
+    sphere; meshes this size had failed earlier at a 6.25 TiB width probe, so no scene that built changes."""
+    first = b.shape_count
+    b.add_shape_convex_hull(body, mesh=mesh.compute_convex_hull(), cfg=cfg, label=name)
+    _add_display_mesh(b, body, raw, cfg, name, range(first, b.shape_count))
+    log.info("%s: %d mesh vertices collide as their %d-vertex hull (display: the full mesh)", name,
+             len(raw.vertices), mesh.maxhullvert)
+
+
+def _require_mass(b: newton.ModelBuilder, body: int, src: MeshSource, name: str) -> None:
+    """An AssemblyError for a dynamic body whose mesh gave it no mass: Newton gives the body density x the mesh's
+    signed volume, which is 0 or less for an open, flat or inconsistently wound mesh (half a cube's faces flipped:
+    0), and the rigid step's contact gains divide by that mass. Static and kinematic bodies are not judged."""
+    mass = float(b.body_mass[body])
+    if not mass > 0.0:
+        raise AssemblyError(f"{name}: mesh {src.path} encloses no volume, so the moving body has mass {mass:.3g} kg: "
+                            "the mesh is open, flat or its faces are wound inconsistently")
 
 
 def _inertia(mesh: TriMesh, density: float, kind: int) -> tuple[float, wp.vec3, wp.mat33]:

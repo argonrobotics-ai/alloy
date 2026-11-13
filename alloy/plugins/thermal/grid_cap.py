@@ -27,7 +27,7 @@ import warp as wp
 
 from alloy.plugins.thermal.grid_kernels import BIG, Grid, width
 
-BEAD_MODELS = ("nearest", "cap")
+BEAD_MODELS = ("nearest", "cap", "surface")
 WET_LIQUID = (31.0, 6950.0, 808.0)  # liquid steel's molecular k, ρ, c for the contact temperature (GA §6)
 VOLUME_TOL = 1.0e-4  # cells of one uniform band count as equal: their float32 edge widths differ by up to ~4e-6
 
@@ -66,7 +66,7 @@ class Bead:
     h_drop: float  # J/kg, H at the droplets' temperature
     t_drop: float  # K
     max_fill: int  # cells per world per exchange at most
-    model: int  # 0: nearest-first; 1: a capillary cap between the fused toes (``cap_region``)
+    model: int  # 0: nearest-first; 1: a capillary cap between the fused toes; 2: its surface with weight
     root: wp.vec2  # (y, z) of the joint's root in the slice plane (cap model)
     root_at_anchor: int  # 1: the root is the anchor's foot on the parent surface (a bead on plate)
     e1: wp.vec2  # the joint's two surfaces as rays from the root, sweeping counter-clockwise through the bead
@@ -84,6 +84,10 @@ class Bead:
     arc_force: float  # N, the arc's force (GA ARC_FORCE); > 0: the pool flows along the weld (``grid_flow``)
     arc_sigma: float  # m, σ of the arc's pressure along the weld (GA ARC_PRESSURE_SIGMA)
     gamma: float  # N/m, the liquid's surface tension
+    sag: int  # 1: an overfull slice's toes move out along surfaces that carry the liquid (``joint_down``)
+    down: wp.vec2  # gravity's direction in the slice plane
+    g: float  # m/s², gravity's magnitude for the surface model (``grid_surface``)
+    rho_liquid: float  # kg/m³, the liquid's density (GA: 6950)
 
 
 def bead_struct(c, m, cell: np.ndarray) -> tuple[Bead, float]:
@@ -109,7 +113,10 @@ def bead_struct(c, m, cell: np.ndarray) -> tuple[Bead, float]:
     b.drop_radius, b.drop_depth = c.drop_cylinder
     b.lag, b.gamma = c.deposit_lag, c.surface_tension
     b.arc_force, b.arc_sigma = c.arc_pressure
-    b.wet = math.sqrt(WET_LIQUID[0] * WET_LIQUID[1] * WET_LIQUID[2]) / math.sqrt(k_hot * m.density * c_hot)
+    b.sag, b.down = int(c.joint_down is not None), wp.vec2(*(c.joint_down or (0.0, -1.0)))
+    b.g, b.rho_liquid = c.gravity, WET_LIQUID[1]
+    e_solid = m.contact_effusivity or math.sqrt(k_hot * m.density * c_hot)
+    b.wet = math.sqrt(WET_LIQUID[0] * WET_LIQUID[1] * WET_LIQUID[2]) / e_solid
     return b, m.density * b.area * (h_drop - float(m.enthalpy(c.ambient)))
 
 
@@ -162,6 +169,45 @@ def wet_toe(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), temp: wp.arra
 
 
 @wp.func
+def spills(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), temp: wp.array2d(dtype=float), w: int, ax: int,
+           root: wp.vec2, e: wp.vec2, n: wp.vec2, step: float, s: float) -> bool:
+    """Can the liquid at the toe s along ray ``e`` run onto the metal beyond it? As ``wet_toe``: the liquid at the edge
+    (the weld cell just outside the surface at the toe) and the parent cell just beyond meet at the effusivity-weighted
+    contact temperature, which must reach the solidus (GA pool.py:1257-1296, ``_contact_freezes``)."""
+    edge = root + (s - 0.5 * step) * e - 0.5 * step * n
+    ce = (ax * g.ny + locate(g, 1, edge[0])) * g.nz + locate(g, 2, edge[1])
+    if cell[w, ce] != bead.weld or temp[w, ce] < bead.t_liquidus:
+        return False
+    t_wet = bead.t_solidus + bead.wet * (bead.t_solidus - temp[w, ce])
+    q = root + (s + 0.5 * step) * e + 0.5 * step * n
+    c = (ax * g.ny + locate(g, 1, q[0])) * g.nz + locate(g, 2, q[1])
+    return cell[w, c] != 0 and temp[w, c] >= t_wet
+
+
+@wp.func
+def overflow(bead: Bead, t1: float, t2: float, target: float, step: float) -> wp.vec2:
+    """How far each toe of an overfull slice moves out this exchange (GA pool.py:1029-1056). A chord holds at most the
+    wedge plus a half disc (GA: a face at 88° to its chord); a slice holding more spreads, each side by
+    L (sqrt(target / full) - 1) / 2 (a full chord's capacity grows as its length squared), at least one step and at
+    most ``advance``, but not up a surface that climbs against gravity (e · down < -0.3, GA's 17°: an overfull
+    horizontal fillet sags onto the plate). The caller moves an edge only where the contact does not freeze
+    (``spills``, GA pool.py:1047); where it does, GA's bulge overhangs and may touch down (a cold lap), and here the
+    excess stays in the cap (more convex)."""
+    c = wp.length(t2 * bead.e2 - t1 * bead.e1)
+    full = 0.5 * wp.abs(cross2(t1 * bead.e1, t2 * bead.e2)) + wp.pi * c * c / 8.0
+    if target <= full or full <= 0.0:
+        return wp.vec2(0.0, 0.0)
+    move = wp.clamp(0.5 * c * (wp.sqrt(target / full) - 1.0), step, bead.advance)
+    m1 = float(0.0)
+    m2 = float(0.0)
+    if wp.dot(bead.e1, bead.down) > -0.3:
+        m1 = move
+    if wp.dot(bead.e2, bead.down) > -0.3:
+        m2 = move
+    return wp.vec2(m1, m2)
+
+
+@wp.func
 def cap_angle(chord: float, area: float) -> float:
     """θ of the circular segment on ``chord`` holding ``area`` (θ in (0, 2π); bisection on the monotone
     L² (θ − sin θ) / (8 sin²(θ/2)))."""
@@ -201,14 +247,12 @@ def held(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), budget: wp.array
 
 
 @wp.func
-def cap_of(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), peak: wp.array2d(dtype=float),
-           temp: wp.array2d(dtype=float), toes: wp.array2d(dtype=wp.vec2), w: int, ax: int, root: wp.vec2,
-           step: float, target: float) -> Cap:
-    """Slice ax's bead for the area ``target`` [m²]: the toes, the wedge between the rays and the chord, and the
-    circular segment on that chord holding the rest. A toe (stored in ``toes``, only growing) lies at the outermost
-    fused point, or further where the slice's liquid wets: onto parent metal hot enough that the effusivity-weighted
-    contact temperature (e_l T_pool + e_s T) / (e_l + e_s) reaches the solidus (GA §6), at most ``advance`` per
-    exchange."""
+def fused_toes(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), peak: wp.array2d(dtype=float),
+               temp: wp.array2d(dtype=float), toes: wp.array2d(dtype=wp.vec2), w: int, ax: int, root: wp.vec2,
+               step: float) -> wp.vec2:
+    """Slice ax's toes before any overflow: a toe (stored in ``toes``, only growing) lies at the outermost fused
+    point, or further where the slice's liquid wets: onto parent metal hot enough that the effusivity-weighted contact
+    temperature (e_l T_pool + e_s T) / (e_l + e_s) reaches the solidus (GA §6), at most ``advance`` per exchange."""
     n1 = wp.vec2(bead.e1[1], -bead.e1[0])
     n2 = wp.vec2(-bead.e2[1], bead.e2[0])
     old = toes[w, ax]
@@ -218,7 +262,29 @@ def cap_of(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), peak: wp.array
                                                 bead.t_half)))
     t1 = wet_toe(g, bead, cell, temp, w, ax, root, bead.e1, n1, step, t1)
     t2 = wet_toe(g, bead, cell, temp, w, ax, root, bead.e2, n2, step, t2)
-    toes[w, ax] = wp.vec2(t1, t2)
+    return wp.vec2(t1, t2)
+
+
+@wp.func
+def spread(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), temp: wp.array2d(dtype=float), w: int, ax: int,
+           root: wp.vec2, step: float, t: wp.vec2, over: wp.vec2) -> wp.vec2:
+    """The toes t moved out by ``over`` where the contact does not freeze (``spills``), within ``reach``."""
+    n1 = wp.vec2(bead.e1[1], -bead.e1[0])
+    n2 = wp.vec2(-bead.e2[1], bead.e2[0])
+    t1 = t[0]
+    t2 = t[1]
+    if over[0] > 0.0 and spills(g, bead, cell, temp, w, ax, root, bead.e1, n1, step, t1):
+        t1 = wp.min(t1 + over[0], wp.max(t1, bead.reach))
+    if over[1] > 0.0 and spills(g, bead, cell, temp, w, ax, root, bead.e2, n2, step, t2):
+        t2 = wp.min(t2 + over[1], wp.max(t2, bead.reach))
+    return wp.vec2(t1, t2)
+
+
+@wp.func
+def circle_of(bead: Bead, root: wp.vec2, t1: float, t2: float, target: float) -> Cap:
+    """The bead for area ``target`` [m²] between toes t1, t2: the wedge between the rays and the chord, and the
+    circular segment on that chord holding the rest (concave when the area is less than the wedge)."""
+    n1 = wp.vec2(bead.e1[1], -bead.e1[0])
     p1 = root + t1 * bead.e1
     p2 = root + t2 * bead.e2
     out = Cap()
@@ -247,6 +313,19 @@ def cap_of(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), peak: wp.array
 
 
 @wp.func
+def cap_of(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), peak: wp.array2d(dtype=float),
+           temp: wp.array2d(dtype=float), toes: wp.array2d(dtype=wp.vec2), w: int, ax: int, root: wp.vec2,
+           step: float, target: float) -> Cap:
+    """Slice ax's bead for the area ``target`` [m²]: the toes (``fused_toes``; an overfull slice spreads, ``sag``),
+    stored, and the circle on them (``circle_of``)."""
+    t = fused_toes(g, bead, cell, peak, temp, toes, w, ax, root, step)
+    if bead.sag == 1:
+        t = spread(g, bead, cell, temp, w, ax, root, step, t, overflow(bead, t[0], t[1], target, step))
+    toes[w, ax] = t
+    return circle_of(bead, root, t[0], t[1], target)
+
+
+@wp.func
 def in_cap(x: wp.vec2, cap: Cap, bead: Bead) -> bool:
     """Inside the bead: the wedge between the rays on the root's side of the chord, plus (convex) the cap beyond the
     chord or minus (concave) the circle bulging into the wedge."""
@@ -269,7 +348,7 @@ def pool_time(g: Grid, bead: Bead, cell: wp.array2d(dtype=wp.int32), temp: wp.ar
     run, ``grid_flow``: a slice whose steel is fused is in the pool before it holds weld metal, and after it has
     drained); ``liquid_s``: the slices holding fed metal only (-1 until then; the freeze times the measures read)."""
     w, ax = wp.tid()
-    if bead.model != 1 or bead.root_at_anchor == 1:
+    if bead.model < 1 or bead.root_at_anchor == 1:
         return
     for y in range(locate(g, 1, bead.root[0] - bead.reach), locate(g, 1, bead.root[0] + bead.reach) + 1):
         for z in range(locate(g, 2, bead.root[1] - bead.reach), locate(g, 2, bead.root[1] + bead.reach) + 1):

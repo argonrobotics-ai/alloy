@@ -12,6 +12,12 @@ not matter and a redraw never compounds: mass = nominal x (the product of its ma
 draws); inertia = nominal x mass / nominal mass; centre of mass = nominal + offsets; a servo's kp and kd = nominal x
 their factors. Friction, absolute armature and gravity components are set to the drawn value (the last row wins).
 
+A servo whose file gives its damping as ``dampratio`` (``<position ... dampratio=...>``) has no damping until the
+solver is made (``joint_target_kd`` is 0 at ``install``; the solver resolves the ratio from the world's inertia and
+kp). ``attach`` takes that resolved damping as the nominal, with the kp factors it was resolved at, and writes the
+draws again; such a servo keeps its ratio when kp is drawn again: kd = nominal x sqrt(kp factors / kp factors at
+build) x kd factors (before, kd_scale was ignored there and a reset zeroed the damping).
+
 Draws are counter-based (``alloy.scene.randomize.draw``): a function of the seed, the global world id, the row's name
 and the reset count only, so a world gets the same values on every device and for every process count.
 """
@@ -92,12 +98,45 @@ def install(built: Any, scene: Any, seed: int) -> None:
 
 
 def attach(engine: Any) -> None:
-    """Make ``engine.reset`` redraw the ``when="reset"`` rows (nothing when the scene has none).
+    """Take the solver's resolved ``dampratio`` damping as nominal and write the gain draws again (module docstring),
+    and make ``engine.reset`` redraw the ``when="reset"`` rows (nothing when the scene has none).
 
     Example: ``attach(engine)`` once the simulation is wired."""
     st = getattr(engine.built, "robot_random", None)
-    if st is not None and st.groups("reset"):
+    if st is None:
+        return
+    if "gains" in st.groups():
+        _resolved_damping(engine, st)
+    if st.groups("reset"):
         engine.reset_hooks.append(lambda world_mask: redraw(engine, world_mask))
+
+
+def _resolved_damping(engine: Any, st: Applied) -> None:
+    """Nominal kd of the servos whose ``dampratio`` the solver resolved at build (0 at ``install``, nonzero now): the
+    resolved value, with the kp factors it was resolved at (``dampratio_kp``; damping goes with sqrt(kp)); then the
+    gain draws are written again, and the solvers are told only when a value changed (no kd draw: nothing moves)."""
+    from alloy._vendor import newton  # noqa: PLC0415
+
+    model, nom = engine.built.model, st.nominal
+    kd_now = model.joint_target_kd.numpy().copy()      # a copy: on the CPU numpy() is a view of the array
+    resolved = (nom["joint_target_kd"] == 0.0) & (kd_now != 0.0)
+    if not resolved.any():
+        return
+    every = np.arange(len(st.counts))
+    stride = _rows(st, "gains")[0][1].stride["dof"]
+    kp_at = np.zeros(kd_now.shape)                       # 0: not a dampratio servo
+    for d, f in _factors(st, "gains", "kp_scale", every, "target_dofs").items():
+        kp_at[d + every * stride] = f
+    nom["joint_target_kd"] = np.where(resolved, kd_now, nom["joint_target_kd"])
+    nom["dampratio_kp"] = np.where(resolved, np.where(kp_at > 0.0, kp_at, 1.0), 0.0)
+    _gains(model, st, every)
+    if np.array_equal(model.joint_target_kd.numpy(), kd_now):
+        return
+    flags = 0
+    for name in FLAGS["gains"]:
+        flags |= int(getattr(newton.ModelFlags, name))
+    engine._notify(flags)
+    log.info("robot randomize: kd draws on %d dampratio servo dofs", int(resolved.sum()))
 
 
 def redraw(engine: Any, world_mask: Any = None) -> None:
@@ -240,10 +279,13 @@ def _gains(model: Any, st: Applied, worlds: np.ndarray) -> None:
     dof_kd = _factors(st, "gains", "kd_scale", worlds, "target_dofs")
     if dof_kp:
         ke, kdamp = model.joint_target_ke.numpy(), model.joint_target_kd.numpy()
+        kp_at = nom.get("dampratio_kp")                   # dampratio servos keep their ratio (module docstring)
         for d in dof_kp:
             g = d + worlds * stride["dof"]
             ke[g] = nom["joint_target_ke"][g] * dof_kp[d]
-            kdamp[g] = nom["joint_target_kd"][g] * dof_kd[d]
+            follow = 1.0 if kp_at is None else np.sqrt(np.where(kp_at[g] > 0.0, dof_kp[d] / np.where(
+                kp_at[g] > 0.0, kp_at[g], 1.0), 1.0))
+            kdamp[g] = nom["joint_target_kd"][g] * dof_kd[d] * follow
         _assign(model, "joint_target_ke", ke)
         _assign(model, "joint_target_kd", kdamp)
 

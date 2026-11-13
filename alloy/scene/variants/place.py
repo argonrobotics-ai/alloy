@@ -19,13 +19,15 @@ from typing import Any
 
 import numpy as np
 
-from alloy.scene.variants.base import Base, groups, touching
+from alloy.scene.randomize import POSE_AXES
+from alloy.scene.variants.base import Base, ParticleLinks, groups, rest_of, touching
 from alloy.scene.variants.xform import Move
 
 log = logging.getLogger("alloy.scene")
 
 OVERLAP_TOL = 1.0e-4    # [m] alloy.check.overlap.OVERLAP_WARN_M
 REST_COS = 0.7          # |contact normal z| above this: the two rest on each other (not side by side)
+AXES = {**POSE_AXES, "x": 0, "y": 1, "z": 2}    # a randomized start coordinate's axis (card paths and API names)
 
 
 @dataclass
@@ -39,10 +41,15 @@ class Placer:
     base_depth: dict[tuple[str, str], float] = field(default_factory=dict)
     supports: dict[str, set[str]] = field(default_factory=dict)
     state: Any = None
+    links: ParticleLinks | None = None
+    on: dict[str, str] = field(default_factory=dict)    # moving particle item -> the still object it rests on
 
     @classmethod
-    def make(cls, base: Base, free: list[str], pos: float, yaw_deg: float) -> Placer:
-        """A placer for the free objects ``free`` (``base.free_objects``)."""
+    def make(cls, base: Base, free: list[str], pos: float, yaw_deg: float,
+             links: ParticleLinks | None = None) -> Placer:
+        """A placer for the free objects ``free`` (``base.free_objects``); ``links`` (``base.particle_links``) adds
+        the fills riding a moving object to its group, joins particle items with what they rest in or on, and keeps
+        a moving particle item on a still support."""
         state = base.state()
         contacts = base.probe.collide(state)
         touch = touching(base, state, contacts)
@@ -51,7 +58,12 @@ class Placer:
         if held:
             log.info("variants: %s touch a robot at the start and stay where they are", sorted(held))
         movable = [n for n in free if n not in held]
-        placer = cls(base, groups(movable, base), float(pos), math.radians(float(yaw_deg)), state=state)
+        carrier = links.carrier if links is not None else {}
+        names = movable + [p for p, c in carrier.items() if p not in free and c in movable]   # fills that ride
+        pairs = {frozenset((p, c)) for p, c in carrier.items() if p in names and c in movable}
+        pairs |= {r for r in (links.riders if links is not None else ()) if r <= set(movable)}
+        placer = cls(base, groups(names, base, pairs), float(pos), math.radians(float(yaw_deg)), state=state,
+                     links=links, on={p: c for p, c in carrier.items() if p in movable and c not in movable})
         placer.base_depth = _depths(base, state, contacts)
         placer.supports = placer._supports(touch)
         return placer
@@ -80,6 +92,16 @@ class Placer:
             lost = self.supports.get(name, set()) - resting.get(name, set())
             if lost:
                 return f"{name} no longer rests on {', '.join(sorted(lost))}"
+        return self._particle_problem(moves)
+
+    def _particle_problem(self, moves: list[Move]) -> str | None:
+        """A moving particle item (a cloth, a soft body) taken out of or off the still object it rested in or on."""
+        for mv in moves:
+            for name in mv.names:
+                support = self.on.get(name)
+                box = self.links.boxes.get(support) if support is not None and self.links is not None else None
+                if box is not None and rest_of(mv.points(self.links.points[name]), {support: box}) != support:
+                    return f"{name} no longer rests on {support}"
         return None
 
     def place(self, rng: np.random.Generator, max_tries: int) -> tuple[list[Move], int]:
@@ -145,18 +167,40 @@ def _resting(touch: list[tuple[str, str, np.ndarray]]) -> dict[str, set[str]]:
 
 
 def edit_poses(scene: Any, moves: list[Move], base: Base) -> None:
-    """Write ``moves`` into ``scene``'s items: the start pose (or the scene card's placement pose) and every
-    per-world start position."""
+    """Write ``moves`` into ``scene``'s items: the start pose (or the scene card's placement pose), every per-world
+    start position and every randomized start coordinate (``_move_ranges``)."""
     for mv in moves:
         for name in mv.names:
             item = scene.items[name]
-            new = mv.pose(base.poses[name])
-            if item.get("raw_placement") is not None:
-                item["raw_placement"]["pose"] = new
+            start = np.asarray(base.poses[name] if name in base.poses else item["pose"], np.float64)
+            new = mv.pose(start)
+            raw = item.get("raw_placement")
+            if raw is not None:
+                raw["pose"] = new
             if item.get("pose") is not None:
                 item["pose"] = new
             if item.get("per_world_pos"):
                 item["per_world_pos"] = mv.points(np.asarray(item["per_world_pos"], np.float64)).tolist()
+            if item.get("pour"):                         # the nozzle goes with the container under it
+                item["pour"]["pos"] = [float(c) for c in mv.points(np.asarray(item["pour"]["pos"], np.float64))]
+            for rows in (item.get("randomize"), (raw or {}).get("randomize"), item.get("start_random")):
+                _move_ranges(rows or [], start, mv)
+
+
+def _move_ranges(rows: list[dict[str, Any]], pose: np.ndarray, mv: Move) -> None:
+    """Randomized start coordinates (``Scene.randomize`` x / y / z: absolute, drawn per world) moved with their
+    object: each range keeps its width and its centre moves as the object does (the start pose with every randomized
+    axis at mid-range, moved by ``mv``). Unmoved ranges would put the object back where it was in every
+    world, onto what vary had placed there."""
+    rand = [(r, AXES[r["field"]]) for r in rows if r.get("field") in AXES and "lo" in r and "hi" in r]
+    if not rand:
+        return
+    mid = np.asarray(pose[:3], np.float64).copy()
+    for r, axis in rand:
+        mid[axis] = 0.5 * (float(r["lo"]) + float(r["hi"]))
+    shift = mv.points(mid) - mid
+    for r, axis in rand:
+        r["lo"], r["hi"] = float(r["lo"]) + float(shift[axis]), float(r["hi"]) + float(shift[axis])
 
 
 __all__ = ["OVERLAP_TOL", "Placer", "edit_poses"]

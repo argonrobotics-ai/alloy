@@ -48,13 +48,22 @@ def check_plugin_depth(depth: wp.array[wp.float32], limit: wp.float32, index: wp
         acc.plug_depth[w] = d
 
 
+@wp.kernel
+def check_share(share: wp.array[wp.float32], bound: wp.float32, bit: wp.uint32, acc: Accum):
+    """One registered share check, one thread per world: ``bit`` while the world's share is over ``bound``."""
+    w = wp.tid()
+    if share[w] > bound:                    # a NaN share never flags here (NONFINITE_PARTICLE covers a NaN solid)
+        acc.overflow[w] = acc.overflow[w] | bit
+
+
 class PluginChecks:
-    """The registered depth checks of one HealthMonitor."""
+    """The registered depth checks of one HealthMonitor, and its share checks (``ShareCheckMixin``)."""
 
     def __init__(self, world_count: int, device: Any) -> None:
         self.world_count = int(world_count)
         self.device = wp.get_device(device)
         self._checks: list[DepthCheck] = []
+        self.shares: list[tuple[str, Any, float, int]] = []    # (name, share [W] float32, bound, flag bit)
 
     @property
     def names(self) -> tuple[str, ...]:
@@ -79,6 +88,46 @@ class PluginChecks:
         for i, c in enumerate(self._checks):
             wp.launch(check_plugin_depth, dim=self.world_count, inputs=[c.depth, wp.float32(c.limit_m), i, acc],
                       device=self.device)
+        for _name, share, bound, bit in self.shares:
+            wp.launch(check_share, dim=self.world_count, inputs=[share, wp.float32(bound), wp.uint32(bit), acc],
+                      device=self.device)
+
+    def register_share(self, name: str, share: Any, bound: float, flag: int) -> int:
+        """Validate and add one share check; returns its index."""
+        if not isinstance(share, wp.array) or share.dtype != wp.float32 or share.shape != (self.world_count,):
+            raise ValueError(f"share check {name!r}: share must be a float32 array of shape ({self.world_count},), got "
+                             f"{getattr(share, 'dtype', type(share))} {getattr(share, 'shape', '')}")
+        if share.device != self.device:
+            raise ValueError(f"share check {name!r}: share is on {share.device}, the monitor on {self.device}")
+        if not (math.isfinite(bound) and bound > 0.0):
+            raise ValueError(f"share check {name!r}: bound must be finite and positive, got {bound}")
+        if name in (n for n, *_ in self.shares):
+            raise ValueError(f"share check {name!r} registered twice")
+        from alloy.precision.ladder import LADDER  # noqa: PLC0415
+
+        if bin(int(flag)).count("1") != 1 or not any(r.flag is not None and int(r.flag) == int(flag) for r in LADDER):
+            raise ValueError(f"share check {name!r}: flag {flag:#x} must be one HealthFlags bit with a ladder row")
+        self.shares.append((name, share, float(bound), int(flag)))
+        log.info("health: share check %r registered (bound %.3g)", name, bound)
+        return len(self.shares) - 1
+
+
+class ShareCheckMixin:
+    """``HealthMonitor.register_share_check`` (GAP #6 slice 2b, WP5's ruling 2026-11-10: a run-time physics limit is a
+    HealthFlags bit like every other)."""
+
+    _plugins: PluginChecks
+
+    def register_share_check(self, name: str, share: Any, bound: float, flag: int | None = None) -> int:
+        """A per-world share (float32 [world_count] on this device, written by its owner every step): over ``bound``
+        the world gets ``flag`` (default QUASI_STATIC, DEGRADED; one laddered bit) at that check, sticky in
+        ``seen_flags`` like every flag. The share is read at check steps only: under a profile that checks every n > 1
+        steps, a peak between checks is missed unless its writer keeps the window's maximum. Register before any graph
+        capture. Nothing is launched for a monitor without share checks."""
+        from alloy.precision.types import HealthFlags  # noqa: PLC0415
+
+        bit = int(HealthFlags.QUASI_STATIC) if flag is None else int(flag)
+        return self._plugins.register_share(name, share, bound, bit)
 
 
 def _as_checks(items: Iterable[Any], owner: str) -> list[DepthCheck]:

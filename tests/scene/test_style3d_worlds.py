@@ -12,6 +12,7 @@ def _sheet(worlds: int) -> alloy.Scene:
     scene = alloy.Scene(worlds=worlds, dt=0.01)
     scene.add_ground()
     scene.add_cloth("napkin", size=(0.1, 0.1), pos=(0.0, 0.0, 0.05), resolution=5, material="cotton_woven_aniso")
+    scene.items["napkin"]["card_extra"]["route"] = {"route": "cloth_style3d", "reason": "test: the Style3D solver"}
     return scene
 
 

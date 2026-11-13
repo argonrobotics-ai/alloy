@@ -135,12 +135,14 @@ def _repeatable_notify(solver: Any) -> Any:
 
 def install_for_pairs(built: Any, solvers: Mapping[str, Any]) -> list[str]:
     """``install`` on every MPM entry that is the source of a two-way pair into an SPH entry; one note each. Also the
-    proxy body carry of MPM destinations (``mpm_bodies``), the pair clock's route note (``mpm_clock``) and the
-    many-world warning for MPM beside a moving body (``mpm_moving``)."""
-    from alloy.integration import mpm_bodies, mpm_clock, mpm_moving  # noqa: PLC0415
+    proxy body carry of MPM destinations (``mpm_bodies``), the pair clock's route note (``mpm_clock``), the
+    many-world warning for MPM beside a moving body (``mpm_moving``) and the projection out of colliders after every
+    MPM step (``mpm_project``)."""
+    from alloy.integration import mpm_bodies, mpm_clock, mpm_moving, mpm_project  # noqa: PLC0415
     from alloy.integration.mpm_solve import attach_notes  # noqa: PLC0415
 
     notes = mpm_bodies.install_for_pairs(built, solvers) + mpm_moving.warn(built)
+    notes += mpm_project.install_for_entries(built, solvers)   # after the body carry: colliders at the step's end
     if getattr(built.model, mpm_clock.MODEL_ATTR, None) is not None:       # sim.routes() names the pair clock
         for e in built.entries:
             solver = solvers.get(e.name)

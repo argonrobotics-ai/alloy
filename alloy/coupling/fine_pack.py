@@ -14,9 +14,11 @@ S1 is what that needs first: ``WorldTransfer`` copies world ``e`` of one simulat
   first, on both sides), when the two sides do not have the same slot names, or when a world's item count differs
   from the slot's. VBD's per-contact-row history (``_prev_contact_*``) has no world map, so a pack that carries it is
   refused as an array without a per-world axis: its rows follow the pack's contact build, not the world (WP10).
-- Per-world Model parameters (a randomized scene's masses, frictions, ...) are not moved yet (S1b): a transfer
-  between worlds whose float Model arrays differ is refused. The model's start state (body_q, joint_q, particle_q
-  and their velocities) is not a parameter: only a reset reads it, and the fine pack refuses reset (WP12).
+- Per-world Model parameters (a randomized scene's masses, frictions, ...) move with the world (S1b:
+  ``world_clock_params.WorldParams``, which also refreshes what the solvers and the coupler derive from them and
+  names what it refuses). The way back uses ``params="same"``: the rows must already agree, nothing is written. The
+  model's start state (body_q, joint_q, particle_q and their velocities) is not a parameter: only a reset reads it,
+  and the fine pack refuses reset (WP12).
 - The start checks (``health.start``: START_PEN level, spin peak and body, judged bodies) move too (WP12).
 - Not moved here (S2): the pack counters (clock ticks, steps, ``health._step``), the host-side period indices
   (OnsetRefiner.last, PeriodLadder.last / per_world) and the contact gate's rows (DESIGN sections 11, 13).
@@ -61,6 +63,7 @@ def snapshot(sim: Any) -> WorldSnapshot:
     if health is not None:
         extra.update({f"health/{k}": v for k, v in _health_arrays(health).items()})
         extra.update(_start_arrays(sim.model, health, maps))
+        extra.update(_gain_arrays(sim.model, health, maps))
     return WorldSnapshot(sim.model, sim.state, extra or None, extra_world=maps or None)
 
 
@@ -76,6 +79,19 @@ def _start_arrays(model: Any, health: Any, maps: dict[str, wp.array]) -> dict[st
         if world is not None and world.shape[0] == arr.shape[0]:
             out[f"health/start.{name}"] = arr
             maps[f"health/start.{name}"] = world
+    return out
+
+
+def _gain_arrays(model: Any, health: Any, maps: dict[str, wp.array]) -> dict[str, wp.array]:
+    """The energy-gain tier's per-world block state (``health.gain.state``, PHYSA-1: time, block, its maximum, the
+    floor, ready, lowers; the flag and the peak are in ``state_arrays``): set from the world's own start energy, so a
+    moved world takes its own, not the slot's (test_world_clock_params law iii)."""
+    state, out = getattr(getattr(health, "gain", None), "state", None), {}
+    world = world_iota(int(model.world_count), model.device)
+    for name in ("t", "block", "block_max", "floor", "ready", "lowers"):
+        arr = getattr(state, name, None)
+        if arr is not None and arr.shape[0] == int(model.world_count):
+            out[f"health/gain.{name}"], maps[f"health/gain.{name}"] = arr, world
     return out
 
 
@@ -155,8 +171,11 @@ def model_differences(src: Any, dst: Any, e: int, s: int) -> list[str]:
 class WorldTransfer:
     """Copies world ``e`` of ``src`` into slot ``s`` of ``dst``, both built from the same scene (module docstring)."""
 
-    def __init__(self, src: Any, dst: Any, skip: Iterable[str] = ()) -> None:
+    def __init__(self, src: Any, dst: Any, skip: Iterable[str] = (), params: str = "move") -> None:
+        from alloy.coupling.world_clock_params import WorldParams  # noqa: PLC0415  (it imports this module)
+
         self.src, self.dst = src, dst
+        self.params, self._move = WorldParams(src, dst), params == "move"
         watched = [name for name, sim in (("source", src), ("destination", dst)) if getattr(sim, "_observers", None)]
         if watched:
             raise TransferError(f"step observers on the {' and '.join(watched)} (drives, pour energy): their clocks "
@@ -191,19 +210,26 @@ class WorldTransfer:
         return out
 
     def check(self, e: int, s: int) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-        """Raises ``TransferError`` when world ``e`` cannot move into slot ``s`` (item counts, per-world Model
-        parameters); no side effects, so a caller can refuse before it changes anything (WP12, S2). The item rows."""
+        """Raises ``TransferError`` when world ``e`` cannot move into slot ``s`` (item counts; per-world Model
+        parameters that cannot move with it, ``WorldParams.refusal``); no side effects, so a caller can refuse before
+        it changes anything (WP12, S2). The item rows."""
         rows = self.items(e, s)
-        diff = model_differences(self.src.model, self.dst.model, e, s)
-        if diff:
-            raise TransferError(f"per-world model parameters differ between world {e} and slot {s} (a randomized "
-                                f"scene; S1b moves them): {diff[:8]}")
+        if self._move:
+            self.params.check(e, s)
         return rows
 
     def copy(self, e: int, s: int) -> None:
         """World ``e`` of the source -> slot ``s`` of the destination, bit for bit; the destination's other slots and
         its global items are untouched."""
         rows = self.check(e, s)
+        if self._move:
+            self.params.move(e, s)       # before the state: a solver's refresh never sees half a world
+            from alloy.coupling.world_clock_params import move_watch_reference  # noqa: PLC0415  (imports this module)
+
+            move_watch_reference(self.src, self.dst, e, s)   # the watchdog judges the world on its own scale
+        elif self.params.differing(e, s):
+            raise TransferError(f"world {e} -> slot {s}: per-world model parameters differ on a transfer that does "
+                                f"not move them: {self.params.differing(e, s)[:8]}")
         self.a.save(self.src.state)
         self.b.save(self.dst.state)
         self.ca.save(_NO_STATE)
@@ -222,6 +248,23 @@ class WorldTransfer:
         self.b.restore(self.dst.state, m)
         self.cb.restore(_NO_STATE, m)
         self._translate_health(e, s)
+
+    def copy_controls(self, e: int, s: int) -> None:
+        """Only world ``e``'s Control rows (joint targets, joint_f, MuJoCo ctrl) -> slot ``s``: a resident's inputs,
+        every period (world_clock_run)."""
+        rows = self.items(e, s)
+        self.ca.save(_NO_STATE)
+        self.cb.save(_NO_STATE)
+        for name, a, b in self.pairs:
+            ia, ib = rows[name]
+            if not name.startswith("extra:control:") and not name.startswith("control:") or not ia.size:
+                continue
+            dst = b.store.numpy().reshape(-1, b.words).copy()
+            dst[ib] = a.store.numpy().reshape(-1, a.words)[ia]
+            b.store.assign(dst.reshape(-1))
+        mask = np.zeros(int(self.dst.model.world_count), np.int32)
+        mask[s] = 1
+        self.cb.restore(_NO_STATE, wp.array(mask, dtype=wp.int32, device=self.dst.model.device))
 
     def _translate_health(self, e: int, s: int) -> None:
         """The moved health rows (and the start checks' spin body) name bodies, shapes and particles by global index:

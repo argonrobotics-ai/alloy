@@ -13,8 +13,9 @@ cloth (stable at any k). Which vertices are held is decided on the device before
 poses the cloth solver sees: the fingers count as closed below ``CLOSE_GAP`` between their centres (0.09 m open,
 0.014 m on the 2-layer ridge, 0.010 m shut on nothing); then every free vertex inside the box between the two
 fingers (the fingers' length and width, from one finger's inner face to the other's) is held. They are let go above
-``OPEN_GAP``. Nothing runs on the host, so a captured CUDA graph replays it, and a world the env resets lets go by
-itself (its fingers start open).
+``OPEN_GAP``. Nothing runs on the host, so a captured CUDA graph replays it. A reset world lets go of every vertex
+it held (the cloth solver's reset, whole or masked, as ``env.reset()`` and an autoreset run it), whatever its
+fingers' gap: a gripper that starts less than ``OPEN_GAP`` open would otherwise keep the last episode's holds.
 
 Limits, stated: one-way. The gripper does not feel the held towel's weight or pull (the 30 g towel weighs 0.3 N;
 the gantry's servos are kp 3000 N/m). The held vertices stay in the fingers' contacts too, so the fingers still
@@ -85,21 +86,33 @@ def hold_accumulate(colour: int, colors: wp.array[wp.int32], q: wp.array[wp.vec3
     hessians[i] = hessians[i] + k * wp.identity(3, float)
 
 
-def _body_index(model: Any, name: str, worlds: int) -> np.ndarray:
-    """(worlds,) global body index of the body named ``name`` (the last part of its label, e.g. "finger_left" in
-    "worldbody/.../palm/finger_left") in each world; exactly one per world."""
-    labels = [str(x) for x in (getattr(model, "body_label", None) or getattr(model, "body_key"))]
-    world = model.body_world.numpy() if getattr(model, "body_world", None) is not None else np.zeros(len(labels), int)
-    out = np.full(worlds, -1, np.int32)
-    for b, label in enumerate(labels):
-        if label.rsplit("/", 1)[-1] != name or not 0 <= world[b] < worlds:
-            continue
-        if out[world[b]] >= 0:
-            raise ValueError(f"cloth attach: two bodies named {name!r} in world {world[b]}")
-        out[world[b]] = b
-    if (out < 0).any():
-        raise ValueError(f"cloth attach: no body {name!r} in worlds {np.flatnonzero(out < 0).tolist()}")
-    return out
+@wp.kernel
+def release_worlds(particle_world: wp.array[wp.int32], mask: wp.array[wp.bool], held: wp.array[wp.int32]):
+    """A reset: let go of every held vertex of the worlds ``mask`` marks (Newton's mask may carry one more entry,
+    the global one, which no cloth vertex of a world reads)."""
+    i = wp.tid()
+    w = wp.max(particle_world[i], 0)                       # a one-world model may mark its particles -1
+    if w < mask.shape[0]:
+        if mask[w]:
+            held[i] = FREE
+
+
+def _finger_bodies(sim: Any, robot: str, finger: str) -> np.ndarray:
+    """(worlds,) engine body index of "<robot>/<finger>" in each world (``sim.index``, the names ``sim.names()``
+    lists). Raises UnknownNameError, with the fix, when the scene has no such body."""
+    from alloy.api.errors import UnknownNameError  # noqa: PLC0415
+
+    name = f"{robot}/{finger}"
+    if name not in sim.index.bodies:
+        robots = sorted({b.split("/", 1)[0] for b in sim.index.bodies
+                         if b.endswith("/finger_left") or b.endswith("/finger_right")})
+        raise UnknownNameError(
+            f"cloth attach: no body {name!r} in the scene (attach-on-grasp needs a gripper with bodies "
+            f"'<robot>/finger_left' and '<robot>/finger_right', as alloy.envs.robots.gantry_gripper has)",
+            "pass robot= the name you gave add_robot for such a gripper (in this scene: "
+            f"{', '.join(robots) or 'none'})",
+            field="robot")
+    return sim.index.per_world(sim.index.body(name), "body").astype(np.int32)
 
 
 class ClothAttach:
@@ -136,7 +149,27 @@ class ClothAttach:
             return inner(state_in, state_out, control, contacts, dt, *args, **kwargs)
 
         solver.step = step
+        inner_reset = solver.reset
+
+        def reset(state, world_mask=None, flags=None):
+            out = inner_reset(state, world_mask=world_mask, flags=flags)
+            self.release(world_mask)
+            return out
+
+        solver.reset = reset
         solver.add_colour_callback(self._accumulate, external=True, when="after_accumulate")
+
+    def release(self, world_mask: Any = None) -> None:
+        """Let go of every held vertex of the worlds in ``world_mask`` (bool or int per world, numpy or Warp; None:
+        every world). The cloth solver's reset calls it, so a reset world starts with nothing held."""
+        if world_mask is None:
+            self.held.zero_()
+            return
+        mask = world_mask
+        if not (isinstance(mask, wp.array) and mask.dtype == wp.bool and mask.device == self.dev):
+            host = mask.numpy() if hasattr(mask, "numpy") else np.asarray(mask)
+            mask = wp.array(np.asarray(host).reshape(-1) != 0, dtype=wp.bool, device=self.dev)
+        wp.launch(release_worlds, dim=self.n, inputs=[self.world, mask], outputs=[self.held], device=self.dev)
 
     def _accumulate(self, solver: Any, colour: int, state: Any, contacts: Any) -> None:
         # the anchors follow the fingers' pose the contacts use: Newton evaluates the particle iteration's body contacts
@@ -170,19 +203,22 @@ def cloth_solver(sim: Any) -> Any:
         s = getattr(entry, "solver", None)
         if s is not None and hasattr(s, "add_colour_callback") and s.model.particle_count > 0:
             return s
-    raise ValueError("cloth attach: the simulation has no cloth (VBD) entry")
+    from alloy.api.errors import SceneError  # noqa: PLC0415  (a ValueError: installed() still returns None)
+
+    raise SceneError("cloth attach: the simulation has no cloth (VBD) entry",
+                     "add the cloth with scene.add_cloth(...) before building", field="sim")
 
 
 def install(sim: Any, robot: str = "gripper", finger_half: tuple[float, float, float] = (0.012, 0.005, 0.03),
             **kw: Any) -> ClothAttach:
     """Attach-on-grasp for the Cartesian gripper ``robot`` (alloy.envs.robots.gantry_gripper: fingers
-    "<robot>/finger_left", "<robot>/finger_right", box half sizes ``finger_half``) on the scene's cloth.
+    "<robot>/finger_left", "<robot>/finger_right", box half sizes ``finger_half``) on the scene's cloth. A scene
+    without those bodies raises UnknownNameError, one without a cloth SceneError, each with the fix.
     Example: ``Task(..., on_build=lambda sim: install(sim, "gripper"))``."""
     solver = cloth_solver(sim)
-    model = sim.engine.model
     worlds = int(sim.worlds)
-    left = _body_index(model, "finger_left", worlds)          # one gantry gripper per world (ClothFold)
-    right = _body_index(model, "finger_right", worlds)
+    left = _finger_bodies(sim, robot, "finger_left")          # that robot's fingers, one pair per world
+    right = _finger_bodies(sim, robot, "finger_right")
     margin = 0.002                                        # vertices at the fingers' edges, within a contact radius
     att = ClothAttach(solver, left, right, (finger_half[0] + margin, finger_half[1], finger_half[2] + margin), **kw)
     log.info("cloth attach-on-grasp (a shortcut, not a friction grasp) on %s, %d worlds", type(solver).__name__, worlds)

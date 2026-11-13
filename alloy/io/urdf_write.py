@@ -142,10 +142,16 @@ def _joint(robot: ET.Element, j: IOJoint, shift: dict[str, Pose], io: IOModel, g
     if j.damping or j.friction:
         ET.SubElement(el, "dynamics", damping=_fmt([j.damping]), friction=_fmt([j.friction]))
     for what, v in (("armature", j.armature), ("drive stiffness", j.stiffness), ("drive damping", j.drive_damping),
-                    ("initial position", j.q0)):
+                    ("initial position", j.q0), ("spring", j.spring)):
         if v:
             io.note("urdf", group, f"URDF has no joint {what}: set it in the loading simulator (source values in "
                                    "the MJCF or USD export)")
+
+
+def free_base(g: Group) -> bool:
+    """A jointed group whose base moves freely: its URDF says so with a ``floating`` joint (a loader that reads a
+    plain root link welds it to the world)."""
+    return g.root is not None and bool(g.joints) and g.base_joint is None and not g.fixed_base
 
 
 def group_urdf(io: IOModel, g: Group, out_dir: Path) -> ET.Element:
@@ -157,6 +163,13 @@ def group_urdf(io: IOModel, g: Group, out_dir: Path) -> ET.Element:
         base = f"{g.name}_base"
         ET.SubElement(robot, "link", name=base)
         joints.insert(0, replace(g.base_joint, parent=base))    # the base link is the world: joint frame as is
+    if free_base(g):                    # a free-base robot: a floating joint from an empty world link, at its place
+        world = f"{g.name}_world"
+        ET.SubElement(robot, "link", name=world)
+        fj = ET.SubElement(robot, "joint", name=f"{g.name}_floating", type="floating")
+        _origin(fj, g.base_pose())
+        ET.SubElement(fj, "parent", link=world)
+        ET.SubElement(fj, "child", link=g.root.name)
     shift = {j.child: j.child_pose for j in joints}        # child link frame = joint frame
     if g.root is None:
         link = ET.SubElement(robot, "link", name=f"{g.name}_base")
@@ -189,7 +202,8 @@ def write_urdf(io: IOModel, out_dir: str | Path) -> dict:
         ET.indent(tree, space="  ")
         path = out / f"{g.name}.urdf"
         tree.write(path, encoding="unicode", xml_declaration=True)
-        pose = IDENTITY if g.base_joint is not None else g.base_pose()   # a jointed base carries its own place
+        own = g.base_joint is not None or free_base(g)      # a jointed or floating base carries its own place
+        pose = IDENTITY if own else g.base_pose()
         groups.append({"name": g.name, "kind": g.kind, "file": path.name, "base_pose": list(pose),
                        "fixed_base": g.fixed_base, "articulated": g.articulated})
     for e in io.equalities:

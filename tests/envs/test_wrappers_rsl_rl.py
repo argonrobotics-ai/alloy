@@ -132,3 +132,13 @@ def test_imports_without_the_libraries():
     """)
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
     assert out.returncode == 0 and "OK" in out.stdout, out.stderr[-800:]
+
+
+@pytest.mark.compile_heavy
+def test_camera_images_left_out_of_the_groups_are_named_in_a_warning(caplog):
+    """rsl_rl's policies read flat groups: an env with camera images says the policy will not see them (T2-008)."""
+    venv = RslRlVecEnv(make("GripperLiftCamera-v0", num_envs=2, device="cpu", backend="torch"))
+    with caplog.at_level("WARNING", logger="alloy.envs"):
+        groups = venv.default_obs_groups()
+    venv.close()
+    assert groups["actor"] == ["policy"] and any("camera images" in r.getMessage() for r in caplog.records)

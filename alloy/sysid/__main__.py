@@ -71,11 +71,10 @@ def _parser() -> argparse.ArgumentParser:
 
 def _fit(args: Any) -> int:
     import alloy.sysid as S  # noqa: PLC0415
-    from alloy.sysid.readers import load_recording  # noqa: PLC0415
 
     cols = [int(c) for c in _names(args.state_columns)] if args.state_columns else None
-    rec = load_recording(args.data, _names(args.column_names), cols)
-    result = S.fit(args.robot, rec, parameters=_names(args.fit), joints=_names(args.joints), worlds=args.worlds,
+    result = S.fit(args.robot, args.data, column_names=_names(args.column_names), state_columns=cols,
+                   parameters=_names(args.fit), joints=_names(args.joints), worlds=args.worlds,
                    generations=args.generations, seed=args.seed, angle_unit=args.angle_unit,
                    time_unit=args.time_unit, max_delay=args.max_delay_ms / 1e3, device=args.device)
     path = result.save(args.out)

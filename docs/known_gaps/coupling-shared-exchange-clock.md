@@ -41,6 +41,30 @@
   velocity from the true displacement), and then the re-run world no longer crosses the threshold. The test is
   xfail(strict=False) until it has a scenario with margin. The clock is still the minimum over worlds.
 
+## Opt-in: clock_worlds
+- `alloy.build(scene, clock_worlds=n)` moves the up to n worlds that need the smallest exchange step into a second
+  simulation of n worlds, where they step on their own clock; the worlds left in the main simulation share the
+  larger step that the neediest of them asks for. A world's re-run ask enters the second simulation alone instead of
+  re-running every world. Off by default; `sim.report()["world_clock"]` has the books (`exchanges`, the estimate
+  `exchanges_shared`, `residents`, `paused`, `limits`).
+- It fixes the "one world's need sets every world's step" half of this gap for the worlds it moves: the worlds
+  left in the main simulation step bit for bit as if the moved ones were parked by hand; a moved world matches its
+  run without the option only to rounding (as a different world count does).
+- Speed: on 64 worlds of a robot beside a towel with randomized pad masses (one L4) it ran 1.12-1.24x faster with
+  clock_worlds=4 (41.5 s per period off; 33.6-37.0 s on, 3 runs). On the CPU with few worlds the second
+  simulation's fixed cost can make it slower (4 worlds: 0.88x).
+- Limits (each in `sim.report()["world_clock"]["limits"]`): the sticky floor and the coupling mode are each
+  simulation's, not each world's; a moved world takes the second simulation's substep rungs; moved worlds go
+  through the host every period; neither simulation keeps its captured graphs across a reset;
+  `alloy.envs.VectorEnv` and `alloy.live` world ops refuse such a simulation (writes straight to engine state still
+  bypass the move back); a moved world that fails, and GPU runs, have no law yet. Not with liquid, MPM, the contact gate, the CPU's default MuJoCo route,
+  `processes=`, `rerun_worlds` or user plug-ins.
+- Still open: bitwise independence across layouts. A world does not step bit for bit the same in a 4-world and a
+  1-world simulation, because VBD's solve reads a batch-wide total whose rounding depends on the other worlds
+  (development notes, not shipped). Until that leak is closed, "this world does what it would do alone" holds to
+  rounding, not to the bit.
+- Laws: tests/coupling/test_world_clock_run.py, test_world_clock_review.py, test_world_clock_laws.py.
+
 ## Why
 - The Scheduler steps all worlds in one launch per exchange with one dt_x and one substep count per entry. Per-world
   substeps would need per-world loop bounds in every coupled kernel and graph.

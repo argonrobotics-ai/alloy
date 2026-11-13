@@ -67,16 +67,21 @@ development notes (not shipped).
   digits, an L4 the same to 4 digits. The static sag is about 2 µm and its strain 1e-6.
 - **Press and release** (the press rig, CPU, dt 0.01; `test_a_dented_sheet_released_fast_stays_on_its_supports`): the
   same sheet on two 10 mm round supports 4 cm apart (or 2 cm boxes 5 cm apart), pressed 15 mm by a kinematic 5 mm
-  sphere, released at 0.1 m/s (fast) or 0.02 m/s (slow), watched to t 3 s:
-  - inertial, 10: stays on round supports; on boxes it went INVALID (PEN_FAIL, contact 0.6 mm deep; scene dt 0.005
-    gave identical digits);
-  - adaptive, 10: walks sideways 0.1 s after the release ends, climbs to 74-80 mm (supports' tops at 50 mm), on the
-    ground by t 2.9; on boxes it rises 12 mm and falls off. Slow: stays on, but creeps upward (52.5 -> 56.1 mm in
-    1.4 s). At 40 iterations the same (80 mm); with Chebyshev 0.9 at 40 it climbs slower (61 mm at t 3). Nothing
-    flags it: `sim.check()` stays ok, health reads DEGRADED (UNCONVERGED) as during any press, and the film ledger's
-    largest one-step energy gain does not move (6.9 µJ, from the press): the ~0.6 mJ climb comes over ~70 steps;
-  - inertial, 20: stays on both, fast or slow. Round: settles, 0.7 mm sideways. Boxes: 2.3 mm sideways in 2.2 s and
-    still moving. A flat sheet at rest stays still with every start.
+  sphere, released at 0.1 m/s (fast) or 0.02 m/s (slow), watched to t 3 s. Re-measured on main 692add686, after a
+  drive's velocity began one physics step earlier (7690f7a84); the runs that leave their supports are chaotic, so
+  their heights and times moved, the outcomes did not:
+  - inertial, 10: stays on round supports and on boxes (1.3 mm sideways). On the first metal-sheet commit the box
+    case went INVALID (PEN_FAIL, contact 0.6 mm deep); it no longer does;
+  - adaptive, 10: walks sideways within 0.5 s of the release's end, climbs to 75 mm (supports' tops at 50 mm) and is
+    18-29 mm off to the side and falling at t 3 (before the drive change: 74-80 mm, on the ground by t 2.9); on
+    boxes it climbs to 93 mm and is on the ground by t 1.6. Slow: stays on, wandering (top 52.7-55.1 mm, 2.7 mm
+    sideways). At 40 iterations it climbs to 84 mm; with Chebyshev 0.9 at 40 it climbs slower, to 81 mm at t 3.
+    Nothing flags it: `sim.check()` stays ok, health reads DEGRADED (UNCONVERGED) as during any press, and the film
+    ledger's largest one-step energy gain does not move (6.9 µJ, from the press): the climb of about 0.6 mJ comes
+    over tens of steps;
+  - inertial, 20: stays on both, fast or slow. Round: settles, 0.7 mm sideways. Boxes: 2.4 mm sideways by t 3 and
+    still moving; on boxes health also reads CLOTH_STRETCH (the sheet 67 % past its rest size over the edges,
+    DEGRADED). A flat sheet at rest stays still with every start.
 - **Network** (CPU; the strip and can rows mass-scaled ×10⁴ / ×10³, quasi-static):
   - elastic 3-point bending of a 1 mm steel strip deflects 1.20 / 1.27 / 1.33 × the plane-strain beam for 5 / 10 /
     20 mm strips (a narrow real plate: 1.10 ×);

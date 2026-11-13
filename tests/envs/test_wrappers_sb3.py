@@ -113,3 +113,19 @@ def test_imports_without_the_libraries():
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
     assert done.returncode == 0, done.stderr
     assert "pip install" in done.stdout
+
+
+@pytest.mark.compile_heavy
+def test_an_unflattened_history_has_its_shape_in_the_space():
+    """ObsHistory(flatten=False) gives (n, H, D) observations: the space is (H, D), not (H,) (T1-010)."""
+    import dataclasses
+
+    from alloy.envs import VectorEnv
+    from alloy.envs.realism import ObsHistory
+    from alloy.envs.tasks import gripper_lift_scene, gripper_lift_task
+
+    task = dataclasses.replace(gripper_lift_task(max_steps=5), layers=[ObsHistory(3, flatten=False)])
+    v = Sb3VecEnv(VectorEnv(gripper_lift_scene(4), task, worlds=4, device="cpu"))
+    obs = v.reset()
+    assert v.observation_space.contains(obs[0]) and obs.shape[1:] == v.observation_space.shape
+    v.close()

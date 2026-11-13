@@ -166,6 +166,7 @@ class GatedEndpoints:
     dest_bodies: list[np.ndarray]       # per destination: parent body ids it owns
     dest_body_radius: list[np.ndarray]
     fixed_bound_s: float = math.inf     # always-on pairs (stated interface stiffness): never gated
+    fixed_world_s: np.ndarray | None = None     # (W,) that bound per world (``ContactGate.park`` leaves worlds out)
     routes: list[tuple[str, str]] = field(default_factory=list)      # per pair index: (source, destination)
 
 
@@ -195,6 +196,10 @@ class ContactGate:
         self.always = ~np.isfinite(ends.bound_s)            # cannot hold the clock: always armed, never decides
         self._pair_count = int(ends.pair.max()) + 1 if n else 0
         self.hold = np.full(n, self.hold_periods, dtype=np.int64)
+        # Host data for ``world_need`` only (nothing steps on it): each proxy's own arming, before ``_whole_pairs``
+        # spreads it over its pair: near this period or touched unarmed, held ``hold_periods`` periods.
+        self.own_hold = np.full(n, self.hold_periods, dtype=np.int64)
+        self.own_armed_host = np.ones(n, dtype=bool)
         self.armed = wp.array(np.ones(n, np.int32), dtype=wp.int32, device=dev)
         self.touched = wp.zeros(max(n, 1), dtype=wp.int32, device=dev)
         self.near = wp.zeros(max(n, 1), dtype=wp.int32, device=dev)
@@ -212,6 +217,24 @@ class ContactGate:
         self._touch = self._touch_launches(sets)
         self.reruns = 0
         self.seen_state = False
+        self.parked: np.ndarray | None = None               # (E,) bool: proxies of parked worlds (``park``)
+        self._fixed_all = float(ends.fixed_bound_s)
+
+    def park(self, worlds: np.ndarray | None) -> None:
+        """``worlds`` (bool [W]; None: none) are parked (``parked.py``): their proxies arm no pair, hold no bound and
+        ask for no re-run, and the always-on bound is the other worlds'."""
+        ends, per_world = self.ends, self.ends.fixed_world_s
+        if worlds is None or not np.any(worlds):
+            self.parked, ends.fixed_bound_s = None, self._fixed_all
+            return
+        w = np.asarray(ends.world, dtype=np.int64)
+        self.parked = (w >= 0) & np.asarray(worlds, dtype=bool)[np.maximum(w, 0)]
+        if per_world is not None:
+            ends.fixed_bound_s = float(np.min(per_world[~np.asarray(worlds, dtype=bool)], initial=math.inf))
+
+    def _unparked(self, flags: np.ndarray) -> np.ndarray:
+        """``flags`` (bool [E]) without the proxies of parked worlds."""
+        return flags if self.parked is None else flags & ~self.parked
 
     def _touch_launches(self, sets: list[Any]) -> list[tuple[Any, wp.array, wp.array, Any]]:
         """Per endpoint set that is gated: (kernel, gate index per endpoint, proxy index, the mapping)."""
@@ -231,7 +254,10 @@ class ContactGate:
         (the clock then goes straight to what the new bound needs: ``ClockController.decide(jump=)``)."""
         if self.count == 0:
             return False
-        near = self._whole_pairs(self._near(state, control_dt))
+        flags = self._unparked(self._near(state, control_dt))
+        self.own_hold = np.where(flags, self.hold_periods, self.own_hold - 1)
+        self.own_armed_host = flags | (self.own_hold > 0)
+        near = self._whole_pairs(flags)
         self.hold = np.where(near, self.hold_periods, self.hold - 1)
         armed = near | (self.hold > 0)
         changed = bool(np.any(self.armed_host != armed))
@@ -279,8 +305,20 @@ class ContactGate:
 
     def bound(self) -> float:
         """The clock bound [s]: the minimum over armed proxies, and the always-on pairs."""
-        own = self.ends.bound_s[self.armed_host]
+        own = self.ends.bound_s[self._unparked(self.armed_host)]
         return float(min(self.ends.fixed_bound_s, float(own.min()) if own.size else math.inf))
+
+    def world_need(self) -> np.ndarray:
+        """(W,) [s] per world, the gate's bound over that world's own armed proxies (the minimum ``bound`` takes, but
+        before a pair is armed whole across worlds) and its always-on pairs; ``inf`` where a world has none. Host data
+        only: the clock, ``armed`` and ``bound`` do not read it."""
+        ends = self.ends
+        out = np.full(max(int(self.model.world_count), 1), math.inf)
+        if ends.fixed_world_s is not None:
+            out = np.minimum(out, ends.fixed_world_s[: out.size])
+        own = self._unparked(self.own_armed_host) & (np.asarray(ends.world) >= 0)
+        np.minimum.at(out, np.asarray(ends.world, dtype=np.int64)[own], ends.bound_s[own])
+        return out
 
     # ------------------------------------------------------------------ device, every exchange
     def after_exchange(self) -> None:
@@ -294,7 +332,9 @@ class ContactGate:
         self.touched.zero_()
 
     def touched_unarmed(self) -> np.ndarray:
-        return self.touched.numpy()[: self.count].astype(bool) if self.count else np.zeros(0, dtype=bool)
+        if not self.count:
+            return np.zeros(0, dtype=bool)
+        return self._unparked(self.touched.numpy()[: self.count].astype(bool))
 
     def accept(self) -> bool:
         """Arm the pairs whose proxies touched unarmed (and hold them); True when there were any (re-run the period)."""
@@ -302,6 +342,8 @@ class ContactGate:
         if not t.any():
             return False
         arm = self._whole_pairs(t)
+        self.own_hold = np.where(t, self.hold_periods, self.own_hold)
+        self.own_armed_host = self.own_armed_host | t
         self.hold = np.where(arm, self.hold_periods, self.hold)
         self._set_armed(self.armed_host | arm)
         self.reruns += 1
@@ -365,6 +407,7 @@ def gate_for(sched: Any) -> ContactGate | None:
     names: list[str] = []
     routes: list[tuple[str, str]] = []
     fixed, gated = math.inf, []
+    fixed_world = np.full(max(int(model.world_count), 1), math.inf)
     for es in sched._sets:
         route = (es.src_name, es.dst_name)
         pair = by_route[route]
@@ -373,6 +416,8 @@ def gate_for(sched: Any) -> ContactGate | None:
         bounds = endpoint_bounds(masses, sched._pair_k_c(pair), c_d, clock.safety, clock.omega_dt_max)
         if getattr(pair, "interface_stiffness", None):     # an always-on interface (D17): never gated
             fixed = min(fixed, float(bounds.min()) if bounds.size else math.inf)
+            world = es.world.numpy()
+            np.minimum.at(fixed_world, world[world >= 0], bounds[world >= 0])
             continue
         names += [] if es.dst_name in names else [es.dst_name]
         routes += [] if route in routes else [route]
@@ -384,7 +429,7 @@ def gate_for(sched: Any) -> ContactGate | None:
     ends = GatedEndpoints(cat["is_body"], cat["item"], cat["world"], cat["radius"], cat["dest"],
                           cat["bound_s"].astype(np.float64), cat["pair"].astype(np.int64), names,
                           [np.asarray(e.particles, dtype=np.int64) for e in owned], bodies,
-                          [radii[b] for b in bodies], fixed_bound_s=fixed, routes=routes)
+                          [radii[b] for b in bodies], fixed_bound_s=fixed, fixed_world_s=fixed_world, routes=routes)
     log.info("contact gate: %d proxies in %d pairs gated against %s; always-on bound %.3g s", len(ends.item),
              len(routes), names, fixed)
     return ContactGate(model, ends, gated, clock.gate_margin, clock.gate_hold_periods)

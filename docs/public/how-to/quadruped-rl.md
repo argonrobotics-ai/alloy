@@ -55,3 +55,5 @@ on one NVIDIA L4 GPU, as shipped and physics only.
 - RL libraries, tasks and wrappers: [Reinforcement learning](../guides/rl.md).
 - Record demonstrations instead: [Imitation learning](../guides/imitation.md).
 - Look at a run: [Camera](../guides/camera.md).
+- Related: [the Gymnasium vector API](gymnasium-vector-api.md),
+  [GPU-parallel engines for RL](../answers/gpu-parallel-engines-for-rl.md).

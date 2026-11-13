@@ -13,7 +13,7 @@ sensor = TactileSensor("left_gel", attach_to="gripper/finger_left",
 img = sensor.render(sim)                       # wp.array uint8 (worlds, 240, 320, 3)
 img_t = sensor.render_torch(sim)               # the same as a torch tensor on the GPU
 out = sensor.render(sim, output="all")         # + out.press (worlds, H, W) mm, out.markers, out.motion
-sensor.reset(seed=episode)                     # after resetting worlds: forget touches, redraw augmentation
+sensor.reset(worlds=done, seed=episode)        # after a (masked) world reset: those worlds' touches and augmentation
 ```
 
 - **Pose:** the gel surface centre in the `attach_to` body frame; +Z points out of the gel toward what it touches,
@@ -21,8 +21,10 @@ sensor.reset(seed=episode)                     # after resetting worlds: forget 
 - **Presets:** `"gelsight"` (18.9 x 14.2 mm, markers) and `"digit"` (17.0 x 12.8 mm, no markers), from the
   MIT-licensed Taxim calibrations. `markers=True/False` overrides; `width=` sets the size (aspect kept).
 - **Depth:** `out.press` is the depth image in the sensor frame: how far each touching shape reaches into the
-  undeformed gel (mm), ray-cast exactly against the collision shapes. Give the pad a soft contact (MJCF `solref`,
-  e.g. `"0.03 1"`) so objects sink about as far as into a real gel; a stiff pad gives faint images.
+  undeformed gel (mm), ray-cast exactly against the collision shapes. Cloth and soft-body surfaces, MPM grains
+  and liquid particles press too, from their particles (`deformables=False` turns that off). Give the pad a soft
+  contact (MJCF `solref`, e.g. `"0.03 1"`) so objects sink about as far as into a real gel; a stiff pad gives faint
+  images.
 - **Markers:** pushed outward by the press and dragged by the touching object (stick, then slip past `slip_mm`).
   An engine's own marker field can drive them instead (`TactileRenderer.render(..., marker_disp=...)`).
 - **Augmentation:** `Augment.strong(seed)` randomises lighting, gel colour, tone, sensor offset, noise, worn spots

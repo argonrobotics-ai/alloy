@@ -50,3 +50,5 @@ faster on that scene: 269,159 images/s. Set the samples per pixel with `spp=` on
 - [Camera](../guides/camera.md)
 - [Train with RL](../guides/rl.md)
 - [Robots](../guides/robots.md)
+- Related: [the Gymnasium vector API](gymnasium-vector-api.md),
+  [GPU-parallel engines for RL](../answers/gpu-parallel-engines-for-rl.md).

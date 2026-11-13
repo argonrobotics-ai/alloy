@@ -22,9 +22,17 @@ How it runs (no vendored byte changes):
 - The block path never writes the dense ``ctx.hfactor``. Only the incremental Newton path reads it back (the skip
   flags; MuJoCo Warp takes it for every cone but the elliptic one), so a pyramidal-cone model is not eligible.
 
-Eligible: Newton, elliptic cone, sparse constraint Jacobian (MuJoCo Warp's ``is_sparse``), every tree at most 6 dofs,
-SLEEP off, nv >= ``NV_MIN``. Off: ``ALLOY_MJW_BLOCK=0``. Other models never see this module and stay bitwise
-unchanged.
+Eligible: Newton, elliptic cone, sparse constraint Jacobian (MuJoCo Warp's ``is_sparse``), SLEEP off, nv >=
+``NV_MIN``. Off: ``ALLOY_MJW_BLOCK=0``. Other models never see this module and stay bitwise unchanged.
+
+**Trees over 6 dofs** (0.1.2). Until 0.1.2 one such tree (a 7-dof arm, the Panda's 9, a CHAIN
+cable's 15-21) made the whole entry dense: one 6-link cable beside 200 boxes and a 1-dof arm ran 42-77x slower on an
+L4, and on the CPU Warp route the dense factor took 6.2 of 7.9 s (the 1-dof arm alone, block path off: 0.42 -> 6.06
+s). ``units`` now splits such a tree into consecutive runs of at most 6 dofs, and the graph ties every two runs of
+one tree (its mass matrix couples them); the factor is exact for any such split. A model whose trees all fit passes
+the model's own tree arrays, bit for bit as before. ``ALLOY_MJW_BLOCK_CHUNK=0`` keeps such a model dense.
+A model with the chain-grip pivot floor (``mjw_chol.set_pivot_floor``) takes the block path too; its float64 redo
+floors pivots as the dense redo does (``mjw_block_kernels``).
 """
 
 from __future__ import annotations
@@ -44,6 +52,8 @@ from alloy.precision.owned_cache import remember
 log = logging.getLogger("alloy.precision")
 
 NV_MIN = 96                       # below this the dense path stays (step 3 measures the crossover)
+CHUNK_ENV = "ALLOY_MJW_BLOCK_CHUNK"   # "0": a tree over B dofs keeps the entry dense (as before 0.1.2)
+UNITS_ATTR = "alloy_block_units"     # on the mujoco_warp Model: the runs of a model with a tree over B dofs
 BLOCK_DIM = 64                    # threads per world in the factor kernel (step 1: 32-128 equal at 50-100 trees)
 SYM_BLOCK_DIM = 1                 # threads per block, symbolic (L4: 1 is 1.6-2.1x faster than 32 or 256)
 GRAPH_LANES = 256                 # threads per world building the graph (a launch where nothing runs stays cheap)
@@ -74,11 +84,65 @@ def eligible(mjm: Any) -> str | None:
         return "sleeping is on"
     if mjm.nv < NV_MIN:
         return f"nv {mjm.nv} < {NV_MIN}"
-    if mjm.ntree == 0 or int(np.max(mjm.tree_dofnum[:mjm.ntree])) > K.B:
-        return f"a kinematic tree has more than {K.B} dofs"
+    if mjm.ntree == 0:
+        return "no kinematic tree"
+    if int(np.max(mjm.tree_dofnum[:mjm.ntree])) > K.B:
+        if os.environ.get(CHUNK_ENV, "1") == "0":
+            return f"a kinematic tree has more than {K.B} dofs ({CHUNK_ENV}=0)"
+        u = units(mjm)
+        if u is None or (u[3] < 0).any() or not np.array_equal(np.sort(u[3]), u[3]):
+            return f"a kinematic tree has more than {K.B} dofs, and the trees do not cover the dofs in order"
     from alloy._vendor.mujoco_warp._src import io  # noqa: PLC0415
 
     return None if io.is_sparse(mjm) else "dense constraint Jacobian"
+
+
+def units(mjm: Any) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None:
+    """(dofadr, dofnum, tree, dof_unit) of the block path's diagonal blocks when some tree of ``mjm`` has more than
+    B dofs: every tree split into consecutive runs of at most B dofs (a tree's dofs are contiguous). None when every
+    tree fits: the model's own tree arrays serve, unchanged."""
+    adr, num = mjm.tree_dofadr[:mjm.ntree], mjm.tree_dofnum[:mjm.ntree]
+    if mjm.ntree == 0 or int(np.max(num)) <= K.B:
+        return None
+    runs = [(int(a) + k, min(K.B, int(n) - k), t) for t, (a, n) in enumerate(zip(adr, num))
+            for k in range(0, int(n), K.B)]
+    dofadr, dofnum, tree = (np.array(c, np.int32) for c in zip(*runs))
+    dof_unit = np.full(int(mjm.nv), -1, np.int32)
+    for u, (a, n, _) in enumerate(runs):
+        dof_unit[a:a + n] = u
+    return dofadr, dofnum, tree, dof_unit
+
+
+def n_blocks(mjm: Any) -> int:
+    """The block path's diagonal blocks: the runs of ``units``, else the trees."""
+    u = units(mjm)
+    return int(mjm.ntree) if u is None else len(u[0])
+
+
+@dataclasses.dataclass(frozen=True)
+class Units:
+    """``units`` on the device: the arrays the kernels read in place of the model's tree arrays."""
+
+    dofadr: wp.array
+    dofnum: wp.array
+    tree: wp.array
+    dof_unit: wp.array
+
+
+def _mark_units(m: Any, mjm: Any) -> None:
+    u = units(mjm)
+    if u is not None:
+        dev = m.dof_treeid.device
+        object.__setattr__(m, UNITS_ATTR, Units(*(wp.array(a, dtype=int, device=dev) for a in u)))
+
+
+def _blocks(m: Any) -> tuple[wp.array, wp.array, wp.array, wp.array, int]:
+    """(dofadr, dofnum, dof -> block, block -> tree, ties) the kernels read: a chunked model's runs (ties 1: runs of
+    one tree always coupled), else the model's own trees (ties 0; the tree array is then never read)."""
+    u = getattr(m, UNITS_ATTR, None)
+    if u is None:
+        return m.tree_dofadr, m.tree_dofnum, m.dof_treeid, m.dof_treeid, 0
+    return u.dofadr, u.dofnum, u.dof_unit, u.tree, 1
 
 
 def config_for(ntree: int) -> BlockConfig:
@@ -150,16 +214,23 @@ def _dense_mask(done: wp.array[bool], overflow: wp.array[wp.int32], mask: wp.arr
 
 
 @wp.kernel
-def graph_clear(ntree: int, lanes: int, solver_niter: wp.array[int], edge: wp.array3d[wp.int8],
-                changed: wp.array[wp.int32]):
-    """No edges yet, nothing changed yet. A launch where nothing runs costs a few threads."""
+def graph_clear(ntree: int, lanes: int, solver_niter: wp.array[int], tree: wp.array[int], ties: int,
+                edge: wp.array3d[wp.int8], changed: wp.array[wp.int32]):
+    """No edges yet but the ties (``ties``: two runs of one tree, ``tree``), nothing changed yet. A launch where
+    nothing runs costs a few threads."""
     w, lane = wp.tid()
     if solver_niter[w] != 0:
         return
     if lane == 0:
         changed[w] = 0
     for k in range(lane, ntree * ntree, lanes):
-        edge[w, k // ntree, k % ntree] = wp.int8(0)
+        a = k // ntree
+        b = k % ntree
+        e = wp.int8(0)
+        if ties != 0:
+            if a != b and tree[a] == tree[b]:
+                e = wp.int8(1)
+        edge[w, a, b] = e
 
 
 @wp.func
@@ -232,12 +303,13 @@ def symbolic(m: Any, d: Any, b: Buffers) -> None:
     in its own cache)."""
     a, c, dev, W = b.arrays, b.cfg, d.qpos.device, int(d.nworld)
     lanes = (W, GRAPH_LANES)
+    _, _, dof_block, tree, ties = _blocks(m)
     force = int(os.environ.get("ALLOY_MJW_BLOCK_REUSE", "1") == "0")
-    wp.launch(graph_clear, dim=lanes, inputs=[c.ntree, GRAPH_LANES, d.solver_niter],
+    wp.launch(graph_clear, dim=lanes, inputs=[c.ntree, GRAPH_LANES, d.solver_niter, tree, ties],
               outputs=[a["edge"], a["changed"]], device=dev)
     wp.launch(graph_rows, dim=lanes, device=dev,
               inputs=[GRAPH_LANES, d.solver_niter, d.nefc, d.efc.J_rownnz, d.efc.J_rowadr, d.efc.J_colind,
-                      m.dof_treeid],
+                      dof_block],
               outputs=[a["edge"]])
     wp.launch(graph_changed, dim=lanes, inputs=[c.ntree, GRAPH_LANES, force, d.solver_niter, a["edge"], a["seen"]],
               outputs=[a["changed"]], device=dev)
@@ -250,24 +322,26 @@ def symbolic(m: Any, d: Any, b: Buffers) -> None:
                                       "lvl_off", "off_item", "opair_ptr", "opair_a", "opair_b", "overflow")])
 
 
-def launch_factor(dtype: Any, m: Any, d: Any, ctx: Any, b: Buffers, clamps: wp.array) -> None:
+def launch_factor(dtype: Any, m: Any, d: Any, ctx: Any, b: Buffers, clamps: wp.array, floor: float = 0.0) -> None:
     """One factor + solve launch: float32 (every world not done, not overflowed) or float64 (the worlds float32
-    flagged in ``bad``)."""
+    flagged in ``bad``; pivots floored at ``floor`` x nv * eps32 * max diag H when it is > 0)."""
     a, c, tag = b.arrays, b.cfg, "64" if dtype == wp.float64 else "32"
+    dofadr, dofnum, _, _, _ = _blocks(m)
     wp.launch_tiled(kernels(dtype)[0], dim=d.nworld, block_dim=BLOCK_DIM, device=d.qpos.device,
-                    inputs=[c.ntree, ctx.done, a["overflow"], a["bad"], clamps, ctx.h, ctx.grad, a["order"],
-                            m.tree_dofadr, m.tree_dofnum, a["nlev"], a["lvl_node"], a["node_item"], a["lvl_off"],
-                            a["off_item"], a["col_ptr"], a["off_row"], a["off_col"], a["row_ptr"], a["row_blk"],
-                            a["opair_ptr"], a["opair_a"], a["opair_b"], a[f"a_diag{tag}"], a[f"lo{tag}"],
+                    inputs=[c.ntree, int(m.nv), wp.float64(floor), ctx.done, a["overflow"], a["bad"], clamps, ctx.h,
+                            ctx.grad, a["order"], dofadr, dofnum, a["nlev"], a["lvl_node"], a["node_item"],
+                            a["lvl_off"], a["off_item"], a["col_ptr"], a["off_row"], a["off_col"], a["row_ptr"],
+                            a["row_blk"], a["opair_ptr"], a["opair_a"], a["opair_b"], a[f"a_diag{tag}"], a[f"lo{tag}"],
                             a[f"dinv{tag}"], a[f"g{tag}"], a[f"y{tag}"], a[f"x{tag}"]],
                     outputs=[ctx.search, ctx.search_dot, ctx.newton_decrement])
 
 
-def factor_solve(m: Any, d: Any, ctx: Any, clamps: wp.array, dense: Callable[[Any], None]) -> bool:
+def factor_solve(m: Any, d: Any, ctx: Any, clamps: wp.array, dense: Callable[[Any], None],
+                 floor: float = 0.0) -> bool:
     """The block path for one ``_cholesky_factorize_solve`` call. False (nothing launched) when this Data has no
     buffers (first seen inside a capture), or when the model's options moved onto MuJoCo Warp's incremental path
     after ``put_model`` (a cone switched to pyramidal: that path reads the dense factor back): the caller runs the
-    dense path then."""
+    dense path then. ``floor``: the model's pivot floor (``mjw_chol.pivot_floor``; 0: mjMINVAL)."""
     from alloy._vendor.mujoco_warp._src import solver as mjw_solver  # noqa: PLC0415
 
     b = buffers_for(m, d)
@@ -276,7 +350,7 @@ def factor_solve(m: Any, d: Any, ctx: Any, clamps: wp.array, dense: Callable[[An
     symbolic(m, d, b)
     a, dev = b.arrays, d.qpos.device
     for dtype in (wp.float32, wp.float64):
-        launch_factor(dtype, m, d, ctx, b, clamps)
+        launch_factor(dtype, m, d, ctx, b, clamps, floor)
     wp.launch(_dense_mask, dim=d.nworld, inputs=[ctx.done, a["overflow"]], outputs=[a["mask"]], device=dev)
     dense(dataclasses.replace(ctx, done=a["mask"]))
     return True
@@ -288,8 +362,10 @@ def _put_model(put_model: Any) -> Any:
         m = put_model(mjm, *args, **kwargs)
         why = eligible(mjm)
         if why is None:
-            object.__setattr__(m, "alloy_block_newton", config_for(int(mjm.ntree)))
-            log.info("mjw_block: block-sparse Newton factorization on (nv %d, %d trees)", mjm.nv, mjm.ntree)
+            _mark_units(m, mjm)
+            object.__setattr__(m, "alloy_block_newton", config_for(n_blocks(mjm)))
+            log.info("mjw_block: block-sparse Newton factorization on (nv %d, %d trees, %d blocks)", mjm.nv,
+                     mjm.ntree, n_blocks(mjm))
         else:
             log.debug("mjw_block: dense Newton factorization (%s)", why)
         return m
@@ -303,7 +379,7 @@ def _put_data(put_data: Any) -> Any:
     def wrapped(mjm: Any, *args: Any, **kwargs: Any) -> Any:
         d = put_data(mjm, *args, **kwargs)
         if eligible(mjm) is None and id(d.solver_niter) not in _BUFFERS:
-            b = Buffers.allocate(config_for(int(mjm.ntree)), int(d.nworld), d.qpos.device)
+            b = Buffers.allocate(config_for(n_blocks(mjm)), int(d.nworld), d.qpos.device)
             remember(_BUFFERS, id(d.solver_niter), d.solver_niter, b)
         return d
 
@@ -342,4 +418,5 @@ def uninstall() -> None:
             setattr(mujoco_warp, name, _STATE.pop(name))
 
 
-__all__ = ["BlockConfig", "NV_MIN", "eligible", "factor_solve", "install", "uninstall"]
+__all__ = ["BlockConfig", "CHUNK_ENV", "NV_MIN", "Units", "eligible", "factor_solve", "install", "n_blocks",
+           "uninstall", "units"]

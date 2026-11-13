@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Set up the alloy.create 3D generator (photo/text -> mesh) on a Linux machine with an NVIDIA GPU (16 GB or more),
 # in its own folder, and write a script that serves it. The GPU machine does not need Alloy's physics engine: the
-# server imports only alloy.create from this checkout, NumPy and the models' packages.
+# server imports only alloy.create (from this checkout or the installed package), NumPy and the models' packages.
 #
 #   bash examples/create/generator_setup.sh [FOLDER]        # default ~/alloy-generator; about 10 GB of packages
 #   ALLOY_GEN3D_TOKEN=<secret> FOLDER/serve.sh              # serves on port 8765; models download on first use
@@ -12,7 +12,19 @@
 # TripoSR (MIT), scikit-image marching cubes (BSD-3-Clause).
 set -euo pipefail
 DIR=$(mkdir -p "${1:-$HOME/alloy-generator}" && cd "${1:-$HOME/alloy-generator}" && pwd)
-ALLOY_SRC=$(cd "$(dirname "$0")/../.." && pwd)
+# The folder that holds the alloy package: the nearest one above this script (a clone's root, or site-packages when
+# this script is the installed copy under alloy/_data/examples), or $ALLOY_SRC. Only the package is linked into
+# FOLDER/src, so the other packages beside it never shadow the generator's own.
+ALLOY_SRC=${ALLOY_SRC:-}
+HERE=$(cd "$(dirname "$0")" && pwd)
+while [ -z "$ALLOY_SRC" ] && [ "$HERE" != "/" ]; do
+    HERE=$(dirname "$HERE")
+    [ -f "$HERE/alloy/__init__.py" ] && [ -f "$HERE/alloy/create/serve.py" ] && ALLOY_SRC=$HERE
+done
+[ -n "$ALLOY_SRC" ] && [ -f "$ALLOY_SRC/alloy/create/serve.py" ] || {
+    echo "cannot find the alloy package above $0; set ALLOY_SRC to the folder that holds alloy/" >&2; exit 1; }
+mkdir -p "$DIR/src" && ln -sfn "$ALLOY_SRC/alloy" "$DIR/src/alloy"
+ALLOY_SRC=$DIR/src
 TRIPOSR_COMMIT=107cefdc244c39106fa830359024f6a2f1c78871     # alloy.create.gen3d_local.TRIPOSR_COMMIT
 PY=${PYTHON:-python3}
 

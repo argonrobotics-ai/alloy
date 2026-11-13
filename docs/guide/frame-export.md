@@ -1,7 +1,7 @@
 # Frame export
 
 `alloy.export` hands picked worlds of a running simulation to a viewer you write, as plain numpy arrays. (Alloy's own
-viewer, [viewer.md](viewer.md), pauses and steps a run; it has no mouse dragging or joint sliders yet.) It sends body
+viewer, [viewer.md](viewer.md), pauses and steps a run, with opt-in joint sliders and mouse dragging.) It sends body
 poses, cloth, film and soft-body vertices, downsampled liquid and MPM particles, and rod centre lines. It never slows
 or changes the run: stepping with the export on gives the same state, bit for bit, as stepping with it off.
 
@@ -49,6 +49,8 @@ steps instead of 8. On one L4 that came to 1.8-3.5 s per period, and the first r
   - `body_names` and `body_active`;
   - `body_shapes`: each body's shapes in its body frame;
   - `statics`: the ground, tables and bins, with their world poses;
+  - both list the shapes the camera draws: the visible ones, plus the collision shapes of a moving link that has no
+    visible shape (the Gym tasks' gantry gripper, whose palm and fingers Newton's import leaves unmarked);
   - `mesh_faces`, indexing the mesh vertices, and `mesh_thickness`: the vertices are the mid-surface, so offset a
     sheet by half its thickness to draw it resting on what it touches;
   - `mesh_vertex_active`, and for soft bodies `mesh_tets` with `mesh_tet_active` (see Topology version);

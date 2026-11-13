@@ -55,8 +55,19 @@ interval are in `result.summary()`; with so few episodes the interval is wide, s
 ## Keep in mind
 
 - `alloy.il` records, replays and evaluates; it trains no policy.
-- Teleoperation is joint-space only: there is no end-effector control, so a 7-joint arm is driven joint by joint.
-- Cloth, liquid and other particle objects are not in a recording, so such an episode cannot be replayed.
+- It works on a `VectorEnv`: the ready-made tasks and a `Task` of your own. The task ports (`alloy.envs.ports`) and
+  Gymnasium wrappers around an environment are not supported.
+- For a policy without memory, leave the `action[i]` columns out of its input: the state vector ends with the
+  previous action, and a single-step behaviour-cloning network that reads it learns to repeat itself.
+- For keyboard teleoperation, build the environment with a `max_steps` long enough for one demonstration
+  (`max_steps=3000` is 30 s).
+- Teleoperation drives the environment's action columns. On a joint-action environment a 7-joint arm is driven
+  joint by joint; to drive the hand, build the environment with `alloy.envs.diffik.EEActionSpec` actions (an
+  opt-in first version, tested on the CPU).
+- Cloth, liquid and other particle objects are not in a recording, so such an episode cannot be replayed; neither
+  can a clamped or soft cable on the rod solver, or an environment with an actuator model (`ActuatorSpec`).
+- A replay of a scene with per-world random values (`scene.randomize`) is not exact: an episode can run with
+  another world's values.
 - On a GPU [runs do not repeat bit for bit](../../known_gaps/determinism-gpu-rigid.md) once bodies touch, so a
   replay is not exact.
 

@@ -115,12 +115,19 @@ class TactileRenderer:
             d.pitch_x, d.pitch_y, d.rows, d.cols = 1.0, 1.0, 0, 0
         self._draw = d
 
-    def resample(self, seed: int | None = None) -> None:
-        """Draw new per-world augmentation values (``seed`` None keeps the current one)."""
+    def resample(self, seed: int | None = None, worlds: np.ndarray | None = None) -> None:
+        """Draw new per-world augmentation values (``seed`` None keeps the current one); ``worlds``: a bool
+        (worlds,) mask, only those worlds get new values (the others keep theirs)."""
         if seed is not None:
             self.augment = self.augment.with_seed(seed)
         m = self.grid.count if self.grid else 1
         vals = self.augment.sample(self.num_worlds, self.preset.field_mm, m, self.preset.noise_std)
+        old = getattr(self, "_aug_vals", None)
+        if worlds is not None and old is not None:
+            keep = ~np.asarray(worlds, bool)
+            for k in vals:
+                vals[k][keep] = old[k][keep]
+        self._aug_vals = vals
         a, dev = AugArrays(), self.device
         a.light = wp.array(vals["light"], dtype=wp.vec3, device=dev)
         a.bg_gain = wp.array(vals["bg_gain"], dtype=wp.vec3, device=dev)

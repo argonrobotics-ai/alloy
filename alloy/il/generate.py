@@ -31,6 +31,7 @@ from alloy.il.episode import Episode, Writer
 from alloy.il.evaluate import wilson_interval
 from alloy.il.recorder import Recorder
 from alloy.il.script import Phase, PhaseScript
+from alloy.il.support import require_vector_env
 
 log = logging.getLogger("alloy.il")
 
@@ -96,9 +97,10 @@ def generate(env: Any, policy: Callable[[Any], Any], writers: Sequence[Writer], 
     with the counts so far each time episodes end.
 
     Example: see the module docstring."""
+    require_vector_env(env, "generate")
     if episodes < 1:
         raise EnvError(f"episodes is {episodes}", "pass a positive number of episodes", field="episodes")
-    worlds = int(env.num_envs)
+    worlds, manual_reset = int(env.num_envs), env.autoreset == "disabled"
     budget = max_attempts if max_attempts is not None else max(20 * episodes, worlds)
     to_np = env.xp.to_numpy
     result = GenerateResult(saved=0, wanted=int(episodes), attempted=0, successes=0, steps=0, worlds=worlds,
@@ -119,6 +121,8 @@ def generate(env: Any, policy: Callable[[Any], Any], writers: Sequence[Writer], 
             result.saved, result.wall_s = rec.saved, time.perf_counter() - t0
             if progress is not None:
                 progress(result)
+            if manual_reset:                               # autoreset="disabled": the ended worlds wait for this
+                obs, _ = rec.reset(options={"reset_mask": info["_episode"]})
         result.saved, result.wall_s = rec.saved, time.perf_counter() - t0
     if not result.complete:
         log.warning("generate: %d of %d episodes saved after %d attempts (%d succeeded); the run stopped at "

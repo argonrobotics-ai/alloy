@@ -298,5 +298,5 @@ def scenes(extra: Sequence[str | Path] = ()) -> list[str]:
 def objects(extra: Sequence[str | Path] = ()) -> list[str]:
     """Object card names on disk (``Scene.add_object(name, card)`` places one): the 118 that ship with Alloy, plus
     any you fetched or imported. ``alloy fetch --list`` shows the about 5,400 in the object library on the Hugging
-    Face Hub (with the ``import`` extra), which ``add_object`` also takes by name. Example: ``objects()[:3]``."""
+    Face Hub (with the ``import`` extra), which ``add_object`` also takes by name. Example: ``alloy.objects()[:3]``."""
     return names("objects", extra)

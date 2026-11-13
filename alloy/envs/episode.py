@@ -32,6 +32,8 @@ class LiveArrays:
         self._views: dict[str, Any] = {}
 
     def __call__(self, name: str) -> Any:
+        if name == "particle_active":
+            return self.active()
         if name not in self._views:
             arr = getattr(self.engine.state, name, None)
             if arr is None and name in MODEL_ARRAYS:
@@ -40,6 +42,25 @@ class LiveArrays:
                 raise KeyError(f"the engine state has no {name}")
             self._views[name] = self.xp.view(arr)
         return self._views[name]
+
+    def active(self) -> Any:
+        """(N,) bool, now: particles taking part (False: a pour's drop still at the nozzle, or a retired particle), from
+        the model's flags and each liquid solver's own (``sim.state()``'s ``"<name>.active"``). Example: internal."""
+        from alloy._vendor import newton  # noqa: PLC0415
+
+        if "_liquid" not in self._views:
+            from alloy.api._liquid import _local_to_global, liquid_solvers  # noqa: PLC0415
+
+            pairs = []
+            for solver in liquid_solvers(self.engine):
+                ids = _local_to_global(self.engine, solver)
+                if ids is not None and len(ids):
+                    pairs.append((self.xp.asarray(ids, "int64"), self.xp.view(solver.model.particle_flags)))
+            self._views["_liquid"] = pairs
+        flags = self.xp.copy(self.xp.view(self.engine.model.particle_flags))
+        for ids, view in self._views["_liquid"]:
+            flags[ids] = view[: ids.shape[0]]
+        return (flags & int(newton.ParticleFlags.ACTIVE)) != 0
 
 
 class StartState:

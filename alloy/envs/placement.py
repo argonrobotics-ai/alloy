@@ -15,6 +15,7 @@ from typing import Any
 
 import numpy as np
 
+from alloy.coupling.world_clock_writes import evict_before_write
 from alloy.envs.errors import EnvError
 
 CYLINDER_POINTS = 16
@@ -68,24 +69,28 @@ def lowest_z(sim: Any, name: str, world: int = 0) -> float:
     return low
 
 
-def rest_on_floor(sim: Any, names: Sequence[str], floor: float = 0.0, gap: float = 0.0005) -> dict[str, float]:
-    """Move each named free object up or down so its lowest point is ``gap`` above ``floor`` in every world, and
-    make that the state ``reset`` returns to. Returns the shift per object (m).
+def rest_on_floor(sim: Any, names: Sequence[str], floor: float = 0.0,
+                  gap: float = 0.0005) -> dict[str, np.ndarray]:
+    """Move each named free object up or down so its lowest point is ``gap`` above ``floor`` in every world (each
+    world by its own amount: starts drawn per world differ), and make that the state ``reset`` returns to. Returns
+    the shift per object and world (m, (W,)).
 
     Example: ``rest_on_floor(sim, ["obj"])``."""
     from alloy._vendor import newton  # noqa: PLC0415
 
     eng, idx = sim.engine, sim.index
+    evict_before_write(eng)               # clock_worlds: residents come back first (world_clock_writes)
     joint_q, q_start = eng.state.joint_q.numpy(), eng.model.joint_q_start.numpy()
     x_p, shifts = eng.model.joint_X_p.numpy(), {}
     for name in names:
         if name not in idx.free_joint:
             raise EnvError(f"{name!r} is not a free object", "rest_on_floor moves objects added with add_object / "
                            "add_box, not robots or static parts", field=name)
-        dz = floor + gap - lowest_z(sim, name)
-        for j in idx.per_world(idx.free_joint[name], "joint"):
+        rows = idx.per_world(idx.free_joint[name], "joint")
+        dz = np.array([floor + gap - lowest_z(sim, name, world=w) for w in range(len(rows))])   # each world's own
+        for j, d in zip(rows, dz):
             q0 = int(q_start[j])
-            joint_q[q0:q0 + 3] += _rot(x_p[j, 3:7]).T @ np.array([0.0, 0.0, dz])
+            joint_q[q0:q0 + 3] += _rot(x_p[j, 3:7]).T @ np.array([0.0, 0.0, d])
         shifts[name] = dz
     eng.state.joint_q.assign(joint_q)
     newton.eval_fk(eng.model, eng.state.joint_q, eng.state.joint_qd, eng.state)

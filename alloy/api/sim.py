@@ -23,14 +23,12 @@ from typing import Any
 
 import numpy as np
 
-from alloy.api import _heat, _liquid, _liquid_accuracy, _robot_random_apply, _robot_random_push, _say
-from alloy.api import health as H
-from alloy.api._state import StateIO
-from alloy.api.errors import (
-    FeatureUnavailableError, SimulationError, forget_raised, raise_if_invalid, reading, wrapped,
-)
+from alloy.api import _heat, _liquid, _liquid_accuracy, _pour, _robot_random_apply, _robot_random_push, _say
+from alloy.api import _memory_errors, _state, health as H
+from alloy.api.errors import FeatureUnavailableError, SimulationError, forget_raised, raise_if_invalid, reading, wrapped
 from alloy.api.names import NameIndex
 from alloy.api.trajectory import Trajectory
+from alloy.coupling import world_clock_api
 
 log = logging.getLogger("alloy.api")
 RIGID_KINDS = ("box", "sphere", "cylinder", "capsule", "mesh")
@@ -68,7 +66,7 @@ class Sim:
         # engine periods per step(): more than 1 when a precise fixture made the cards' period finer (fixtures.py)
         self._sub = max(1, round(float(scene.dt) / float(engine.built.control_dt))) if scene is not None else 1
         self.index = NameIndex.from_built(self.built)
-        self._io = StateIO(engine, self.index)
+        self._io = _state.StateIO(engine, self.index)
         self._workdir = workdir
         self._warned_invalid: set[int] = set()
         self._settled = False                    # settle() ran: reset() returns to that state
@@ -112,16 +110,21 @@ class Sim:
         if not isinstance(n, (int, np.integer)) or n < 0:
             raise SimulationError(f"step(n) needs an int >= 0, got {n!r}", "pass n=1 (control periods)", field="n")
         with wrapped("step", SimulationError), _device(self.device):
-            for _ in range(int(n) * self._sub):
-                if self._pushes is not None:
-                    self._pushes.tick()            # scene.add_push: start and end the pushes that are due
-                self.engine.step_period()
-                raise_if_invalid(self.engine)      # profile "precision": raise in the period a world fails
+            try:
+                for _ in range(int(n) * self._sub):
+                    if self._pushes is not None:
+                        self._pushes.tick()            # scene.add_push: start and end the pushes that are due
+                    self.engine.step_period()
+                    raise_if_invalid(self.engine)      # profile "precision": raise in the period a world fails
+            except RuntimeError as exc:                # Warp / CUDA out of memory: SimulationError
+                raise _memory_errors.step_oom(self, exc) or exc
         return self
 
     def run(self, seconds: float, record: Iterable[str] | str | None = None, every: int = 1, *,
             targets: Mapping[str, Any] | None = None) -> Trajectory:
         """Step ``seconds`` of simulated time, recording state every ``every`` periods (frame 0 = before stepping).
+        It steps whole control periods, ``round(seconds / sim.dt)`` of them: under half a period steps none (its
+        targets are still checked).
 
         - ``record``: names to record (default: every body, joint and particle object); [] records only time;
         - ``targets``: joint position targets during the run: ``{"joint": value}`` holds a value, and
@@ -136,7 +139,7 @@ class Sim:
             raise SimulationError(f"run({seconds!r}, every={every!r}) is not a forward run",
                                   "pass seconds >= 0 and every >= 1")
         names = self._io.expand(record) if record != [] else []
-        ramps = _ramps(targets or {})
+        ramps = self._io.ramps(targets or {})      # checked before stepping: a run of no periods too
         frames, times = [self._io.read(names)], [self.t]
         steps0, wall0 = self.physics_steps, time.perf_counter()
         for k in range(1, periods + 1):
@@ -163,7 +166,9 @@ class Sim:
         (piles, drapes and soft parts start a few mm off rest), also in a scene with ``scene.randomize`` (each world
         settles from its own draws). Example: ``sim.settle(0.5)``."""
         self.step(int(round(float(seconds) / self.dt)))
+        world_clock_api.evict(self.engine)     # clock_worlds: the settled start is saved from this simulation
         self.engine._initial.save(self.engine.state)
+        self._io.save_controls()               # reset returns to the targets the settle ran with
         self._settled = True
         self._rebase()
         return self
@@ -191,6 +196,7 @@ class Sim:
         Example: ``sim.set_pose("tray", pos=(0, 0, 0.3))``."""
         from alloy.api import _drive, _robots  # noqa: PLC0415
 
+        world_clock_api.evict(self.engine, world)    # clock_worlds: the write lands where it is read
         if name in self.index.robot_joints:
             _robots.set_pose(self, name, pos, quat_wxyz, world)
         else:
@@ -203,9 +209,9 @@ class Sim:
               pivot: Any = None, duration: float = float("inf")) -> Sim:
         """Move a kinematic object (or a kinematic fixture's parts together) from now on with a constant linear
         ``velocity`` (m/s) and ``angular_velocity`` (rad/s, world axes) about ``pivot`` (a world point; default its
-        current ``.pos``, or the fixture's centre) for ``duration`` s, then hold. Contacts and liquids see the moving
-        walls every physics step. A new drive of an object replaces its earlier one (it starts from where the object
-        is now). Example (tilt a cup about its lip at 40 deg/s for 2 s)::
+        ``.pos`` or the fixture's centre in each world), each (x, y, z) or (worlds, 3), for ``duration`` s, then hold.
+        Contacts and liquids see the moving walls every physics step. A new drive of an object replaces its earlier
+        one (it starts from where the object is now). Example (tilt a cup about its lip at 40 deg/s for 2 s)::
 
             sim.drive("cup", angular_velocity=(0, math.radians(40), 0), pivot=(0.044, 0, 0.104), duration=2.0)"""
         from alloy.api import _drive  # noqa: PLC0415
@@ -234,10 +240,9 @@ class Sim:
         return _robot_random_push.forces(self)
 
     def reset(self) -> Sim:
-        """Back to the start state of every world (randomized values are redrawn the same way, except robot and
-        gravity rows added with ``when="reset"``, which get a new draw; drives and ``apply_wrench`` loads are removed).
-
-        Example: ``sim.reset()``."""
+        """Back to the start of every world: joint targets and controls as before the first command (or at
+        ``settle``), drives and ``apply_wrench`` loads removed; randomized values are redrawn the same way, except robot
+        and gravity rows added with ``when="reset"``, which get a new draw. Example: ``sim.reset()``."""
         self.stop_drives()
         with wrapped("reset", SimulationError), _device(self.device):
             self.engine.reset()
@@ -248,8 +253,7 @@ class Sim:
                 self.engine._initial.restore(self.engine.state, None)
                 _robot_random_apply.S.place(self.engine)     # start rows: the restore put the robots back
                 self._rebase()
-            self._io.clear_wrenches()
-            self._io.match_states()                # both of the engine's states: a kinematic row (API-16 class)
+            self._io.after_reset()                 # loads, targets, ctrl; both of the engine's states alike
         return self
 
     # --- state and control ---------------------------------------------------------------------------------------
@@ -287,6 +291,7 @@ class Sim:
         """Hold a force (N) and a torque (N m) on a body, in world coordinates about its centre of mass, until changed;
         zeros remove it. ``at``: "start" or "end" picks a rod's end segment. A (worlds, 3) array sets one per world.
         Example: ``sim.apply_wrench("cable", torque=(0.002, 0, 0), at="end")``."""
+        world_clock_api.evict(self.engine)
         self._io.apply_wrench(name, force, torque, at)
         return self
 
@@ -320,7 +325,7 @@ class Sim:
 
     def liquid_volume(self, name: str) -> float:
         """Volume (m^3) of a liquid as simulated: whole particles fill the shape you asked for, so this can be a few
-        percent below the box volume; enlarge the box if you need an exact amount.
+        percent below the box volume (enlarge the box for an exact amount); a pour's is its volume to half a particle.
 
         Example: ``sim.liquid_volume("water") * 1e6`` -> millilitres."""
         return len(self.index.particle_range(name)) * self.particle_volume(name)
@@ -410,13 +415,11 @@ class Sim:
     def report(self) -> dict[str, Any]:
         """The engine's report (steps, time, coupling, health objects). Example: ``sim.report()["steps"]``."""
         with reading(self.engine):                 # profile "precision": reading must not raise
-            return dict(self.engine.report())
+            return world_clock_api.report(self.engine, dict(self.engine.report()))
 
     def close(self) -> None:
         """Free the scene's temporary card directory (and the ``rerun_worlds`` simulation). Example: ``sim.close()``."""
-        fine = getattr(getattr(self, "engine", None), "fine_rerun", None)
-        if fine is not None:
-            fine.close()
+        world_clock_api.close(getattr(self, "engine", None))     # rerun_worlds' or clock_worlds' simulation
         if self._workdir:
             shutil.rmtree(self._workdir, ignore_errors=True)
             self._workdir = None
@@ -457,7 +460,7 @@ class Sim:
         items = getattr(self.scene, "items", {}) if self.scene is not None else {}
         for name in self.index.particles:
             item = items.get(name, {})
-            asked = (item.get("pour") or {}).get("volume") or item.get("volume") if item.get("kind") == "liquid" else None
+            asked = _pour.asked_volume(item) if item.get("kind") == "liquid" else None
             if not asked or not self.built.handles[name].decision.numbers.get("particle_radius"):
                 continue                       # a paste (add_liquid of mayonnaise) routes to MPM: no SPH particles
             got = self.liquid_volume(name)
@@ -482,16 +485,6 @@ def _clock_mode(engine: Any) -> dict[str, Any] | None:
     stepper = getattr(engine, "stepper", None)
     mode = getattr(getattr(stepper, "base", stepper), "clock_mode", None)
     return mode() if callable(mode) else None
-
-
-def _ramps(targets: Mapping[str, Any]) -> dict[str, tuple[Any, Any]]:
-    out = {}
-    for name, value in targets.items():
-        if isinstance(value, tuple) and len(value) == 2:
-            out[name] = (np.asarray(value[0], float), np.asarray(value[1], float))
-        else:
-            out[name] = (np.asarray(value, float), np.asarray(value, float))
-    return out
 
 
 def _device(device: str) -> Any:

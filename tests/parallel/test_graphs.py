@@ -64,6 +64,20 @@ def test_odd_swaps_are_refused():
         g.launch()
 
 
+def test_a_zero_length_buffer_does_not_break_the_capture():
+    """S3-001 (Gemini audit of 0.1.2): a scene whose robots have no degrees of freedom has zero-length joint arrays,
+    whose ``ptr`` is None; the swap check read int(None) and the first GPU step raised a TypeError. Here on the CPU,
+    the same capture path (an empty buffer beside two that swap): it captures, replays and keeps the result."""
+    pp = PingPong(4)
+    empty = wp.zeros(0, dtype=wp.float32, device="cpu")
+    assert empty.ptr is None
+    g = PeriodGraph(pp.period, "cpu", use_graph=True, buffers=lambda: (*pp.buffers(), empty, None))
+    for _ in range(3):
+        g.launch()
+    assert g.mode == "graph" and g.captures == 1
+    np.testing.assert_array_equal(pp.a.numpy(), np.full(8, 12.0))
+
+
 def test_invalidate_recaptures():
     pp = PingPong(2)
     g = PeriodGraph(pp.period, "cpu", use_graph=True, buffers=pp.buffers)

@@ -12,8 +12,7 @@ from __future__ import annotations
 import warp as wp
 
 from alloy.precision.health_pen import (  # noqa: I001
-    HARD_TIMES, NATIVE_HARD, deep_time, designed_pair, hard_up, moving_extent, native_pen_flags, past_limit,
-    pen_fail_level, pen_level)
+    HARD_TIMES, NATIVE_HARD, deep_time, hard_up, native_pen_flags, pen_fail_level, pen_level)
 from alloy.precision.health_overflow import OverflowNote, overflow_line, overflow_note  # noqa: F401 (health.py)
 from alloy.precision.health_source_shapes import SolidTable, contact_thickness
 from alloy.precision.ladder import DEGRADED_MASK, INVALID_MASK
@@ -57,6 +56,7 @@ class Accum:
     pen_fail: wp.array[wp.int32]
     pen_src: wp.array[wp.int32]            # 1 once a contact source covered the world in this check (SCR-SC0-1)
     pen_native: wp.array[wp.float32]       # max penetration from MuJoCo Warp's own contacts (SCR-SC0-1)
+    pen_native_flag: wp.array[wp.float32]  # ... the deepest past its allowance (health_native; flags)
     pen_native_fail: wp.array[wp.int32]    # its contacts above their S1 limit
     pen_arg: wp.array[wp.uint64]           # (pen bits << 32) | pen_tag(source, index) of the deepest contact
     pen_shape_a: wp.array[wp.int32]        # that contact's shapes / particle (health_failure resolves them; -1: none)
@@ -118,6 +118,7 @@ def reset_accum(acc: Accum):
     acc.pen_fail[w] = 0
     acc.pen_src[w] = 0
     acc.pen_native[w] = 0.0
+    acc.pen_native_flag[w] = 0.0
     acc.pen_native_fail[w] = 0
     acc.pen_arg[w] = wp.uint64(0)
     acc.pen_shape_a[w] = -1
@@ -291,44 +292,6 @@ def check_soft_contacts(count: wp.array[wp.int32], particle: wp.array[wp.int32],
     note_pen(acc, w, -d, limit, pen_tag(PEN_SOFT, k), wp.inf)       # cloth / soft: the dwell only
 
 
-@wp.func
-def geom_to_shape(geom_shape: wp.array2d[wp.int32], w: int, g: int) -> int:
-    """The Newton shape behind MuJoCo geom ``g`` of world ``w`` (-1 when it has none)."""
-    if geom_shape.shape[0] == 0 or g < 0 or g >= geom_shape.shape[1]:
-        return -1
-    return geom_shape[w % geom_shape.shape[0], g]
-
-
-@wp.kernel
-def check_mjw_contacts(nacon: wp.array[wp.int32], dist: wp.array[wp.float32], worldid: wp.array[wp.int32],
-                       geom: wp.array[wp.vec2i], geom_shape: wp.array2d[wp.int32], shape_thick: wp.array[wp.float32],
-                       pair_mark: wp.array[wp.int32], world_count: wp.int32, pen_fail: wp.float32, hard: wp.float32,
-                       frame: wp.array[wp.mat33],
-                       solids: SolidTable, shape_type: wp.array[wp.int32], shape_scale: wp.array[wp.vec3],
-                       shape_transform: wp.array[wp.transform], shape_body: wp.array[wp.int32],
-                       body_q: wp.array[wp.transform], acc: Accum):
-    """MuJoCo Warp's own contacts (SCR-SC0-1): penetration = -dist (signed surface distance); maxima only (D3)."""
-    k = wp.tid()
-    if k >= nacon[0]:
-        return
-    w = worldid[k]
-    if w < 0 or w >= world_count:
-        return
-    g = geom[k]
-    n = frame[k][0]  # MuJoCo's contact normal (frame row 0, world)
-    sa, sb = geom_to_shape(geom_shape, w, g[0]), geom_to_shape(geom_shape, w, g[1])
-    ta = contact_thickness(solids, shape_type, shape_scale, shape_transform, shape_body, shape_thick, body_q, sa, n)
-    tb = contact_thickness(solids, shape_type, shape_scale, shape_transform, shape_body, shape_thick, body_q, sb, n)
-    thin = wp.min(ta, tb)
-    pen = -dist[k]
-    if pen > 0.0:
-        wp.atomic_max(acc.pen_native, w, pen)
-        note_deepest(acc, w, pen, pen_tag(PEN_NATIVE, k))
-        thin = designed_pair(thin, pair_mark, sa, sb)                # GAP-E1: health_pen's one rule
-        size = moving_extent(sa, sb, shape_thick, shape_body)
-        wp.atomic_max(acc.pen_native_fail, w, past_limit(pen, wp.min(pen_fail, 0.5 * thin), hard, size))
-
-
 @wp.kernel
 def mark_pen_measured(world_count: wp.int32, acc: Accum):
     """Every world of the model is covered by the contact source just read."""
@@ -427,10 +390,11 @@ def classify(step_counter: wp.array[wp.int64], acc: Accum, lim: Limits, ref: Ene
     got = inbox[w]
     h = record[w]
     flags = lim.static_flags | acc.overflow[w] | motion_flags(w, acc, lim) | got.flags
-    lvl = pen_level(lim.native_pen_flags, acc.pen_native_fail[w], acc.pen_native[w] > lim.pen_fail, acc.pen_fail[w])
+    lvl = pen_level(lim.native_pen_flags, acc.pen_native_fail[w], acc.pen_native_flag[w] > lim.pen_fail,
+                    acc.pen_fail[w])
     h.pen_deep_s = deep_time(h.pen_deep_s, check_dt, lvl > 0)
     h.pen_hard_n = wp.where(lvl >= NATIVE_HARD, h.pen_hard_n + 1, 0)
-    flags = flags | native_pen_flags(lim.native_pen_flags != 0 and acc.pen_native[w] > lim.pen_warn,
+    flags = flags | native_pen_flags(lim.native_pen_flags != 0 and acc.pen_native_flag[w] > lim.pen_warn,
                                      hard_up(h.pen_hard_n, check_dt), h.pen_deep_s, lim.pen_dwell_s)
     flags = flags | pair_flags(got.max_pair_pen_m, lim)
     if hold_joints != 0:

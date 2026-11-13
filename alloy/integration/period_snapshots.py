@@ -23,6 +23,10 @@ state, up to that many steps before the failing check: up to ``every`` - 1 steps
 period (the condition the coordinator set: FAST_COST says so), instead of at the start of its failing period, which
 with checks every 10 steps was not checked either. Every other simulation saves all three every period, as before.
 Example: ``save_period_start(sim)`` at the top of ``IntegratedSimulation.step_period``.
+
+``make_period_snapshots`` makes the copies themselves, from the arrays the simulation has at that moment:
+``IntegratedSimulation.__init__`` calls it, and so does a pour that adds solver state after the build
+(``alloy.api._pour.start``), so one place says how they are made (WP4's review, 2026-11-11).
 """
 
 from __future__ import annotations
@@ -35,7 +39,7 @@ from alloy.integration.row_growth import row_guard
 
 log = logging.getLogger("alloy.integration")
 
-__all__ = ["save_period_start", "sparse"]
+__all__ = ["make_period_snapshots", "save_period_start", "sparse"]
 
 
 def sparse(sim: Any) -> bool:
@@ -77,3 +81,25 @@ def save_period_start(sim: Any) -> None:
         sim._latch_snap.save(sim.state)
     if sim._health_snap is not None:
         sim._health_snap.save(sim.state)
+
+
+def make_period_snapshots(sim: Any, *, good: bool = False) -> None:
+    """Make ``sim``'s period snapshots from the state arrays it has now. ``_latch_snap`` is ``_good`` itself when
+    every array has a per-world axis, else a per-world copy. ``_end_snap`` stays empty until a per-world rollback
+    needs it. ``_health_snap`` holds health's arrays. A WP2 base's ``_latch`` / ``_end`` point at these copies.
+
+    ``good=True`` first remakes ``_good`` itself, for solver state added after construction. A snapshot keeps only
+    the arrays it was made with, so a pour's emitter cursor added later was never restored by a rollback (GAP-LC,
+    2026-11-11: 244 of 294 particles poured). Remake before the first step only: a captured graph holds the
+    snapshots' arrays.
+    Example: ``make_period_snapshots(sim)`` (``IntegratedSimulation.__init__``)."""
+    if good:
+        sim._good = sim._snapshot()
+        sim._good.save(sim.state)
+    sim._latch_snap = sim._good if not sim._good.whole_arrays else sim._per_world_snapshot()
+    sim._latch_snap.save(sim.state)
+    sim._end_snap = None
+    sim._health_snap = sim._health_snapshot()
+    for name in ("_latch", "_end"):     # newer WP2 bases keep their own copies; this class uses its own
+        if hasattr(sim, name):
+            setattr(sim, name, sim._latch_snap if name == "_latch" else None)

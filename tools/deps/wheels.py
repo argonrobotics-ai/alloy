@@ -112,24 +112,28 @@ class TreeMeta:
     package_data: dict[str, list[str]] = field(default_factory=dict)  # [tool.setuptools.package-data]
     dependencies: list[str] = field(default_factory=list)            # [project] dependencies
     project: dict[str, Any] = field(default_factory=dict)            # PROJECT_FIELDS the tree sets (summary, readme)
+    entry_points: dict[str, dict[str, str]] = field(default_factory=dict)  # plug-in groups (isaaclab.tasks)
 
 
 def tree_meta(tree: Path) -> TreeMeta:
-    """The source tree's optional dependencies (without ``dev``), console scripts, package-data globs and
-    ``PROJECT_FIELDS``.
+    """The source tree's optional dependencies (without ``dev``), console scripts, entry-point groups, package-data
+    globs and ``PROJECT_FIELDS``.
 
     >>> meta = tree_meta(Path("."))
     >>> "mesh" in meta.extras and "dev" not in meta.extras and "**/*" in meta.package_data["alloy"]
     True
     >>> "description" in meta.project and "version" not in meta.project
     True
+    >>> meta.entry_points["isaaclab.tasks"]
+    {'alloy': 'alloy.isaaclab.register'}
     """
     doc = tomllib.loads((tree / "pyproject.toml").read_text())
     project = doc["project"]
     extras = {k: list(v) for k, v in project.get("optional-dependencies", {}).items() if k != "dev"}
     data = doc.get("tool", {}).get("setuptools", {}).get("package-data", {})
     return TreeMeta(extras, dict(project.get("scripts", {})), {k: list(v) for k, v in data.items()},
-                    list(project.get("dependencies", [])), {k: project[k] for k in PROJECT_FIELDS if k in project})
+                    list(project.get("dependencies", [])), {k: project[k] for k in PROJECT_FIELDS if k in project},
+                    {g: dict(v) for g, v in project.get("entry-points", {}).items()})
 
 
 def dist_name(requirement: str) -> str:
@@ -175,18 +179,25 @@ def merged_package_data(tree_data: dict[str, list[str]]) -> dict[str, list[str]]
 
 
 def release_pyproject(version: str, requires: list[str], meta: TreeMeta | None = None, name: str = DIST_NAME) -> str:
-    """The pyproject.toml of the staged release tree: ``requires`` as dependencies, ``meta``'s extras, scripts and
-    ``PROJECT_FIELDS`` (summary, readme, licence; ``PROJECT_DEFAULTS`` where the tree sets none), and the tree's
-    package-data merged with ``RELEASE_PACKAGE_DATA``.
+    """The pyproject.toml of the staged release tree: ``requires`` as dependencies, ``meta``'s extras, scripts,
+    entry-point groups (Isaac Lab finds ``physics=alloy`` through ``isaaclab.tasks``) and ``PROJECT_FIELDS``
+    (summary, readme, licence; ``PROJECT_DEFAULTS`` where the tree sets none), and the tree's package-data merged
+    with ``RELEASE_PACKAGE_DATA``.
 
     >>> doc = tomllib.loads(release_pyproject("0.0.1", [], TreeMeta(project={"description": "An engine"})))
     >>> doc["project"]["description"], doc["project"]["license"]
     ('An engine', 'Apache-2.0')
+    >>> eps = {"isaaclab.tasks": {"alloy": "alloy.isaaclab.register"}}
+    >>> tomllib.loads(release_pyproject("0.0.1", [], TreeMeta(entry_points=eps)))["project"]["entry-points"] == eps
+    True
     """
     meta = meta or TreeMeta()
     deps = "".join(f'    "{r}",\n' for r in requires)
     extra_lines = "".join(f"{json.dumps(k)} = {json.dumps(v)}\n" for k, v in meta.extras.items())
     script_lines = "".join(f"{json.dumps(k)} = {json.dumps(v)}\n" for k, v in meta.scripts.items())
+    entry_lines = "".join(f"[project.entry-points.{json.dumps(g)}]\n"
+                          + "".join(f"{json.dumps(k)} = {json.dumps(v)}\n" for k, v in eps.items()) + "\n"
+                          for g, eps in meta.entry_points.items())
     data_lines = "".join(f"{json.dumps(k)} = {json.dumps(v)}\n"
                          for k, v in merged_package_data(meta.package_data).items())
     fields = {**PROJECT_DEFAULTS, **meta.project}
@@ -194,6 +205,7 @@ def release_pyproject(version: str, requires: list[str], meta: TreeMeta | None =
     return (f'[project]\nname = "{name}"\nversion = "{version}"\n{field_lines}'
             f"dependencies = [\n{deps}]\n\n[project.optional-dependencies]\n{extra_lines}\n"
             + (f"[project.scripts]\n{script_lines}\n" if script_lines else "")
+            + entry_lines
             + '[build-system]\nrequires = ["setuptools>=77"]\nbuild-backend = "setuptools.build_meta"\n\n'
             '[tool.setuptools.packages.find]\ninclude = ["alloy*"]\n\n'
             f"[tool.setuptools.package-data]\n{data_lines}")

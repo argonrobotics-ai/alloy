@@ -128,6 +128,9 @@ $n object cards for the [Alloy](https://alloy.argonrobotics.ai) robot simulator,
 
 $about
 
+Alloy's code is at [github.com/argonrobotics-ai/alloy](https://github.com/argonrobotics-ai/alloy) and its
+documentation at [alloy.argonrobotics.ai/docs](https://alloy.argonrobotics.ai/docs/).
+
 Each object is a card (YAML: shape plus material values: density, friction, restitution, stiffness, each with where
 it comes from and an uncertainty range) together with its geometry (a physics mesh with a convex-hull collision
 sidecar and a visual glTF, or an MJCF model with its meshes and textures) and, where the library has one, a rendered

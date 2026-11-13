@@ -34,10 +34,26 @@ def require(lib: str) -> Any:
 def require_vector_env(env: Any, lib: str) -> None:
     """Raise ``EnvError`` unless ``env`` is a ``VectorEnv`` (the task-port envs are not: they have no array
     backend). Example: ``require_vector_env(env, "sb3")``."""
+    if type(env).__name__ == "PortEnv":
+        raise EnvError(f"the {lib} wrapper does not take a task port ({getattr(env.spec, 'name', 'PortEnv')}): its "
+                       "episode is the port's scripted run, with no array backend or reward terms to train on",
+                       "train on a ready-made VectorEnv task instead (alloy.envs.make('GripperLift-v0'), "
+                       "'PickCube-v0', ...: docs/guide/envs.md, Ready-made environments), or drive the port with "
+                       "your own loop (reset, step, info['expert_action'])", field="env")
     if getattr(env, "xp", None) is None or not hasattr(env, "task") or not hasattr(env, "stats"):
         raise EnvError(f"the {lib} wrapper takes an alloy.envs.VectorEnv, not {type(env).__name__}",
                        "pass an env from alloy.envs.make(<a ready-made name>) or VectorEnv(scene, task); the task "
                        "ports (alloy.envs.ports) are not supported by the wrappers", field="env")
+
+
+def require_same_step(env: Any, lib: str) -> None:
+    """Raise ``EnvError`` unless ``env`` restarts a finished world inside ``step`` (``autoreset="same_step"``): the
+    wrappers' rollouts and value bootstraps assume it. Example: ``require_same_step(env, "rsl_rl")``."""
+    mode = getattr(env, "autoreset", "same_step")
+    if mode != "same_step":
+        raise EnvError(f"the {lib} wrapper needs autoreset='same_step', this env has {mode!r}",
+                       "make the env with autoreset='same_step' (the default): the wrapper restarts no world itself, "
+                       "and next-step resets would void its terminal observations", field="autoreset")
 
 
 def require_torch_env(env: Any, lib: str) -> None:

@@ -93,10 +93,10 @@ print(sim.state(["carton/flap"])["carton/flap.pos"])          # the flap came al
 `sim.reset()` returns to the drawn starts. A robot welded to the world has one base pose in every world (the build
 says so): move the objects around it per world instead. Runnable: `examples/api/08_robot_per_world.py`.
 
-A per-world `pos` array puts the root body itself at each row, and so does a `pos` tuple once `scene.randomize`
-draws the robot's `x`, `y` or `z`. A plain `pos` tuple moves the whole file instead: the root body ends at `pos` plus
-where the file places it. For a root body the file puts above its origin (`<body pos="0 0 0.3">`), give that height
-in the rows or the tuple (z = 0.3 there, plus any lift), or the robot starts in the ground (START_PEN, PEN_FAIL).
+`pos` moves the whole robot file in every form (a tuple, a per-world array, or a coordinate `scene.randomize`
+draws): the root body ends at the row plus where the file places it, so a root body at `<body pos="0 0 0.3">` with
+`pos=(0, 0, 0.1)` starts 0.4 m up. `sim.set_pose` is the exception: it puts the root body itself at the `pos` you
+pass.
 
 ## Names
 

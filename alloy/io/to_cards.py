@@ -23,6 +23,8 @@ from pathlib import Path
 
 from alloy.cards import types as ct
 from alloy.core.quantity import Q
+from alloy.io.card_rules import FIXED_BASE, UNWRITABLE, file_reason, group_joints, is_driven, mocap_bodies, pair_cards
+from alloy.io.errors import ImportFileError
 from alloy.io.from_model import clean_name
 from alloy.io.geometry import compose, shape_volume, write_obj
 from alloy.io.groups import Group, split_groups
@@ -49,6 +51,7 @@ class ImportResult:
     files: list[str] = field(default_factory=list)
     issues: list[dict] = field(default_factory=list)
     unmapped: list[Unmapped] = field(default_factory=list)
+    masses: dict[str, float] = field(default_factory=dict)     # object card -> kg, the sum of the file's body masses
 
     def to_json(self) -> dict:
         """Plain data for agents and the command line."""
@@ -81,6 +84,10 @@ class _Ctx:
     fmt: str                    # "mjcf" | "urdf" | "usd"
     prefix: str
     res: ImportResult
+    package_dirs: tuple = ()    # URDF ``package://`` roots
+    exact: bool = False         # the file's one object is named ``prefix`` itself (import_file(as_object=True))
+    mocap: frozenset = frozenset()     # MJCF mocap bodies: kinematic cards
+    shape_material: dict = field(default_factory=dict)      # colliding shape name -> its object's material card
 
 
 def _density(ctx: _Ctx, g: Group, name: str) -> Q:
@@ -165,19 +172,22 @@ def _mjcf_shape(ctx: _Ctx, g: Group, name: str, density: float | None, robot: bo
 def _motion(ctx: _Ctx, g: Group) -> str:
     if g.root is None:
         return "static"
-    if g.root.motion == "kinematic":
+    if g.root.motion == "kinematic" or g.root.name in ctx.mocap:
         return "kinematic"
     return "static" if g.fixed_base and not g.articulated else "dynamic"
 
 
 def object_card(ctx: _Ctx, g: Group) -> tuple[ct.ObjectCard, Pose]:
     """The object card of a non-robot group and its placement pose."""
-    name = card_name(f"{ctx.prefix}_{g.name}" if not g.name.startswith(ctx.prefix) else g.name)
+    name = ctx.prefix if ctx.exact else \
+        card_name(f"{ctx.prefix}_{g.name}" if not g.name.startswith(ctx.prefix) else g.name)
     body: IOBody | None = g.root
     shapes = [s for s in (body.shapes if body is not None else g.world_shapes) if s.collide]
     if len(shapes) < len(body.shapes if body is not None else g.world_shapes):
         ctx.io.note("cards", name, "visual-only shapes dropped: the card renders its collision shape")
-    mat = _material(ctx, g, name, shapes)
+    every = [s for b in g.bodies for s in b.shapes if s.collide] if g.bodies else shapes   # all bodies' shapes
+    mat = _material(ctx, g, name, every)
+    ctx.shape_material.update({s.name: mat for s in every})
     if not g.articulated and len(g.bodies) <= 1 and len(shapes) == 1:
         base = body.pose if body is not None else (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
         shape, pose = _single_shape(ctx, shapes[0], name), compose(base, shapes[0].pose)
@@ -190,18 +200,53 @@ def object_card(ctx: _Ctx, g: Group) -> tuple[ct.ObjectCard, Pose]:
     return ct.ObjectCard(name=name, shape=shape, material=mat, motion=_motion(ctx, g)), pose
 
 
+def _portable_robot(ctx: _Ctx, name: str) -> str:
+    """The library-relative path of a copy of the source robot file that needs nothing outside the library folder
+    (meshes copied beside it), or the source's absolute path, with a note, when no copy can be made."""
+    import tempfile  # noqa: PLC0415
+
+    from alloy.io.mjcf_prune import PruneError, copy_mjcf  # noqa: PLC0415
+    from alloy.io.urdf_read import copy_urdf  # noqa: PLC0415
+
+    why = "USD files are referenced where they are"
+    if ctx.fmt in ("mjcf", "urdf"):
+        path, rel = _asset(ctx, f"{name}.{'xml' if ctx.fmt == 'mjcf' else 'urdf'}")
+        try:
+            if ctx.fmt == "urdf":
+                copy_urdf(ctx.src_path, path, ctx.package_dirs)
+            else:
+                with tempfile.TemporaryDirectory() as tmp:
+                    src = _with_display_layer(ctx.src_path, Path(tmp))
+                    copy_mjcf(src, path) if src == ctx.src_path else _copy_layered(src, ctx.src_path, path)
+            ctx.res.files.append(str(path))
+            return rel
+        except (PruneError, ValueError, OSError) as exc:
+            why = str(exc)
+    ctx.io.note("cards", name, f"the scene names the robot file by its absolute path ({why}): keep that file in "
+                               "place, or edit the path in the scene card after moving it")
+    return str(ctx.src_path.resolve())
+
+
+def _copy_layered(layered: Path, src: Path, dst: Path) -> None:
+    """Copy a robot pack whose display-mesh layer was written into ``layered`` (asset paths start at ``src``)."""
+    from alloy.io.mjcf_prune import _finish  # noqa: PLC0415
+    from alloy.io.mjcf_include import read_mjcf  # noqa: PLC0415
+
+    _finish(read_mjcf(layered), src.parent, dst, drop_unused=False)
+
+
 def robot_ref(ctx: _Ctx, g: Group, whole_file: Path | None) -> ct.RobotRef:
-    """A robot reference: the original file when it holds only this robot, else a generated MJCF."""
+    """A robot reference: a copy of the original file when it holds only this robot, else a generated MJCF."""
     name = card_name(f"{ctx.prefix}_{g.name}" if not g.name.startswith(ctx.prefix) else g.name)
     if whole_file is not None:
-        return ct.RobotRef(str(whole_file.resolve()), ctx.fmt, tidy(g.base_pose()) if ctx.fmt == "urdf"
+        return ct.RobotRef(_portable_robot(ctx, name), ctx.fmt, tidy(g.base_pose()) if ctx.fmt == "urdf"
                            else (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0), name)
     _, rel = _mjcf_shape(ctx, g, f"{name}_robot", None, robot=True)
     ctx.io.note("cards", name, "robot taken out of a larger file into a generated MJCF: tendons, sensors, joint "
                                "couplings, non-position actuators, contact excludes and collision masks are not "
                                "kept, and it starts at joint positions 0. Run sim.check(): a start_overlap between "
                                "two robot links means the source excluded that pair")
-    return ct.RobotRef(str((ctx.out / rel).resolve()), "mjcf", tidy(g.base_pose()), name)
+    return ct.RobotRef(rel, "mjcf", tidy(g.base_pose()), name)
 
 
 def _with_display_layer(src: Path, tmp: Path) -> Path:
@@ -225,17 +270,21 @@ def pruned_robots(ctx: _Ctx, robots: list[Group]) -> tuple[ct.RobotRef, bool] | 
     import tempfile  # noqa: PLC0415
     import xml.etree.ElementTree as ET  # noqa: PLC0415
 
+    from alloy.io.mjcf_include import read_mjcf  # noqa: PLC0415
     from alloy.io.mjcf_prune import PruneError, prune_mjcf  # noqa: PLC0415
 
     name = card_name(f"{ctx.prefix}_{robots[0].name}" if len(robots) == 1 else f"{ctx.prefix}_robots")
-    path, _ = _asset(ctx, f"{name}.xml")
+    path, rel = _asset(ctx, f"{name}.xml")
     try:
-        tops = [el.get("name") for el in ET.parse(ctx.src_path).getroot().find("worldbody") if el.tag == "body"]
+        tops = [el.get("name") for el in read_mjcf(ctx.src_path).find("worldbody") if el.tag == "body"]
         by_clean = {clean_name(n, ""): n for n in tops if n}
-        keep = {by_clean[g.root.name] for g in robots}
+        keep = {by_clean[b.name] for g in robots for b in g.bodies if b.name in by_clean}   # top-level bodies
+        if not keep:
+            raise KeyError("no top-level body")
         with tempfile.TemporaryDirectory() as tmp:
-            rep = prune_mjcf(_with_display_layer(ctx.src_path, Path(tmp)), keep, path)
-    except (PruneError, KeyError, AttributeError, ET.ParseError) as exc:
+            rep = prune_mjcf(_with_display_layer(ctx.src_path, Path(tmp)), keep, path,
+                             files_from=ctx.src_path.parent)
+    except (PruneError, KeyError, AttributeError, ET.ParseError, ValueError) as exc:
         ctx.io.note("cards", name, f"the robot could not be cut from the source file ({exc}); a generated file is "
                                    "used instead")
         return None
@@ -245,41 +294,87 @@ def pruned_robots(ctx: _Ctx, robots: list[Group]) -> tuple[ct.RobotRef, bool] | 
             ctx.io.unmapped[:] = [u for u in ctx.io.unmapped if not u.item.startswith(f"{kind} ")]
     for note in rep.notes:
         ctx.io.note("cards", name, note)
-    return ct.RobotRef(str(path.resolve()), "mjcf", (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0), name), rep.kept_world
+    return ct.RobotRef(rel, "mjcf", (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0), name), rep.kept_world
 
 
 def is_robot(g: Group) -> bool:
     """A group with driven joints (or marked robot by the reader)."""
-    return g.kind == "robot" or any(j.actuated or j.stiffness > 0 for j in g.joints)
+    return g.kind == "robot" or any(is_driven(j) for j in group_joints(g))
+
+
+def _kept_files(ctx: _Ctx, groups: list[Group], rebuilt: bool, as_objects: bool = False) -> dict[str, str]:
+    """Group name -> why it stays a robot file (:func:`alloy.io.card_rules.file_reason`). A constraint or gravity
+    compensation only a source MJCF can carry (a USD / URDF source, or a rebuilt root joint) is listed instead."""
+    kept = {}
+    for g in groups:
+        why = file_reason(ctx.io, g)
+        if why == UNWRITABLE and (ctx.fmt != "mjcf" or rebuilt):
+            raise ImportFileError(f"{g.name}: {'; '.join(ctx.io.unwritable.values())} cannot be written to cards or "
+                                  "a generated file, and the body would come out free",
+                                  "load the file directly (scene.add_robot(name, path)), or give each axis its own "
+                                  "body (one joint per body)")
+        if why in ("a weld or connect constraint", "gravity compensation") and (ctx.fmt != "mjcf" or rebuilt):
+            ctx.io.note("cards", g.name, f"{why} is not kept: a card cannot hold it; load the source file directly "
+                                         "(scene.add_robot) to keep it")
+            why = "driven joints" if is_robot(g) else ""
+        if why == FIXED_BASE and as_objects:          # the caller wants an object card: it is placed, not mounted
+            ctx.io.note("cards", g.name, "the base's mount to the world is not kept: the object card is free")
+            why = ""
+        if why:
+            kept[g.name] = why
+    return kept
+
+
+def _robots(ctx: _Ctx, groups: list[Group], kept: dict[str, str], rebuilt: bool) -> tuple[list, bool]:
+    """Robot references of the kept groups and whether the world's own geoms stayed in the robot file: the source
+    pruned to them, the whole source, or (``rebuilt``: the caller asked for another root joint) generated files."""
+    mine = [g for g in groups if g.name in kept]
+    if not mine:
+        return [], False
+    if not rebuilt and ctx.fmt == "mjcf" and len(groups) > 1:
+        cut = pruned_robots(ctx, mine)
+        if cut is not None:
+            return [cut[0]], cut[1]
+    whole = len(groups) == 1 and not rebuilt and ctx.src_path.suffix.lower() != ".json"
+    if rebuilt:
+        ctx.io.note("cards", ctx.prefix, "floating= changes the root joint, so the robot is written as a generated "
+                                         "MJCF (position servos and motors only), not referenced as the file")
+    return [robot_ref(ctx, g, ctx.src_path if whole else None) for g in mine], False
 
 
 def write_cards(io: IOModel, out_dir: str | Path, *, source: str | Path, fmt: str,
-                prefix: str | None = None) -> ImportResult:
-    """Write cards for every group of ``io`` into the library folder ``out_dir`` and a scene card placing them."""
+                prefix: str | None = None, package_dirs=(), exact: bool = False,
+                rebuilt: bool = False) -> ImportResult:
+    """Write cards for every group of ``io`` into the library folder ``out_dir`` and a scene card placing them.
+    ``exact`` (the file describes objects): a file holding one object and no robot names its card ``prefix``
+    itself, not ``<prefix>_<body>``, and a jointed object mounted on the world becomes a free object card.
+    ``rebuilt``: the reader was asked for another root joint (``floating=``), so robots are generated files."""
     out = Path(out_dir)
     src = Path(source)
     pre = card_name(prefix or src.stem)
     res = ImportResult(pre, str(out))
-    ctx = _Ctx(io, out, src.name, src, fmt, pre, res)
+    ctx = _Ctx(io, out, src.name, src, fmt, pre, res, tuple(Path(d) for d in package_dirs),
+               mocap=frozenset(mocap_bodies(src, fmt)))
     groups = split_groups(io)
-    placements, robots = [], []
-    robot_groups = [g for g in groups if is_robot(g)]
-    cut = pruned_robots(ctx, robot_groups) if fmt == "mjcf" and robot_groups and len(groups) > 1 else None
-    if cut is not None:
-        robots.append(cut[0])
+    kept = _kept_files(ctx, groups, rebuilt, exact)
+    ctx.exact = exact and len(groups) == 1 and not kept
+    robots, world_kept = _robots(ctx, groups, kept, rebuilt)
+    placements = []
     for g in groups:
-        if is_robot(g):
-            if cut is None:
-                robots.append(robot_ref(ctx, g, src if len(groups) == 1 else None))
+        if g.name in kept or (world_kept and g.root is None):   # in a robot file (the world's geoms stayed there)
             continue
-        if cut is not None and cut[1] and g.root is None:
-            continue                                    # the world's own geoms stayed in the robot file
         card, pose = object_card(ctx, g)
         _write_card(ctx, card, "objects")
         res.objects.append(card.name)
+        res.masses[card.name] = float(sum(b.mass for b in g.bodies))
         placements.append(ct.Placement(card.name, tidy(pose)))
-    res.robots = [{"name": r.name, "path": r.path, "kind": r.kind, "base_pose": list(r.base_pose)} for r in robots]
-    res.scene = str(_write_scene(ctx, ct.SceneCard(robots=tuple(robots), objects=tuple(placements), worlds=1)))
+    pairs, left = pair_cards(io, ctx.shape_material, ctx.src)
+    if left and not robots:
+        io.note("cards", "contact pairs", f"{left} explicit contact pairs name a shape that has no card: not kept")
+    where = lambda r: r.path if Path(r.path).is_absolute() else str((out / r.path).resolve())  # noqa: E731
+    res.robots = [{"name": r.name, "path": where(r), "kind": r.kind, "base_pose": list(r.base_pose)} for r in robots]
+    res.scene = str(_write_scene(ctx, ct.SceneCard(robots=tuple(robots), objects=tuple(placements),
+                                                   pairs=tuple(pairs), worlds=1)))
     res.unmapped = list(io.unmapped)
     return res
 

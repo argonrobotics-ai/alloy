@@ -24,6 +24,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from alloy.io.errors import ExportError
+from alloy.io.from_model import clean_name
 from alloy.io.model import IOModel
 from alloy.scene.types import BuiltScene
 
@@ -117,12 +118,36 @@ def _full_arrays(root: ET.Element) -> None:
                 el.set(key, " ".join(vals + [f"{v:g}" for v in default[len(vals):]]))
 
 
+def _mocap(root: ET.Element, io: IOModel) -> None:
+    """Write kinematic bodies as MuJoCo mocap bodies (moved by the user, not by forces): the converter's free joint
+    and its weld to the world are removed."""
+    names = {b.name for b in io.bodies if b.motion == "kinematic"}
+    world = root.find("worldbody")
+    if not names or world is None:
+        return
+    done = set()
+    for body in world.findall("body"):
+        if clean_name(body.get("name"), "") not in names:
+            continue
+        for j in [el for el in body if el.tag == "freejoint" or (el.tag == "joint" and el.get("type") == "free")]:
+            body.remove(j)
+        if body.find("joint") is None:
+            body.set("mocap", "true")
+            done.add(body.get("name"))
+    for sec in root.findall("equality"):
+        for el in list(sec):
+            pair = {el.get("body1"), el.get("body2")} - {None, "world"}
+            if el.tag == "weld" and len(pair) == 1 and pair <= done:
+                sec.remove(el)
+
+
 def finish(path: Path, io: IOModel, object_shapes: set[int] = frozenset()) -> None:
     """Add the model name, the timestep and the header comment to a converter MJCF; plain geom names."""
     tree = ET.parse(path)
     root = tree.getroot()
     _open_masks(root, object_shapes)
     _plain_geom_names(root)
+    _mocap(root, io)
     _full_arrays(root)
     root.set("model", io.name)
     opt = root.find("option")

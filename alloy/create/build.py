@@ -42,8 +42,18 @@ def create(request: CreateRequest | dict[str, Any] | None = None, *, check: bool
         from alloy.create.model import create_from_model  # noqa: PLC0415
 
         return create_from_model(req, out, check=check, device=device)
+    _before_generating(req, out)
     src, generator = _source(req, out)
-    result = _make(req, out, Path(src), generator)
+    from alloy.importers.common.errors import ImporterError  # noqa: PLC0415
+
+    try:
+        result = _make(req, out, Path(src), generator)
+    except ImporterError as exc:
+        if exc.step != "deps":                                      # a missing module of the import extra
+            raise
+        raise CreateError(f"create cannot process this mesh: {getattr(exc, 'message', exc)}",
+                          "pip install 'alloy-engine[import]' (in a clone: bash install.sh --extras import)",
+                          field="mesh") from exc
     if check:
         result.check = _drop_test(result, out, device)
     result.timings_s["total"] = round(time.perf_counter() - t0, 2)
@@ -59,6 +69,21 @@ def _request(request: CreateRequest | dict[str, Any] | None, fields: dict[str, A
     if request is None:
         return CreateRequest.from_dict(fields)
     raise CreateError(f"request of type {type(request).__name__}", "pass a CreateRequest, a dict, or keywords")
+
+
+def _before_generating(req: CreateRequest, out: Path) -> None:
+    """For a photo or a description: raise what can be known to fail (a name already taken, no size and no known
+    category, a material that is not one) before the generator runs, which takes about a minute."""
+    if req.mesh:
+        return
+    from alloy.create.scale import _from_category  # noqa: PLC0415
+
+    name = req.card_name
+    lib = _library(out, name)
+    cat = find_category(req.text, req.category, name)
+    if req.size is None and req.units is None:
+        _from_category(1.0, cat)
+    choose_material(lib, req.material, cat, req.text)
 
 
 def _source(req: CreateRequest, out: Path) -> tuple[str, dict[str, Any] | None]:

@@ -34,9 +34,8 @@ control period, per world. Before: main; after: the integer lookup (the law runs
 
 - 1 world is bit for bit with Warp's own lookup (it has no offsets, and that branch is unchanged).
 - Newton's and Alloy's GPU MPM laws pass with the fix (17 tests).
-- The lifted box, with the fix (an audit, 6 mm floor, 64 worlds, the next release's drive timing): 0, 0 and 0
-  worlds at 0.099, 0.100 and 0.101 m/s (before: 42, 0 and 13), the 64 worlds within 0.007 mm of each other; a
-  128-world lift sank none.
+- The lifted box, with the fix (an audit, 6 mm floor, 64 worlds): 0, 0 and 0 worlds at 0.099, 0.100 and
+  0.101 m/s (before: 42, 0 and 13), the 64 worlds within 0.007 mm of each other; a 128-world lift sank none.
 - The lifted box before the fix: sand_silica_dry 4 x 4 x 2 cm in an open box 6 x 6 x 5 cm inside, at rest for
   0.05 s, then lifted for 0.15 s at the speed shown, and read 0.05 s after the lift stops. Worlds out of 64 with a
   grain centre within 1.5 mm of the floor's mid-plane or below it:
@@ -49,9 +48,6 @@ control period, per world. Before: main; after: the integer lookup (the law runs
 
 - 1 world read 0 at all five speeds (6 mm floor) and at 0.099, 0.100 and 0.101 (4 mm). The deepest grain went up to
   15.7 mm below the floor's bottom face (6 mm floor at 0.101).
-- The drive's timing did not decide it. The table is from the next release's drive timing (a drive at full speed
-  from its first physics step). With this release's timing the 4 mm row at 0.099, 0.100 and 0.101 read 16, 9 and 54
-  worlds.
 - Above 64 worlds (a free box on a 2 x 2 x 1 cm slab, with the fix and without): at 256 worlds the grid rebuild
   failed with status 8 and the step ended in SparseMemoryError; at 1,024 worlds the runs stalled past 25 minutes, and
   once ended in CUDA error 700 ([mpm-gpu-memory.md](mpm-gpu-memory.md)).

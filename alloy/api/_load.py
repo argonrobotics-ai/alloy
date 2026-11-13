@@ -2,8 +2,9 @@
 """``alloy.load(source)`` -> a ready ``alloy.Sim``; ``alloy.Scene.load(source)`` -> an editable ``alloy.Scene``.
 
 ``source`` is a library scene name (``alloy.scenes()``), a scene card (.yaml), a Scene JSON file (``Scene.to_json``)
-or a robot file (MJCF .xml, .urdf, .usd): the robot on a ground plane at z = 0, or on its own floor when the MJCF has
-a plane geom (MuJoCo Menagerie ``scene.xml`` files). The robot is named after the file stem. Example::
+or a robot file (MJCF .xml, .urdf, .usd/.usdz): the robot on a ground plane at z = 0, or on its own floor when the MJCF
+has a plane geom (MuJoCo Menagerie ``scene.xml`` files). The robot is named after the file stem. Another file (a mesh,
+a binary) raises a SceneError naming what to pass instead. Example::
 
     sim = alloy.load("panda.xml")                      # build at once: GPU if present
     traj = sim.run(2.0)
@@ -20,10 +21,12 @@ from typing import Any
 
 from alloy.api import catalog
 from alloy.api import _say
+from alloy.api._items import ROBOT_KINDS
 from alloy.api.errors import SceneError
 from alloy.api.scene import Scene
 
-ROBOT_SUFFIXES = (".xml", ".mjcf", ".urdf", ".usd", ".usda", ".usdc")
+ROBOT_SUFFIXES = tuple(ROBOT_KINDS)
+SCENE_SUFFIXES = (".yaml", ".yml", ".json")
 
 
 def load(source: str | Path | Scene | dict, *, worlds: int | None = None, device: str | None = None, seed: int = 0,
@@ -43,12 +46,21 @@ def load_scene(source: str | Path, *, worlds: int | None = None) -> Scene:
 
     Example: ``scene = alloy.Scene.load("demo_pour", worlds=1)``."""
     path = Path(source).expanduser()
-    if path.suffix.lower() == ".json" and path.is_file():
-        scene = Scene.from_dict(json.loads(path.read_text(encoding="utf-8")))
-    elif path.suffix.lower() in ROBOT_SUFFIXES:
+    suffix = path.suffix.lower()
+    if suffix == ".json" and path.is_file():
+        data = _json(path)
+        if isinstance(data, dict) and data.get("format") == "urdf" and "groups" in data:
+            raise SceneError(f"{path.name} is the URDF index alloy.io.export_scene writes (one .urdf per object and "
+                             "its base pose), not a Scene file",
+                             "turn it into a scene first: res = alloy.io.import_file(path, folder), then "
+                             "alloy.load(res.scene); or load one of its .urdf files", field="source")
+        scene = Scene.from_dict(data)
+    elif suffix in ROBOT_SUFFIXES:
         scene = _robot_scene(path)
-    elif path.suffix.lower() in (".yaml", ".yml") or path.is_file():
+    elif suffix in (".yaml", ".yml") or (path.is_file() and not suffix):
         scene = _card_scene(path)
+    elif path.is_file():
+        raise _not_a_scene(path)
     else:
         scene = _library_scene(str(source))
     if worlds is not None:
@@ -60,8 +72,8 @@ def _robot_scene(path: Path) -> Scene:
     """The robot on a ground plane at z = 0, unless its MJCF (or a file it includes) has its own plane geom, as MuJoCo
     Menagerie ``scene.xml`` files do (their floor and table are part of the robot then)."""
     if not path.is_file():
-        raise SceneError(f"robot file {str(path)!r} not found", "pass the path of an existing .xml/.urdf/.usd file",
-                         field="source")
+        raise SceneError(f"robot file {str(path)!r} not found", "pass the path of an existing robot file "
+                         f"({'/'.join(ROBOT_SUFFIXES)})", field="source")
     scene = Scene()
     if not has_floor(path):
         scene.add_ground()
@@ -72,6 +84,10 @@ def _robot_scene(path: Path) -> Scene:
 def has_floor(path: Path, depth: int = 0) -> bool:
     """True if an MJCF file (or a file it ``<include>``s) has a ``<geom type="plane">``. Example: a Menagerie
     ``scene.xml`` -> True, a bare ``panda.xml`` -> False. Non-MJCF files: False."""
+    if path.suffix.lower() in (".usd", ".usda", ".usdc", ".usdz"):
+        from alloy.io.usd_units import has_plane  # noqa: PLC0415
+
+        return has_plane(path)          # a stage with its own colliding Plane prim; False without the USD packages
     if path.suffix.lower() not in (".xml", ".mjcf") or depth > 4:
         return False
     import xml.etree.ElementTree as ET  # noqa: PLC0415
@@ -84,6 +100,30 @@ def has_floor(path: Path, depth: int = 0) -> bool:
         return True
     return any(has_floor(path.parent / inc.get("file", ""), depth + 1) for inc in root.iter("include")
                if inc.get("file"))
+
+
+def _json(path: Path) -> dict[str, Any]:
+    """A Scene JSON file's data; a SceneError for a file that is not JSON text."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SceneError(f"{path} is not a Scene JSON file ({exc})", "pass a file written by Scene.to_json() or "
+                         "scene.save()", field="source") from exc
+
+
+def _not_a_scene(path: Path, why: str = "") -> SceneError:
+    """The SceneError for a file ``alloy.load`` cannot read: a mesh names the calls that take it, any other file the
+    kinds ``alloy.load`` reads. Example: ``_not_a_scene(Path("part.stl")).fix`` names ``scene.add_mesh``."""
+    from alloy.create.request import MESH_SUFFIXES  # noqa: PLC0415
+
+    suffix = path.suffix.lower()
+    if suffix in MESH_SUFFIXES:
+        return SceneError(f"{path} is a mesh, not a scene or a robot", "place it in a scene with "
+                          "scene.add_mesh(name, path) (.obj or .stl), or make it a library object with "
+                          "alloy.create.create(mesh=path)", field="source")
+    return SceneError(f"alloy.load cannot read {path}: {why or f'unknown suffix {suffix!r}'}",
+                      "pass a library scene name (alloy.scenes()), a scene file or a robot file "
+                      f"({'/'.join(SCENE_SUFFIXES + ROBOT_SUFFIXES)})", field="source")
 
 
 def _library_scene(name: str) -> Scene:
@@ -100,12 +140,19 @@ def _card_scene(path: Path) -> Scene:
     if not path.is_file():
         raise SceneError(f"scene file {str(path)!r} not found", "pass an existing scene card (.yaml)", field="source")
     from alloy.cards.units_yaml import yaml_load  # noqa: PLC0415
+    from alloy.core.errors import CardError  # noqa: PLC0415
 
-    data = yaml_load(path.read_text(encoding="utf-8"), path.stem)
+    try:
+        data = yaml_load(path.read_text(encoding="utf-8"), path.stem)
+    except UnicodeDecodeError as exc:
+        raise _not_a_scene(path, "it is not a text file") from exc
+    except CardError as exc:
+        raise SceneError(f"{path} is not a readable scene card: {exc.message}", "fix the YAML at the place the "
+                         "message names, or pass another scene card", field="source") from exc
     if not isinstance(data, dict) or data.get("schema") != "alloy.scene/1":
         raise SceneError(f"{path} is not a scene card (schema alloy.scene/1)", "pass a scene card; object cards "
                          "are placed with Scene.add_object", field="source")
-    root = path.parent.parent if path.parent.name == "scenes" else path.parent
+    root = (path.parent.parent if path.parent.name == "scenes" else path.parent).absolute()  # cwd may change later
     scene = Scene(worlds=int(data.get("worlds", 1)), dt=float(data.get("control_dt", 0.02)))
     scene.roots = [str(root)] if root.resolve() != catalog.library_root().resolve() else []
     seen: dict[str, int] = {}

@@ -90,3 +90,5 @@ Alloy's limits are listed on one page, each with its size and a workaround: [Kee
 ## Next
 
 - [Liquids](../guides/liquids.md), [World health](../guides/health.md), [Which simulator?](index.md)
+- Related: [open-source multi-physics engines](../answers/open-source-multi-physics-engines.md),
+  [robots, cloth and liquids in one scene](../answers/robots-cloth-liquids-one-scene.md).

@@ -1,0 +1,133 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+index a3efe499c..bca8c8c2b 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/rheology_solver_kernels.py
+@@ -12,7 +12,16 @@ from warp.fem.linalg import symmetric_eigenvalues_qr
+ from .contact_solver_kernels import ColoredContacts, make_solve_colored_cell_contacts
+ 
+ _DELASSUS_PROXIMAL_REG = wp.constant(1.0e-6)
+-"""Cutoff for the trace of the diagonal block of the Delassus operator to disable constraints"""
++"""Cutoff for the trace of the diagonal block of the Delassus operator to disable constraints
++
++Alloy (delassus-regularization): the number added to each block's diagonal is now ``Config.delassus_regularization``
++(default this constant), passed to ``compute_delassus_diagonal`` as ``proximal_reg``; the eigen solve's stop test keeps
++this constant (it is relative). An absolute epsilon in SI units is wrong for a diagonal that is itself small: a stiff
++solid with quasi-static mass scaling has blocks of about 1e-7 to 1e-9 (brass x1,000 to x64,000; read at x16,000: 1.3e-9
++to 5.5e-9), so 1e-6 made every Gauss-Seidel step about 12-770x too short (mass-scaled brass read 0.43 of its converged
++punch force, 1.00 at 1e-12). A form relative to each block's trace would be unit-free and is the better long-term fix;
++not posted upstream.
++"""
+ 
+ _SLIDING_NEWTON_TOL = wp.constant(1.0e-7)
+ """Tolerance for the Newton method to solve for the sliding velocity"""
+@@ -170,6 +179,7 @@ def compute_delassus_diagonal(
+     strain_batch: wp.array[int],
+     mass_multiplicity: wp.array2d[float],
+     majorize: bool,
++    proximal_reg: float,  # Alloy (delassus-regularization): added to the diagonal (was _DELASSUS_PROXIMAL_REG)
+     delassus_rotation: wp.array[mat55],
+     delassus_diagonal: wp.array[vec6],
+ ):
+@@ -213,7 +223,7 @@ def compute_delassus_diagonal(
+         b_v2 = _symmetric_part_op(b_val, wp.vec3(0.0, 0.0, 1.0))
+         diag_block += inv_frac * wp.outer(b_v2, b_v2)
+ 
+-    diag_block += _DELASSUS_PROXIMAL_REG * wp.identity(n=6, dtype=float)
++    diag_block += proximal_reg * wp.identity(n=6, dtype=float)  # Alloy (delassus-regularization)
+ 
+     coupling = vec6(0.0)
+     for k in range(1, 6):
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+index c7f2f189b..fdc8120d6 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solve_rheology.py
+@@ -43,6 +43,7 @@ from .rheology_solver_kernels import (
+     build_flat_offsets,
+     build_strain_to_batch,
+     commit_batched_stress,
++    _DELASSUS_PROXIMAL_REG,  # Alloy (delassus-regularization): the default regularization
+     compute_batch_base_offsets,
+     compute_delassus_diagonal,
+     compute_vel_node_multiplicity,
+@@ -443,9 +444,11 @@ class _DelassusOperator:
+         rheology: RheologyData,
+         momentum: MomentumData,
+         temporary_store: fem.TemporaryStore | None = None,
++        regularization: float = float(_DELASSUS_PROXIMAL_REG),  # Alloy (delassus-regularization)
+     ):
+         self.rheology = rheology
+         self.momentum = momentum
++        self.regularization = float(regularization)  # Alloy (delassus-regularization): added to each local diagonal block
+ 
+         self.delassus_rotation = fem.borrow_temporary(temporary_store, shape=self.size, dtype=mat55)
+         self.delassus_diagonal = fem.borrow_temporary(temporary_store, shape=self.size, dtype=vec6)
+@@ -532,6 +535,7 @@ class _DelassusOperator:
+                 batch_map,
+                 mult,
+                 majorize,
++                self.regularization,  # Alloy (delassus-regularization)
+             ],
+             outputs=[
+                 self.delassus_rotation,
+@@ -1889,6 +1893,7 @@ def solve_rheology(
+     temporary_store: fem.TemporaryStore | None = None,
+     use_graph: bool = True,
+     verbose: bool | None = None,
++    delassus_regularization: float = float(_DELASSUS_PROXIMAL_REG),  # Alloy (delassus-regularization)
+ ):
+     """Solve coupled plasticity and collider contact to compute grid velocities.
+ 
+@@ -1944,6 +1949,8 @@ def solve_rheology(
+         use_graph: If True, uses conditional CUDA graphs for the iteration loop.
+         verbose: If True, log residuals/iteration counts. If False, suppress details. If None, log details when
+             ``wp.config.log_level`` is configured for debug logging.
++        delassus_regularization: Alloy (delassus-regularization): the number added to each local Delassus diagonal block
++            (default 1e-6, Newton's constant; see ``rheology_solver_kernels._DELASSUS_PROXIMAL_REG``).
+ 
+     Returns:
+         A captured execution graph handle when ``use_graph`` is True and the
+@@ -1959,7 +1966,8 @@ def solve_rheology(
+ 
+     contact_solver.apply_initial_guess()
+ 
+-    delassus_operator = _DelassusOperator(rheology, momentum, temporary_store)
++    delassus_operator = _DelassusOperator(  # Alloy (delassus-regularization): with the configured regularization
++        rheology, momentum, temporary_store, regularization=delassus_regularization)
+     batch_tolerance_scales = None
+     if rheology.strain_environment_offsets is None:
+         tolerance_scale = math.sqrt(1 + delassus_operator.size)
+diff --git a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solver_implicit_mpm.py b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solver_implicit_mpm.py
+index d3cecd2b3..87eb5d5c7 100644
+--- a/alloy/_vendor/newton/_src/solvers/implicit_mpm/solver_implicit_mpm.py
++++ b/alloy/_vendor/newton/_src/solvers/implicit_mpm/solver_implicit_mpm.py
+@@ -924,6 +924,12 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
+         """Maximum number of iterations for the rheology solver."""
+         tolerance: float = 1.0e-4
+         """Tolerance for the rheology solver."""
++        delassus_regularization: float = 1.0e-6
++        """Alloy (delassus-regularization): the number added to each local Delassus diagonal block
++        of the rheology solve. The default is Newton's constant, so a solver left at it runs bit for bit as before.
++        It is absolute (SI units): a stiff solid under quasi-static mass scaling has blocks of about 1e-7 to 1e-9,
++        where 1e-6 shortens every Gauss-Seidel step; such an entry sets it smaller (Alloy's j2 route: 1e-12). Zero
++        and negative values are refused by policy (0 neither hung nor blew up in a test)."""
+         carry_residual_strain: Literal["none", "unconverged", "sampled"] = "none"
+         """Residual strain carried into the elastic strain, beyond the strain consistent with the solved stress.
+ 
+@@ -1633,6 +1639,9 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
+ 
+         self.max_iterations = config.max_iterations
+         self.tolerance = float(config.tolerance)
++        self.delassus_regularization = float(config.delassus_regularization)  # Alloy (delassus-regularization)
++        if not (self.delassus_regularization > 0.0 and math.isfinite(self.delassus_regularization)):
++            raise ValueError(f"delassus_regularization must be finite and positive, got {self.delassus_regularization}")
+         if config.carry_residual_strain not in ("none", "unconverged", "sampled"):
+             raise ValueError(f"Invalid carry_residual_strain: {config.carry_residual_strain}")
+         self.carry_residual_strain = config.carry_residual_strain
+@@ -4053,6 +4062,7 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
+                 temporary_store=self.temporary_store,
+                 use_graph=self._use_cuda_graph,
+                 verbose=self.verbose,
++                delassus_regularization=self.delassus_regularization,  # Alloy (delassus-regularization)
+             )
+ 
+         for temporary in contact_temporaries:

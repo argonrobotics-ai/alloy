@@ -131,6 +131,16 @@ class LocoEnv(VectorEnv):
         info["command"] = self.commands.value
         return obs, reward, terminated, truncated, info
 
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
+        """As ``VectorEnv.reset``. A seeded reset (``seed=``) also restarts the push timer and lifts a push being
+        held, so it repeats a fresh env's episode; other resets keep the timer (every world is pushed at the same
+        moments). Example: ``env.reset(seed=42)``."""
+        if seed is not None:
+            self._tick = self._sensed = 0
+            if self.pusher.active:
+                self.pusher.clear()
+        return super().reset(seed=seed, options=options)
+
     def reset_worlds(self, mask: Any) -> None:
         """Reset the worlds in the bool (W,) ``mask``: start state, a new command, cleared buffers."""
         mask = self._mask(mask)

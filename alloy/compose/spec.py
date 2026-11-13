@@ -15,6 +15,7 @@ Example::
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Literal
 
@@ -27,6 +28,16 @@ ARRANGEMENTS = ("scatter", "row", "grid")
 RELATIONS = ("on", "in", "over")
 SPEC_SCHEMA = "alloy.compose_spec/1"
 
+
+
+def _whole(value: Any) -> bool:
+    """An int that is not a bool (True is an int in Python). Example: ``_whole(True) is False``."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _finite(values: Any) -> bool:
+    """Every value a real, finite number (no bool, NaN or Infinity). Example: ``_finite((0, 1e400)) is False``."""
+    return all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in values)
 
 @dataclass(frozen=True)
 class ItemSpec:
@@ -53,7 +64,7 @@ class ItemSpec:
         if not isinstance(self.query, str) or not self.query.strip():
             raise ComposeError(f"item query {self.query!r} is empty", "give each item a noun, e.g. {'query': 'mug'}",
                                field="items.query")
-        if not isinstance(self.count, int) or self.count < 1:
+        if not _whole(self.count) or self.count < 1:
             raise ComposeError(f"item {self.query!r}: count {self.count!r} is not a positive integer",
                                "pass count=1 or more", field="items.count")
         if self.relation not in (None, *RELATIONS):
@@ -98,10 +109,10 @@ class RobotSpec:
             raise ComposeError("a robot needs a file path", "pass {'path': 'arm.xml'}", field="robots.path")
         if self.kind not in ROBOT_KINDS:
             raise ComposeError(f"robot kind {self.kind!r} is unknown", f"use one of {ROBOT_KINDS}", field="robots.kind")
-        if self.pose is not None and len(self.pose) != 4:
-            raise ComposeError(f"robot pose {self.pose!r} needs 4 numbers", "pass pose=(x, y, z, yaw)",
+        if self.pose is not None and (len(self.pose) != 4 or not _finite(self.pose)):
+            raise ComposeError(f"robot pose {self.pose!r} needs 4 finite numbers", "pass pose=(x, y, z, yaw)",
                                field="robots.pose")
-        if not 0 < self.clear < self.reach:
+        if not _finite((self.clear, self.reach)) or not 0 < self.clear < self.reach:
             raise ComposeError(f"robot clear {self.clear} / reach {self.reach}", "use 0 < clear < reach (m)",
                                field="robots.reach")
 
@@ -152,12 +163,12 @@ class SceneSpec:
         if self.arrangement not in ARRANGEMENTS:
             raise ComposeError(f"arrangement {self.arrangement!r} is unknown", f"use one of {ARRANGEMENTS}",
                                field="arrangement")
-        if not isinstance(self.worlds, int) or self.worlds < 1:
+        if not _whole(self.worlds) or self.worlds < 1:
             raise ComposeError(f"worlds {self.worlds!r} is not a positive integer", "pass worlds=1 or more",
                                field="worlds")
-        if self.area is not None and (len(self.area) != 4 or self.area[2] <= self.area[0]
+        if self.area is not None and (len(self.area) != 4 or not _finite(self.area) or self.area[2] <= self.area[0]
                                       or self.area[3] <= self.area[1]):
-            raise ComposeError(f"area {self.area!r} is not (x0, y0, x1, y1) with x1 > x0 and y1 > y0",
+            raise ComposeError(f"area {self.area!r} is not (x0, y0, x1, y1), finite, with x1 > x0 and y1 > y0",
                                "pass area=(-0.3, -0.2, 0.3, 0.2) (m, on the table, top face at z = 0)", field="area")
         names = [r.name for r in self.robots]
         if len(set(names)) != len(names):

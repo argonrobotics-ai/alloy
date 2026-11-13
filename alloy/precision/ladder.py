@@ -86,6 +86,10 @@ LADDER: tuple[LadderRow, ...] = (
               "side, out of another side from 2 mm deep, across it in one step, or the body ended wholly inside it): "
               "INVALID, frozen (sticky; GAP-E2)", "S1",
               Severity.INVALID),
+    LadderRow("QUASI_STATIC", F.QUASI_STATIC, "a j2 solid under quasi-static mass scaling moves as a whole faster "
+              "than half its declared tool speed, or a body touching it faster than 12x that speed; DEGRADED while "
+              "it lasts (GAP #6 slice 2b, health_plugin)", "S2",
+              Severity.DEGRADED),
     LadderRow("LATCHED", F.LATCHED, "world frozen after INVALID (sticky)", "-", Severity.INVALID),
 )
 

@@ -25,10 +25,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+from alloy.envs.errors import EnvError
 from alloy.envs.wrappers._common import require
 
 log = logging.getLogger("alloy.envs")
 HORIZON = 32
+MIN_IMAGE_SIDE = 36      # SB3's default image encoder (NatureCNN: 8x8/4, 4x4/2, 3x3/1 convolutions) needs this
 OBS_EPSILON = 0.01
 
 
@@ -38,6 +40,20 @@ def ppo_settings(num_envs: int, iterations: int) -> dict[str, Any]:
             "gae_lambda": 0.95, "ent_coef": 0.0, "max_grad_norm": 1.0, "verbose": 0,
             "learning_rate": 3e-4, "target_kl": 0.02,
             "policy_kwargs": {"log_std_init": -1.0, "net_arch": {"pi": [128, 128], "vf": [128, 128]}}}
+
+
+def check_image_sizes(env: Any, images: list[str]) -> None:
+    """Raise ``EnvError`` for a camera smaller than ``MIN_IMAGE_SIDE`` on a side: the default image encoder of
+    ``MultiInputPolicy`` cannot take it. Example: ``check_image_sizes(env, ["front"])``."""
+    shapes = env.single_observation_space.spaces if images else {}
+    sides = {k: tuple(int(d) for d in shapes[k].shape[:2]) for k in images}
+    small = {k: hw for k, hw in sides.items() if min(hw) < MIN_IMAGE_SIDE}
+    if small:
+        raise EnvError(f"camera images {small} (height, width) are smaller than the {MIN_IMAGE_SIDE} x "
+                       f"{MIN_IMAGE_SIDE} that Stable-Baselines3's default image encoder (NatureCNN) needs",
+                       f"render the cameras at {MIN_IMAGE_SIDE} x {MIN_IMAGE_SIDE} or larger, or train with your own "
+                       "features extractor (PPO(..., policy_kwargs={'features_extractor_class': ...}))",
+                       field="cameras")
 
 
 def normalized(base: Any) -> Any:
@@ -106,6 +122,7 @@ def train(env_id: str, *, num_envs: int = 512, iterations: int = 200, seed: int 
     meta = {"env": env_id, "num_envs": raw.num_envs}
     try:
         policy = "MultiInputPolicy" if base._images else "MlpPolicy"
+        check_image_sizes(raw, base._images)
         model = PPO(policy, venv, seed=seed, device="cuda" if str(raw.device).startswith("cuda") else "cpu",
                     **ppo_settings(raw.num_envs, iterations))
         callback = _make_callback(base, meta, report_every, iterations, t0)
@@ -121,4 +138,4 @@ def train(env_id: str, *, num_envs: int = 512, iterations: int = 200, seed: int 
             "samples": int(model.num_timesteps), "checkpoint": str(checkpoint)}
 
 
-__all__ = ["ppo_settings", "train"]
+__all__ = ["check_image_sizes", "ppo_settings", "train"]

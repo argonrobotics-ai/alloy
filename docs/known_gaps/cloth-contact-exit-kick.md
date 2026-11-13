@@ -62,9 +62,19 @@ probe, not shipped.
     step; the coupler's record-momentum feedback gives a robot body back only what the particles took.
   - A particle squeezed sideways out of a wedge between two records leaves along the wedge, not along either normal,
     and that speed is not capped.
-  - Not yet measured on ClothFold; the 128-world pinch row with it is to run.
+- Measured on ClothFold (one L4 per run, main b5121ce81 with `ALLOY_EXIT_SPEED=1.0`; 2026-11-11 11:58Z):
+  - The pinch-and-lift repro, 128 worlds: no world reset, against 31 with the cap off.
+  - The task, 960 worlds a side, against a control of 1,088 a side with the cap off (main 1db240364; the trees differ
+    by the cap and by changes ClothFold does not use). The shipped demo's frozen worlds fell from 10.8 % to 6.0 %,
+    the slow-release script's from 8.9 % to 6.8 %.
+  - Its fold count did not rise measurably with the demo (+1.6 points, t 0.8). It rose 5.6 points (t 2.4) with the
+    slow release.
+  - The resets left come while the fingers squeeze and carry the towel in the turn (4.7 % of the worlds, against
+    5.9 % with the cap off). At and after the release they fell from 3.9 % to 1.7 %. Which exit the cap misses in the
+    turn is being traced (a wedge exit, a stretch snap, or a neighbour of a capped particle).
 
 ## Planned fix
-- The ClothFold rows with the cap (INVALID worlds, fold count). Then the cap as a default, after its laws
-  and an engine audit.
+- The cap as a default (the ClothFold rows above), after a decision and an audit verdict.
+- The turn's resets: a probe dump splits the fastest particle's speed by record count, normal and tangent, and
+  edge stretch.
 - Then trace how the particle starts a step that deep, which the cap does not fix.

@@ -65,3 +65,5 @@ at 10 iterations as in "fast").
 - The short cloth guide: [Cloth](../guides/cloth.md).
 - Reinforcement learning environments: [Reinforcement learning](../guides/rl.md).
 - Robots beside cloth: [Robots](../guides/robots.md).
+- Related: [deformable object manipulation](../answers/deformable-object-manipulation.md),
+  [an MJCF robot with cloth or liquid](mjcf-robot-with-cloth-or-liquid.md).

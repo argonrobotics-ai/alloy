@@ -247,6 +247,26 @@ def test_copies_need_no_failure_values_and_cloth_refuses_them(tmp_path) -> None:
         emit.add_cloth(newton.ModelBuilder(), cloth, np.zeros((3, 3)), np.array([[0, 1, 2]]), {}, 1.0e-3)
 
 
+def test_a_second_knife_in_a_world_is_a_build_error_with_its_way_out(tmp_path) -> None:
+    """Two blade objects in one world under ``cut_model: copies``: ``alloy.build`` raises its own BuildError with a
+    fix, not a bare ValueError (the cutter takes one blade per world)."""
+    import alloy
+
+    cards = dict(CARDS)
+    cards["objects/knife_two.yaml"] = cards["objects/knife_kinematic.yaml"].replace("name: knife_kinematic",
+                                                                                 "name: knife_two")
+    cards["scenes/cut_block.yaml"] = cards["scenes/cut_block.yaml"].replace(
+        "worlds: 2", f"  - {{object: knife_two, pose: [0, 0.03, {KNIFE_Z}, 0.7071068, 0, 0, 0.7071068]}}\nworlds: 1")
+    for rel, text in cards.items():
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text(text)
+    scene = alloy.Scene.load(tmp_path / "scenes" / "cut_block.yaml")
+    scene.add_ground()
+    with pytest.raises(alloy.BuildError, match="one blade per world") as err:
+        alloy.build(scene, device="cpu")
+    assert isinstance(err.value, alloy.AlloyAPIError) and "cut_model: seams" in err.value.fix
+
+
 def test_copies_beside_seam_bonds_are_refused(monkeypatch) -> None:
     """One cut model per scene (WP12 review): copies and pre-split seam bonds in one scene raise at wiring."""
     from types import SimpleNamespace

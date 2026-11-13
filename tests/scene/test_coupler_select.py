@@ -69,8 +69,10 @@ def test_precision_flag_is_carried():
 
 
 def test_three_entries_use_admm():
+    """Three dynamic entries (a film sheet beside sand steps; cloth beside sand is refused: see below)."""
     mpm = EntryMass("mpm", 0.01, frozenset({Route.GRAIN_MPM}), ("sand",))
-    c = select_coupler(CouplerInputs([rigid(1.0), cloth(0.01), mpm]))
+    film = EntryMass("film", 0.01, frozenset({Route.CLOTH_FILM}), ("wrap",))
+    c = select_coupler(CouplerInputs([rigid(1.0), film, mpm]))
     assert c.kind == "admm" and len(c.pairs) == 3
 
 
@@ -220,9 +222,12 @@ def test_p3_chain_uses_the_soft_volume():
 
 
 def test_sph_beside_two_two_way_partners_raises():
+    """A liquid beside a rigid hub and two deformable solvers: refused, every solver's objects named (audit S2-009)."""
     sand = EntryMass("mpm", 0.2, frozenset({Route.GRAIN_MPM}), ("sand",))
-    with pytest.raises(AssemblyError, match="one rigid hub with one two-way partner"):
-        select_coupler(CouplerInputs([rigid(1.0), cloth(0.1), sand, water()]))
+    film = EntryMass("film", 0.1, frozenset({Route.CLOTH_FILM}), ("wrap",))
+    with pytest.raises(AssemblyError, match="not supported in one scene yet") as err:
+        select_coupler(CouplerInputs([rigid(1.0), film, sand, water()]))
+    assert all(n in str(err.value) for n in ("water", "wrap", "sand")) and "keep only one of" in err.value.fix
 
 
 def test_sph_beside_a_strong_hub_pair_raises():
@@ -257,3 +262,15 @@ def test_deformable_objects_get_their_emitted_volume():
     assert bodies["box"].volume == pytest.approx(0.06**3, rel=1e-6)
     assert bodies["sponge"].dynamic and not bodies["sponge"].container
     assert "table" not in bodies                                # static: no entry, as before
+
+
+def test_select_coupler_refuses_cloth_beside_sand_naming_both():
+    """Audit S1-001 of 0.1.2: a route pair no solver steps together is refused at the coupler choice, which estimate
+    and the quick check reach too (they assemble), naming the objects."""
+    from alloy.coupling.unsupported import UnsupportedPairError
+
+    sand = EntryMass("mpm", 0.01, frozenset({Route.GRAIN_MPM}), ("sand",))
+    with pytest.raises(UnsupportedPairError) as err:
+        select_coupler(CouplerInputs([rigid(1.0), cloth(0.01), sand]))
+    assert "towel" in str(err.value) and "sand" in str(err.value)
+

@@ -40,7 +40,7 @@ STICKY = ("_trips", "_rho_raises", "_coupling")
 GATE_DEVICE = ("armed", "touched", "near", "_lo", "_hi", "_vmax", "_count")   # first axis: proxy, or (dest, world)
 GATE_PROXY_ROWS = ("armed", "touched", "near")    # indexed by proxy; the others by (destination, world)
 SKIP_PASSES = ("world_count", "device")
-SKIP_CONFIG = ("policy",)                     # configuration, not clock state: the live object stays
+SKIP_CONFIG = ("policy", "parked")            # not clock state: the live object keeps it (parked: parked.py owns it)
 
 
 @dataclasses.dataclass

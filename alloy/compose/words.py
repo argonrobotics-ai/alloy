@@ -22,6 +22,7 @@ NUMBERS: dict[str, int] = {
     "few": 3, "several": 4, "some": 3, "many": 6, "lots": 8,
 }
 MAX_COUNT = 40                                   # per item phrase; more than this is almost surely a typo
+PLURAL_COUNT = 3                                 # "cubes", "towels" with no number
 
 CLUTTER: dict[str, str] = {
     "cluttered": "cluttered", "messy": "cluttered", "crowded": "cluttered", "packed": "cluttered",
@@ -135,5 +136,5 @@ def expand(word: str) -> set[str]:
     return {w, *SYNONYMS.get(w, ())}
 
 
-__all__ = ["ARRANGEMENT", "CARD_WORDS", "CLUTTER", "MATERIAL_WORDS", "MAX_COUNT", "NUMBERS", "RELATIONS", "SIZE_WORDS",
-           "STOP", "SUPPORTS", "SYNONYMS", "expand", "singular", "tokens"]
+__all__ = ["ARRANGEMENT", "CARD_WORDS", "CLUTTER", "MATERIAL_WORDS", "MAX_COUNT", "NUMBERS", "PLURAL_COUNT",
+           "RELATIONS", "SIZE_WORDS", "STOP", "SUPPORTS", "SYNONYMS", "expand", "singular", "tokens"]

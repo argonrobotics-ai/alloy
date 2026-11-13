@@ -67,7 +67,7 @@ def test_pour_beside_a_free_body_reaches_the_full_model():
     scene = alloy.Scene(dt=0.01)
     scene.add_ground()
     scene.add_open_cylinder("cup", inner_radius=0.03, depth=0.05, wall=0.004)
-    scene.add_pour("water", 6e-6, pos=(0, 0, 0.12), rate=2e-5)              # 100 particles over 0.3 s
+    scene.add_pour("water", 6e-6, pos=(0, 0, 0.12), rate=2e-5)              # 94 particles over 0.3 s
     scene.add_box("free", size=(0.04, 0.04, 0.04), pos=(0.2, 0, 0.02), mass=0.1)
     sim = alloy.build(scene, device="cpu")
     sph = next(s for s in sim.engine.stepper._entries.values() if hasattr(s.solver, "add_emitter")).solver
@@ -79,7 +79,7 @@ def test_pour_beside_a_free_body_reaches_the_full_model():
     view = sph.model.particle_flags.numpy() & act != 0
     phase = sph.layout.phase.numpy()
     ids = np.flatnonzero(phase != PHASE_NONE)
-    assert int(full[ids].sum()) == int(view[ids].sum()) == 100
+    assert int(full[ids].sum()) == int(view[ids].sum()) == 94
     assert sim.check()["ok"], sim.check()["problems"]
     z = sim.state(["water"], world=0)["water.points"][:, 2]
     assert 0.0 < float(np.median(z)) < 0.05                                   # inside the 5 cm cup

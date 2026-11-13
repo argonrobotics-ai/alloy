@@ -23,8 +23,10 @@ PY="${PYTHON:-$DEFAULT_PY}"
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 # SCR-WP8-8: users get the MuJoCo C route on CPU by default, but CI (pytest and the analytic suite) stays on the Warp
-# kernels, which stand in for the GPU ones (coordinator ruling 2026-11-06 14:18Z). Forced, like tests/conftest.py.
-export ALLOY_CPU_ROUTE=warp
+# kernels, which stand in for the GPU ones (coordinator ruling 2026-11-06 14:18Z). Forced, like tests/conftest.py,
+# whose opt-in ALLOY_TEST_CPU_ROUTE=mjc (release tiers; the merge gate drops it) moves the analytic suite too.
+export ALLOY_CPU_ROUTE="${ALLOY_TEST_CPU_ROUTE:-warp}"
+echo "ci_cpu: CPU route $ALLOY_CPU_ROUTE"
 WORKERS="${ALLOY_CI_WORKERS:-1}"
 DIST="${ALLOY_CI_DIST:-loadfile}"
 case "$DIST" in

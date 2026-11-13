@@ -77,7 +77,8 @@ env.close()
 
 `step` and `reset` return `obs` as a dict with both groups; `env.single_observation_space` is a Dict space of the
 same two. Give an actor `obs["policy"]` and a value function `obs["critic"]`. How the groups reach an RL library
-(rsl_rl takes both, skrl and Stable-Baselines3 take the policy group) is in `rl.md`.
+(rsl_rl and skrl give the critic group to the value network, Stable-Baselines3 takes the policy group) is in
+`rl.md`.
 
 Choose your own lists. An entry is a state key or a `(key, scale)` pair. The critic group is `policy_obs` followed by
 `privileged_obs`:
@@ -184,8 +185,8 @@ env.close()
 ```
 
 `VelocityCommands` has `lin_x`, `lin_y`, `yaw`, `resample_s`, `standing` and `deadband`. `info["command"]` is the
-command in each world. `env.commands.set` takes a tuple or a NumPy array of shape (worlds, 3); a GPU tensor is refused
-with the same `TypeError`, so pass `env.xp.to_numpy(tensor)`.
+command in each world. `env.commands.set` takes a tuple, a NumPy array or a tensor (also one on the GPU), of shape
+(3,) or (worlds, 3).
 
 ## Pushes
 
@@ -282,8 +283,10 @@ print(env.xp.to_numpy(env.state["feet.force"]).sum(1).round(1))    # each world'
 env.close()
 ```
 
-Scenes with randomized values rebuild the GPU's captured step at every reset, so training with them runs
-slower; we have not measured how much.
+Rows drawn at build, as here, leave a reset about as cheap as without them, and the GPU keeps its captured step (one
+L4, 1,024 worlds of a small pusher scene, not the Go2: 1.0 ms against 0.9 ms per masked reset). Rows drawn at every
+reset (`when="reset"`, `randomize_robots.md`) do not: the step after such a reset runs without the captured step. We
+have not measured either on the Go2 environment.
 
 ## Training a walk
 

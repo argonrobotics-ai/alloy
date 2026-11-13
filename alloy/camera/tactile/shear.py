@@ -78,6 +78,15 @@ def stick_slip(sums: wp.array(dtype=wp.vec3), lead: wp.array(dtype=wp.int32), sh
     motion[i] = wp.vec4(d[0], d[1], th, 1.0)
 
 
+@wp.kernel
+def forget(images: wp.array(dtype=wp.int32), anchor_body: wp.array(dtype=wp.int32), motion: wp.array(dtype=wp.vec4)):
+    """Drop the touch of image i when images[i] != 0 (the next frame anchors afresh)."""
+    i = wp.tid()
+    if images[i] != 0:
+        anchor_body[i] = -1
+        motion[i] = wp.vec4(0.0)
+
+
 class StickSlip:
     """Per-image stick-slip state (device arrays) and its per-frame update."""
 
@@ -90,10 +99,15 @@ class StickSlip:
         self.center = wp.zeros(n, dtype=wp.vec2, device=dev)
         self.motion = wp.zeros(n, dtype=wp.vec4, device=dev)
 
-    def reset(self) -> None:
-        """Forget every touch (call after resetting worlds)."""
-        self.anchor_body.fill_(-1)
-        self.motion.zero_()
+    def reset(self, images: wp.array | None = None) -> None:
+        """Forget the touches of the images where ``images`` (int32 (images,), 1 = reset) is set, or of every image
+        (None). Call it with the worlds a reset restarts; the other images keep their stick-slip state."""
+        if images is None:
+            self.anchor_body.fill_(-1)
+            self.motion.zero_()
+            return
+        wp.launch(forget, dim=self.motion.shape[0], inputs=[images], outputs=[self.anchor_body, self.motion],
+                  device=self.device)
 
     def update(self, stats: PressStats, gel_xf: wp.array, shape_body: wp.array, body_q: wp.array) -> wp.array:
         """One frame from the press summary (patch sums, touched shape): returns ``motion`` (images,) vec4

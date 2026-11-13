@@ -3,8 +3,10 @@
 
 Everything that belongs to the kept robots stays exactly as the author wrote it: default classes, actuators of any
 kind, tendons, equality couplings, contact excludes and pairs, sensors, and the keyframes (cut down to the kept
-joints and actuators). Everything that belongs to a removed body goes, with every element that refers to it. Mesh and
-texture paths become absolute, so the pruned file can live anywhere. The pruned file is loaded once in MuJoCo.
+joints and actuators). Everything that belongs to a removed body goes, with every element that refers to it. The
+mesh and texture files the result uses are copied into ``files/`` beside it, so the folder can be moved or shared.
+``<include>`` files are written in first. The result is loaded once in MuJoCo. :func:`copy_mjcf` is the same with
+nothing removed (a file that holds only the robot).
 
 Example::
 
@@ -16,9 +18,12 @@ Example::
 from __future__ import annotations
 
 import logging
+import shutil
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from alloy.io.mjcf_include import IncludeError, read_mjcf
 
 log = logging.getLogger("alloy.io")
 
@@ -92,6 +97,25 @@ def _absolute_files(root: ET.Element, src_dir: Path) -> None:
                 if attr.startswith("file") and value:
                     name = Path(value).name if strip else value
                     el.set(attr, str((src_dir / base / name).resolve()))
+
+
+def localize_files(root: ET.Element, folder: Path, attrs: tuple[str, ...] = ("file",)) -> int:
+    """Copy every file an element names by an absolute path (``attrs``, by prefix) into ``folder/files`` and name it
+    by its path relative to ``folder``. Two files of one name get distinct copies. Returns the number copied."""
+    done: dict[str, str] = {}
+    for el in root.iter():
+        for attr, value in list(el.attrib.items()):
+            if not attr.startswith(attrs) or not value or not Path(value).is_absolute() or not Path(value).is_file():
+                continue
+            if value not in done:
+                name, k = Path(value).name, 1
+                while f"files/{name}" in done.values():
+                    name, k = f"{Path(value).stem}_{k}{Path(value).suffix}", k + 1
+                (folder / "files").mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(value, folder / "files" / name)
+                done[value] = f"files/{name}"
+            el.set(attr, done[value])
+    return len(done)
 
 
 def _joint_elements(body: ET.Element) -> list[ET.Element]:
@@ -242,16 +266,47 @@ def _check_loads(path: Path) -> None:
         raise PruneError(f"the pruned file does not load in MuJoCo: {exc}") from exc
 
 
-def prune_mjcf(src: str | Path, keep: set[str], dst: str | Path) -> PruneReport:
+def _finish(root: ET.Element, src_dir: Path, dst: Path, *, drop_unused: bool) -> None:
+    """Write ``root`` at ``dst`` with its asset files copied beside it, and load it once in MuJoCo."""
+    _absolute_files(root, src_dir)
+    if drop_unused:
+        _drop_unused_meshes(root)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    localize_files(root, dst.parent)
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="  ")
+    tree.write(dst, encoding="unicode")
+    _check_loads(dst)
+
+
+def copy_mjcf(src: str | Path, dst: str | Path) -> Path:
+    """A copy of the MJCF ``src`` at ``dst`` that needs no other file of the source: includes written in, mesh and
+    texture files copied into ``files/`` beside it. Raises :class:`PruneError` when it does not load in MuJoCo."""
+    src, dst = Path(src).resolve(), Path(dst)
+    try:
+        root = read_mjcf(src)
+    except (IncludeError, ET.ParseError) as exc:
+        raise PruneError(str(exc)) from exc
+    _finish(root, src.parent, dst, drop_unused=False)
+    return dst
+
+
+def prune_mjcf(src: str | Path, keep: set[str], dst: str | Path, *, files_from: str | Path | None = None
+               ) -> PruneReport:
     """Write a copy of the MJCF ``src`` at ``dst`` that keeps only the top-level bodies named in ``keep`` (and the
     world's own geoms when the file excludes robot-world contacts). Raises :class:`PruneError` when the file's
-    layout is not supported (includes, frames, deformables) or the result does not load in MuJoCo."""
+    layout is not supported (frames, replicates, deformables) or the result does not load in MuJoCo. ``files_from``:
+    the folder relative asset paths start from when ``src`` is a rewritten copy of a file that lives elsewhere."""
     src, dst = Path(src).resolve(), Path(dst)
-    tree = ET.parse(src)
-    root = tree.getroot()
-    for tag in ("include", "deformable", "replicate", "frame", "attach"):
+    try:
+        root = read_mjcf(src)                                   # <include> files written in, as MuJoCo reads them
+    except IncludeError as exc:
+        raise PruneError(str(exc)) from exc
+    for tag in ("deformable", "replicate", "frame", "attach"):
         if root.find(f".//{tag}") is not None:
             raise PruneError(f"the file uses <{tag}>, which the pruner does not handle")
+    if any(c.get("settotalmass") for c in root.iter("compiler")):
+        raise PruneError("the file sets <compiler settotalmass>, which a part of the file cannot keep")
     rep = PruneReport(dst)
     masks, actnum, why = None, [], ""
     try:
@@ -261,12 +316,7 @@ def prune_mjcf(src: str | Path, keep: set[str], dst: str | Path) -> PruneReport:
     removed = _prune_world(root, set(keep), rep)
     act_mask = _prune_sections(root, removed, rep)
     _keyframes(root, masks, actnum, act_mask, why, rep)
-    _absolute_files(root, src.parent)
-    _drop_unused_meshes(root)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    ET.indent(tree, space="  ")
-    tree.write(dst, encoding="unicode")
-    _check_loads(dst)
+    _finish(root, src.parent if files_from is None else Path(files_from), dst, drop_unused=True)
     if rep.kept_world:
         rep.notes.append("the file excludes contacts between the world and the robot, so the world's own geoms "
                          "(floor, fixtures) stay in the robot file and are not made cards")

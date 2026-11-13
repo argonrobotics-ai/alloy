@@ -3,6 +3,9 @@
 Drop a ball on a table, read where it went, and save a picture. About 10 minutes, most of it the first run's
 one-time compile.
 
+No install: the same first steps run in a browser.
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/argonrobotics-ai/alloy/blob/main/notebooks/quickstart.ipynb)
+
 ## 1. Install
 
 ```bash

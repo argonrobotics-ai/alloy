@@ -124,3 +124,29 @@ def test_bench_cli_writes_json(tmp_path, capsys):
     assert bench_main(["--worlds", "2", "--sizes", "80", "--frames", "1", "--device", "cpu", "--out", str(out)]) == 0
     row = json.loads(out.read_text().splitlines()[0])
     assert row["worlds"] == 2 and row["width"] == 80 and row["images_per_s"] > 0 and row["frac_worlds_rendered"] == 1.0
+
+
+def test_reset_only_the_given_worlds():
+    """Audit T2-006: a masked reset restarts the stick-slip of those worlds only; the others keep their shear."""
+    model = ball_model(worlds=2)
+    state = model.state()
+    base = state.body_q.numpy().copy()
+    s = TactileSensor("tip", attach_to="pad", pose=GEL, width=160, augment=QUIET)
+
+    def shift(dx: float) -> np.ndarray:
+        q = base.copy()
+        q[[1, 3], 0] += dx  # each world's ball
+        state.body_q.assign(q)
+        return s.render(model, state, output="all").motion.numpy().copy()
+
+    shift(0.0)
+    assert np.allclose(shift(0.0002)[:, 0], 0.2, atol=2e-3)
+    s.reset(worlds=[0])
+    m = s._bound[2].motion.numpy()
+    assert m[0, 3] == 0.0 and m[1, 3] == 1.0 and m[1, 0] == pytest.approx(0.2, abs=2e-3)
+    after = shift(0.0003)
+    assert after[0, 0] == pytest.approx(0.0, abs=2e-3) and after[1, 0] == pytest.approx(0.3, abs=2e-3)
+    s.reset(worlds=np.array([False, True]), seed=4)
+    assert s._bound[2].motion.numpy()[0, 3] == 1.0 and s._bound[2].motion.numpy()[1, 3] == 0.0
+    with pytest.raises(CameraError, match="outside 0..1"):
+        s.reset(worlds=[2])

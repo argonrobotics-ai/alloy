@@ -19,11 +19,11 @@ from pathlib import Path
 from typing import Any
 
 from alloy.cli.errors import RequestError
-from alloy.cli.ops_sim import now
-from alloy.cli.scenes import to_scene
+from alloy.cli.ops_sim import check_view, now
+from alloy.cli.scenes import check_per_world, to_scene
 from alloy.cli.session import Session
 
-LIST_KINDS = ("scenes", "objects", "materials", "adds", "ops")
+LIST_KINDS = ("scenes", "objects", "materials", "robots", "adds", "ops")
 #: scene files the card tools (check, export) cannot read directly: converted to cards first
 CONVERT_SUFFIXES = (".xml", ".mjcf", ".urdf", ".usd", ".usda", ".usdc", ".json")
 _PNG_COUNT = [0]
@@ -47,6 +47,7 @@ def scene_card(value: Any, library: list[str] | None) -> Iterator[tuple[str, lis
 def op_check(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     """Physics check: a scene (cards, overlap, a short run) or, with ``sim``, an open simulation as it is now."""
     if a["sim"] is not None or (a["scene"] is None and session.last is not None):
+        _live_only(a)
         sid, sim = session.get(a)
         return {"sim": sid, "mode": "live", "t": now(sim), **sim.check()}
     if a["scene"] is None:
@@ -61,8 +62,23 @@ def op_check(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     with scene_card(a["scene"], a["library"]) as (target, library):
         report = check(target, a["worlds"], a["seconds"], device=a["device"], run=not a["quick"],
                        expect_rest=not a["moving"], profile=a["profile"] or "standard", seed=a["seed"] or 0,
-                       library=library, budget_s=a["budget"] if a["budget"] and a["budget"] > 0 else None)
+                       library=library, budget_s=a["budget"] if a["budget"] and a["budget"] > 0 else None,
+                       contacts=a["contacts"])
     return {"mode": "quick" if a["quick"] else "run", **report.to_dict()}
+
+
+#: check arguments that shape a check run (a scene), and their defaults: an open simulation is checked as it is
+RUN_ONLY = {"scene": None, "worlds": None, "device": None, "seed": None, "profile": None, "contacts": None,
+            "library": None, "liquid_accuracy": None, "seconds": None, "quick": False, "moving": False, "budget": 25.0}
+
+
+def _live_only(a: dict[str, Any]) -> None:
+    """Refuse run arguments on a check of an open simulation (it checks the run so far, at its own settings)."""
+    given = sorted(k for k, default in RUN_ONLY.items() if a.get(k) not in (None, default))
+    if given:
+        raise RequestError(f"check of an open simulation takes no {given}: it checks that simulation as it is now",
+                           "drop them (step or run the simulation first to check later states), or check the scene "
+                           'itself without sim: {"op": "check", "scene": ..., "seconds": 1}', field=given[0])
 
 
 def _liquid_setting(a: dict[str, Any]) -> str:
@@ -78,14 +94,15 @@ def _liquid_setting(a: dict[str, Any]) -> str:
 
 def op_render(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     """A PNG of one world (after ``steps`` control periods), framed automatically unless ``look_at`` is given."""
+    kw: dict[str, Any] = {k: a[k] for k in ("spp", "fov") if a[k] is not None}
+    if a["look_at"] is not None:
+        kw["look_at"] = _look_at(a["look_at"])            # checked before a scene is built or a step is taken
     sid, sim = session.get(a)
+    check_view(sim, None, a["world"])
     if a["steps"]:
         sim.step(a["steps"])
     path = Path(a["out"]).expanduser() if a["out"] else _temp_png()
     path.parent.mkdir(parents=True, exist_ok=True)
-    kw: dict[str, Any] = {k: a[k] for k in ("spp", "fov") if a[k] is not None}
-    if a["look_at"] is not None:
-        kw["look_at"] = _look_at(a["look_at"])
     img = sim.render(None, world=a["world"], width=a["width"], height=a["height"], path=str(path), **kw)
     return {"sim": sid, "path": str(path), "t": now(sim), "world": a["world"], "width": int(img.shape[1]),
             "height": int(img.shape[0]), "mean_rgb": img.reshape(-1, img.shape[-1])[:, :3].mean(axis=0).round(1)}
@@ -108,6 +125,8 @@ def op_estimate(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     from alloy.api._estimate import estimate  # noqa: PLC0415
 
     scene = to_scene(a["scene"], library=a["library"] or (), liquid_accuracy=a["liquid_accuracy"])
+    if a["worlds"] is not None:
+        check_per_world(scene, a["worlds"], more=True)   # what a build of that many worlds would refuse
     return estimate(scene, a["worlds"], a["seconds"], a["device"], measure=a["measure"])
 
 
@@ -126,15 +145,14 @@ def op_export(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     if (a["scene"] is None) == (a["object"] is None):
         raise RequestError("export needs exactly one of scene / object", 'pass scene="demo_peg_d12" or '
                            'object="cube_beech_30"', field="scene")
-    if a["object"] is not None:
-        library = a["library"][0] if a["library"] else None
-        return export_object(a["object"], a["out"], formats, library=library).to_json()
+    if a["object"] is not None:                       # every --library folder is searched, in order
+        return export_object(a["object"], a["out"], formats, library=a["library"] or None).to_json()
     with scene_card(a["scene"], a["library"]) as (target, library):
-        return export_scene(target, a["out"], formats, library=library[0] if library else None).to_json()
+        return export_scene(target, a["out"], formats, library=library or None).to_json()
 
 
 def op_list(session: Session, a: dict[str, Any]) -> dict[str, Any]:
-    """Names in the card library (scenes, objects, materials), recipe add kinds, or the operations."""
+    """Names in the card library (scenes, objects, materials, robots), recipe add kinds, or the operations."""
     kind, match = a["kind"], (a["match"] or "").lower()
     items = _list_items(kind, a["library"] or ())
     if match:
@@ -150,6 +168,10 @@ def _list_items(kind: str, library: Any) -> list[Any]:
         return catalog.materials(library)
     if kind in ("scenes", "objects"):
         return catalog.names(kind, library)
+    if kind == "robots":                      # name, title and file: pass the name as a recipe robot's path
+        from alloy.cli.robots import robots  # noqa: PLC0415
+
+        return robots(library)
     if kind == "adds":
         from alloy.cli.scenes import describe_adders  # noqa: PLC0415
 

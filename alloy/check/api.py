@@ -46,7 +46,8 @@ ExtraCheck = Callable[[Any, Any, Any], tuple[list[Finding], dict[str, Any]]]   #
 
 def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *, device: str | None = None,
           run: bool = True, expect_rest: bool = True, profile: str = "standard", seed: int = 0,
-          library: Any = None, budget_s: float | None = 25.0, extra: Sequence[ExtraCheck] = ()) -> CheckReport:
+          library: Any = None, budget_s: float | None = 25.0, extra: Sequence[ExtraCheck] = (),
+          contacts: str | None = None) -> CheckReport:
     """Check ``scene`` (YAML path, library scene name, YAML text or ``SceneCard``) and return a ``CheckReport``.
 
     Never raises for a broken scene: problems are findings, each with the change that fixes it. Raises
@@ -54,7 +55,8 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
     a slow scene runs fewer seconds (``metrics["run"]["truncated"]``; None runs them all). ``extra``: more checks on
     the same run, each ``fn(res, built, index) -> (findings, metrics)`` (``alloy.check.run.RunResult``,
     ``BuiltScene``, ``alloy.check.objects.ObjectIndex``), named by ``fn.check_name`` (else ``fn.__name__``); their
-    findings carry that name and their verdicts and metrics join the report under it.
+    findings carry that name and their verdicts and metrics join the report under it. ``contacts``: the run's
+    contact pipeline, as ``alloy.build(contacts=)`` ("auto", "mujoco", "newton"; None: the profile's own).
 
     Example::
 
@@ -64,6 +66,11 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
     """
     t0 = time.perf_counter()
     dev, worlds, seconds = resolve_settings(device, worlds, seconds)
+    if contacts not in (None, "auto", "mujoco", "newton"):
+        from alloy.api.errors import SceneError  # noqa: PLC0415
+
+        raise SceneError(f"check(contacts=...) got {contacts!r}", "pass contacts='auto', 'mujoco', 'newton' or None "
+                         "(None: the profile's own pipeline)", field="contacts")
     try:
         src = load_source(scene, library)
     except CardError as exc:
@@ -72,7 +79,7 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
         return _skip_rest(report, "the scene card does not load", t0)
     report = CheckReport(scene=src.label, settings={"worlds": worlds, "seconds": seconds if run else 0.0,
                                                     "device": dev, "profile": profile, "seed": seed,
-                                                    "expect_rest": expect_rest})
+                                                    "expect_rest": expect_rest, "contacts": contacts})
     _stage(report, "cards", lambda: report.add(_fetch(src) + card_findings(src), "cards"))
     if not report.ok:
         return _skip_rest(report, "card errors (fix them first)", t0)
@@ -83,7 +90,7 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
     probe = ContactProbe(built)
     _stage(report, "overlap", lambda: _overlap(report, built, index, probe))
     if run:
-        opts = RunOptions(seconds, profile, seed, budget_s)
+        opts = RunOptions(seconds, profile, seed, budget_s, contacts)
         _stage(report, "run", lambda: _dynamic(report, built, index, probe, opts, expect_rest, extra))
     else:
         for c in (*RUN_CHECKS, *(extra_name(fn) for fn in extra)):

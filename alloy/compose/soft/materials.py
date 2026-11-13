@@ -140,7 +140,8 @@ def _grain_card(catalog: Any, material: str) -> str | None:
 
 
 def _shape_kind(catalog: Any, name: str) -> str | None:
-    """"cloth" for sheet cards, "cable" for curve cards, else None (read without validation)."""
+    """"cloth" for sheet cards (a thin box, or a flat film mesh with a thickness), "cable" for curve cards, else
+    None (read without validation)."""
     from alloy.cards import types as ct  # noqa: PLC0415
 
     try:
@@ -149,9 +150,16 @@ def _shape_kind(catalog: Any, name: str) -> str | None:
         return None
     if isinstance(card.shape, ct.CurveSource):
         return "cable"
-    thin = isinstance(card.shape, ct.Primitive) and card.shape.kind == "box" and \
-        min(card.shape.size) < 0.05 * sorted(card.shape.size)[1]
-    return "cloth" if thin and card.motion == "dynamic" else None
+    if card.motion != "dynamic":
+        return None
+    if isinstance(card.shape, ct.Primitive):
+        size = card.shape.size if card.shape.kind == "box" else None
+    elif isinstance(card.shape, ct.MeshSource) and card.features.thickness is not None and card.route is not None \
+            and card.route.route == "cloth_film":
+        size = catalog.info(name).size                 # a flat film mesh (a scored sheet), not a bag or a shell
+    else:
+        size = None
+    return "cloth" if size is not None and min(size) < 0.05 * sorted(size)[1] else None
 
 
 def _search(item: ItemSpec, catalog: Any, kind: str) -> str | None:

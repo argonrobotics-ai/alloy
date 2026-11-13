@@ -210,3 +210,68 @@ def test_a_worker_that_dies_is_named():
             split.step(1)
     finally:
         split.close()
+
+
+def _cube_scene():
+    scene = alloy.Scene(dt=0.01)
+    scene.add_ground()
+    scene.add_box("cube", size=(0.1, 0.1, 0.1), pos=(0.0, 0.0, 0.1))
+    return scene
+
+
+def same_as_one(split, one) -> None:
+    np.testing.assert_array_equal(split[:2], one[:2])                  # the first process's block: worlds 0 and 1
+    a, b = split[2:].astype(np.float64), one[2:].astype(np.float64)
+    hit = np.isfinite(a) & np.isfinite(b)                                # depth is inf where a ray meets nothing
+    assert (np.isfinite(a) == np.isfinite(b)).mean() >= 0.99
+    diff = np.abs(a[hit] - b[hit])
+    assert diff.mean() <= 0.01 * max(float(np.abs(b[hit]).max()), 1e-9), diff.mean()
+
+
+def _camera(name: str):
+    return alloy.Camera(name, look_at=((0.5, -0.5, 0.4), (0.0, 0.0, 0.05)), width=32, height=24, spp=1)
+
+
+@pytest.fixture(scope="module")
+def sims():
+    """The same 4 worlds in one process and in two (blocks 2 + 2)."""
+    scene = _cube_scene()
+    one = alloy.build(scene, worlds=4, device="cpu", processes=1)
+    split = alloy.build(scene, worlds=4, device="cpu", processes=2)
+    try:
+        yield one, split
+    finally:
+        one.close()
+        split.close()
+
+
+def test_a_split_sim_renders_several_outputs(sims):
+    """An ``output=`` tuple comes back as one process's does, a dict joined per output (it raised "zero-dimensional
+    arrays cannot be concatenated"). The first process's worlds render bit for bit as in one process; the second's are
+    its local worlds 0 and 1, whose 1-sample noise is drawn from another world index, so they match within it."""
+    one, split = sims
+    rgbd_one = one.render(_camera("a"), output=("rgb", "depth"))
+    rgbd_split = split.render(_camera("b"), output=("rgb", "depth"))
+    assert set(rgbd_split) == {"rgb", "depth"}
+    for key in rgbd_one:
+        assert rgbd_split[key].shape == rgbd_one[key].shape
+        same_as_one(rgbd_split[key], rgbd_one[key])
+
+
+def test_a_split_sim_renders_with_a_camera_used_elsewhere(sims):
+    """A camera that already rendered in this process renders in a split sim too: its renderer (ctypes handles) does
+    not pickle, so the copy sent leaves it here (it raised AttributeError on CDLL._FuncPtr). The camera that stays here
+    keeps its renderer and renders as before, bit for bit; the copy binds again in the worker."""
+    one, split = sims
+    here = _camera("here")
+    first = one.render(here)
+    bound = here._bound
+    same_as_one(split.render(here), first)
+    assert here._bound is bound
+    np.testing.assert_array_equal(one.render(here), first)
+    assert here._bound is bound
+    import pickle  # noqa: PLC0415
+
+    from alloy.parallel.cpu_worlds import portable  # noqa: PLC0415
+
+    assert pickle.loads(pickle.dumps(portable(here)))._bound is None and here._bound is bound

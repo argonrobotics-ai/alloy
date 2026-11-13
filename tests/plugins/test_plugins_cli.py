@@ -97,3 +97,80 @@ def test_same_named_packages_from_two_folders(monkeypatch, tmp_path):
         new_plugin("my_force", kind=kind, dest=tmp_path / sub)
         (cls,) = load_target(str(tmp_path / sub / "my_force"))
         assert cls.kind == kind
+
+
+@pytest.mark.parametrize("argv", [
+    [],                                                          # no command
+    ["check", "magnet", "--bogus"],                              # an unknown flag
+    ["--request", '{"command": "bogus"}'],                       # an unknown command in a request
+    ["--request", '{"command": "list", "unknown": 1}'],          # an unknown request option
+])
+def test_bad_requests_still_reply_json_with_exit_2(argv, capfd):
+    """Audit S2-042: argparse's own errors and a missing command printed usage text only (stdout empty)."""
+    code, err = _run(argv, capfd)
+    assert code == 2 and err["error"] == "PluginError" and err["fix"], err
+
+
+def test_request_speed_matches_the_python_api():
+    """Audit S2-042: ``"speed": false`` was dropped (the speed check still ran) and ``"speed": true`` was refused."""
+    from alloy.plugins.cli import _args_from_request, _parser
+
+    for speed in (False, True):
+        req = json.dumps({"command": "check", "target": "magnet", "quick": True, "speed": speed})
+        assert _args_from_request(_parser(), req).no_speed is (not speed)
+
+
+def test_out_in_a_new_folder_is_written(capfd, monkeypatch, tmp_path):
+    """Audit S2-042: ``--out new_dir/report.json`` ran the whole check, then crashed (FileNotFoundError, exit 1)."""
+    import importlib
+
+    from alloy.plugins.harness.report import CheckReport, CheckResult
+
+    def fake_check(plugin, **_):
+        report = CheckReport(plugin.name, plugin.kind, "magnet", "cpu")
+        report.add(CheckResult("contract", "contract", True))
+        return report
+
+    harness = importlib.import_module("alloy.plugins.harness.check")   # the module (the package re-exports check())
+    monkeypatch.setattr(harness, "check", fake_check)
+    out = tmp_path / "new_dir" / "deeper" / "report.json"
+    code, report = _run(["check", "magnet", "--quick", "--out", str(out)], capfd)
+    assert code == 0 and report["passed"] and json.loads(out.read_text()) == report
+
+
+def _guide_drag_file(dest):
+    """GUIDE.md's force plug-in as one file: the code of section 2 (Anatomy), then section 6's scene and law."""
+    import re
+    from pathlib import Path
+
+    import alloy.plugins
+
+    guide = (Path(alloy.plugins.__file__).parent / "GUIDE.md").read_text()
+    blocks = []
+    for heading in ("## 2. Anatomy", "## 6. Test scenes and laws"):
+        after = guide[guide.index(heading):]
+        blocks.append(re.search(r"```python\n(.*?)```", after, re.S).group(1))
+    dest.write_text("\n\n".join(blocks))
+    return dest
+
+
+def test_a_plugin_importing_top_level_newton_gets_the_import_to_write(capfd, monkeypatch, tmp_path):
+    """Audit S2-048: ``import newton`` (no such package in a pip install) crashed the CLI with a bare
+    ModuleNotFoundError and an empty stdout; it is now a JSON error naming Alloy's copy."""
+    monkeypatch.setitem(sys.modules, "newton", None)               # as in a pip install: no top-level newton
+    path = tmp_path / "drag.py"
+    path.write_text("import newton\n")
+    code, err = _run(["check", str(path), "--quick"], capfd)
+    assert code == 2 and err["error"] == "PluginError" and "from alloy._vendor import newton" in err["fix"], err
+    path.write_text("raise RuntimeError('a bug in the plug-in')\n")
+    code, err = _run(["describe", str(path)], capfd)                # any other failure: JSON too
+    assert code == 2 and err["error"] == "RuntimeError" and "traceback" in err["fix"], err
+
+
+@pytest.mark.compile_heavy       # a quick check: 10-25 s, more on a loaded gate host
+def test_guide_force_plugin_passes_as_written(capfd, monkeypatch, tmp_path):
+    """Audit S2-048: GUIDE.md's worked Drag plug-in imported a top-level ``newton``, which a pip install lacks."""
+    monkeypatch.setitem(sys.modules, "newton", None)
+    path = _guide_drag_file(tmp_path / "drag.py")
+    code, report = _run(["check", str(path), "--quick"], capfd)
+    assert code == 0 and report["passed"] and report["plugin"] == "drag", report

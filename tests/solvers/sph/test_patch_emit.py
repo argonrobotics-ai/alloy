@@ -145,3 +145,17 @@ def test_patch_capacity_validation_and_box_emitters_share_spares():
     assert len(box_pool) == 12 - COUNTS[0] and not set(box_pool) & set(s.emitters.patches.reserved(0))
     with pytest.raises(ValueError):
         s.trigger(5, _flags(1, 1, 1))
+
+
+def test_a_patch_added_after_a_pour_leaves_the_pours_own_spares():
+    """AUDIT-STACK, 2026-11-11: a patch emitter registered after an emitter that owns its pool (a pour's reservoir)
+    reserved the pour's ids, which the pour would then re-place at its nozzle. Law: the patch reserves only spares no
+    emitter owns, and the owned pool stays whole (bound: exact ids)."""
+    m, s, plugs, points, a, c = _scene(spares=20)
+    own = s.emitters._spares(0)[:10]
+    e = s.add_emitter(0, wp.transform((0.0, 0.0, 0.01), wp.quat_identity()), wp.vec3(1e-3, 1e-3, 1e-4), rate=1e-7,
+                      velocity=wp.vec3(0.0, 0.0, -0.1), pool=own)
+    _register(s, plugs, points)
+    reserved = [int(i) for i in s.emitters.patches.reserved(0)]
+    assert s.emitters.table.pool[e].tolist() == own.tolist()
+    assert len(reserved) == COUNTS[0] and not set(reserved) & set(own.tolist())

@@ -6,6 +6,10 @@ The images come from the base assembly with each variant's moved start state, so
 ``quality="full"`` renders the variant looks (textures, tints) with ``alloy.camera``'s full-material tracer; a look it
 cannot draw (a texture missing from the local asset cache, a ``tex_tint`` fabric) falls back to the fast diffuse
 path for that tile, which shows shape colours only. ``quality="fast"`` uses the fast path throughout.
+
+The base assembly holds the shapes of rigid objects only: items stepped as particles (cloth, film, soft bodies, rods on
+``rod_vbd``, MPM materials, liquids), which a sim draws from its state, are not on the tiles, and :func:`not_drawn`
+names each of them in the sheet's ``left_out`` (before, they were missing while ``left_out`` was empty).
 """
 
 from __future__ import annotations
@@ -22,6 +26,8 @@ log = logging.getLogger("alloy.scene")
 SUN = {"type": "sun", "eye": [1.0, -1.5, 2.5], "target": [0.0, 0.0, 0.0], "strength": 3.0}
 GAP_PX = 4
 FOV_DEG = 40.0
+PARTICLE_ROUTES = ("rod_vbd", "cloth_vbd", "cloth_style3d", "cloth_film", "soft_vbd", "grain_mpm", "paste_mpm",
+                   "liquid_sph", "liquid_mpm")  # drawn from a sim's state, not from the base assembly's shapes
 
 
 def view(base: Any, state: Any, names: list[str] | None = None) -> tuple[tuple[float, ...], tuple[float, ...]]:
@@ -40,6 +46,17 @@ def view(base: Any, state: Any, names: list[str] | None = None) -> tuple[tuple[f
     direction = np.array([1.0, -1.2, 0.9]) / np.linalg.norm([1.0, -1.2, 0.9])
     eye = center + direction * radius / math.sin(math.radians(0.5 * FOV_DEG)) * 1.1
     return tuple(float(v) for v in eye), tuple(float(v) for v in center)
+
+
+def not_drawn(base: Any) -> list[str]:
+    """The items no tile draws (module docstring), one ``"<name>: <route> (...)"`` line each, logged once."""
+    decisions = getattr(getattr(base.built, "report", None), "decisions", None) or {}
+    out = [f"{name}: {d.route} (not drawn on the contact sheet; render the variant file to see it)"
+           for name, d in decisions.items() if str(d.route) in PARTICLE_ROUTES]
+    if out:
+        log.warning("variants contact sheet: %d item(s) stepped as particles are not drawn: %s", len(out),
+                    ", ".join(o.split(":")[0] for o in out))
+    return out
 
 
 def drawable(look: dict, res: str = "2k") -> tuple[dict, list[str]]:
@@ -109,4 +126,4 @@ def write_sheet(path: Path, images: list[np.ndarray]) -> Path:
     return write_png(path, tile(images))
 
 
-__all__ = ["SUN", "drawable", "render_tile", "tile", "view", "write_sheet"]
+__all__ = ["PARTICLE_ROUTES", "SUN", "drawable", "not_drawn", "render_tile", "tile", "view", "write_sheet"]

@@ -44,12 +44,11 @@ def audit(scene: Any, *, rounds: int = 3, episodes: int = 16, seed: int = 0, dev
     library (default: Alloy's library with every imported library);
     ``bully=False`` skips the bully agent; ``runner`` stands in for its library call.
     Example: ``audit("my_scenes/scenes/scene.yaml", rounds=3, episodes=32).to_json()``."""
-    from alloy.check.source import load_source  # noqa: PLC0415
-
     _limits(rounds, episodes)
     t0 = time.perf_counter()
-    roots = _roots(library)
-    src = load_source(scene, _library(library, roots))
+    given = _roots(library)
+    src = _load(scene, list(given) if given or library is None else library)         # check adds the scene's root
+    roots = _with_scene_root(given, src.path)
     report = AuditReport(scene=src.label, runs={"rounds": rounds, "episodes": episodes if bully else 0,
                                                 "seed": seed, "device": device})
     _check_rounds(report, src, (rounds, seed, roots), device, worlds, seconds)
@@ -62,6 +61,9 @@ def audit(scene: Any, *, rounds: int = 3, episodes: int = 16, seed: int = 0, dev
         if res.summary:
             report.runs["bully_summary"] = res.summary
             report.runs["episodes"] = res.episodes
+        for f in res.findings:
+            if roots and isinstance(f.replay, dict) and "handle" in f.replay:
+                f.replay["library"] = list(roots)                # replay_finding needs the scene's card folders
         report.findings.extend(res.findings)
         if res.note:
             report.notes.append(res.note)
@@ -89,12 +91,40 @@ def _roots(library: Any) -> tuple[str, ...]:
     return ()
 
 
-def _library(library: Any, roots: tuple[str, ...]):
-    if library is not None and not roots and not isinstance(library, (list, tuple)):
-        return library
-    from alloy.compose.load import library as full_library  # noqa: PLC0415
+def _load(scene: Any, library: Any):
+    """``alloy.check``'s scene source; a card that does not load raises a ``SceneError`` with check's own fix."""
+    from alloy.check.cards import card_error_finding  # noqa: PLC0415
+    from alloy.check.source import SceneInputError, load_source  # noqa: PLC0415
+    from alloy.core.errors import CardError  # noqa: PLC0415
 
-    return full_library(roots)
+    try:
+        return load_source(scene, library)
+    except CardError as exc:
+        f = card_error_finding(exc)
+        raise SceneInputError(f"the scene card does not load: {f.message}", f.fix, field="scene") from exc
+
+
+def _with_scene_root(roots: tuple[str, ...], path: Path | None) -> tuple[str, ...]:
+    """``roots`` plus the card folder a scene file sits in (``<root>/scenes/<name>.yaml``): the folder its generated
+    cards and robot files are in, which every replay needs."""
+    if path is None:
+        return roots
+    root = next((p.parent for p in path.resolve().parents if p.name == "scenes"), None)
+    return roots if root is None or str(root) in roots else (*roots, str(root))
+
+
+def library(roots: Any = ()) -> Any:
+    """The card library an audit reads: ``roots`` (searched first), Alloy's library, every fetch cache and every
+    imported library; the same roots ``alloy.check`` uses. For ``replay_finding(handle, library=...)``.
+
+    Example: ``library(["my_scenes"]).has_object("cube_beech_30")``."""
+    from alloy.cards.library import CardLibrary  # noqa: PLC0415
+    from alloy.cards.roots import assets_root  # noqa: PLC0415
+    from alloy.check.source import default_roots  # noqa: PLC0415
+
+    mine = [Path(r).expanduser().resolve() for r in ([roots] if isinstance(roots, (str, Path)) else roots)]
+    rest = [d for d in default_roots() if all(d.resolve() != m for m in mine)]
+    return CardLibrary([*mine, *rest], assets=assets_root())
 
 
 def _check_rounds(report: AuditReport, src, plan: tuple[int, int, tuple[str, ...]], device: str | None,
@@ -102,6 +132,7 @@ def _check_rounds(report: AuditReport, src, plan: tuple[int, int, tuple[str, ...
     from alloy.check import check  # noqa: PLC0415
 
     rounds, seed, roots = plan
+    target = str(src.path or src.label)                          # a file's full path: its stem is not a scene name
     seen: dict[tuple, AuditFinding] = {}
     for r in range(rounds):
         s = seed + r
@@ -115,14 +146,15 @@ def _check_rounds(report: AuditReport, src, plan: tuple[int, int, tuple[str, ...
                 seen[key].seen += 1
                 continue
             seen[key] = AuditFinding("check", f.level, f.check, f.message, f.fix, tuple(f.objects), value=f.value,
-                                     limit=f.limit, unit=f.unit, replay=_replay(src.label, s, rep.settings, roots))
+                                     limit=f.limit, unit=f.unit, replay=_replay(target, s, rep.settings, roots))
     for f in seen.values():
         f.rate = f.seen / rounds
         report.add(f)
 
 
-def _replay(label: str, seed: int, settings: dict[str, Any], roots: tuple[str, ...] = ()) -> dict[str, Any]:
-    cmd = f"python -m alloy.check {shlex.quote(label)} --seed {seed}"
+def _replay(target: str, seed: int, settings: dict[str, Any], roots: tuple[str, ...] = ()) -> dict[str, Any]:
+    """The command that re-runs one check round. ``target``: the scene file's full path, else its library name."""
+    cmd = f"python -m alloy.check {shlex.quote(target)} --seed {seed}"
     for k in ("worlds", "seconds", "device"):
         if settings.get(k) is not None:
             cmd += f" --{k} {settings[k]}"
@@ -131,4 +163,4 @@ def _replay(label: str, seed: int, settings: dict[str, Any], roots: tuple[str, .
             "command": cmd + " --json"}
 
 
-__all__ = ["audit"]
+__all__ = ["audit", "library"]

@@ -5,7 +5,9 @@ from an object it is plugged into (and on to a second one).
 The path is a polyline of the cable's length: heading changes by a bounded random walk (bend radius at least
 ``MIN_BEND``), each segment kept ``EDGE`` inside the table and clear of the other objects' outlines. A plugged end
 starts at the object's side, ``PORT_HEIGHT`` up (at most half its height), points away from it and comes down to
-the table within ``DROP``. Between two objects the path is a sideways bulge that uses up the extra length.
+the table within ``DROP``. Between two objects the path is a sideways bulge that uses up the extra length. A cable
+laid after others keeps clear of them (``avoid``: their ``footprint``); a second cable between the same two objects
+leaves them beside the first (``port``'s ``turn``).
 
 The cable's chain takes the laid shape as its rest shape: a loose cable keeps the curve it was laid in (as real
 cables keep a set); the result lists this as an estimate.
@@ -20,6 +22,7 @@ Example::
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -36,10 +39,11 @@ TRIES = 120
 
 
 def loose_path(layout: Layout, length: float, radius: float, *, straight: bool = False,
-               start: np.ndarray | None = None, heading: float | None = None, skip: tuple[str, ...] = ()
-               ) -> np.ndarray | None:
+               start: np.ndarray | None = None, heading: float | None = None, skip: tuple[str, ...] = (),
+               avoid: Sequence[np.ndarray] = ()) -> np.ndarray | None:
     """A lying cable (POINTS x 3, world) of ``length``; ``start``/``heading``: a fixed first point and direction
-    (a plugged end); ``skip``: layout keys it may touch (the object it is plugged into). None when no try fits."""
+    (a plugged end); ``skip``: layout keys it may touch (the object it is plugged into); ``avoid``: more keep-out
+    polygons (cables laid before it). None when no try fits."""
     top = _table_top(layout)
     lo, hi = layout.area
     for _ in range(TRIES):
@@ -49,18 +53,19 @@ def loose_path(layout: Layout, length: float, radius: float, *, straight: bool =
         z = np.full(len(xy), top + radius + LIFT)
         if start is not None:
             z = _drop(xy, float(start[2]), z[0])
-        if _fits(layout, xy, radius, skip):
+        if _fits(layout, xy, radius, skip, avoid):
             return np.column_stack([xy, z])
     return None
 
 
-def between(layout: Layout, a: np.ndarray, b: np.ndarray, length: float, radius: float, skip: tuple[str, ...]
-            ) -> np.ndarray | None:
+def between(layout: Layout, a: np.ndarray, b: np.ndarray, length: float, radius: float, skip: tuple[str, ...],
+            avoid: Sequence[np.ndarray] = ()) -> np.ndarray | None:
     """A cable from port ``a`` to port ``b`` (world, z = port heights) of ``length`` >= their distance: a sideways
-    sine bulge on the table between the two drops."""
+    sine bulge on the table between the two drops. None when it does not fit, or when the two ports coincide (no
+    direction to run in)."""
     d = np.asarray(b[:2]) - np.asarray(a[:2])
     dist = float(np.linalg.norm(d))
-    if length < dist + 1e-3:
+    if dist < 1e-6 or length < dist + 1e-3:
         return None
     u = d / dist
     n = np.array([-u[1], u[0]])
@@ -71,18 +76,21 @@ def between(layout: Layout, a: np.ndarray, b: np.ndarray, length: float, radius:
         xy = a[None, :2] + s[:, None] * d[None, :] + sign * amp * np.sin(math.pi * s)[:, None] * n[None, :]
         lie = top + radius + LIFT
         z = np.maximum(_drop(xy, float(a[2]), lie), _drop(xy[::-1], float(b[2]), lie)[::-1])
-        if _fits(layout, xy, radius, skip):
+        if _fits(layout, xy, radius, skip, avoid):
             return np.column_stack([xy, z])
     return None
 
 
-def port(target: Placed, toward: np.ndarray, radius: float) -> tuple[np.ndarray, float]:
+def port(target: Placed, toward: np.ndarray, radius: float, turn: float = 0.0) -> tuple[np.ndarray, float]:
     """(world point, outward heading) where a cable plugged into ``target`` leaves it: on its outline in the
-    direction of ``toward`` (xy), ``PORT_HEIGHT`` up (at most half its height), one radius plus 1 mm out."""
+    direction of ``toward`` (xy) turned by ``turn`` (rad, counter-clockwise), ``PORT_HEIGHT`` up (at most half its
+    height), one radius plus 1 mm out."""
     out = target.outline
     c = out.mean(axis=0)
     d = np.asarray(toward, np.float64) - c
     d = d / max(float(np.linalg.norm(d)), 1e-9)
+    if turn:
+        d = np.array([math.cos(turn) * d[0] - math.sin(turn) * d[1], math.sin(turn) * d[0] + math.cos(turn) * d[1]])
     reach = _ray_exit(out, c, d)
     tri = target.triangles()
     zmin, zmax = float(tri[..., 2].min()), float(tri[..., 2].max())
@@ -93,6 +101,12 @@ def port(target: Placed, toward: np.ndarray, radius: float) -> tuple[np.ndarray,
 
 def path_length(points: np.ndarray) -> float:
     return float(np.linalg.norm(np.diff(points, axis=0), axis=1).sum())
+
+
+def footprint(points: np.ndarray, radius: float) -> list[np.ndarray]:
+    """The keep-out polygons (world xy) of a laid cable: one per segment, a cable's width across."""
+    xy = np.asarray(points, np.float64)[:, :2]
+    return [_segment_polygon(a, b, radius) for a, b in zip(xy[:-1], xy[1:], strict=True)]
 
 
 def _walk(rng: np.random.Generator, p0: np.ndarray, h0: float, length: float, straight: bool) -> np.ndarray:
@@ -126,13 +140,16 @@ def _amplitude(dist: float, length: float) -> float:
     return 0.5 * (lo + hi)
 
 
-def _fits(layout: Layout, xy: np.ndarray, radius: float, skip: tuple[str, ...]) -> bool:
-    """Every segment inside the table and clear of the other objects and the robots' bases."""
+def _fits(layout: Layout, xy: np.ndarray, radius: float, skip: tuple[str, ...],
+          avoid: Sequence[np.ndarray] = ()) -> bool:
+    """Every segment finite, inside the table and clear of the other objects, the robots' bases and ``avoid``."""
+    if not np.isfinite(xy).all():
+        return False
     table = layout.support.outline
     if geom.depths(table, xy).min() < EDGE:
         return False
     gap = CLEARANCE[layout.clutter]
-    others = [p.outline for k, p in layout.placed.items() if k not in skip] + list(layout.obstacles)
+    others = [p.outline for k, p in layout.placed.items() if k not in skip] + list(layout.obstacles) + list(avoid)
     for a, b in zip(xy[:-1], xy[1:]):
         seg = _segment_polygon(a, b, radius)
         if any(not geom.separated(seg, o, gap) for o in others):
@@ -159,4 +176,4 @@ def _table_top(layout: Layout) -> float:
     return float(layout.support.triangles()[..., 2].max())
 
 
-__all__ = ["between", "loose_path", "path_length", "port"]
+__all__ = ["between", "footprint", "loose_path", "path_length", "port"]

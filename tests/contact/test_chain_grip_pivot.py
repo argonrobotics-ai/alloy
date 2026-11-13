@@ -6,7 +6,7 @@ tests/precision/test_mjw_chol.py); these cover only the marked path and its keys
 - The rig's real Hessian (WP9's R4 rig, a CHAIN gripped at impratio 300, MuJoCo Warp CPU, t = 25 ms): indefinite by
   float32 rounding. mjMINVAL's clamp gives a non-finite step, the floor a finite descent step.
 - Only a marked model launches ``_check_floor``; the mark and the guard's scratch survive the compact and DISCRETE
-  solves' copies of the model and Data; a marked model never takes the SPARSE-1 block path.
+  solves' copies of the model and Data; a marked model takes the SPARSE-1 block path with its floor (0.1.2).
 """
 
 from __future__ import annotations
@@ -125,17 +125,19 @@ def test_a_marked_models_discrete_data_copy_finds_the_same_scratch() -> None:
     assert mjw_chol.clamp_counts(copy) is mjw_chol.clamp_counts(d)
 
 
-def test_a_marked_model_never_takes_the_block_path(monkeypatch) -> None:
-    """mjw_block's float64 redo clamps at mjMINVAL, so a model marked with ``set_pivot_floor`` stays on the dense path
-    (and its floor) even when it carries a block config (WP5's review of SCR-WP3-CHAINGRIP-GPU)."""
+def test_a_marked_model_takes_the_block_path_with_its_floor(monkeypatch) -> None:
+    """Since 0.1.2 (Gemini audit T2-009) a model marked with ``set_pivot_floor`` takes the SPARSE-1 block path when it
+    carries a block config, handing the block path its floor (mjw_block's float64 redo floors pivots as the dense
+    redo does; tests/precision/test_mjw_block.py). Before, it stayed dense (WP5's review of SCR-WP3-CHAINGRIP-GPU), so
+    a CHAIN beside clutter factored the whole entry densely."""
     from alloy.precision import mjw_block
 
-    calls: list[int] = []
-    monkeypatch.setattr(mjw_block, "factor_solve", lambda *a, **k: calls.append(1) or True)
+    floors: list[float] = []
+    monkeypatch.setattr(mjw_block, "factor_solve", lambda m, d, c, k, dense, floor=0.0: floors.append(floor) or True)
     assert mjw_chol.install()
 
-    def steps(mark: bool) -> int:
-        calls.clear()
+    def steps(mark: bool) -> set[float]:
+        floors.clear()
         model = _pile(2)
         solver = newton.solvers.SolverMuJoCo(model, njmax=200, nconmax=64, solver="newton", cone="elliptic")
         solver.mjw_model.alloy_block_newton = object()           # as if eligible
@@ -145,7 +147,7 @@ def test_a_marked_model_never_takes_the_block_path(monkeypatch) -> None:
         for _ in range(3):
             solver.step(s0, s1, ctl, None, 1e-3)
             s0, s1 = s1, s0
-        return len(calls)
+        return set(floors)
 
-    assert steps(False) > 0                                      # the control: an unmarked model dispatches
-    assert steps(True) == 0
+    assert steps(False) == {0.0}                                 # an unmarked model: mjMINVAL
+    assert steps(True) == {10.0}

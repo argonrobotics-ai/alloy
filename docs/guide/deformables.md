@@ -26,17 +26,19 @@ self_contact=True)`
     a rigid box instead, `add_box(..., rigid=True)` (without `rigid=True` a thin box of these goes to the cloth route
     too), at least 1.25 mm thick and with the sheet's mass (`mass=`)
     ([cloth-stiff-sheet-sag.md](../known_gaps/cloth-stiff-sheet-sag.md));
-  - a fabric card with warp and weft stretch (`elastic.cloth`, such as `cotton_woven_aniso`) routes to
-    `cloth_style3d` when nothing else in the scene moves. If its stretch is stiff for its mass, mesh and step, the
-    build warns and the sheet barely drapes
-    ([cloth-style3d-stretch-lock.md](../known_gaps/cloth-style3d-stretch-lock.md)). Opt-in instead: the object
-    card's route override `route: {route: cloth_vbd, reason: ...}` keeps it on `cloth_vbd` with an orthotropic
-    membrane (warp and weft stretch, shear and per-direction bending from the card). On a warp / weft grid
-    (`add_cloth`'s) KES-built twill and wool drape within 0.035 of a Cusick tester; a heavy 2.4 mm plain weave hangs
-    0.16 low, and on a mesh that does not follow warp and weft the stiff yarns lock (the build warns). DC is converged at
+  - a fabric card with warp and weft stretch (`elastic.cloth`, such as `cotton_woven_aniso`) on an `add_cloth`
+    sheet routes to `cloth_vbd` with an orthotropic membrane (warp and weft stretch, shear and per-direction
+    bending from the card; warp along the sheet's x). A sheet from a mesh with such a card routes to
+    `cloth_style3d` when nothing else in the scene moves, where a stiff fabric barely drapes
+    ([cloth-style3d-stretch-lock.md](../known_gaps/cloth-style3d-stretch-lock.md)); the object card's route
+    override `route: {route: cloth_vbd, reason: ...}` puts it on the membrane too. KES-built twill and wool drape
+    within 0.05 of a Cusick tester on the grid and on an irregular mesh (0.035 on the grid; up to 0.046 on one
+    irregular mesh, in a second run of it); a heavy 2.4 mm plain weave hangs 0.16-0.19 low. Against the old
+    Style3D route such a sheet drapes differently (up to 0.13 m on a sheet alone) and steps 2-2.5x slower. DC is
+    converged at
     the shipped iterations and the yarns stretch under 0.6 %, but on the lightest fabric the local shear is not: its
     99th-percentile shear angle is 9.5° at 60 iterations and 2.2° at 160, and health does not flag shear. Without the
-    override such a card beside other moving things is refused at build
+    override a mesh sheet with such a card beside other moving things is refused at build
     ([cloth-woven-drape-isotropic.md](../known_gaps/cloth-woven-drape-isotropic.md)).
 
   Very thin films need care at sharp edges. A 0.05 mm LDPE film draped over a box's edge went INVALID (a contact
@@ -93,6 +95,14 @@ self_contact=True)`
   - so give the pads and links near the cloth realistic, not tiny, masses. On one L4 GPU, 64 worlds of a 12 s fold
     took 47 min (self contact off, at 10 iterations as in "fast"; a drape runs 2.6x slower at the default 40).
     Plan cloth + robot work for a GPU and time a short run first.
+  - a world that health freezes (INVALID) still sets that clock. One that froze on a start overlap (a sheet started
+    inside a wall, a soft body flush on its support) can then make every world's step take minutes. Set
+    `ALLOY_PARK_LATCHED=1` in the environment before the build when you run many worlds or long runs of such a scene
+    and do not reset frozen worlds at once: a frozen world then leaves the clock until it is reset. 1,024 worlds of a
+    sheet beside a free ball, one frozen at its start, stepped at 2.1 s per control step instead of over 37 min on
+    one L4. Nothing changes until a world freezes; after that the other worlds step on their own clock, so their
+    results differ from a run without it
+    ([coupling-frozen-world-sets-clock.md](../known_gaps/coupling-frozen-world-sets-clock.md)).
 
 - Accuracy: `alloy.Scene(cloth_accuracy="default" | "super" | "fast")` (or `scene.cloth_accuracy`), the words of
   `liquid_accuracy` plus "fast". The cloth solver (Newton's `SolverVBD`) runs a fixed number of iterations per
@@ -194,17 +204,31 @@ print(rest - st["sheet.points"][:, 2].min())                  # about 0.003 m: t
   dent's kept depth depends on the mesh: a can wall pressed 8 mm kept
   0.68-1.07 mm on three meshes. Bend along the mesh rows where you can, and compare two meshes before you trust a
   depth.
-- Rest and press it on rounded parts. Released fast (0.1 m/s) or slowly, the dented sheet stays on the example's
-  round supports and settles. On two boxes' sharp edges it stays on too, but creeps sideways (2 mm in 1.5 s, still
-  moving).
+- Rest and press it on rounded parts. Released fast (0.1 m/s) or slowly, the dented sheet stays on the example's round
+  supports and settles. On two boxes' sharp edges it stays on too, but creeps sideways (about 1 mm in 1.5 s, 2.4 mm by
+  3 s, still moving), and health reads CLOTH_STRETCH there (DEGRADED: the sheet 67 % past its rest size over the
+  edges).
 - More: [film-metal-sheets.md](../known_gaps/film-metal-sheets.md) (the sag and the hinge network, with numbers)
   and [plasticity-metal.md](../known_gaps/plasticity-metal.md) (no Bauschinger effect).
 
 A solid block of a yielding material (a `plastic.model: j2` card with no hardening modulus, such as `brass_c360`)
 can step on MPM by choice: give its object card the route override `paste_mpm`
 (`scene.add_box(..., card_extra={"route": {"route": "paste_mpm", "reason": "j2 solid on MPM"}})`). Squeezed
-evenly it yields at the card's yield stress, and a tool that is moved into it leaves a dent that stays. The force
-under a punch reads low (15 % at 4,000 particles, 40 % or more at 13,500), so no punch dent law is claimed:
+evenly it yields at the card's yield stress, and a tool that is moved into it leaves a dent that stays. A soft
+card's punch force converges at the route's settings. A metal's does not (brass reads under 1 % of its punch force,
+and the build warns) unless the block rests under the tool with quasi-static mass scaling:
+`scene.set_quasi_static_mass_scale("block", tool_speed=0.002)` multiplies its density by s with its weight kept true
+(`scale="auto"`: the largest s whose inertial share stays within 1 % at that tool speed), and brass pressed at 2 mm/s
+then reads 0.99 of its converged force. `tool_speed` is your statement of how fast anything presses on the block; the
+build's limits on s (auto within 1 %, refused over 5 %) are on the safe side, and a tool faster than declared reads
+the force within about 9 % at 3x and 10x (medians +1 to +3 %). Quasi-static only: the build refuses a block that does
+not rest on the ground or a static box, and a world reads DEGRADED with QUASI_STATIC while the block as a whole
+moves faster than half `tool_speed` (pushed along, the push read up to 4.4x the force) or a body touching it faster
+than 12x (at 100x the force read 38 % low where the tool first hit).
+A block that
+loses its support falls s times slowly (g / s), and health flags it QUASI_STATIC while it is pushed and as it falls:
+use the setting only for a block that stays on its support. The punch laws
+(mean pressure by the measured contact radius) are not claimed yet:
 [plasticity-mpm-solid-punch-force.md](../known_gaps/plasticity-mpm-solid-punch-force.md). Without the override
 such a solid is a soft body, which can yield at rest when its yield strain is small
 ([plasticity-soft-tets-low-yield.md](../known_gaps/plasticity-soft-tets-low-yield.md)).
@@ -215,7 +239,7 @@ Pour to fill a container: `scene.add_pour(name, volume, pos=..., rate=2e-4, spee
 `volume` m³ straight down from a nozzle at `pos`, at `rate` m³/s. The particles wait at the nozzle until released;
 `"<name>.active"` in the state marks the poured ones. A block of liquid released in the air splashes several percent
 over the rim when it lands (a flat liquid face hitting a flat floor makes real pressure jets). A stream splashes much
-less: 4 % of a 6 ml pour from 12 cm into an 8 cm box. Beside cloth it is a fifth or more, and health stays OK
+less: 3 % of a 6 ml pour from 12 cm into an 8 cm box, and health stays OK
 ([liquid-pour-over-the-rim.md](../known_gaps/liquid-pour-over-the-rim.md)).
 
 Pouring from a held container instead: make the container kinematic (`add_open_box(..., kinematic=True)`) and tilt
@@ -270,8 +294,13 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
   simulated second. A 10 cm cotton sheet dropped onto 0.8 l of water steps at 3-4 s per 10 ms control step while it
   falls and at about 50 s per control step from first touch (about 80 minutes per simulated second), almost all of it
   in the cloth solver, and no setting helps: plan such a scene in tenths of a second, or use a film-route sheet
-  (paper, metal foil), which ran 1.6 simulated seconds on water in 5-11 minutes on an L4. The first run of a cloth +
-  liquid scene also builds kernels for several minutes.
+  (paper, metal foil), which ran 1.6 simulated seconds on water in 5-11 minutes on an L4. Those are the numbers of
+  0.1.0 and 0.1.1. After 0.1.1 liquid that moves fast takes smaller steps, so a sheet that stirs the water costs
+  more. Measured on one
+  L4 in a rebuilt scene (a 10 cm sheet at resolution 10 dropped 2 cm onto 0.8 l of water in a static 13 x 13 cm box),
+  a cotton sheet's steps after first touch went from 33 s to 88 s each, and a paper sheet (`paper_80gsm`) cost 2.3x
+  over its first 0.3 s. A cup of water at rest beside cloth costs the same. The first run of a
+  cloth + liquid scene also builds kernels for several minutes.
 - Pouring onto cloth: a stream poured onto a fabric sheet with self-contact on (the default) makes the world INVALID,
   mostly within 0.1 s of landing (0.39 s on a full block top; CPU rows); give a sheet that takes a pour
   `self_contact=False` (it stayed OK in the one scene measured) or use a film sheet (`film_ldpe`). Cloth takes up no
@@ -300,7 +329,8 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
   - Saved cards (`scene.save()`) don't keep the setting; Scene JSON (`scene.to_json()`) does. On a scene loaded from
     cards, set `scene.liquid_accuracy = "super"` again.
 - `sim.liquid_volume(name)`: the simulated volume in m³. Whole particles fill the box, so it can be a few percent
-  below the box volume; enlarge the box for an exact amount.
+  below the box volume; enlarge the box for an exact amount. A pour (`add_pour`) holds its volume within half a
+  particle.
 - `sim.particle_volume(name)`: the volume one particle stands for. Liquid in a region = particles inside it times
   that volume.
 - State: `"<name>.points"`, shape `(worlds, particles, 3)` (and `"<name>.active"` for a pour).

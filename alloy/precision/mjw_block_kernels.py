@@ -3,7 +3,9 @@
 
 MuJoCo Warp factors the Newton Hessian H = M + J'DJ (+ the elliptic cone term) densely, nv x nv per world. For a
 model whose kinematic trees all have at most 6 dofs (free bodies, small articulations) H is block-sparse: one 6x6
-block per tree on the diagonal, and an off-diagonal block for every pair of trees a constraint row touches.
+block per tree on the diagonal, and an off-diagonal block for every pair of trees a constraint row touches. A tree
+over 6 dofs (an arm, a chain) is split into runs of at most 6 dofs (``mjw_block.units``), its
+runs always coupled (its mass matrix couples them): the kernels below see one diagonal block per run, a "tree".
 
 Where ``solver_niter == 0`` (the first factorizations of each solve, while the constraint rows are fixed),
 ``mjw_block`` builds that tree graph from the sparse J and hands it to ``adj`` where it differs from the last
@@ -16,13 +18,15 @@ the dense kernel reads it), factors left-looking level by level (diagonal blocks
 of those columns, a barrier) and solves L L' x = grad, writing search = -x, search_dot = x'x and the Newton
 decrement grad'x as the dense kernel does. Every block and vector is written by one thread (no float atomics);
 pivots below mjMINVAL are raised to it, as mju_cholFactor does, and counted per world (``clamps``, read as
-FALLBACK_USED).
+FALLBACK_USED). On a model with a pivot floor (``floor_c`` > 0: ``mjw_chol.set_pivot_floor``, the chain-grip rule)
+the float64 redo raises them to c * nv * eps32 * max diag H instead, as ``mjw_chol_f64.factor64_floor`` does.
 """
 
 import warp as wp                                      # no postponed annotations: the factories' types are locals
 
 B = 6
 MINVAL = wp.constant(1.0e-15)                          # mjMINVAL
+EPS32 = wp.constant(wp.float64(2.0 ** -24))            # float32 unit roundoff (the pivot floor, mjw_chol_f64)
 
 
 @wp.func_native(snippet="WP_TILE_SYNC();")
@@ -235,16 +239,16 @@ def _block_funcs(dtype):
     M = wp.types.matrix(shape=(B, B), dtype=dtype)
 
     @wp.func
-    def chol(a: M, w: int, bad: wp.array[wp.int32]) -> M:
+    def chol(a: M, w: int, bad: wp.array[wp.int32], thr: dtype) -> M:
         lo = M()
         for j in range(B):
             s = a[j, j]
             for k in range(j):
                 s -= lo[j, k] * lo[j, k]
-            if not (s >= dtype(MINVAL)):               # also NaN
+            if not (s >= thr):                         # also NaN; thr is mjMINVAL but under a pivot floor
                 if wp.static(not F64):
                     bad[w] = 1                          # float32: flag the world for the float64 redo
-                s = dtype(MINVAL)                       # mju_cholFactor: the pivot is raised to mjMINVAL
+                s = thr                                 # mju_cholFactor: the pivot is raised to mjMINVAL
             dj = wp.sqrt(s)
             lo[j, j] = dj
             for i in range(j + 1, B):
@@ -313,9 +317,9 @@ def _gather_func(dtype, M, V, h_at):
     return gather
 
 
-def _factor_func(M, chol, inv_lower):
+def _factor_func(dtype, M, chol, inv_lower):
     @wp.func
-    def factor(w: int, lane: int, bd: int, bad: wp.array[wp.int32], nlev: wp.array[wp.int32],
+    def factor(w: int, lane: int, bd: int, thr: dtype, bad: wp.array[wp.int32], nlev: wp.array[wp.int32],
                lvl_node: wp.array2d[wp.int32], node_item: wp.array2d[wp.int32], lvl_off: wp.array2d[wp.int32],
                off_item: wp.array2d[wp.int32], off_col: wp.array2d[wp.int32], row_ptr: wp.array2d[wp.int32],
                row_blk: wp.array2d[wp.int32], opair_ptr: wp.array2d[wp.int32], opair_a: wp.array2d[wp.int32],
@@ -329,7 +333,7 @@ def _factor_func(M, chol, inv_lower):
                 for q in range(row_ptr[w, j], row_ptr[w, j + 1]):
                     ljk = lo[w, row_blk[w, q]]
                     s = s - ljk * wp.transpose(ljk)
-                dinv[w, j] = inv_lower(chol(s, w, bad))
+                dinv[w, j] = inv_lower(chol(s, w, bad, thr))
             _sync()
             for it in range(lvl_off[w, lv] + lane, lvl_off[w, lv + 1], bd):
                 e = off_item[w, it]
@@ -410,17 +414,27 @@ def _output_func(dtype, V):
     return output
 
 
+@wp.func
+def _pivot_floor(h: wp.array3d[float], w: int, nv: int, c: wp.float64) -> wp.float64:
+    """max(mjMINVAL, c * nv * eps32 * max_j |H_jj|): ``mjw_chol_f64.factor64_floor``'s floor."""
+    hmax = wp.float64(0.0)
+    for j in range(nv):
+        hmax = wp.max(hmax, wp.abs(wp.float64(h[w, j, j])))
+    return wp.max(wp.float64(MINVAL), c * wp.float64(nv) * EPS32 * hmax)
+
+
 def factor_kernel(dtype):
     """The factor + solve kernel in ``dtype`` (float32 first; float64 redoes the worlds float32 flagged)."""
     F64 = dtype == wp.float64
     M, V, chol, inv_lower, h_at = _block_funcs(dtype)
     gather = _gather_func(dtype, M, V, h_at)
-    factor = _factor_func(M, chol, inv_lower)
+    factor = _factor_func(dtype, M, chol, inv_lower)
     forward, backward = _solve_funcs(M, V)
     output = _output_func(dtype, V)
 
     @wp.kernel(module="unique", enable_backward=False)
-    def kernel(ntree: int, done: wp.array[bool], overflow: wp.array[wp.int32], bad: wp.array[wp.int32],
+    def kernel(ntree: int, nv: int, floor_c: wp.float64, done: wp.array[bool], overflow: wp.array[wp.int32],
+               bad: wp.array[wp.int32],
                clamps: wp.array[wp.int32], h: wp.array3d[float], grad: wp.array2d[float],
                order: wp.array2d[wp.int32], tree_dofadr: wp.array[int], tree_dofnum: wp.array[int],
                nlev: wp.array[wp.int32], lvl_node: wp.array2d[wp.int32], node_item: wp.array2d[wp.int32],
@@ -440,10 +454,14 @@ def factor_kernel(dtype):
             if lane == 0:
                 bad[w] = 0                              # before the first barrier: every flag comes after it
         bd = wp.block_dim()
+        thr = dtype(MINVAL)
+        if wp.static(F64):
+            if floor_c > wp.float64(0.0):                 # each lane reads the diagonal itself (no barrier)
+                thr = _pivot_floor(h, w, nv, floor_c)
         gather(w, lane, bd, ntree, h, grad, order, tree_dofadr, tree_dofnum, col_ptr, off_row, off_col, a_diag, lo,
                g)
         _sync()
-        factor(w, lane, bd, bad, nlev, lvl_node, node_item, lvl_off, off_item, off_col, row_ptr, row_blk,
+        factor(w, lane, bd, thr, bad, nlev, lvl_node, node_item, lvl_off, off_item, off_col, row_ptr, row_blk,
                opair_ptr, opair_a, opair_b, a_diag, lo, dinv)
         forward(w, lane, bd, nlev, lvl_node, node_item, row_ptr, row_blk, off_col, lo, dinv, g, y)
         backward(w, lane, bd, nlev, lvl_node, node_item, col_ptr, off_row, lo, dinv, y, x)

@@ -25,13 +25,15 @@ MAX_INLINE_IMAGE = 4 * 1024 * 1024        # bytes of PNG sent back inline from r
 
 INSTRUCTIONS = """Alloy is a GPU physics engine for robots and objects (rigid, cloth, liquid). Units are SI \
 (m, kg, s), z is up.
-Typical flow: list (scenes/objects/materials) -> scene (check a description, fast) -> build (returns a sim id; the \
-first build of a new scene compiles kernels, about a minute) -> step / run / state / targets -> check -> render \
-(returns a PNG) -> close. vary writes n variants of a scene (objects moved, textures swapped) as Scene JSON files \
+Typical flow: list (scenes/objects/materials/robots) -> scene (check a description, fast) -> build (returns a sim \
+id; the first build of a new scene compiles kernels, about a minute) -> step / run / state / targets -> check -> \
+render (returns a PNG) -> close. While it runs: drive (kinematic objects), pose, wrench, settle, heater, controls. \
+vary writes n variants of a scene (objects moved, textures swapped) as Scene JSON files \
 that every tool takes as scene.
 A scene is a library scene name, a file path (.yaml card, .xml MJCF, .urdf, .usd, Scene .json), or a recipe: \
 {"objects": [{"add": "ground"}, {"add": "box", "name": "cube", "size": [0.1, 0.1, 0.1], "pos": [0, 0, 0.5], \
-"mass": 1.0}]} (list kind=adds shows every add kind and its arguments).
+"mass": 1.0}]} (list kind=adds shows every add kind and its arguments; a robot's path can be a name from list \
+kind=robots; "set": [{"set": "heater", ...}] rows call Scene.set_*).
 Every error says what to change in its "fix"."""
 
 

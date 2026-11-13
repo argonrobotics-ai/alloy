@@ -7,7 +7,7 @@ of 9.8 s). It stops when the stress residual is under the tolerance (Newton's de
 ``DEFAULT_TOLERANCE``, 3e-4 since every MPM law and the dough, paste and soil tasks re-passed at it within their own
 bands (2026-11-08; old against new in [internal note] notes/wp12-results/rheo-default/regression.md).
 ``ALLOY_MPM_TOLERANCE=1e-4`` restores Newton's default. 3e-4 cut a 256-world dough period 22 % (7.60 against 9.78 s;
-sand unchanged, 6.69 against 6.73 s) and moved a pressed dough ball's particles by mean 0.07 mm, max 0.52 mm, 2.4x the
+sand unchanged, 6.69 against 6.73 s) and moved a pressed dough ball's particles by mean 0.08 mm, max 0.65 mm, 2.3x the
 solver's own floor (CPU, 0.2 s). Values outside ``TOLERANCE_RANGE`` are refused: looser ones leave solves unconverged
 (the ruling rejected 1e-3 and a 100-iteration cap).
 

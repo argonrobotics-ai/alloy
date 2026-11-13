@@ -924,6 +924,12 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
         """Maximum number of iterations for the rheology solver."""
         tolerance: float = 1.0e-4
         """Tolerance for the rheology solver."""
+        delassus_regularization: float = 1.0e-6
+        """Alloy (delassus-regularization): the number added to each local Delassus diagonal block
+        of the rheology solve. The default is Newton's constant, so a solver left at it runs bit for bit as before.
+        It is absolute (SI units): a stiff solid under quasi-static mass scaling has blocks of about 1e-7 to 1e-9,
+        where 1e-6 shortens every Gauss-Seidel step; such an entry sets it smaller (Alloy's j2 route: 1e-12). Zero
+        and negative values are refused by policy (0 neither hung nor blew up in a test)."""
         carry_residual_strain: Literal["none", "unconverged", "sampled"] = "none"
         """Residual strain carried into the elastic strain, beyond the strain consistent with the solved stress.
 
@@ -1633,6 +1639,9 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
 
         self.max_iterations = config.max_iterations
         self.tolerance = float(config.tolerance)
+        self.delassus_regularization = float(config.delassus_regularization)  # Alloy (delassus-regularization)
+        if not (self.delassus_regularization > 0.0 and math.isfinite(self.delassus_regularization)):
+            raise ValueError(f"delassus_regularization must be finite and positive, got {self.delassus_regularization}")
         if config.carry_residual_strain not in ("none", "unconverged", "sampled"):
             raise ValueError(f"Invalid carry_residual_strain: {config.carry_residual_strain}")
         self.carry_residual_strain = config.carry_residual_strain
@@ -4053,6 +4062,7 @@ class SolverImplicitMPM(SolverBase, CouplingInterface):
                 temporary_store=self.temporary_store,
                 use_graph=self._use_cuda_graph,
                 verbose=self.verbose,
+                delassus_regularization=self.delassus_regularization,  # Alloy (delassus-regularization)
             )
 
         for temporary in contact_temporaries:

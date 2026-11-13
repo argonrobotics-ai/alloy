@@ -111,6 +111,12 @@ def cloth_sheet(name: str, template: ct.ObjectCard, length: float | None = None,
     return SoftCard(name, dataclasses.replace(template, name=name, shape=shape))
 
 
+def mesh_sheet(name: str, template: ct.ObjectCard) -> SoftCard:
+    """A sheet whose shape is its own mesh (the scored kraft sheet: its crease is in the mesh) under a new name, at
+    its own size: the same mesh file, material, thickness and route. Example: ``mesh_sheet("compose_paper", card)``."""
+    return SoftCard(name, dataclasses.replace(template, name=name), source=template.name)
+
+
 def cloth_mesh_card(name: str, template: ct.ObjectCard, vertices: np.ndarray, faces: np.ndarray,
                     thickness: float, note: str) -> SoftCard:
     """The template sheet as a generated triangle mesh (written beside the card), with self contact on so its
@@ -201,4 +207,4 @@ def route_of(library, name: str) -> tuple[str, dict, str]:
 
 
 __all__ = ["COPY_OF", "SoftCard", "cable_curve", "cloth_mesh_card", "cloth_sheet", "copied_from", "grain_column",
-           "grain_region", "liquid_column", "measured", "rigid_copy", "route_of", "static_copy"]
+           "grain_region", "liquid_column", "measured", "mesh_sheet", "rigid_copy", "route_of", "static_copy"]

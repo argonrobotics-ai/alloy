@@ -240,10 +240,10 @@ def split_pools(t: EmitterTable, world: int, spares: np.ndarray, cursors: np.nda
 
 def rewind(dev: EmitterDevice | None, world_mask: wp.array | None, world_count: int) -> None:
     """The box emitters of the masked worlds (all when None) back to a fresh build's: layer clock and cursor 0, so a
-    pour starts over from its full reservoir at the next step. ``sim.reset`` calls it (``alloy.api._pour.start``): the
-    start snapshot is taken before the pours' emitters exist, so it holds the particles but not the emitters, and a
-    finished pour never poured again. ``enabled`` stays as set. Written in place: captured graphs keep their
-    pointers. Example: ``rewind(solver.emitters.dev, None, 4)``."""
+    pour starts over from its full reservoir at the next step. ``SolverDFSPH.reset`` calls it. ``sim.reset`` does not:
+    its start snapshot holds the emitters with the particles (``alloy.api._pour.remake_start``), so a reset after
+    ``sim.settle`` goes on from the settled pour. ``enabled`` stays as set. Written in place: captured graphs keep
+    their pointers. Example: ``rewind(solver.emitters.dev, None, 4)``."""
     if dev is None or dev.n_emitters == 0:
         return
     mask = np.ones(world_count, bool) if world_mask is None else np.asarray(

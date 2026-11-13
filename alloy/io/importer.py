@@ -23,6 +23,7 @@ from alloy.io.errors import ImportFileError, usd_fix
 from alloy.io.from_model import read_model
 from alloy.io.model import IOModel
 from alloy.io.quiet import quiet_engine
+from alloy.io.robot_mjcf import RobotFileError
 from alloy.io.to_cards import ImportResult, write_cards
 
 log = logging.getLogger("alloy.io")
@@ -34,12 +35,30 @@ def file_format(path: str | Path) -> str:
     """"mjcf", "urdf" or "usd" from the suffix (``.xml`` files are MJCF unless their root is ``<robot>``)."""
     p = Path(path)
     fmt = SUFFIXES.get(p.suffix.lower())
+    if p.suffix.lower() == ".json":
+        if is_urdf_index(p):
+            return "urdf"
+        raise ImportFileError(f"{p.name} is not a file alloy.io imports: the only .json it reads is the "
+                              "urdf/index.json that alloy.io.export_scene writes",
+                              "for a Scene JSON file (Scene.to_json) use alloy.load(path)")
     if fmt is None:
-        raise ImportFileError(f"{p.name}: unknown suffix {p.suffix!r}; use one of {sorted(SUFFIXES)}")
+        raise ImportFileError(f"{p.name}: unknown suffix {p.suffix!r}; use one of {sorted(SUFFIXES)}",
+                              "pass an MJCF (.xml), URDF (.urdf) or USD (.usd / .usda / .usdc / .usdz) file")
     if fmt == "mjcf" and p.suffix.lower() == ".xml" and "<robot" in p.read_text(errors="replace")[:4000] \
             and "<mujoco" not in p.read_text(errors="replace")[:4000]:
         return "urdf"
     return fmt
+
+
+def is_urdf_index(path: str | Path) -> bool:
+    """True for the ``urdf/index.json`` that ``alloy.io.export_scene`` writes (``"format": "urdf"``, ``groups``)."""
+    import json  # noqa: PLC0415
+
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get("format") == "urdf" and isinstance(data.get("groups"), list)
 
 
 def _newton_model(path: Path, fmt: str, floating: bool | None) -> IOModel:
@@ -47,7 +66,9 @@ def _newton_model(path: Path, fmt: str, floating: bool | None) -> IOModel:
 
     b = newton.ModelBuilder()
     if fmt == "mjcf":
-        b.add_mjcf(str(path), floating=floating)
+        from alloy.io.robot_mjcf import mjcf_source  # noqa: PLC0415
+
+        b.add_mjcf(mjcf_source(path), floating=floating)    # settotalmass applied, coordinate="global" refused
     else:
         try:
             import newton_usd_schemas  # noqa: F401, PLC0415
@@ -55,7 +76,9 @@ def _newton_model(path: Path, fmt: str, floating: bool | None) -> IOModel:
         except ImportError as exc:
             raise ImportFileError(f"reading USD needs the packages usd-core and newton-usd-schemas ({exc.name} is "
                                   "not installed)", usd_fix()) from exc
-        b.add_usd(str(path), floating=floating)
+        from alloy.io.usd_units import metre_source  # noqa: PLC0415
+
+        b.add_usd(metre_source(path), floating=floating)        # a stage in other length units: read in metres
     return read_model(b.finalize("cpu"), path.stem)
 
 
@@ -67,15 +90,21 @@ def read_file(path: str | Path, *, floating: bool | None = None, package_dirs=()
         raise FileNotFoundError(f"{p} not found")
     fmt = file_format(p)
     if fmt == "urdf":
-        from alloy.io.urdf_read import read_urdf  # noqa: PLC0415
+        from alloy.io.urdf_read import read_urdf, read_urdf_index  # noqa: PLC0415
 
+        if p.suffix.lower() == ".json":
+            return read_urdf_index(p)
         return read_urdf(p, floating=floating, package_dirs=package_dirs)
     try:
         return _newton_model(p, fmt, floating)
     except ImportFileError:
         raise
+    except RobotFileError as exc:
+        raise ImportFileError(str(exc), exc.fix) from exc
     except Exception as exc:  # noqa: BLE001 - Newton's message plus the fix to try
-        raise ImportFileError(f"Newton could not read {p.name} as {fmt.upper()}: {exc}") from exc
+        raise ImportFileError(f"Newton could not read {p.name} as {fmt.upper()}: {exc}",
+                              "check the file loads in its own tool (MuJoCo for MJCF, usdchecker for USD) and "
+                              "fix what the message names") from exc
 
 
 def _declare_min_wall(lib, name: str, res: ImportResult) -> bool:
@@ -122,16 +151,23 @@ def _validate(res: ImportResult) -> None:
 
 
 def import_file(path: str | Path, out_dir: str | Path, *, name: str | None = None, floating: bool | None = None,
-                package_dirs=()) -> ImportResult:
+                package_dirs=(), as_object: bool = False) -> ImportResult:
     """Import ``path`` (MJCF, URDF or USD) into card files under the library folder ``out_dir``.
 
     Writes ``objects/``, ``materials/``, ``assets/<name>/`` (meshes, generated MJCF) and ``scenes/<name>.yaml``,
     then validates each object card; problems are in ``issues`` and values the cards cannot hold in ``unmapped``.
+    ``as_object`` (``alloy.create``): the file describes objects, so a jointed tree with no driven joint (every
+    jointed URDF, which has no actuators) becomes an articulated object instead of a robot, and a file holding one
+    object names its card ``name`` exactly (default: the file's stem).
     """
     p = Path(path)
     with quiet_engine():
         io = read_file(p, floating=floating, package_dirs=package_dirs)
-        res = write_cards(io, out_dir, source=p, fmt=file_format(p), prefix=name)
+        index_name = io.name if p.suffix.lower() == ".json" else None      # index.json: the exported scene's name
+        if as_object:
+            io.groups = dict.fromkeys(io.groups, "object")          # driven joints still make a robot (is_robot)
+        res = write_cards(io, out_dir, source=p, fmt=file_format(p), prefix=name or index_name,
+                          package_dirs=package_dirs, exact=as_object, rebuilt=floating is not None)
         _validate(res)
     log.info("imported %s: %d objects, %d robots, %d issues", p.name, len(res.objects), len(res.robots),
              len(res.issues))

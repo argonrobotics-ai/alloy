@@ -12,7 +12,9 @@ the dynamic geom's solref governs unlisted contacts (MuJoCo averages solref by s
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import NamedTuple
 
 import numpy as np
@@ -32,6 +34,27 @@ DEFAULT_SOLIMP = (0.9, DEFAULT_IMP, 0.001, 0.5, 2.0)   # Newton's mujoco:geom_so
 SOLIMP_ATOL = 1e-6                                     # float32 storage of the geom values
 FIT_ATTRS = ("pair_k", "pair_zeta", "pair_kecap")       # read by alloy.contact.pair_fit (SCR-DC3-5 part 2)
 DRAWN_ATTRS = ("pair_m0", "pair_tcmin")                # drawn rows: template reduced mass, 2·dt (SCR-DC3-8)
+_COUNT_ONLY: ContextVar[list[int] | None] = ContextVar("alloy_pair_rows_count_only", default=None)
+
+
+@contextmanager
+def count_only() -> Iterator[list[int]]:
+    """Inside the block ``pair_rows`` adds no row and appends the number it would add (per world) to the yielded
+    list instead: ``alloy.estimate``'s assembly, which reads counts the rows do not change (16 bowls of
+    27 hulls make 88,000 rows, most of an estimate's time). Example::
+
+        with count_only() as rows:
+            built = assembler.assemble(card, device, world_count=1)
+        print(sum(rows))
+    """
+    sink: list[int] = []
+    token = _COUNT_ONLY.set(sink)
+    try:
+        yield sink
+    finally:
+        _COUNT_ONLY.reset(token)
+
+
 
 
 def _shape_bodies(b: newton.ModelBuilder, objs: Sequence[TemplateObject]) -> list[tuple[int, int, int]]:
@@ -55,15 +78,67 @@ def pair_rows(b: newton.ModelBuilder, objs: Sequence[TemplateObject], keys: Sequ
     if "mujoco:pair_geom1" not in b.custom_attributes:
         return 0
     shapes = _shape_bodies(b, objs)
-    fit = FitBodies(armature_bodies(b, objs), drawn_bodies(objs))
+    index: dict[str, int] = {}                     # a key's first index, as keys.index, in O(1) per row
+    for i, k in enumerate(keys):
+        index.setdefault(k, i)
+    pairs = _candidates(b, shapes, objs, index, table)
+    sink = _COUNT_ONLY.get()
+    if sink is not None:                                  # count_only(): the estimate's assembly
+        sink.append(len(pairs))
+        return len(pairs)
+    fit, memo = FitBodies(armature_bodies(b, objs), drawn_bodies(objs)), {}
     rows = 0
-    for i in range(len(shapes)):
-        for j in range(i + 1, len(shapes)):
-            rows += _maybe_row(b, shapes[i], shapes[j], objs, keys, table, stiffness, (dt, integrator), fit)
+    for i, j in pairs:
+        rows += _maybe_row(b, shapes[i], shapes[j], objs, index, table, stiffness, (dt, integrator), fit, memo)
     if rows > ROWS_WARN:
         log.warning("%d explicit MuJoCo pairs per world (GOTCHAS:503: millions of keyed pairs slow the build)", rows)
     log.info("native MuJoCo pair rows: %d per world", rows)
     return rows
+
+
+def _candidates(b: newton.ModelBuilder, shapes: Sequence[tuple[int, int, int]], objs: Sequence[TemplateObject],
+                index: dict[str, int], table: np.ndarray) -> list[tuple[int, int]]:
+    """(i, j) indices into ``shapes``, i < j in the double loop's order, of the pairs that get a row: ``_maybe_row``'s
+    tests (different bodies, one dynamic, not ``_excluded``, μ_pair ≠ max(μ_a, μ_b) or a CCD / drawn object) in numpy,
+    one shape against all later ones (the rows are the same; the per-pair Python test made the build O(shapes²) in
+    Python: 16 decomposed bowls, 433 shapes, 17 s of a CPU build)."""
+    from alloy.scene.entries import ccd_backed
+
+    n = len(shapes)
+    if n < 2:
+        return []
+    shape, body, obj = (np.array([x[k] for x in shapes], dtype=np.int64) for k in range(3))
+    mass = np.array([_mass(b, int(x)) for x in body], dtype=np.float64)
+    live = np.array([objs[o].obj is not None for o in obj], dtype=bool)
+    mat = np.array([index[objs[o].material_key] if live[k] else 0 for k, o in enumerate(obj)], dtype=np.int64)
+    mu_s = np.array([float(b.shape_material_mu[s]) for s in shape], dtype=np.float64)
+    group = np.array([int(b.shape_collision_group[s]) for s in shape], dtype=np.int64)
+    always = np.array([live[k] and (ccd_backed(objs[o]) or _draws_surface(objs[o])) for k, o in enumerate(obj)],
+                      dtype=bool)
+    mu_table = np.asarray(table[:, :, 1], dtype=np.float64)
+    filtered = b._shape_collision_filter_pairs
+    out = []
+    for i in range(n - 1):
+        if not live[i]:
+            continue
+        j = np.arange(i + 1, n)
+        ok = live[j] & (body[j] != body[i]) & (obj[j] != obj[i]) & ((mass[j] > 0.0) | (mass[i] > 0.0))
+        ok &= _groups_collide_np(group[i], group[j])
+        mu_max = np.maximum(mu_s[i], mu_s[j])
+        differs = np.abs(mu_table[mat[i], mat[j]] - mu_max) > MU_RTOL * np.maximum(np.abs(mu_max), 1e-12)
+        ok &= differs | always[j] | always[i]
+        s0 = int(shape[i])
+        out.extend((i, int(k)) for k in j[ok] if (min(s0, int(shape[k])), max(s0, int(shape[k]))) not in filtered)
+    return out
+
+
+def _groups_collide_np(g0: int, g1: np.ndarray) -> np.ndarray:
+    """``groups_collide(g0, x)`` for each x in ``g1``."""
+    if g0 == 0:
+        return np.zeros(g1.shape, dtype=bool)
+    if g0 > 0:
+        return (g1 != 0) & ((g1 == g0) | (g1 < 0))
+    return (g1 != 0) & (g1 != g0)
 
 
 def _excluded(b: newton.ModelBuilder, sa, sb, objs) -> bool:
@@ -91,7 +166,7 @@ def groups_collide(g0: int, g1: int) -> bool:
     return g0 != g1
 
 
-def _maybe_row(b, sa, sb, objs, keys, table, stiffness, step=(None, "implicitfast"), fit=None) -> int:
+def _maybe_row(b, sa, sb, objs, index, table, stiffness, step=(None, "implicitfast"), fit=None, memo=None) -> int:
     """A row where μ_pair ≠ max(μ_a, μ_b), or where either object collides through MuJoCo's CCD path (so the
     resting ζ floor reaches a box resting on a static mesh, whose own solref MuJoCo would otherwise use).
 
@@ -99,25 +174,25 @@ def _maybe_row(b, sa, sb, objs, keys, table, stiffness, step=(None, "implicitfas
     (`_row_solimp`). A row touching a body in `fit` (joint armature, SCR-DC3-5; or a per-world drawn mass,
     SCR-DC3-8) records K, ζ and the ke cap so `alloy.contact.pair_fit` resizes it from MuJoCo's per-world
     body_invweight0; a drawn row also records its template reduced mass (`_row_fit_values`)."""
-    from alloy.scene.entries import ccd_backed
-    from alloy.scene.native_gains import ZETA_CCD, resting_floor
+    from alloy.scene.native_gains import ZETA_CCD
 
     (s0, b0, o0), (s1, b1, o1) = sa, sb
     m0, m1 = _mass(b, b0), _mass(b, b1)
     if b0 == b1 or (m0 <= 0.0 and m1 <= 0.0) or _excluded(b, sa, sb, objs):
         return 0
-    i, j = keys.index(objs[o0].material_key), keys.index(objs[o1].material_key)
+    memo = {} if memo is None else memo                  # per-object values over one pair_rows call
+    (i, ccd0, drawn0, floor0), (j, ccd1, drawn1, floor1) = (_obj_facts(objs, index, o, memo) for o in (o0, o1))
     mu = float(table[i, j, 1])
     mu_max = max(float(b.shape_material_mu[s0]), float(b.shape_material_mu[s1]))
-    ccd = ccd_backed(objs[o0]) or ccd_backed(objs[o1])
-    drawn = _draws_surface(objs[o0]) or _draws_surface(objs[o1])       # per-world values go into the row
+    ccd = ccd0 or ccd1
+    drawn = drawn0 or drawn1                                            # per-world values go into the row
     if abs(mu - mu_max) <= MU_RTOL * max(abs(mu_max), 1e-12) and not ccd and not drawn:
         return 0
     m_eff = 1.0 / sum(1.0 / m for m in (m0, m1) if m > 0.0)
     solimp, imp, flat = _row_solimp(b, s0, s1)
     # resting floors: the CCD one from either side, as before (a box resting on a static mesh); the multi-point one
     # from the dynamic sides only (a sphere bouncing on a static box table keeps its e)
-    floors = [resting_floor(objs[o]) for o, m in ((o0, m0), (o1, m1)) if m > 0.0]
+    floors = [f for f, m in ((floor0, m0), (floor1, m1)) if m > 0.0]
     zeta_min = 1.0 if flat else max([ZETA_CCD if ccd else 0.0, *floors])
     K, e = float(stiffness[i, j]), float(table[i, j, 2])
     ke, kd = native_gains(K, m_eff, e, imp, dt=step[0], zeta_min=zeta_min, integrator=step[1])
@@ -138,6 +213,18 @@ def _maybe_row(b, sa, sb, objs, keys, table, stiffness, step=(None, "implicitfas
     return 1
 
 
+def _obj_facts(objs: Sequence[TemplateObject], index: dict[str, int], o: int,
+               memo: dict) -> tuple[int, bool, bool, float]:
+    """(material index, CCD-backed, draws a surface value, resting damping floor) of object ``o``, kept in ``memo``."""
+    from alloy.scene.entries import ccd_backed
+    from alloy.scene.native_gains import resting_floor
+
+    if ("obj", o) not in memo:
+        t = objs[o]
+        memo[("obj", o)] = (index[t.material_key], ccd_backed(t), _draws_surface(t), resting_floor(t))
+    return memo[("obj", o)]
+
+
 def _attr(b: newton.ModelBuilder, key: str, s: int, fallback):
     """A per-shape custom attribute value (its default when unset, `fallback` when unregistered)."""
     a = b.custom_attributes.get(key)
@@ -153,17 +240,22 @@ def _row_solimp(b: newton.ModelBuilder, s0: int, s1: int) -> tuple[tuple[float, 
     touched-face option, gains at that imp). Any other geom solimp keeps the default row: DC4's rack PSU faces
     (0.99, 0.999, 0.1 mm) are tuned on it, and honouring them moved its latch either way (gains at dmax: creep
     1.85 mm per 10 s, bound 0.05; at d0: unmating 9.6 N, floor 12 N). Default geoms keep DEFAULT_SOLIMP exactly."""
-    a = np.asarray(_attr(b, "mujoco:geom_solimp", s0, DEFAULT_SOLIMP), dtype=np.float64)
-    c = np.asarray(_attr(b, "mujoco:geom_solimp", s1, DEFAULT_SOLIMP), dtype=np.float64)
-    if np.allclose(a, DEFAULT_SOLIMP, rtol=0.0, atol=SOLIMP_ATOL) and np.allclose(c, DEFAULT_SOLIMP, rtol=0.0,
-                                                                                   atol=SOLIMP_ATOL):
+    a0, c0 = _attr(b, "mujoco:geom_solimp", s0, DEFAULT_SOLIMP), _attr(b, "mujoco:geom_solimp", s1, DEFAULT_SOLIMP)
+    if _plain_solimp(a0) and _plain_solimp(c0):
         return DEFAULT_SOLIMP, DEFAULT_IMP, False
+    a, c = np.asarray(a0, dtype=np.float64), np.asarray(c0, dtype=np.float64)
     p0, p1 = int(_attr(b, "mujoco:geom_priority", s0, 0)), int(_attr(b, "mujoco:geom_priority", s1, 0))
     w = 1.0 if p0 > p1 else 0.0 if p1 > p0 else _solmix_weight(b, s0, s1)
     mixed = tuple(float(x) for x in w * a + (1.0 - w) * c)
     if abs(mixed[0] - mixed[1]) > SOLIMP_ATOL:
         return DEFAULT_SOLIMP, DEFAULT_IMP, False
     return mixed, mixed[1], True
+
+
+def _plain_solimp(v) -> bool:
+    """Whether a geom solimp is the default (np.allclose(v, DEFAULT_SOLIMP, rtol=0, atol=SOLIMP_ATOL) without numpy's
+    per-call cost: it runs once per shape pair)."""
+    return len(v) == len(DEFAULT_SOLIMP) and all(abs(float(x) - y) <= SOLIMP_ATOL for x, y in zip(v, DEFAULT_SOLIMP))
 
 
 def _solmix_weight(b: newton.ModelBuilder, s0: int, s1: int) -> float:

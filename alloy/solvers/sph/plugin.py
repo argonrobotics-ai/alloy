@@ -25,7 +25,7 @@ from alloy.core.registry import (
 )
 
 from .config import DFSPHConfig, register_custom_attributes
-from .escape_box import auto_world_bounds
+from .escape_box import auto_box
 from .solver import SolverDFSPH
 
 log = logging.getLogger("alloy.sph")
@@ -45,15 +45,20 @@ def _factory(view: Any, kwargs: Mapping[str, Any]) -> SolverDFSPH:
     fields = {k: kw.pop(k) for k in list(kw) if k in _CONFIG_FIELDS}
     if kw:
         raise TypeError(f"sph factory: unknown kwargs {sorted(kw)}")
+    auto = None
     if cfg is None:
         if "world_bounds" not in fields:
-            fields["world_bounds"] = auto_world_bounds(view)
+            auto = auto_box(view)
+            fields["world_bounds"] = None if auto is None else auto[0]
             log.info("sph factory: escape box %s from the scene's content (retired particles: report().escaped)",
                      fields["world_bounds"])
         cfg = DFSPHConfig(**fields)
     elif fields:
         cfg = dataclasses.replace(cfg, **fields)
-    return SolverDFSPH(view, cfg, capacity_per_world=cap)
+    solver = SolverDFSPH(view, cfg, capacity_per_world=cap)
+    if auto is not None:
+        solver.escape_box_pad = auto[1]          # an automatic box: a drive widens it (escape_box.widen)
+    return solver
 
 
 class _SPHEmitter:

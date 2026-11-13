@@ -94,6 +94,8 @@ def shape_prim(shape: IOShape, mat_path: str | None, io: IOModel) -> Prim:
         p.attr("token purpose", '"guide"')
     if mat_path:
         p.attr("rel material:binding:physics", f"<{mat_path}>")
+    if shape.collide and shape.solref is not None:      # contact stiffness and damping, as the MJCF export's geoms
+        p.attr("uniform double[] mjc:solref", f"[{num(shape.solref[0])}, {num(shape.solref[1])}]")
     return p
 
 
@@ -114,6 +116,8 @@ def body_prim(body: IOBody, io: IOModel, mats: dict[str, str], *, in_world: bool
     _xform(p, body.pose if in_world else IDENTITY)
     if body.motion == "kinematic":
         p.attr("bool physics:kinematicEnabled", "1")
+    if body.gravcomp:
+        p.attr("float mjc:gravcomp", num(body.gravcomp))        # MuJoCo's USD attribute (gravity compensation)
     _mass(p, body)
     for s in body.shapes:
         p.children.append(shape_prim(s, mats.get(s.material), io))
@@ -174,8 +178,13 @@ def _joint_extras(p: Prim, j: IOJoint, unit: float, angular: bool) -> None:
         p.attr(f"float drive:{kind}:physics:targetPosition", num(j.q0 * unit))
         if j.effort is not None:
             p.attr(f"float drive:{kind}:physics:maxForce", num(j.effort))
-    if j.armature or j.friction or j.velocity is not None:
+    if j.armature or j.friction or j.velocity is not None or j.damping:
         p.schemas.append("NewtonJointAPI")
+    if j.damping:                                   # passive damping: per degree for a hinge, as UsdPhysics drives
+        p.attr("float newton:damping", num(j.damping / unit))
+    if j.spring:                                    # passive spring: MuJoCo's USD attributes, SI (per radian)
+        p.attr("float mjc:stiffness", num(j.spring))
+        p.attr("float mjc:springref", num(j.spring_ref * unit))
     if j.armature:
         p.attr("float newton:armature", num(j.armature))
     if j.friction:
@@ -184,6 +193,48 @@ def _joint_extras(p: Prim, j: IOJoint, unit: float, angular: bool) -> None:
         p.attr("float newton:velocityLimit", num(j.velocity * unit))
     if j.q0:
         p.attr(f"float state:{kind}:physics:position", num(j.q0 * unit))
+
+
+def _motor_prim(j: IOJoint, joints_path: str) -> Prim:
+    """An ``MjcActuator`` for a force / torque motor (fixed gain, no bias): its control is the force times the gear."""
+    a = Prim("MjcActuator", f"{clean_name(j.name, 'joint')}_act")
+    a.attr("rel mjc:target", f"<{joints_path}/{clean_name(j.name, 'joint')}>")
+    a.attr("uniform token mjc:gainType", '"fixed"')
+    a.attr("uniform token mjc:biasType", '"none"')
+    a.attr("uniform double[] mjc:gear", "[" + ", ".join([num(j.motor_gear)] + ["0"] * 5) + "]")
+    if j.ctrl_range is not None:
+        a.attr("uniform token mjc:ctrlLimited", '"true"')
+        a.attr("uniform double mjc:ctrlRange:min", num(j.ctrl_range[0]))
+        a.attr("uniform double mjc:ctrlRange:max", num(j.ctrl_range[1]))
+    return a
+
+
+def actuator_prims(io: IOModel, joints_path: str) -> Prim:
+    """``MjcActuator`` prims (MuJoCo's USD schema) for the position servos, so a reload has the actuators by name
+    as the MJCF export does. The gains repeat the joint's drive; a reader that knows only UsdPhysics uses the drive."""
+    scope = Prim("Scope", "Actuators")
+    for j in io.joints:
+        if j.kind not in ("revolute", "prismatic") or not (j.actuated and j.stiffness > 0 or j.motor_gear is not None):
+            continue
+        if j.stiffness <= 0:
+            scope.children.append(_motor_prim(j, joints_path))
+            continue
+        kv = -j.drive_damping if j.drive_damping else j.drive_dampratio      # MuJoCo: positive = damping ratio
+        if j.drive_dampratio and not j.drive_damping:
+            io.note("usd", j.name, f"servo damping is a damping ratio ({j.drive_dampratio:g}): kept on the "
+                                   "MjcActuator prim; the UsdPhysics drive has damping 0 (it has no ratio)")
+        a = Prim("MjcActuator", f"{clean_name(j.name, 'joint')}_act")
+        a.attr("rel mjc:target", f"<{joints_path}/{clean_name(j.name, 'joint')}>")
+        a.attr("uniform token mjc:gainType", '"fixed"')
+        a.attr("uniform token mjc:biasType", '"affine"')
+        a.attr("uniform double[] mjc:gainPrm", "[" + ", ".join([num(j.stiffness)] + ["0"] * 9) + "]")
+        a.attr("uniform double[] mjc:biasPrm", "[" + ", ".join(["0", num(-j.stiffness), num(kv)] + ["0"] * 7) + "]")
+        if j.effort is not None:
+            a.attr("uniform token mjc:forceLimited", '"true"')
+            a.attr("uniform double mjc:forceRange:min", num(-j.effort))
+            a.attr("uniform double mjc:forceRange:max", num(j.effort))
+        scope.children.append(a)
+    return scope
 
 
 def group_prim(g: Group, io: IOModel, mats: dict[str, str], root: str) -> tuple[Prim, list[Prim]]:
@@ -230,9 +281,25 @@ def usd_text(io: IOModel) -> str:
         joints.children.extend(js)
     _equality_joints(io, joints, root)
     top.children.append(joints)
+    acts = actuator_prims(io, f"{root}/Joints")
+    if acts.children:
+        top.children.append(acts)
     header = ('#usda 1.0\n(\n    defaultPrim = "%s"\n    metersPerUnit = 1\n    kilogramsPerUnit = 1\n'
               '    upAxis = "Z"\n    doc = "Exported by Alloy (alloy.io)"\n)\n\n' % name)
     return header + top.text()
+
+
+def _equality_frames(jp: Prim, e, pos0: Pose, paths: dict[str, str]) -> None:
+    """Bodies and frames of a weld / connect: body1 at its own origin (a connect: its anchor), body0 where that is."""
+    anchor = e.anchor if e.kind == "connect" else IDENTITY
+    if e.body2 is not None:
+        jp.attr("rel physics:body0", f"<{paths[e.body2]}>")
+    jp.attr("rel physics:body1", f"<{paths[e.body1]}>")
+    first = compose(pos0, anchor)
+    jp.attr("point3f physics:localPos0", f3(first[:3]))
+    jp.attr("quatf physics:localRot0", quat_text(first[3:]))
+    jp.attr("point3f physics:localPos1", f3(anchor[:3]))
+    jp.attr("quatf physics:localRot1", quat_text(anchor[3:]))
 
 
 def _equality_joints(io: IOModel, joints: Prim, root: str) -> None:
@@ -242,11 +309,14 @@ def _equality_joints(io: IOModel, joints: Prim, root: str) -> None:
         for b in grp.bodies:
             paths[b.name] = f"{root}/{clean_name(grp.name, 'object')}/{clean_name(b.name, 'body')}"
     for e in io.equalities:
-        if e.kind != "weld":
-            io.note("usd", e.name, "connect (ball) equality not written; add a PhysicsSphericalJoint")
-            continue
         b1 = io.body(e.body1)
         rel = IDENTITY if e.body2 is None else compose(inverse(io.body(e.body2).pose), b1.pose)
+        if e.kind != "weld" or e.body2 is not None:     # MuJoCo's USD equality schemas: read back as equalities
+            jp = Prim("PhysicsFixedJoint" if e.kind == "weld" else "PhysicsSphericalJoint", clean_name(e.name, "eq"),
+                      ["MjcEqualityWeldAPI" if e.kind == "weld" else "MjcEqualityConnectAPI"])
+            _equality_frames(jp, e, rel if e.body2 is not None else b1.pose, paths)
+            joints.children.append(jp)
+            continue
         jp = Prim("PhysicsFixedJoint", clean_name(e.name, "weld"))
         if e.body2 is not None:
             jp.attr("rel physics:body0", f"<{paths[e.body2]}>")

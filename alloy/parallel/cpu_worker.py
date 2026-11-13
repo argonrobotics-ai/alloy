@@ -40,20 +40,6 @@ def describe(exc: BaseException) -> dict[str, Any]:
             "traceback": "".join(traceback.format_exception(exc))}
 
 
-def default_pivot(sim: Any, name: str) -> Any:
-    """The pivot ``Sim.drive`` takes for a kinematic fixture of several parts: their mean position in (global)
-    world 0, which only rank 0 holds; None for a single part (it turns about its own origin in every world)."""
-    import numpy as np  # noqa: PLC0415
-
-    from alloy.api import _drive  # noqa: PLC0415
-
-    parts = _drive.parts_of(sim, name)
-    if len(parts) <= 1:
-        return None
-    st = sim.state(parts, world=0)
-    return np.mean([st[f"{p}.pos"] for p in parts], axis=0)
-
-
 def mpm_solvers(sim: Any) -> list[Any]:
     """The worker's implicit MPM solvers, in the stepper's order (the same in every worker)."""
     return [s for s in sim.engine.solvers if hasattr(s, "_mpm_model")]   # every entry, same order in every worker
@@ -92,7 +78,7 @@ def build(job: dict[str, Any]) -> Any:
 
 
 def handle(sim: Any, msg: tuple[Any, ...]) -> Any:
-    """One request: ("call", method, args, kwargs), ("get", fact) or ("pivot", name)."""
+    """One request: ("call", method, args, kwargs) or ("get", fact)."""
     op = msg[0]
     if op == "call" and msg[1] in CALLS:
         out = getattr(sim, msg[1])(*msg[2], **msg[3])
@@ -101,8 +87,6 @@ def handle(sim: Any, msg: tuple[Any, ...]) -> Any:
         return None if out is sim else out
     if op == "get" and msg[1] in FACTS:
         return getattr(sim, msg[1])
-    if op == "pivot":
-        return default_pivot(sim, msg[1])
     if op == "mpm_boxes":
         return mpm_boxes(sim)
     if op == "mpm_hold":

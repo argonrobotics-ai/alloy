@@ -28,6 +28,7 @@ from alloy.plugins.base import ForcePlugin, Forces
 from alloy.plugins.funcs import add_wrench
 from alloy.plugins.harness.scene import Law, LawResult, TestScene, body_xform
 from alloy.plugins.tactile import laws as L1
+from alloy.plugins.tactile.coupled_law import PAD, coupled_check, normal_gel_force
 
 R_BALL = 0.005
 MARKERS = {"markers": (5, 7)}
@@ -190,4 +191,13 @@ def gel_laws() -> list[Law]:
         Law("twist_sense", _check_twist_sense, scene=twist, config=MARKERS, doc="markers turn with the twist"),
         Law("null", _check_null, scene=TestScene(build=L1._build_null, periods=10, ground_mu=1.0), config=MARKERS,
             doc="no contact, no field"),
+        Law("coupled_force", coupled_check(_gel_on_probe, normal_gel_force),
+            scene=TestScene(build=L1._build_null, periods=1, ground_mu=1.0),
+            doc="gel normal force beside liquid (a coupled scene) = rigid-only, within 2 %"),
     ]
+
+
+def _gel_on_probe() -> Any:
+    from alloy.plugins.tactile.gel import GelSensor  # noqa: PLC0415 - gel imports this module in laws()
+
+    return GelSensor(**PAD)

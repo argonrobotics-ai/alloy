@@ -38,7 +38,9 @@ Every `add_*` returns the name; names must be unique and are how you read state 
 Per-world random values: `scene.randomize(name, field, lo, hi)` with field `x`, `y`, `z` (start position), `density`,
 `friction`, `youngs`, or the card path `material.surface.mu_dynamic`. `mass` and `restitution` are not fields:
 randomize `density` (mass = density x volume), and set restitution for all worlds with `restitution=` on the object. A
-wrong field raises `SceneError` listing these. More in `worlds.md`.
+wrong field raises `SceneError` listing these. Calling `randomize` again on the same object and field replaces the
+earlier range (a warning names both); a recipe's `randomize` row overrides its base card's range. More in
+`worlds.md`.
 
 ## Containers and fixtures
 

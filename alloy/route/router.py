@@ -12,7 +12,7 @@ import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 
-from alloy.cards.types import CurveSource, ParticleSource, ResolvedObject
+from alloy.cards.types import CurveSource, ParticleSource, Primitive, ResolvedObject
 from alloy.core.errors import CapacityError, RouteError
 from alloy.route import checks as ck
 from alloy.route import rodcheck
@@ -30,6 +30,13 @@ ROUTE_ENTRY: dict[Route, str] = {
     Route.LIQUID_MPM: "mpm", Route.LIQUID_SPH: "sph", Route.CLOTH_FILM: "film",
 }
 SelfTest = Callable[[RodCard, str], Mapping[str, float]]
+
+
+def woven_grid_sheet(obj: ResolvedObject) -> bool:
+    """A woven card (``elastic.cloth``) whose sheet is a thin box: the assembler meshes it as a warp / weft grid, where
+    the orthotropic membrane (``alloy.scene.ortho_membrane``) drapes without locking. Mesh sheets are not grids."""
+    shape = obj.card.shape
+    return obj.material.elastic.cloth is not None and isinstance(shape, Primitive) and shape.kind == "box"
 
 
 @dataclass
@@ -99,7 +106,9 @@ class Router:
         if obj.card.route is not None:          # the override first; the natural route's reasons follow it
             p.reasons.insert(0, f"override {route} -> {obj.card.route.route}: {obj.card.route.reason} (the reasons "
                                 f"after this line are the {route} pick it replaced)")
+            refuse_frictionless_rigid(obj, Route(obj.card.route.route), route)
             return self._decision(Route(obj.card.route.route), ctx, p, overridden=True)
+        refuse_frictionless_rigid(obj, route, route)
         return self._decision(route, ctx, p)
 
     def _j2_solid_on_mpm(self, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> None:
@@ -122,10 +131,28 @@ class Router:
                          "spuriously below sigma_y / E 10 % "
                          "(docs/known_gaps/plasticity-soft-tets-low-yield.md); the entry's "
                          f"rheology solve (all MPM materials in it) runs at tolerance {mpm_solid.TOLERANCE:g}, at most "
-                         f"{mpm_solid.MAX_ITERATIONS} iterations per step")
-        if (text := mpm_solid.stiffness_warning(obj.card.name, obj.material, p.numbers["voxel"])) is not None:
+                         f"{mpm_solid.MAX_ITERATIONS} iterations per step, Delassus regularization "
+                         f"{mpm_solid.DELASSUS_REGULARIZATION:g}")
+        scale = self._quasi_static_scale(obj, p)        # Scene.set_quasi_static_mass_scale (slice 2b step 2), or None
+        if (text := mpm_solid.stiffness_warning(obj.card.name, obj.material, p.numbers["voxel"],
+                                                mass_scale=scale.s if scale else 1.0)) is not None:
             p.reasons.append(text)
             _warn_once(obj.card.name, text)
+
+    def _quasi_static_scale(self, obj: ResolvedObject, p: _Path) -> quasi_static.Scale | None:  # noqa: F821
+        """The quasi-static mass scale the scene asks for this j2 solid (``quasi_static.Scale``), noted in ``p``, or
+        None. ``self.quasi_static`` is set by ``alloy.api._quasi_static.with_scales`` (empty: none asked)."""
+        from alloy.solvers.plastic import quasi_static
+
+        spec = getattr(self, "quasi_static", {}).get(obj.card.name)
+        if spec is None:
+            return None
+        scale = quasi_static.choose(obj.material, spec)
+        p.numbers.update(scale.numbers())
+        p.reasons.append(scale.reason())
+        if (text := scale.warning(obj.card.name)) is not None:
+            _warn_once(obj.card.name + ":quasi_static", text)
+        return scale
 
     def _decision(self, route: Route, ctx: SceneContext, p: _Path, overridden: bool = False) -> RouteDecision:
         entry = self._articulated_entry(p.articulated, ctx) if route == Route.STATIC and p.articulated \
@@ -281,6 +308,9 @@ class Router:
                 return sheet
             aniso = obj.material.elastic.cloth is not None
             others = ctx.other_dynamic_entries
+            if aniso and woven_grid_sheet(obj):
+                p.reasons.append("cloth_vbd: woven grid sheet, orthotropic membrane (warp along x, weft along y)")
+                return Route.CLOTH_VBD
             if aniso and others == 0 and str(Route.CLOTH_STYLE3D) in ctx.registered_routes:
                 p.reasons.append("cloth_style3d: anisotropic cloth, no other dynamic entry (D16)")
                 return Route.CLOTH_STYLE3D
@@ -310,6 +340,37 @@ class Router:
         from alloy.route.phase import rod_route
 
         return rod_route(self, obj, ctx, p)
+
+
+RIGID_CONTACT_ROUTES = frozenset({Route.RIGID, Route.RIGID_COMPLIANT, Route.RIGID_PILE, Route.GRAIN_RIGID,
+                                  Route.PANELS, Route.CHAIN})     # free bodies whose contacts take Coulomb friction
+
+
+class FrictionlessRigidError(RouteError):
+    """A paste or liquid material (no Coulomb friction: its wall drag is its viscosity) on a rigid route; ``fix``
+    names the friction to give."""
+
+    def __init__(self, message: str, fix: str) -> None:
+        super().__init__(message)
+        self.fix = fix
+
+
+def refuse_frictionless_rigid(obj: ResolvedObject, route: Route, natural: Route) -> None:
+    """Raise ``FrictionlessRigidError`` for a free rigid body of a fluid material with zero friction (a paste or
+    liquid card: ``mu_static`` = ``mu_dynamic`` = 0, its drag coming from its viscosity, which a rigid body has not):
+    it would slide as on ice against everything, with MuJoCo warning of NaN (friction under MJ_MINMU). A ``friction=``
+    on the object gives it a Coulomb friction and builds."""
+    surf = obj.material.surface
+    if route not in RIGID_CONTACT_ROUTES or obj.material.fluid is None \
+            or float(surf.mu_static.value) > 0.0 or float(surf.mu_dynamic.value) > 0.0:
+        return
+    keep = f"or drop rigid=True to keep it a {natural} body" if natural != route else "or use a solid material"
+    raise FrictionlessRigidError(
+        f"{obj.card.name}: material {obj.material.name!r} has no Coulomb friction (friction 0: a paste or liquid "
+        f"drags on walls by its viscosity, which a rigid body does not have), so on route {route} it would slide "
+        "as on ice against everything",
+        f"pass friction= with rigid=True (the object's Coulomb mu against everything it touches; Scene.set_friction "
+        f"can then change single pairs), {keep}")
 
 
 def _is_j2(obj: ResolvedObject) -> bool:
@@ -349,4 +410,5 @@ def particle_region_volume(src: ParticleSource) -> float:
     return abs((hi[0] - lo[0]) * (hi[1] - lo[1]) * (hi[2] - lo[2]))
 
 
-__all__ = ["CapacityError", "ROUTE_ENTRY", "Router", "particle_region_volume", "worst"]
+__all__ = ["CapacityError", "FrictionlessRigidError", "RIGID_CONTACT_ROUTES", "ROUTE_ENTRY", "Router",
+           "particle_region_volume", "refuse_frictionless_rigid", "worst"]

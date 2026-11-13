@@ -17,16 +17,18 @@ so in ``result`` (``result.ok`` for check, ``result.health.ok`` for step and run
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import logging
 from typing import Any
 
+from alloy.cli import ops_control as C
 from alloy.cli import ops_sim as S
 from alloy.cli import ops_tools as T
 from alloy.cli import ops_vary as V
-from alloy.cli.errors import RequestError, error_payload
+from alloy.cli.errors import RequestError, bounded, error_payload
 from alloy.cli.jsonio import plain
-from alloy.cli.scenes import ADDERS
+from alloy.cli.scenes import ADDERS, SETTERS
 from alloy.cli.session import Session
 from alloy.cli.spec import Op, Param, check_request
 
@@ -44,7 +46,12 @@ _RECIPE_SCHEMA = {
                        "type": "object", "required": ["add"],
                        "properties": {"add": {"enum": sorted(ADDERS)}, "name": {"type": "string"}},
                        "description": "keyword arguments of Scene.add_<add>: sizes in m (full edges), mass kg, "
-                                      "pos [x, y, z], rpy radians, static true/false (alloy list adds)"}},
+                                      "pos [x, y, z], rpy radians, static true/false (alloy list adds); a robot's "
+                                      "path is a file or a library robot name (alloy list robots)"}},
+                   "set": {"type": "array", "items": {
+                       "type": "object", "required": ["set"], "properties": {"set": {"enum": sorted(SETTERS)}},
+                       "description": 'keyword arguments of Scene.set_<set>, e.g. {"set": "heater", "name": '
+                                      '"pan_floor", "temperature": 353.15} or {"set": "heat", "time_scale": 60}'}},
                    "friction": {"type": "array", "items": {"type": "object"}},
                    "randomize": {"type": "array", "items": {"type": "object"}}},
     "additionalProperties": False}
@@ -79,8 +86,50 @@ def _op(name: str, summary: str, params: tuple[Param, ...], handler: Any, exampl
     return Op(name, summary, params, handler, description or summary, example, read_only, engine, image)
 
 
+def _vec(name: str, help_text: str) -> Param:
+    return Param(name, "vector", help_text)
+
+
+def _value(name: str, help_text: str) -> Param:
+    return Param(name, "any", help_text, schema={"anyOf": [{"type": "number"},
+                                                           {"type": "array", "items": {"type": "number"}}]})
+
+
+BODY = Param("name", "string", "body or kinematic object name (from build's names)", required=True)
+#: commands acting on an open simulation while it runs (alloy.Sim methods; handlers in alloy.cli.ops_control)
+CONTROL_OPS = (
+    _op("drive", "Move a kinematic object at a constant velocity from now (Sim.drive); stop=true ends all drives.",
+        (*ON_SIM, Param("name", "string", "kinematic object or fixture to move"),
+         _vec("velocity", "linear velocity [vx, vy, vz], m/s"), _vec("angular_velocity", "[wx, wy, wz], rad/s"),
+         _vec("pivot", "point [x, y, z] the rotation turns about (default: the object's origin)"),
+         Param("duration", "number", "seconds to keep driving (default: until changed)", minimum=0),
+         Param("stop", "boolean", "end every drive; kinematic objects hold where they are", default=False)),
+        C.op_drive, {"sim": "sim1", "name": "belt", "velocity": [0.25, 0, 0], "duration": 2.0}),
+    _op("pose", "Teleport a free or kinematic body now, at rest (Sim.set_pose).",
+        (*ON_SIM, BODY, _vec("pos", "[x, y, z] m, or one per world [[x, y, z], ...]"),
+         _vec("quat_wxyz", "[w, x, y, z], or one per world"),
+         Param("world", "integer", "only this world (default: every world)", minimum=0)),
+        C.op_pose, {"sim": "sim1", "name": "cube", "pos": [0, 0, 0.5]}),
+    _op("wrench", "Hold a force and torque on a body until changed; zeros remove it (Sim.apply_wrench).",
+        (*ON_SIM, BODY, _vec("force", "[fx, fy, fz] N, world frame (or one per world)"),
+         _vec("torque", "[tx, ty, tz] N m about the centre of mass (or one per world)"),
+         Param("at", "string", "a rod's end segment", choices=("start", "end"))),
+        C.op_wrench, {"sim": "sim1", "name": "cube", "force": [0, 0, 5]}),
+    _op("settle", "Run some seconds with no new commands; the settled state becomes the one reset returns to.",
+        (*ON_SIM, Param("seconds", "number", "simulated seconds", required=True, minimum=0)),
+        C.op_settle, {"sim": "sim1", "seconds": 0.5}),
+    _op("heater", "Change a heater's temperature (K) or power (W) while running (Sim.set_heater).",
+        (*ON_SIM, BODY, _value("temperature", "K: a number, or a list with one per world"),
+         _value("power", "W: a number, or a list with one per world")),
+        C.op_heater, {"sim": "sim1", "name": "burner", "temperature": 370.0}),
+    _op("controls", "Set raw actuator inputs by actuator name (Sim.set_controls); targets is the usual way.",
+        (*ON_SIM, Param("controls", "object", '{"actuator": value} (a list gives one per world)', required=True)),
+        C.op_controls, {"sim": "sim1", "controls": {"arm/actuator1": 0.5}}),
+)
+
+
 OPS: dict[str, Op] = {op.name: op for op in (
-    _op("list", "List library scenes, objects or materials, recipe add kinds, or these operations.",
+    _op("list", "List library scenes, objects, materials or robots, recipe add kinds, or these operations.",
         (Param("kind", "string", "what to list", default="scenes", positional=True, choices=T.LIST_KINDS),
          Param("match", "string", "keep names containing this text"), LIBRARY,
          Param("limit", "integer", "at most this many items", default=200, minimum=1)),
@@ -114,6 +163,7 @@ OPS: dict[str, Op] = {op.name: op for op in (
     _op("targets", "Set joint position or velocity targets (kept until changed).",
         (*ON_SIM, TARGETS.req(), KIND), S.op_targets, {"sim": "sim1", "targets": {"arm/lift": 0.1}}),
     _op("reset", "Put every world of a simulation back to its start state.", ON_SIM, S.op_reset, {"sim": "sim1"}),
+    *CONTROL_OPS,
     _op("close", "Close an open simulation.", (Param("sim", "string", "id to close (default: the last)"),),
         S.op_close, {"sim": "sim1"}, engine=False),
     _op("check", "Physics check of a scene (cards, overlaps, a short run) or of an open simulation now.",
@@ -207,11 +257,13 @@ def run(session: Session, name: str, args: dict[str, Any] | None) -> dict[str, A
     """Run operation ``name`` with ``args`` (checked first); raises on errors. Example: ``run(s, "list", {})``."""
     op = OPS.get(name)
     if op is None:
-        raise RequestError(f"unknown operation {name!r}", f"use one of {sorted(OPS)}", field="op")
+        raise RequestError(f"unknown operation {bounded(name, 80)!r}", f"use one of {sorted(OPS)}", field="op")
     checked = check_request(op, args)
     if op.engine:
         _quiet_engine()
-    return op.handler(session, checked)
+    undo = session.undo_on_error() if isinstance(session, Session) else contextlib.nullcontext()
+    with undo:                                 # a failed call opens no simulation and keeps the default one
+        return op.handler(session, checked)
 
 
 def _quiet_engine() -> None:
@@ -242,7 +294,7 @@ def respond_op(session: Session, name: str, args: dict[str, Any] | None) -> dict
     try:
         return {"ok": True, "op": name, "result": plain(run(session, name, args))}
     except Exception as exc:  # noqa: BLE001 - every failure becomes a reply with a fix
-        return {"ok": False, "op": name, "error": error_payload(exc)}
+        return {"ok": False, "op": bounded(name, 80), "error": error_payload(exc)}
 
 
 def passed(reply: dict[str, Any]) -> bool:

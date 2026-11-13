@@ -16,7 +16,19 @@ VBD entry's kwargs, or ``ALLOY_SELF_CONTACT_ROWS=fixed`` in the environment, kee
    into two words per family: the most pairs a growable row dropped, and whether a row passed ``FILL``. No host read.
 3. ``RowGuard.grow`` (``alloy.integration.row_growth``, once per period, outside any captured graph) reads those
    words. Rows over ``FILL`` grow before they drop a pair; when a row did drop pairs the period re-runs on the larger
-   rows, so no accepted period has a dropped pair.
+   rows, so no accepted period has a dropped pair (one exception on CUDA, item 4: a row that fills from under half
+   full to past its size within one period is seen a period late, and that period stands with the flag).
+4. The read costs nothing while no row is over ``ARM`` (half full): on CUDA the words go to pinned memory and the
+   previous period's copy is read (``PeriodWords``), so the host never waits for the period it just queued and keeps
+   running ahead of the device. A blocking read every period cost a calm 64-world drape 5.7 % on an L4 (rc1, XB4-10).
+   Once a late read shows a row over ``ARM`` the reads wait for each period again (grow and re-run as above) until
+   ``CALM_PERIODS`` periods pass with none over it. A row that goes from under half full to over full within one
+   period still drops pairs without a re-run: health keeps the flag, and from then on the rows are tracked and read
+   every period, so the next such drop re-runs.
+5. Nothing per row is allocated until a row passes ``ARM``: allocating the two per-row ``need`` arrays at build
+   alone (never written or read) made every captured period of that drape 5 % slower on the GPU (L4 probes,
+   [internal note] notes/gap-13b/vmprobe3; an allocation-layout effect whose mechanism is not known). Until then the fold
+   tracks only the words, and a growth sizes rows from the counts of the last detection.
 
 Limits, both logged once with the fix: a row stops at ``ROW_CAP`` pairs, and all rows together at ``bytes_cap``.
 Past either, pairs drop as before and health raises SELF_CONTACT_OVERFLOW. Memory: 8 bytes per pair slot, so a
@@ -49,16 +61,21 @@ FILL = 0.75                        # a row fuller than this starts a growth, bef
 GROW_FILL = 0.5                    # a growth takes every row fuller than this
 BYTES_FACTOR, BYTES_FLOOR = 4.0, 256 << 20     # default cap: 4x the fixed rows' bytes, at least 256 MiB
 SLOT_BYTES = 8                     # two int32 per pair slot
+ARM = 0.5                          # on CUDA, a row fuller than this makes the period-end reads wait (item 4)
+CALM_PERIODS = 20                  # periods with no row over ARM before the reads go late again
+LATE_ON_CPU = False                # laws: run the late reads on the CPU too (they need no device to be checked)
+WORDS = 3                          # per family: most pairs dropped, a row over FILL, a row over ARM
 FAMILIES: tuple[tuple[str, str], ...] = (("vertex", "vertex_colliding_triangles"), ("edge", "edge_colliding_edges"))
 
 
 @wp.kernel
 def _fold_rows(count: wp.array[wp.int32], size: wp.array[wp.int32], family: int, row_cap: int, fill_num: int,
-               fill_den: int, need: wp.array[wp.int32], words: wp.array2d[wp.int32]):
+               arm_num: int, fill_den: int, track: int, need: wp.array[wp.int32], words: wp.array2d[wp.int32]):
     i = wp.tid()
     c = count[i]
-    if c > need[i]:
-        need[i] = c
+    if track != 0:
+        if c > need[i]:
+            need[i] = c
     s = size[i]
     if s >= row_cap:
         return
@@ -66,6 +83,8 @@ def _fold_rows(count: wp.array[wp.int32], size: wp.array[wp.int32], family: int,
         wp.atomic_max(words, family, 0, c - s)
     if c * fill_den > s * fill_num:
         wp.atomic_max(words, family, 1, 1)
+    if c * fill_den > s * arm_num:
+        wp.atomic_max(words, family, 2, 1)
 
 
 def grown_sizes(need: np.ndarray, size: np.ndarray, row_cap: int = ROW_CAP, headroom: float = HEADROOM,
@@ -84,6 +103,68 @@ def row_bytes(sizes: np.ndarray) -> int:
     return SLOT_BYTES * int(np.asarray(sizes, dtype=np.int64).sum())
 
 
+class PeriodWords:
+    """Reads the fold's words at a period's end (module docstring, item 4): now (waits for the device), or late
+    (this period's words go to pinned memory and the previous period's copy is read)."""
+
+    def __init__(self, words: wp.array, late: bool) -> None:
+        self.words, self.can_late, self.late = words, late, late
+        self.calm = 0
+        self.blocking = 0                    # reads that waited for the period just queued (laws count them)
+        cuda = self._cuda = words.device.is_cuda
+        self._host = [wp.zeros(words.shape, dtype=wp.int32, device="cpu", pinned=cuda) for _ in range(2 * late)]
+        self._events: list[Any] = [None, None]
+        self._queued = [False, False]
+        self._turn = 0
+
+    def now(self) -> np.ndarray:
+        """This period's words, then cleared (a host read: waits for the device)."""
+        self.blocking += 1
+        out = self.words.numpy().copy()      # on the CPU numpy() is a live view: copy before zeroing
+        self.words.zero_()
+        return out
+
+    def read(self) -> tuple[np.ndarray, bool]:
+        """The words to act on at this period's end, and whether this period dropped pairs (only this period's own
+        drops can be re-run; a late read's are a period old)."""
+        if not self.late:
+            out = self.now()
+            self._settle(out)
+            return out, bool(out[:, 0].any())
+        slot, prev = self._turn % 2, (self._turn + 1) % 2
+        self._turn += 1
+        self._queue(slot)
+        before = self._take(prev)
+        if not before[:, 2].any():
+            return before, False
+        self.late, self.calm = False, 0      # a row passed half full: wait for this period too, and from now on
+        self.blocking += 1
+        now = self._take(slot)
+        return np.maximum(before, now), bool(now[:, 0].any())
+
+    def _settle(self, out: np.ndarray) -> None:
+        if not self.can_late:
+            return
+        self.calm = 0 if out[:, 2].any() else self.calm + 1
+        if self.calm >= CALM_PERIODS:
+            self.late, self.calm = True, 0
+
+    def _queue(self, slot: int) -> None:
+        stream = wp.get_stream(self.words.device) if self._cuda else None   # the period's own (a pack runs on its own)
+        wp.copy(self._host[slot], self.words, stream=stream)
+        self.words.zero_()
+        self._events[slot] = stream.record_event() if stream is not None else None
+        self._queued[slot] = True
+
+    def _take(self, slot: int) -> np.ndarray:
+        if not self._queued[slot]:
+            return np.zeros(self.words.shape, dtype=np.int32)
+        if self._events[slot] is not None:
+            wp.synchronize_event(self._events[slot])
+        self._queued[slot], self._events[slot] = False, None
+        return self._host[slot].numpy().copy()
+
+
 @dataclass(frozen=True)
 class Growth:
     """One growth: per family (rows grown, largest row after), the bytes after, and whether pairs had dropped."""
@@ -93,14 +174,16 @@ class Growth:
 
 
 class RowState:
-    """The rows of one solver: per-row need, the two words per family, and the growth itself."""
+    """The rows of one solver: per-row need (from the first row past ``ARM``), the words per family, and the growth."""
 
     def __init__(self, solver: Any, bytes_cap: int | None = None) -> None:
         self.solver, self.device = solver, solver.model.device
-        info = solver.trimesh_collision_info
-        self.need = {name: wp.zeros(getattr(info, f"{field}_count").shape[0], dtype=wp.int32, device=self.device)
-                     for name, field in FAMILIES}
-        self.words = wp.zeros((len(FAMILIES), 2), dtype=wp.int32, device=self.device)
+        self.need: dict[str, wp.array] | None = None     # module docstring, item 5
+        self.rebind = False                               # need arrays came in: captured folds hold the stand-in
+        self._no_need = wp.zeros(1, dtype=wp.int32, device=self.device)
+        self.words = wp.zeros((len(FAMILIES), WORDS), dtype=wp.int32, device=self.device)
+        self.reader = PeriodWords(self.words, late=wp.get_device(self.device).is_cuda or LATE_ON_CPU)
+        self._said_late_drop = False
         start = self.bytes()
         self.bytes_cap = int(bytes_cap) if bytes_cap is not None else int(max(BYTES_FACTOR * start, BYTES_FLOOR))
         self.grown: list[Growth] = []
@@ -113,25 +196,52 @@ class RowState:
         return sum(row_bytes(self.sizes(field)) for _, field in FAMILIES)
 
     def after_detection(self) -> None:
-        """Fold the latest detection into ``need`` and ``words`` (one launch per family, no host read)."""
+        """Fold the latest detection into ``words`` (and ``need`` once tracked): one launch per family, no host read."""
         info = self.solver.trimesh_collision_info
-        den = 1000
+        den, track = 1000, int(self.need is not None)
         for k, (name, field) in enumerate(FAMILIES):
             count = getattr(info, f"{field}_count")
+            need = self.need[name] if self.need is not None else self._no_need
             wp.launch(_fold_rows, dim=count.shape[0],
-                      inputs=[count, getattr(info, f"{field}_buffer_sizes"), k, ROW_CAP, int(FILL * den), den],
-                      outputs=[self.need[name], self.words], device=self.device)
+                      inputs=[count, getattr(info, f"{field}_buffer_sizes"), k, ROW_CAP, int(FILL * den),
+                              int(ARM * den), den, track],
+                      outputs=[need, self.words], device=self.device)
 
-    def grow(self) -> Growth | None:
-        """Grow the rows that are over ``FILL`` (a host read: call it outside a captured graph). None when no row
+    def take_rebind(self) -> bool:
+        """Whether the folds changed arrays since the last call (the caller drops its captured graphs)."""
+        out, self.rebind = self.rebind, False
+        return out
+
+    def _track(self) -> None:
+        """Start the per-row need from the last detection's counts (the first row past ``ARM``)."""
+        if self.need is not None:
+            return
+        info = self.solver.trimesh_collision_info
+        self.need = {name: wp.clone(getattr(info, f"{field}_count")) for name, field in FAMILIES}
+        self.rebind = True
+
+    def _need(self, name: str, field: str) -> np.ndarray:
+        count = getattr(self.solver.trimesh_collision_info, f"{field}_count").numpy().copy()
+        return np.maximum(self.need[name].numpy(), count) if self.need is not None else count
+
+    def grow(self, now: bool = False) -> Growth | None:
+        """Grow the rows that are over ``FILL`` (host reads: call it outside a captured graph), from this period's
+        words when ``now`` or the reads wait, else from the previous period's (``PeriodWords``). None when no row
         asked, or when the bytes cap leaves no room."""
         if self.exhausted:
             return None
-        words = self.words.numpy().copy()         # on the CPU numpy() is a live view: copy before zeroing
-        if not words.any():
+        if now:
+            words = self.reader.now()
+            dropped = bool(words[:, 0].any())
+        else:
+            words, dropped = self.reader.read()
+        if words.any():
+            self._track()
+        if not words[:, :2].any():
             return None
-        self.words.zero_()
-        new = {field: grown_sizes(self.need[name].numpy(), self.sizes(field)) for name, field in FAMILIES}
+        if words[:, 0].any() and not dropped:
+            self._say_late_drop()
+        new = {field: grown_sizes(self._need(name, field), self.sizes(field)) for name, field in FAMILIES}
         total = sum(row_bytes(s) for s in new.values())
         if total > self.bytes_cap:
             self._exhaust(total)
@@ -139,12 +249,19 @@ class RowState:
         rows = {name: self._resize(field, new[field]) for name, field in FAMILIES}
         if not any(n for n, _ in rows.values()):
             return None
-        out = Growth(rows, total, bool(words[:, 0].any()))
+        out = Growth(rows, total, dropped)
         self.grown.append(out)
         log.info("VBD self-contact rows grown (%s): %s; %.1f MiB of %.1f MiB", "pairs had dropped" if out.dropped
                  else "before a drop", ", ".join(f"{n} {k} rows, largest {m}" for k, (n, m) in rows.items()),
                  total / 2**20, self.bytes_cap / 2**20)
         return out
+
+    def _say_late_drop(self) -> None:
+        if not self._said_late_drop:
+            self._said_late_drop = True
+            log.warning("VBD self-contact rows: a row went from under half full to over full within one period, so "
+                        "its pairs dropped before the late read saw it; health keeps SELF_CONTACT_OVERFLOW for that "
+                        "period, and from now on the rows are tracked per row and read every period (said once)")
 
     def _exhaust(self, wanted: int) -> None:
         self.exhausted = True
@@ -213,7 +330,7 @@ class RowsMixin:
         det.vertex_triangle_collision_detection(radius, **kw)
         det.edge_edge_collision_detection(radius, **kw)
         self.alloy_rows.after_detection()
-        self.alloy_rows.grow()
+        self.alloy_rows.grow(now=True)
 
 
 def with_rows(cls: type) -> type:
@@ -232,5 +349,6 @@ def pop_rows(kw: dict[str, Any]) -> bool:
     return scene
 
 
-__all__ = ["BYTES_KEY", "FAMILIES", "FILL", "GROW_FILL", "Growth", "HEADROOM", "ROWS_DEFAULT", "ROWS_ENV", "ROWS_KEY",
-           "ROWS_SCENE", "ROW_CAP", "RowState", "RowsMixin", "grown_sizes", "pop_rows", "row_bytes", "with_rows"]
+__all__ = ["ARM", "BYTES_KEY", "CALM_PERIODS", "FAMILIES", "FILL", "GROW_FILL", "Growth", "HEADROOM", "PeriodWords",
+           "ROWS_DEFAULT", "ROWS_ENV", "ROWS_KEY", "ROWS_SCENE", "ROW_CAP", "RowState", "RowsMixin", "grown_sizes",
+           "pop_rows", "row_bytes", "with_rows"]

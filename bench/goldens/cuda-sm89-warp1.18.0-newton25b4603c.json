@@ -20,7 +20,7 @@
     },
     "feat_camera": {
       "periods": 4,
-      "sha256": "797884a9fc304e182664eb3e60cf7d80985e287bbcdff3178c53294e8d7fff44",
+      "sha256": "f8906e38b8ebfb6192958dff2648868537fab5dd9a7526c564617a84c96ba185",
       "worlds": 16,
       "worlds_equal_at_end": false
     },
@@ -39,6 +39,6 @@
   },
   "cpu_model": "Intel(R) Xeon(R) CPU @ 2.20GHz",
   "key": "cuda-sm89-warp1.18.0-newton25b4603c",
-  "reason": "rc1-1110 snapshot ec7a47cb2: FEAT rows (robot randomize, VectorEnv reset, camera) added on an L4",
+  "reason": "feat_camera re-recorded on an L4 after main's camera look changes since 838442cd0 (palette colours c50ec9954, SCAN-TEXTURES 5b48aba51, gantry gripper drawn 374f0d4f1, policy cameras 9cd11dc4e, ...; not bisected); the five other rows unchanged",
   "schema": "alloy.precision.golden/1"
 }

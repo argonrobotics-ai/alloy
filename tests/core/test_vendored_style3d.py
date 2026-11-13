@@ -24,6 +24,8 @@ def _scene(worlds: int, lift: float = 0.0) -> alloy.Scene:
     s.add_box("table", size=(0.3, 0.3, 0.4), pos=(0, 0, 0.2), static=True)
     pos = np.array([[0.0, 0.0, 0.402]] + [[0.0, 0.0, 0.402 + lift]] * (worlds - 1))
     s.add_cloth("sheet", size=(0.4, 0.4), pos=pos, resolution=12, mass=0.05, material="cotton_woven_aniso")
+    # a woven card on a grid sheet routes to the orthotropic membrane by default (D16): these tests are Style3D's
+    s.items["sheet"]["card_extra"]["route"] = {"route": "cloth_style3d", "reason": "test: the Style3D solver"}
     return s
 
 

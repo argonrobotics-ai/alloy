@@ -34,6 +34,7 @@ from typing import Any, Callable, Sequence
 import numpy as np
 import warp as wp
 
+from alloy.precision.health_pen import allowance_host
 from alloy.precision.types import HealthFlags, StepHealth
 
 log = logging.getLogger("alloy.precision")
@@ -129,6 +130,7 @@ class StartChecks:
         self.spin_limit = float(getattr(cfg, "spin_rad_per_step", 0.5))
         self.pending = True
         self.skipped = False                                   # the first update ran under capture: not judged
+        self.shape_allow: np.ndarray | None = None             # health_pen.relax_soft_contacts' marks
         self.depth = np.full(self.W, np.nan)                   # [W] m, deepest start overlap; NaN: none measured
         self.shapes = np.full((self.W, 2), -1, np.int32)       # [W, 2] its two shapes
         self.fails: dict[int, dict[tuple[int, int], float]] = {}   # world -> {pair: depth} past pen_fail (WP13)
@@ -210,6 +212,8 @@ class StartChecks:
         ga, gb = g[:, 0], g[:, 1]
         sa = np.where((ga >= 0) & (ga < gs.shape[1]), row[np.arange(n), np.clip(ga, 0, gs.shape[1] - 1)], -1)
         sb = np.where((gb >= 0) & (gb < gs.shape[1]), row[np.arange(n), np.clip(gb, 0, gs.shape[1] - 1)], -1)
+        if self.shape_allow is not None and hasattr(d.contact, "solimp"):    # soft on purpose: past its allowance
+            depth = depth - allowance_host(self.shape_allow, sa, sb, d.contact.solimp.numpy()[:n, 2])
         return w, depth, sa, sb
 
     def _note(self, w: np.ndarray, depth: np.ndarray, sa: np.ndarray, sb: np.ndarray, relaxed: np.ndarray) -> None:

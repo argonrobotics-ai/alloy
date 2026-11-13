@@ -26,6 +26,7 @@ from alloy.coupling.contact_band import BandRerun, ContactBandBound, read_band
 from alloy.coupling.entry_history import EntryHistory
 from alloy.coupling.ladder import PeriodLadder, escalate
 from alloy.coupling.onset import OnsetRefiner, escalated_beyond_onset
+from alloy.coupling.parked import stable_host
 from alloy.coupling.static_walls import narrow_static_walls, static_wall_shapes
 from alloy.coupling.watchdog import EnergyWatchdog, WatchConfig
 
@@ -89,7 +90,7 @@ class SchedulerMixin:
         self._rung_changes = 0
         self._strong: set[tuple[str, str]] = set()
         self._frozen_contacts = None
-        self._band = ContactBandBound(self._contact_routes(), self.model.device)   # R2-E3: dt_x from the contact band
+        self._band = ContactBandBound(self._contact_routes(), self.model.device, shape[1])   # R2-E3: the band's dt_x
         self._band_bound, self._control_dt = math.inf, math.nan
         self._band_rerun = BandRerun(policy.clock.band_rerun)      # R2-E3 follow-up: a period the bound outran
         log.info("scheduler %s: entries %s, pairs %s, initial rungs %s", type(self).__name__,
@@ -430,8 +431,7 @@ class SchedulerMixin:
         loop = self._loop_arrays()
         wd = self._watchdog
         stable = self._stable_dt.numpy()
-        self._stable_host = {n: float(np.min(stable[e])) for e, n in enumerate(self._entry_order)
-                             if self._estimators.get(n) is not None}
+        self._stable_host = stable_host(self, stable)          # min over worlds, without parked ones (parked.py)
         self._band_bound = read_band(self)          # R2-E3: the next dt_x and the re-run verdict, once per attempt
         self._last_report = report = CouplingReport(
             dt_x=float(self._dt_x) if self._dt_x is not None else math.nan,

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import warp as wp
@@ -89,6 +89,28 @@ class TableBuild:
     table: np.ndarray        # [M, M, 4] float64 (mu_s, mu_d, e, lever)
     stiffness: np.ndarray    # [M, M] float64
     unsourced: list[tuple[str, str]]
+
+
+def pair_card(library, scene_pairs: Sequence[PairCard], a: str, b: str) -> PairCard | None:
+    """The pair card of materials ``a`` and ``b``: the scene's own (``Scene.set_friction``), the library's, else the
+    library's card of the materials they take their pairs from (``MaterialCard.pairs_from``, alloy.Scene's
+    per-object materials), keyed onto ``a`` and ``b``. Example: ``pair_card(lib, (), "abs_for_b1", "abs_for_b2")``
+    is the library's abs/abs card for two boxes given their own mass."""
+    key = tuple(sorted((a, b)))
+    card = next((p for p in scene_pairs if tuple(sorted((p.a, p.b))) == key), None) or library.pair(a, b)
+    if card is not None:
+        return card
+    base = (_pairs_from(library, a), _pairs_from(library, b))
+    card = library.pair(*base) if base != (a, b) else None
+    return None if card is None else replace(card, a=a, b=b)
+
+
+def _pairs_from(library, name: str) -> str:
+    """The material whose pair cards ``name`` takes (itself unless its card says ``pairs_from``)."""
+    has = getattr(library, "has_material", None)
+    if has is not None and not has(name):       # a robot file's material: no card
+        return name
+    return getattr(library.material(name), "pairs_from", None) or name
 
 
 def build_tables(entries: Sequence[MaterialEntry], pair_lookup, combine: str = "harmonic") -> TableBuild:

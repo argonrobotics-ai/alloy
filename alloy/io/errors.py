@@ -7,24 +7,31 @@ Example::
     try:
         import_file("part.step", "lib")
     except ImportFileError as e:
-        print(e)            # "part.step: unknown suffix '.step'; use one of [...]"
+        print(e.message)    # "part.step: unknown suffix '.step'; use one of [...]"
+        print(e.fix)        # "pass an MJCF (.xml), URDF (.urdf) or USD (...) file"
 """
 
 from __future__ import annotations
 
+from alloy.api.errors import AlloyAPIError
+
 USD_PACKAGES = '"usd-core>=25.5,<26.9" newton-usd-schemas'     # the pins of Newton's own USD importer
 
 
-class ExportError(RuntimeError):
-    """An export could not be written or did not load back."""
-
-
-class ImportFileError(ValueError):
-    """A file could not be imported. ``fix`` is what to run or change (also part of the message)."""
+class ExportError(AlloyAPIError, RuntimeError):
+    """An export could not be written or did not load back. ``fix`` says what to change."""
 
     def __init__(self, message: str, fix: str | None = None) -> None:
-        super().__init__(f"{message}; fix: {fix}" if fix else message)
-        self.fix = fix
+        super().__init__(message, fix or "export the other formats (formats=[...]), and check the object the "
+                                         "message names with alloy.check")
+
+
+class ImportFileError(AlloyAPIError, ValueError):
+    """A file could not be imported. ``message`` says what went wrong, ``fix`` what to run or change."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        super().__init__(message, fix or "check the file the message names; a robot file also loads directly: "
+                                         "scene.add_robot(name, path)")
 
 
 def usd_fix() -> str:

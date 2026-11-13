@@ -26,6 +26,7 @@ from ..errors import CameraError
 from .augment import Augment
 from .depth import PressMap
 from .markers import MarkerMotion
+from .particles import ParticlePress
 from .renderer import OUTPUTS, TactileOutput, TactileRenderer
 from .shear import StickSlip
 
@@ -42,19 +43,23 @@ class TactileSensor:
     ``height``: image size (the gel's aspect is kept; default 320 x 240). ``markers``: None (preset default), True,
     False or a MarkerSpec. ``augment``: an :class:`Augment` (e.g. ``Augment.strong(seed)``) for sim-to-real.
     ``ignore``: body labels or indices the gel does not feel (besides its own body). ``slip_mm`` / ``slip_rad``:
-    shear and twist the gel holds before the object slips.
+    shear and twist the gel holds before the object slips. ``deformables`` (default True): cloth and soft-body
+    surfaces, MPM grains and liquid particles press the gel too (``alloy.camera.tactile.particles``); rigid shapes
+    are traced exactly either way.
     """
 
     def __init__(self, name: str = "tactile", attach_to=None, pose=None, preset="gelsight", width: int | None = None,
                  height: int | None = None, markers=None, augment: Augment | None = None, ignore=(),
-                 slip_mm: float = 0.6, slip_rad: float = 0.35, marker_motion: MarkerMotion | None = None):
+                 slip_mm: float = 0.6, slip_rad: float = 0.35, marker_motion: MarkerMotion | None = None,
+                 deformables: bool = True):
         from .presets import load_preset
         self.name, self.attach_to, self.ignore = name, attach_to, tuple(ignore)
+        self.deformables = bool(deformables)
         self.preset = load_preset(preset)
         self._opts = dict(width=width, height=height, markers=markers, augment=augment, motion=marker_motion)
         self._pose = _as_pose(pose)
         self.slip = (float(slip_mm), float(slip_rad))
-        self._bound = None  # (model, PressMap, StickSlip, TactileRenderer)
+        self._bound = None  # (model, PressMap, StickSlip, TactileRenderer, ParticlePress or None)
 
     # ------------------------------------------------------------------ public
     def render(self, source, state=None, output: str = "uint8", shear_field: wp.array | None = None,
@@ -70,14 +75,15 @@ class TactileSensor:
         if output not in OUTPUTS:
             raise CameraError(f"output {output!r}", f"use one of {OUTPUTS}")
         model, state = _unwrap(source, state)
-        pm, ss, tr = self._bind(model, getattr(source, "index", None))
+        pm, ss, tr, pp = self._bind(model, source)
         body_q = getattr(state, "body_q", None) if state is not None else None
         if body_q is None and pm.max_list > 0 and model.body_count > 0:
             raise CameraError(f"tactile sensor {self.name!r} got no state",
                               "pass the simulation state: sensor.render(model, state)")
-        if output not in OUTPUTS:
-            raise CameraError(f"output {output!r}", f"use one of {OUTPUTS}")
-        tr.prepare(pm.compute(body_q), pm.touched)
+        press = pm.compute(body_q)
+        if pp is not None:
+            pp.add(state, pm.gel_xf, press, pm.touched)
+        tr.prepare(press, pm.touched)
         motion = None
         if shear_field is None and tr.grid is not None and body_q is not None:
             motion = ss.update(tr.optics.stats, pm.gel_xf, pm._shape_body, body_q)
@@ -102,12 +108,19 @@ class TactileSensor:
         if self._bound is not None:
             self._bound[1].set_local_pose(self._pose)
 
-    def reset(self, seed: int | None = None) -> None:
-        """Forget every ongoing touch (after resetting worlds); ``seed`` also redraws the augmentation."""
-        if self._bound is not None:
-            self._bound[2].reset()
-            if seed is not None:
-                self._bound[3].resample(seed)
+    def reset(self, worlds=None, seed: int | None = None) -> None:
+        """Forget the ongoing touches of the worlds a reset restarted: ``worlds`` is a bool (worlds,) mask (numpy,
+        torch or warp), a list of world indices, or None for every world. ``seed`` also redraws those worlds'
+        augmentation. The other worlds keep their stick-slip state and augmentation.
+
+        Example: ``env.reset_worlds(done); sensor.reset(worlds=done)``."""
+        if self._bound is None:
+            return
+        mask = None if worlds is None else _world_mask(worlds, self._bound[2].motion.shape[0])
+        dev = self._bound[2].device
+        self._bound[2].reset(None if mask is None else wp.array(mask.astype(np.int32), dtype=wp.int32, device=dev))
+        if seed is not None:
+            self._bound[3].resample(seed, worlds=mask)
 
     @property
     def size(self) -> tuple[int, int]:
@@ -116,9 +129,10 @@ class TactileSensor:
         return output_size(self.preset, self._opts["width"], self._opts["height"])
 
     # ------------------------------------------------------------------ internals
-    def _bind(self, model, names=None):
+    def _bind(self, model, source=None):
         if self._bound is not None and self._bound[0] is model:
             return self._bound[1:]
+        names = getattr(source, "index", None)
         bodies = _sim_bodies(names, self.attach_to)
         if bodies is None:
             bodies = _resolve_bodies(model, self.attach_to)
@@ -131,9 +145,34 @@ class TactileSensor:
                       skip_bodies=skip)
         pm.set_local_pose(self._pose)
         ss = StickSlip(n, str(model.device), *self.slip)
-        self._bound = (model, pm, ss, tr)
+        pp = None
+        if self.deformables:
+            pp = ParticlePress(model, n, h, w, tr.mm_per_px, self.preset.max_depth_mm, self.preset.gel_radius_mm,
+                               sim=source if names is not None else None)
+            pp = pp if pp.active else None
+        self._bound = (model, pm, ss, tr, pp)
         log.info("tactile sensor %s: %d worlds, %dx%d, preset %s", self.name, n, w, h, self.preset.name)
-        return pm, ss, tr
+        return pm, ss, tr, pp
+
+
+def _world_mask(worlds, n: int) -> np.ndarray:
+    """A bool (n,) mask from a mask (numpy / torch / warp) or a list of world indices."""
+    if isinstance(worlds, wp.array):
+        worlds = worlds.numpy()
+    elif hasattr(worlds, "detach"):  # torch
+        worlds = worlds.detach().cpu().numpy()
+    a = np.asarray(worlds)
+    if a.dtype == bool and a.shape == (n,):
+        return a
+    if a.dtype != bool and a.ndim <= 1 and (a.size == 0 or np.issubdtype(a.dtype, np.integer)):
+        idx = a.astype(np.int64).reshape(-1)
+        if idx.size and (idx.min() < 0 or idx.max() >= n):
+            raise CameraError(f"worlds {idx.tolist()} outside 0..{n - 1}", f"pass world indices below {n}")
+        out = np.zeros(n, bool)
+        out[idx] = True
+        return out
+    raise CameraError(f"worlds has shape {a.shape} and dtype {a.dtype}",
+                      f"pass a bool ({n},) mask or a list of world indices")
 
 
 def _unwrap(source, state):

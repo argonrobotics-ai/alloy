@@ -85,29 +85,30 @@ looks, 23,800 either way (median of 3 runs each). The full-material tracer would
   family (a brown floor, grey plastic, ...), with one warning. `python -m alloy.looks --fetch-textures` downloads the
   images once; the policy images then show the textures.
 
-In `PickPlace-v0` and `DrawerOpen-v0` the gantry gripper's position servos can push a finger into the bin's 6 mm
-wall, the floor or the cabinet past the health limit (10 mm, or half the thinner part): health marks the world
-INVALID, `info["invalid"]` is True and the episode ends. In one check on an L4, uniform random actions sent 16 of
-256 PickPlace worlds INVALID within 5 s; learned policies lost up to 7 % of their episodes this way (0-17 of 256 on
-PickPlace, 0-8 of 256 on DrawerOpen) and the shipped scripted demonstrator, with action noise, 3 of 1,280.
-`PegInsert-v0` uses the same gripper and was not counted. Such an episode ends truncated
-(`Task(on_invalid="terminate")` terminates it; the rsl_rl, SB3 and skrl wrappers treat it as terminated either way,
-so no value is bootstrapped from a frozen world). On that step its reward (except the task's `invalid_penalty`, a
-penalty you set; default 0), its reward terms, its success and its last observation read 0, so a policy gains
-nothing from a frozen world. The zeroed observation is the episode's last one: `info["final_obs"]` under the default
-`autoreset="same_step"` (the observation `step` returns is already the next episode's first), the returned one under
-`"next_step"` or `"disabled"`. A reset clears the world's record in `sim.health()` and `sim.check()`; the env keeps
-the count: `info["episode"]["invalid"]` marks the episodes that ended frozen, and `env.invalid_episodes` counts them
-per world since the env was built: once per frozen episode, and `env.reset()` does not clear it. With
-`autoreset="disabled"` a frozen world stays frozen, so it counts once per step until you reset it. Each line the
-one-command trainer prints gives `invalid_episodes`, the count since the previous line.
+In `PickPlace-v0`, `PegInsert-v0` and `DrawerOpen-v0` the gantry gripper's slide servos are capped at 100 N and
+its finger contacts are stiffer than MuJoCo's default (`gantry_gripper(**WALL_SAFE)`), so a finger stalls on a wall
+instead of passing half into it. Under uniform random actions none of 256 worlds went INVALID in 5 s in any of
+the three envs (CPU and one L4; PickPlace with two seeds). In 0.1.0, which had neither, 15 of 256 PickPlace worlds
+did: a finger went into the bin's 6 mm wall or the floor past the health limit (10 mm, or half the thinner part).
+The scripted examples succeed as before. `gantry_gripper()` alone keeps both off: pass `**WALL_SAFE` in a task
+of your own. A world can still go INVALID: health marks it, `info["invalid"]` is True and the episode ends
+(truncated; `Task(on_invalid="terminate")` terminates it; the rsl_rl, SB3 and skrl wrappers treat it as terminated
+either way, so no value is bootstrapped from a frozen world). On that step its reward (except the task's
+`invalid_penalty`, a penalty you set; default 0), its reward terms, its success and its last observation read 0, so
+a policy gains nothing from a frozen world. The zeroed observation is the episode's last one: `info["final_obs"]`
+under the default `autoreset="same_step"` (the observation `step` returns is already the next episode's first), the
+returned one under `"next_step"` or `"disabled"`. A reset clears the world's record in `sim.health()` and
+`sim.check()`; the env keeps the count: `info["episode"]["invalid"]` marks the episodes that ended frozen, and
+`env.invalid_episodes` counts them per world since the env was built: once per frozen episode, and `env.reset()`
+does not clear it. With `autoreset="disabled"` a frozen world stays frozen, so it counts once per step until you
+reset it. Each line the one-command trainer prints gives `invalid_episodes`, the count since the previous line.
 
 `ClothFold-v0` has two grasps, and results depend on which one you use:
 - `grasp="friction"`, the default: the fingers hold the towel by friction alone, as a real gripper does. The
   scripted demo folds 25-27 of 64 worlds in three runs on one L4. A friction pinch on cloth creeps slowly under load
   and lets go before its friction limit (`docs/known_gaps/cloth-robot-grasp-carry.md`).
 - `make("ClothFold-v0", grasp="attach")`, opt-in: a shortcut, not a friction grasp. While the fingers are closed on
-  the towel, the towel between them is held to a finger until they open, as cloth benchmarks grasp
+  the towel, the towel between them is held to a finger until they open or the world resets, as cloth benchmarks grasp
   (`alloy.envs.cloth_attach`). It is one-way: the gripper does not feel the towel's weight. The same scripted demo
   folds 37 of 64 worlds in this mode (one run on one L4). Compare a result in this mode only with other attach
   results.
@@ -144,6 +145,10 @@ print(env.obs_names()[:3], env.action_names(), sorted(info["terms"]))
 
 - `Task` also takes `failure=` (a check that ends the episode as failed), `cameras=` (`alloy.camera.Camera`s), `goals=`
   and `randomize=` (per-episode random starts: `alloy.envs.randomize`). `examples/envs/02_custom_task.py` runs one.
+  `jitter_joint` teleports a joint: what a slide carries moves with it only if named in `carry=` (free objects, and
+  particle objects such as the water in a cup on the slide: without it a 3 cm jitter left 20-41 % of the water
+  outside the cup after 10 steps, with it none), and a pose that puts a finger inside a resting object starts
+  overlapping it (START_PEN), so start a hand open and close it with actions.
 - `actions=ActionSpec(joints, mode="delta" | "absolute")` drives any robot's servos; with no `actions`, every servo.
   In delta mode an action of 1 moves a joint's target `delta` (m or rad) in that step, starting from the last target
   kept within `window` of the joint's measured position (default 5 x `delta`), so a joint held by a wall, a table or
@@ -298,7 +303,10 @@ origin), so the expert's action lies inside the action space and a wrapper may c
 the proprio of what the policy moves and, with `camera=(width, height)`, an image framed on the scene (paint, concrete
 paste, rinse water and soil films, the gift bag's paper and the porridge are drawn). Run one:
 `examples/envs/10_task_ports.py`. Each family's module in `alloy/envs/ports/` (`painting.py`, `rinsing.py`,
-`concrete.py`, `forklift.py`, `gifts_cooking.py`) lists its envs, actions and options. An episode is the port's whole
+`concrete.py`, `forklift.py`, `gifts_cooking.py`) lists its envs, actions and options. A port that runs one simulation per world (13 of the 28:
+`spec.batched` is False) steps them one after another, so a step costs about `num_envs` times one world's; a task
+port returns NumPy arrays, restarts a finished run inside `step` (autoreset `same_step` or `disabled`) and is not
+trainable through the RL wrappers. An episode is the port's whole
 run and can take hours: [What one episode costs](#what-one-episode-costs) gives each env's measured time, and names
 the three whose default has not been seen to finish.
 

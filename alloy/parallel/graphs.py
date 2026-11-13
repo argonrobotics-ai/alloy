@@ -155,9 +155,11 @@ class PeriodGraph:
         log.info("captured control-period graph #%d on %s", self.captures, self.device)
 
     def _pointers(self) -> tuple[int, ...]:
+        """The buffers' device addresses, 0 for a missing or empty one: a zero-length Warp array has no allocation and
+        ``ptr`` None (e.g. joint_q of a scene whose robots have no degrees of freedom)."""
         if self.buffers is None:
             return ()
-        return tuple(int(a.ptr) if a is not None else 0 for a in self.buffers())
+        return tuple(0 if a is None or a.ptr is None else int(a.ptr) for a in self.buffers())
 
     def _end_dangling_capture(self) -> None:
         if not self.device.is_capturing:  # CUDA stream capture, or the CPU's APIC recording (context.py:5981)

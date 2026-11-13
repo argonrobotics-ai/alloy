@@ -27,6 +27,7 @@ from alloy.scene.builtin_plugins import register_builtin_solvers
 from alloy.scene.emitters.rigid import emit_part
 from alloy.scene.entries import chain_on_newton, entry_overrides, hold_warning, make_entries, sliding_warning
 from alloy.scene.finish import finish_scene, material_entries
+from alloy.scene.pairs import pair_card
 from alloy.scene.rigid_step import RigidStepRequest, choose_rigid_step, today_step
 from alloy.scene.types import BuiltScene, ObjectHandle, RouteDecision, RouteReport
 from alloy.solvers.vbd import cloth_profile as CP
@@ -162,7 +163,7 @@ class SceneAssembler:
         b = tp.make_builder(plan.caps, topology=topo)
         make_sub = lambda: tp.make_builder(plan.caps, topology=topo)  # noqa: E731
         robot_mats = {}
-        tree = self._emit_objects(b, plan, make_sub, robot_mats)
+        tree = tp.require_moving(b, plan.objects, self.asset, self._emit_objects(b, plan, make_sub, robot_mats))
         if plan.scene.attachments:
             from alloy.scene.attachments import add_attachments
             add_attachments(b, plan.objects, plan.scene.attachments, today_step(plan.scene.control_dt), plan.report,
@@ -334,10 +335,10 @@ class SceneAssembler:
 
     def _newton_rule(self, plan: Plan, make, fast: FP.FastChoice) -> None:
         """SCR-DC1-2: a chain attachment keeps MuJoCo Warp's Newton solver when the rule's probe shows the float32
-        Hessian positive definite, or with evidence (`alloy.scene.newton_rule`, `alloy.scene.newton_evidence`)."""
-        from alloy.scene import newton_rule as NR
+        Hessian positive definite, or with evidence (`newton_rule`, `newton_evidence`); a robot chain: `robot_chain`."""
+        from alloy.scene import newton_rule as NR, robot_chain as RC
 
-        cand = NR.candidates(plan.objects, fast.on and fast.newton)
+        cand = NR.candidates(RC.mark(plan, self.asset), fast.on and fast.newton)
         if cand is None:
             return
         mj = next(e for e in make(cand) if e.name == "mujoco")
@@ -353,11 +354,7 @@ class SceneAssembler:
         log.info("%s", verdict.line())
 
     def pair_card(self, a: str, b: str, scene: SceneCard) -> PairCard | None:
-        key = tuple(sorted((a, b)))
-        for p in scene.pairs:
-            if tuple(sorted((p.a, p.b))) == key:
-                return p
-        return self.library.pair(a, b)
+        return pair_card(self.library, scene.pairs, a, b)
 
 
 def _blade(t: tp.TemplateObject):

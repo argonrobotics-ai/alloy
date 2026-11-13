@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import time
+from collections.abc import Callable
 from typing import Any
 
 from alloy.envs.wrappers._common import require
@@ -116,17 +117,56 @@ def _learn(venv: RslRlVecEnv, env_id: str, iterations: int, seed: int, log_dir: 
     cfg["obs_groups"] = venv.default_obs_groups()
     os.makedirs(log_dir, exist_ok=True)
     runner = OnPolicyRunner(venv, cfg, log_dir=log_dir, device=str(venv.device))
-    done, last = 0, {}
-    while done < iterations:
-        step = min(chunk, iterations - done)
-        runner.learn(num_learning_iterations=step, init_at_random_ep_len=False)
-        done += step
-        last = _report(venv, env_id, done, t0)
-    checkpoint = os.path.join(log_dir, f"model_{done}.pt")
-    runner.save(checkpoint)
-    log.info("rsl_rl: %s trained %d iterations, checkpoint %s", env_id, done, checkpoint)
+    last: dict[str, Any] = {}
+
+    def report(done: int) -> None:
+        last.update(_report(venv, env_id, done, t0))
+
+    learn_reporting(runner, iterations, chunk, report)
+    checkpoint = os.path.join(log_dir, f"model_{iterations}.pt")
+    runner.save(checkpoint)                      # records iter = iterations (rsl_rl's own final save: the same file)
+    log.info("rsl_rl: %s trained %d iterations, checkpoint %s", env_id, iterations, checkpoint)
     return {"success_rate": last.get("success_rate"), "minutes": last.get("minutes"),
-            "samples": done * STEPS_PER_ENV * venv.num_envs, "checkpoint": checkpoint}
+            "samples": iterations * STEPS_PER_ENV * venv.num_envs, "checkpoint": checkpoint}
+
+
+def learn_reporting(runner: Any, iterations: int, every: int, report: Callable[[int], None],
+                    random_start: bool = False) -> None:
+    """Run ``iterations`` PPO iterations in ONE ``runner.learn`` call, calling ``report(done)`` after every ``every``
+    iterations and after the last; afterwards ``runner.current_learning_iteration`` is the count done.
+
+    rsl_rl 5.x's ``learn`` opens a new log writer (a new TensorBoard file) at every call and leaves the iteration
+    count one short (the last 0-based index), so learning in chunks lost one iteration per chunk in every checkpoint's
+    ``iter`` and split the log. Here the report rides on the runner's per-iteration ``logger.log``, which also sets
+    the count to the iterations done, so rsl_rl's own saves record it and a resume starts where training stopped.
+    ``random_start`` is rsl_rl's ``init_at_random_ep_len`` (episodes start at random lengths).
+    Example: ``learn_reporting(runner, 200, 10, lambda done: print(done))``."""
+    start, logger = runner.current_learning_iteration, getattr(runner, "logger", None)
+    original = getattr(logger, "log", None)
+    if original is None:                         # no per-iteration logger: chunks, the count kept here
+        done = 0
+        while done < iterations:
+            step = min(every, iterations - done)
+            runner.learn(num_learning_iterations=step, init_at_random_ep_len=random_start and done == 0)
+            done += step
+            runner.current_learning_iteration = start + done
+            report(done)
+        return
+    done = [0]
+
+    def log_and_report(*args: Any, **kwargs: Any) -> Any:
+        out = original(*args, **kwargs)
+        done[0] += 1
+        runner.current_learning_iteration = start + done[0]
+        if done[0] % every == 0 or done[0] == iterations:
+            report(done[0])
+        return out
+
+    logger.log = log_and_report
+    try:
+        runner.learn(num_learning_iterations=iterations, init_at_random_ep_len=random_start)
+    finally:
+        del logger.log                           # the class's own method again
 
 
 def _report(venv: RslRlVecEnv, env_id: str, done: int, t0: float) -> dict[str, Any]:
@@ -140,4 +180,4 @@ def _report(venv: RslRlVecEnv, env_id: str, done: int, t0: float) -> dict[str, A
     return line
 
 
-__all__ = ["RECIPES", "default_config", "train"]
+__all__ = ["RECIPES", "default_config", "learn_reporting", "train"]

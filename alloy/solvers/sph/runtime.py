@@ -206,7 +206,7 @@ class EmitterManager:
         self._saved: dict[str, wp.array] = {}
         b = solver.config.world_bounds
         self.bounds = None if b is None else (wp.vec3(*b[0]), wp.vec3(*b[1]))
-        self.patches = PatchEmitters(solver, self._spares)
+        self.patches = PatchEmitters(solver, self._unowned_spares)
 
     @property
     def active(self) -> bool:
@@ -217,6 +217,13 @@ class EmitterManager:
         m = self.solver.model
         ids = spare_ids(self.layout.phase.numpy(), m.particle_world.numpy(), m.particle_flags.numpy(), w, _ACTIVE)
         return np.setdiff1d(ids, self.patches.reserved(w)).astype(np.int32)
+
+    def _unowned_spares(self, w: int) -> np.ndarray:
+        """``_spares`` minus the pools emitters own (a pour's reservoir), for patch emitters to reserve: a patch added
+        after a pour took 10 of its ids, which the pour would then re-place (AUDIT-STACK, 2026-11-11)."""
+        t = self.table
+        owned = [t.pool[e] for e, w2 in enumerate(t.world) if w2 == w and t.own[e]]
+        return np.setdiff1d(self._spares(w), np.concatenate(owned)).astype(np.int32) if owned else self._spares(w)
 
     def add_patch_emitter(self, world_mask, body, local_points, velocity) -> int:
         """Register a patch group (patch.py); box emitters of its worlds re-split the remaining spares, so they
@@ -403,14 +410,15 @@ class EmitterManager:
 
 
 def stable_dt_per_world(solver: SolverDFSPH, p: Particles, out: wp.array) -> None:
-    """out[w] = clamp(cfl·2r/|v|max, dt_min, dt_max) from the given state (D6)."""
+    """out[w] = clamp(speed_margin·cfl·2r/|v|max, dt_min, dt_max): margin while fast, dt_max at rest (D6; COUPLE-9)."""
     cfg = solver.config
     W = solver.layout.world_count
     tmp = solver._tmp_w
     tmp.zero_()
     if solver.layout.n:
         wp.launch(_speed_only_kernel, dim=solver.layout.n, inputs=[p, tmp], device=solver.device)
-    wp.launch(_stable_dt_kernel, dim=W, inputs=[tmp, cfg.cfl, cfg.spacing, cfg.dt_min, cfg.dt_max, out],
+    wp.launch(_stable_dt_kernel, dim=W, inputs=[tmp, cfg.speed_margin * cfg.cfl, cfg.spacing, cfg.dt_min,
+                                               cfg.dt_max, out],
               device=solver.device)
 
 

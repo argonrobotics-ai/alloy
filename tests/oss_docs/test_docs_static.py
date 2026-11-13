@@ -58,6 +58,12 @@ def test_api_names_exist(block) -> None:
     assert not unknown, f"{block.label} uses names alloy.api does not have: {sorted(unknown)} (renamed?)"
 
 
+def test_scene_api_includes_mixins_named_through_their_module() -> None:
+    """Scene's bases written ``_module.Mixin`` count too: a guide block may call their methods."""
+    scene_api = class_methods(API / "scene.py", "Scene")
+    assert {"add_open_box", "set_quasi_static_mass_scale", "relax_contact_depth", "rigid_step"} <= scene_api
+
+
 @pytest.mark.parametrize("doc", DOCS, ids=_id)
 def test_no_internal_names(doc) -> None:
     hits = sorted({m.group(0) for m in INTERNAL.finditer(doc.read_text(encoding="utf-8"))})

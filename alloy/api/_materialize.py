@@ -2,15 +2,17 @@
 """Turn an ``alloy.Scene`` into engine cards on disk (materials/, pairs/, objects/, scenes/, meshes/, robots/).
 
 Per-object overrides (mass, density, friction, restitution) become a derived material ``<base>_for_<object>`` so
-they touch that object only; the library's sourced pair cards of the base material are copied to the derived one
-unless the object sets its own friction. Per-world start positions are returned for ``build`` to apply.
+they touch that object only; unless the object sets its own friction, the derived card names its base
+(``pairs_from``), so the library's sourced pair cards of the base apply to it (``alloy.scene.pairs.pair_card``; one
+card per object, not one per pair of objects), and it takes its base's look file (``derived_look``), so
+the object renders and varies as its base does. Per-world start positions are returned for ``build``.
 """
 
 from __future__ import annotations
 
 import copy
 import hashlib
-import itertools
+import json
 import math
 import shutil
 from dataclasses import dataclass, field
@@ -21,6 +23,8 @@ import numpy as np
 
 from alloy.api import _args as A
 from alloy.api import _anchor, _hulls, catalog
+from alloy.api import _card_objects as _CO
+from alloy.api._items import mixed_winding_edges
 from alloy.api.errors import SceneError
 from alloy.api.fixtures import PRECISE_K, PRECISE_MIN_E, precise_substeps
 
@@ -55,13 +59,12 @@ def materialize(scene: Any, root: Path) -> Materialized:
     for name, spec in scene.materials.items():
         _write(root / "materials" / f"{name}.yaml", _custom_material(name, spec, roots), yaml_dump)
     forced = {n for p in scene.pairs for n in (p["a"], p["b"])}
-    placements, robots, derived = [], [], {}
+    placements, robots = [], []
     for name, item in scene.items.items():
         if item["kind"] == "robot":
             robots.append(_robot_ref(name, item, root))
             continue
-        placements.append(_placement(name, item, root, roots, (forced, out.substeps > 1), derived, out, yaml_dump))
-    _copy_pairs(derived, scene, roots, root, yaml_dump)
+        placements.append(_placement(name, item, root, roots, (forced, out.substeps > 1), out, yaml_dump))
     card = {"schema": "alloy.scene/1", "robots": robots, "objects": placements, **scene.extra,
             "worlds": scene.worlds, "control_dt": scene.dt / out.substeps}
     card["pairs"] = list(scene.extra.get("pairs", [])) + [_scene_pair(p, out.materials, scene) for p in scene.pairs]
@@ -99,21 +102,22 @@ def _custom_material(name: str, spec: dict[str, Any], roots: list[str]) -> dict[
 
 
 def _placement(name: str, item: dict[str, Any], root: Path, roots: list[str], forced: tuple[set[str], bool],
-               derived: dict[str, list[str]], out: Materialized, dump: Any) -> dict[str, Any]:
+               out: Materialized, dump: Any) -> dict[str, Any]:
     """The scene card placement of one item (cards written as needed); ``forced`` = (names whose material needs
     its own card for a pair, precise-fit scene)."""
     if item.get("raw_placement") is not None:
-        out.cards.append(str(item["raw_placement"]["object"]))
-        return copy.deepcopy(item["raw_placement"])
+        return _raw_placement(name, item, root, roots, forced, out, dump)
     if item["per_world_pos"] is not None:
         out.per_world_pos[name] = item["per_world_pos"]
     if item.get("pour"):
         out.pours[name] = dict(item["pour"])
     if item["kind"] == "card":
-        card_name = _card_object(name, item, root, roots, dump, out.names_of)
+        card_name = _card_object(name, item, root, roots, dump, out, forced)
         out.cards.append(item["card_name"])
     else:
-        material = _object_material(name, item, root, roots, forced, derived, dump)
+        if item["kind"] == "mesh":
+            _refuse_mixed_winding(name, item, root)
+        material = _object_material(name, item, root, roots, forced, dump)
         out.materials[name] = material
         _write(root / "objects" / f"{name}.yaml", _object_card(name, item, material, root), dump)
         card_name = name
@@ -124,7 +128,7 @@ def _placement(name: str, item: dict[str, Any], root: Path, roots: list[str], fo
 
 
 def _object_material(name: str, item: dict[str, Any], root: Path, roots: list[str], forced: tuple[set[str], bool],
-                     derived: dict[str, list[str]], dump: Any) -> str:
+                     dump: Any) -> str:
     base, ov = item["material"], item["overrides"]
     cap = _friction_cap(item)
     own = root / "materials" / f"{base}.yaml"          # a Scene.add_material card written above
@@ -150,10 +154,32 @@ def _object_material(name: str, item: dict[str, Any], root: Path, roots: list[st
         surface["contact_stiffness"] = A.user_q(PRECISE_K, "precise-fit scene (add_block_with_hole): a machined part's "
                                                 "contact stiffness at its 0.25 ms rigid step (alloy.api.fixtures)")
     data["surface"] = surface
-    _write(root / "materials" / f"{mat_name}.yaml", data, dump)
     if "friction" not in ov:
-        derived.setdefault(base, []).append(mat_name)
+        data["pairs_from"] = base           # the base's sourced pair cards apply (a friction= of its own replaces them)
+    _write(root / "materials" / f"{mat_name}.yaml", data, dump)
+    derived_look(base, mat_name, root, roots)
     return mat_name
+
+
+def derived_look(base: str, name: str, root: Path, roots: list[str]) -> Path | None:
+    """Write ``looks/materials/<name>.json`` under ``root``: the look of material ``base`` for the per-object
+    material ``name`` made from it, so the object renders, varies (``alloy.vary``) and saves with its base's look,
+    not the grey fallback. Returns the file, or None when ``base`` has no look file (nothing written).
+
+    Example: ``derived_look("wood_beech", "wood_beech_for_lid", root, [])`` -> ``root/looks/materials/
+    wood_beech_for_lid.json``."""
+    from alloy.api._save import _look_file  # noqa: PLC0415
+
+    src = next((p for r in (root, *catalog.search_roots(roots)) if (p := _look_file(Path(r), "materials", base))),
+               None)
+    if src is None:
+        return None
+    data = json.loads(src.read_text(encoding="utf-8"))
+    data.update(material=name, note=f"the look of {base}, which this per-object material is made from")
+    out = root / "looks" / "materials" / f"{name}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+    return out
 
 
 def _stiffens(data: dict[str, Any], item: dict[str, Any]) -> bool:
@@ -199,6 +225,29 @@ def _mesh_volume(item: dict[str, Any], root: Path) -> float:
     v = v * scale
     a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
     return float(np.einsum("ij,ij->i", a, np.cross(b, c)).sum() / 6.0)
+
+
+def _refuse_mixed_winding(name: str, item: dict[str, Any], root: Path) -> None:
+    """A SceneError for a dynamic ``add_mesh`` object whose mass would come out 0 or less because its closed mesh has
+    faces wound both ways (the body's mass is its density x the mesh's signed volume: half a cube's faces flipped
+    give 0). The build's rigid emitter refuses any such body; this names the winding. Static and kinematic objects
+    and an explicit mass= build as before (mass= over a volume of 0 raises in ``_density``). A file that cannot be
+    read is left to the card check, which names it."""
+    if item["static"] or item["card_extra"].get("motion") == "kinematic" or "mass" in item["overrides"]:
+        return
+    try:
+        if _mesh_volume(item, root) > 0.0:
+            return
+        edges = mixed_winding_edges(*_mesh_arrays(item))
+    except (ValueError, OSError):
+        return
+    if edges:
+        where = "path" if "file" in item["mesh"] else "faces"
+        raise SceneError(f"{name}: the mesh is closed but {edges} of its edges run the same way in both of their "
+                         "faces, so some faces are wound inside out: it encloses no volume and the body would have "
+                         "no mass", "wind every face counter-clockwise seen from outside (trimesh.repair."
+                         "fix_normals(mesh) repairs a mesh), or pass static=True for a part that never moves",
+                         field=where)
 
 
 def _mesh_arrays(item: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
@@ -304,33 +353,79 @@ def _partners(entries: list[str], names_of: dict[str, list[str]]) -> list[str]:
     return out
 
 
-def _card_object(name: str, item: dict[str, Any], root: Path, roots: list[str], dump: Any,
-                 names_of: dict[str, list[str]]) -> str:
-    card = item["card_name"]
-    if name == card and item["static"] is None and not names_of:
+def _card_object(name: str, item: dict[str, Any], root: Path, roots: list[str], dump: Any, out: Materialized,
+                 forced: tuple[set[str], bool]) -> str:
+    """A library object's card name in the scene card: the card itself, or a copy named ``name`` (written here) that
+    carries its static / kinematic / rigid keywords, a derived material and its precision partners' new names."""
+    card, names_of = item["card_name"], out.names_of
+    plain = item["static"] is None and not _CO.changes(name, item, forced[0])
+    if name == card and plain and not names_of:
         return card
     path = catalog.object_card(card, roots)                 # fetched from the Hub here on a fresh install
     data = copy.deepcopy(_load_yaml(path))
     declared = list(data.get("precision_partners") or [])
     partners = _partners(declared, names_of)
-    if name == card and item["static"] is None and partners == declared:
+    if name == card and plain and partners == declared:
         return card
     data["name"] = name
     if declared:
         data["precision_partners"] = partners
     if item["static"] is not None:
         data["motion"] = "static" if item["static"] else "dynamic"
+    data.update(copy.deepcopy(item.get("card_extra") or {}))   # kinematic=, rigid=
+    own = _CO.needs_material(name, item, forced[0])
+    material = _card_material(name, item, data, (root, roots, dump), forced) if own else None
+    if material is not None:
+        data["material"] = out.materials[name] = material
     _write(root / "objects" / f"{name}.yaml", data, dump)
     return name
 
 
+def _card_material(name: str, item: dict[str, Any], data: dict[str, Any], where: tuple[Path, list[str], Any],
+                   forced: tuple[set[str], bool]) -> str | None:
+    """The material a library object's own card names when it needs one (``material=``, ``mass=`` and the other
+    values, a ``set_friction`` pair, a randomized static friction below its dynamic one), else None. Derived as for
+    primitives (``_object_material``), from ``material=`` or the card's own material; ``where`` = (root, roots,
+    dump)."""
+    root, roots, dump = where
+    ov = dict(item.get("overrides") or {})
+    _CO.refuse_parts(name, data, _CO.value_asks(name, ov, forced[0]))
+    base = str(item.get("material") or data["material"])
+    vol = _CO.volume(name, item["card_name"], roots) if "mass" in ov else None
+    spec = {"kind": "card", "material": base, "overrides": ov, "randomize": item.get("randomize") or [], "volume": vol}
+    material = _object_material(name, spec, root, roots, (forced[0], False), dump)    # no precise-fit stiffening
+    return None if material == data["material"] else material
+
+
+def _raw_placement(name: str, item: dict[str, Any], root: Path, roots: list[str], forced: tuple[set[str], bool],
+                   out: Materialized, dump: Any) -> dict[str, Any]:
+    """A loaded scene card's placement as it was; its card is written again (same name) with a derived material when
+    ``set_friction`` names the object or its randomized static friction falls below its dynamic friction."""
+    placement = copy.deepcopy(item["raw_placement"])
+    card = str(placement["object"])
+    out.cards.append(card)
+    rows = {"card_name": card, "randomize": placement.get("randomize") or []}
+    if not _CO.needs_material(name, rows, forced[0]):
+        return placement
+    data = copy.deepcopy(_load_yaml(catalog.object_card(card, roots)))
+    material = _card_material(name, rows, data, (root, roots, dump), forced)
+    if material is not None:
+        _CO.refuse_shared(name, card, out.scene.items)
+        data["material"] = out.materials[name] = material
+        _write(root / "objects" / f"{card}.yaml", data, dump)
+    return placement
+
+
 def _robot_ref(name: str, item: dict[str, Any], root: Path) -> dict[str, Any]:
+    """The scene card's robot entry. An ``mjcf=`` robot is written to ``robots/<name>.xml`` and referenced relative
+    to the card root, as the library's scenes reference theirs, so a saved folder still loads after it is moved or
+    copied (an absolute path pointed at the old place); a robot file keeps its own absolute path."""
     if item.get("raw") is not None:
         return copy.deepcopy(item["raw"])
     path = item["path"]
     if path is None:
-        path = str((root / "robots" / f"{name}.xml").resolve())   # absolute: a relative root is not a card root
-        Path(path).write_text(item["mjcf"], encoding="utf-8")
+        path = f"robots/{name}.xml"
+        (root / path).write_text(item["mjcf"], encoding="utf-8")
     ref = {"path": path, "kind": item["robot_kind"], "base_pose": [float(x) for x in item["pose"]], "name": name}
     if item.get("contact_gap") is not None:
         ref["contact_gap"] = float(item["contact_gap"])
@@ -342,28 +437,13 @@ def _scene_pair(pair: dict[str, Any], materials: dict[str, str], scene: Any) -> 
     for n in (pair["a"], pair["b"]):
         if n not in materials:
             kind = scene.items[n]["kind"]
-            raise SceneError(f"set_friction: {n!r} is a {kind}", "set a robot's friction in its file (MJCF "
-                             "<geom friction=...>); set_friction works between objects", field=n)
+            fix = ("set a robot's friction in its file (MJCF <geom friction=...>); " if kind == "robot" else "")
+            raise SceneError(f"set_friction: {n!r} is a {kind} with no material of its own", f"{fix}set_friction "
+                             "works between objects placed with add_* or add_object, and those of a loaded scene",
+                             field=n)
         names.append(materials[n])
     if names[0] == names[1]:
         raise SceneError(f"set_friction({pair['a']!r}, {pair['b']!r}): both use material {names[0]!r}",
                          "pass friction= on one of the two objects instead", field="mu")
     mu = A.user_q(pair["mu"], "set through alloy.Scene.set_friction")
     return {"a": names[0], "b": names[1], "mu_static": mu, "mu_dynamic": dict(mu)}
-
-
-def _copy_pairs(derived: dict[str, list[str]], scene: Any, roots: list[str], root: Path, dump: Any) -> None:
-    """Sourced pair cards of each base material, re-keyed onto its derived materials (mass-only overrides)."""
-    if not derived:
-        return
-    family = {b: [b, *d] for b, d in derived.items()}
-    for key in catalog.names("pairs", roots):
-        a, _, b = key.partition("__")
-        if a not in family and b not in family:
-            continue
-        data = _load_yaml(catalog.card_path("pairs", key, roots))   # type: ignore[arg-type]
-        for x, y in itertools.product(family.get(a, [a]), family.get(b, [b])):
-            if (x, y) == (a, b) or (root / "pairs" / f"{'__'.join(sorted((x, y)))}.yaml").exists():
-                continue
-            new = {**copy.deepcopy(data), "a": x, "b": y}
-            _write(root / "pairs" / f"{'__'.join(sorted((x, y)))}.yaml", new, dump)

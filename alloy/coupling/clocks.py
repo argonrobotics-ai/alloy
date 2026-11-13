@@ -150,6 +150,8 @@ class ClockController:
     _rungs: dict[str, _Hysteresis] = field(default_factory=dict)
     _level: _Hysteresis | None = None
     _cap_jump: bool = False                                          # a new cap: the next decide refines at once
+    _set_jump: bool = False                                          # ``jump_next``
+    _set_rungs: bool = False                                         # ``jump_next(rungs=True)``
     _stable_last: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -179,6 +181,15 @@ class ClockController:
         self.j_floor = current + 1
         log.info("coupling clock escalation: dt_x level j %d -> %d", current, self.j_floor)
         return True
+
+    def jump_next(self, rungs: bool = False) -> None:
+        """The worlds the bounds cover changed (a world was parked or unparked, ``parked.py``): the next ``decide``
+        goes straight to the level they ask for, either way, as after a gate change (``decide(jump=True)``).
+        ``rungs``: the adaptive rungs go straight to what their estimators over the new set want too, coarser as well
+        (``_update_rungs``): a parked world's need leaves at once instead of one rung per quiet stretch. A jump that
+        makes dt_x finer still keeps each entry's own step (WP4's rule)."""
+        self._set_jump = True
+        self._set_rungs = self._set_rungs or rungs
 
     def cap_rung(self, substeps: Mapping[str, int]) -> str | None:
         """An exchange at ``substeps`` was over the graph node budget: cap the adaptive entry with the most substeps
@@ -235,8 +246,9 @@ class ClockController:
         cap_dt = self._cap_bound(stable_dt)
         j_cap = grid_level(min(cap_dt, pol.dt_x_max), control_dt, pol.j_max)[0] if cap_dt < math.inf else 0
         desired = max(j_need, j_cap, self.j_floor)
-        jump = jump or (self._cap_jump and self._level is not None and desired > self._level.value)
-        self._cap_jump = False
+        capped = self._cap_jump and self._level is not None and desired > self._level.value
+        jump, straight = jump or self._set_jump or capped, self._set_rungs
+        self._cap_jump = self._set_jump = self._set_rungs = False
         changes = 0
         level_before = self._level.value if self._level is not None else None
         before = grid_dt(control_dt, level_before) if level_before is not None else None
@@ -251,18 +263,20 @@ class ClockController:
         # a bound made dt_x finer, not the sticky floor rising in this decide (a watchdog trip keeps all its remedy)
         follow = pol.rungs_follow_dt_x and level_before is not None and self.j_floor <= level_before
         refined = (jump or follow) and before is not None and dt_x < before
-        changes += self._update_rungs(dt_x, stable_dt, before if refined else None)
+        changes += self._update_rungs(dt_x, stable_dt, before if refined else None, straight=straight)
         changes += self._clamp_caps(dt_x, stable_dt)
         self.rung_changes_total += changes
         return ClockDecision(dt_x=dt_x, j=self.j, substeps=self.rungs, rung_changes=changes,
                              bound_unmet=bound_unmet, escalation_exhausted=self.j_floor >= pol.j_max)
 
-    def _update_rungs(self, dt_x: float, stable_dt: Mapping[str, float], refined_from: float | None = None) -> int:
+    def _update_rungs(self, dt_x: float, stable_dt: Mapping[str, float], refined_from: float | None = None, *,
+                      straight: bool = False) -> int:
         """Each adaptive rung from its entry's stable-dt estimate: raises at once, lowers one ladder step per quiet
         stretch. ``refined_from``: the dt_x before a gate jump made it finer. Then each rung goes straight to the larger
         of what its estimator wants and the rung that keeps its own step (dt_x / rung) no coarser than before, so the
         released rungs do not carry into contact, and no entry's own step coarsens through a gate change (an entry
-        whose rung rose on its own estimate keeps its step: WP4's review)."""
+        whose rung rose on its own estimate keeps its step: WP4's review). ``straight`` (a parked set changed, dt_x no
+        finer): each rung goes to what its estimator wants, either way."""
         pol = self.policy
         ladder = tuple(pol.substep_ladder)
         changes = 0
@@ -277,6 +291,8 @@ class ClockController:
                 own = refined_from / h.value                      # the entry's own step before the jump
                 keep = next((n for n in ladder if dt_x / n <= own * (1.0 + 1.0e-9)), ladder[-1])
                 changed = h.jump(max(desired, keep))
+            elif straight:
+                changed = h.jump(desired)
             else:
                 changed = h.update(desired, lower, pol.downshift_quiet_periods)
             if changed:

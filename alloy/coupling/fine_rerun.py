@@ -38,10 +38,11 @@ from alloy.core.errors import CouplingError
 from alloy.coupling.capture_passes import PER_WORLD_REPORT_FIELDS, merge_reports, rerun_mask, short_worlds
 from alloy.coupling.contact_band import read_band
 from alloy.coupling.fine_pack import TransferError, WorldTransfer
+from alloy.coupling.world_clock_params import WATCH_ROWS
 
 log = logging.getLogger("alloy.coupling")
 
-ROWS = {"_ladder": {"last": -(2**62), "per_world": 0}, "_onset": {"last": -(2**62)}}   # per-world host rows: default
+ROWS = {"_ladder": {"last": -(2**62), "per_world": 0, "_floor_world": 0}, "_onset": {"last": -(2**62)}}   # per-world host rows: default
 HOST = ("_clock", "_band_rerun")                 # pack-wide host objects: their attributes are deep-copied
 SCALARS = ("_dt_x", "_attempt_limit", "_steps_expected", "_control_dt", "_rollbacks", "_rollbacks_period",
            "_rung_changes", "_substeps_now", "_band_bound", "_stable_host")
@@ -284,7 +285,7 @@ class FineRerun:
         if fine is None:
             return None, f"no fine pack ({self.failed})"
         try:
-            there, back = WorldTransfer(eng, fine), WorldTransfer(fine, eng)
+            there, back = WorldTransfer(eng, fine), WorldTransfer(fine, eng, params="same")
             for s, w in enumerate(np.flatnonzero(E)):
                 there.check(int(w), s)
                 back.check(s, int(w))

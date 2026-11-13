@@ -199,10 +199,10 @@ def _scratch_for(m: Any, d: Any) -> tuple[wp.array, wp.array] | None:
 
 def _guarded(m: Any, d: Any, ctx: Any, skip_unchanged: bool = False, skip_noflip: bool = False) -> None:
     """``solver._cholesky_factorize_solve`` with MuJoCo C's pivot clamp. A model that ``alloy.precision.mjw_block``
-    marked (SCR-WP13-SPARSE-1: elliptic cone, trees of at most 6 dofs) takes the block-sparse factorization instead,
-    with the same clamp counter; a call with ``skip_unchanged`` / ``skip_noflip`` (the incremental path, which reuses
-    the dense ``ctx.hfactor``) stays dense. A model marked with ``set_pivot_floor`` always stays dense, so its redo
-    keeps the floor (mjw_block's float64 redo clamps at mjMINVAL)."""
+    marked (SCR-WP13-SPARSE-1: elliptic cone; trees over 6 dofs split into runs since 0.1.2) takes the block-sparse
+    factorization instead, with the same clamp counter; a call with ``skip_unchanged`` / ``skip_noflip`` (the
+    incremental path, which reuses the dense ``ctx.hfactor``) stays dense. A model marked with ``set_pivot_floor``
+    takes the block path too, its float64 redo floored the same way (it stayed dense before)."""
     original = _STATE["original"]
     s = _scratch_for(m, d)
     if s is None:
@@ -221,11 +221,11 @@ def _guarded(m: Any, d: Any, ctx: Any, skip_unchanged: bool = False, skip_noflip
         wp.launch(_check, dim=d.nworld, inputs=[int(m.nv), c.done, c.h, c.hfactor, c.grad, clamps, f64],
                   outputs=[c.search, c.search_dot, c.newton_decrement], device=d.qpos.device)
 
-    block = floor == 0.0 and getattr(m, "alloy_block_newton", None) is not None   # a marked model stays dense
+    block = getattr(m, "alloy_block_newton", None) is not None
     if block and not (skip_unchanged or skip_noflip):
         from alloy.precision import mjw_block  # noqa: PLC0415
 
-        if mjw_block.factor_solve(m, d, ctx, clamps, dense):
+        if mjw_block.factor_solve(m, d, ctx, clamps, dense, floor):
             return
     dense(ctx)
 

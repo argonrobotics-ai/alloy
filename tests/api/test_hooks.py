@@ -44,7 +44,8 @@ def test_runs_once_after_the_module_body(modpath):
     __import__(name)
     assert seen == [41, "second"]
     assert _hooks.pending(name) == 0
-    assert not any(isinstance(f, _hooks._OneShotFinder) for f in sys.meta_path)   # the finder removed itself
+    assert not any(isinstance(f, _hooks._OneShotFinder) and f.module == name for f in sys.meta_path)   # removed
+    # itself (alloy's own import leaves finders for modules not imported yet: MuJoCo Warp's collision glue)
     sys.modules.pop(name)
     __import__(name)                       # a re-import does not run the callbacks again
     assert seen == [41, "second"]

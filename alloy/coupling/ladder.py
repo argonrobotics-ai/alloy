@@ -43,6 +43,7 @@ class PeriodLadder:
         self.refines = 0            # within-period re-runs over the run (report notes)
         self.last = np.zeros(0, dtype=np.int64)
         self.per_world = np.zeros(0, dtype=np.int64)    # per world: its within-period re-runs (sim.health())
+        self._floor_world = np.zeros(0, dtype=np.int64)  # per world: sticky trips it was among (host data only)
 
     def new_period(self) -> None:
         self.period, self.level = self.period + 1, 0
@@ -54,9 +55,7 @@ class PeriodLadder:
         if self.last.shape != worlds.shape:
             self.last = np.full(worlds.shape, -(2**62), dtype=np.int64)
             self.per_world = np.zeros(worlds.shape, dtype=np.int64)
-        recent = max(math.ceil(self.window_s / control_dt - 1e-9), 1) if control_dt > 0 else 1
-        age = self.period - self.last
-        repeat = bool(np.any(worlds & (age > 0) & (age <= recent)))
+        repeat = self.repeats(worlds, control_dt)
         self.last[worlds] = self.period
         if not (self.on and rerun) or repeat:
             return False
@@ -66,6 +65,32 @@ class PeriodLadder:
         log.info("coupling escalation in %d world(s): period re-run at %d more level(s), for this period only (the "
                  "clock floor and the coupling mode stay)", int(worlds.sum()), self.level)
         return True
+
+    def repeats(self, worlds: np.ndarray, control_dt: float) -> bool:
+        """Whether a world of ``worlds`` (bool [W]) had a trip in an earlier period within the watchdog window: the
+        sticky ladder's case (module docstring). Reads only; the per-world clock refuses such a re-run ask (M2)."""
+        worlds = np.asarray(worlds, dtype=bool)
+        if self.last.shape != worlds.shape:
+            return False
+        recent = max(math.ceil(self.window_s / control_dt - 1e-9), 1) if control_dt > 0 else 1
+        age = self.period - self.last
+        return bool(np.any(worlds & (age > 0) & (age <= recent)))
+
+    def note_floor_trip(self, worlds: np.ndarray) -> None:
+        """One sticky trip by ``worlds`` (bool [W]): their ``_floor_world`` rows count it. Nothing reads it to step."""
+        worlds = np.asarray(worlds, dtype=bool)
+        if self._floor_world.shape != worlds.shape:
+            self._floor_world = np.zeros(worlds.shape, dtype=np.int64)
+        self._floor_world[worlds] += 1
+
+    def clear_worlds(self, mask: Any = None) -> None:
+        """Forget the sticky trips of the worlds in ``mask`` (bool [W]; None: every world), as a reset does."""
+        if not self._floor_world.size:
+            return
+        if mask is None:
+            self._floor_world[:] = 0
+        else:
+            self._floor_world[np.asarray(mask, dtype=bool)[: self._floor_world.size]] = 0
 
     def j(self, j: int, j_max: int) -> int:
         """The attempt's grid level: the clock's, plus this period's extra levels."""
@@ -85,6 +110,8 @@ def escalate(sched: Any, worlds: np.ndarray) -> None:
     mode (staggered + Aitken ω0_strong / ADMM ρ×4: a dt-independent added mass); later trips halve dt_x; then the pairs
     are strong and the worlds FAILED."""
     sched._trips = getattr(sched, "_trips", 0) + 1
+    if hasattr(getattr(sched, "_ladder", None), "note_floor_trip"):
+        sched._ladder.note_floor_trip(worlds)
     if sched._trips == 2 and sched._escalate_mode():
         return
     if sched._clock.escalate() or sched._escalate_mode():

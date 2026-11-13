@@ -31,10 +31,13 @@ from typing import Any
 
 import numpy as np
 
-from alloy.coupling.clocks import damping_bound, grid_level, interface_bound
+from alloy.coupling.clocks import damping_bound, interface_bound
 from alloy.coupling.endpoints import clock_masses
+from alloy.coupling.world_clock_need import AttemptLevels, ClockGrid, per_world_rungs
 
 log = logging.getLogger("alloy.coupling")
+
+PARKED_RUNG = -1          # ``j_world`` of a parked world: held at the pack's clock, it states no need (parked.py)
 
 
 class ClockCensusMixin:
@@ -46,6 +49,7 @@ class ClockCensusMixin:
     _census_attempt: int = 0                   # attempts begun (choose_clock)
     _census_counted: int = -1                  # the attempt the totals last counted
     _census_used: tuple[float, float, np.ndarray | None] | None = None   # the attempt's shared bound, band, armed
+    _census_band: tuple[np.ndarray, np.ndarray] | None = None   # the attempt's per-world band (shared rule, need)
     _census_last: dict[str, Any] | None = None
     _census_warned: bool = False
 
@@ -54,6 +58,7 @@ class ClockCensusMixin:
         gate = getattr(self, "_gate", None)
         armed = None if gate is None else np.asarray(gate.armed_host, dtype=bool).copy()
         self._census_used = (float(self._interface_bound()), float(self._band_bound), armed)
+        self._census_band = self._world_band(float(self._band_bound))
         self._census_attempt += 1
         return out
 
@@ -91,21 +96,25 @@ class ClockCensusMixin:
         extra = max(j_attempt - int(getattr(self._clock, "j", j_attempt)), 0)   # onset / ladder halvings this attempt
         floor = int(getattr(self._clock, "j_floor", 0))
         own = np.minimum(self._world_bounds(w, armed), band)
-        drift = bool(math.isfinite(shared) and not math.isclose(float(own.min()), shared, rel_tol=1e-9, abs_tol=0.0)
-                     and not (math.isinf(shared) and math.isinf(float(own.min()))))
+        parked = getattr(self, "_parked_mask", lambda: None)()          # worlds the clock's bound leaves out
+        parked = np.zeros(w, dtype=bool) if parked is None else parked
+        low = float(np.min(own[~parked], initial=math.inf))
+        drift = bool(math.isfinite(shared) and not math.isclose(low, shared, rel_tol=1e-9, abs_tol=0.0)
+                     and not (math.isinf(shared) and math.isinf(low)))
         if drift and not self._census_warned:
             self._census_warned = True
             log.warning("clock census: min over worlds %.6g s != the clock's shared bound %.6g s (the census no "
-                        "longer reads the clock's bound)", float(own.min()), shared)
-        bound = np.minimum(own, clock.dt_x_max)
-        vals, inv = np.unique(bound, return_inverse=True)        # a few distinct bounds: grid_level once each
-        levels = np.array([grid_level(float(v), control_dt, clock.j_max)[0] for v in vals], dtype=np.int64)
-        j_w = np.maximum(levels[inv.reshape(-1)], floor)
-        j_w = np.minimum(j_w + extra, j_attempt)
+                        "longer reads the clock's bound)", low, shared)
+        rows = self._census_band is not None and not drift       # each world's own band need, else the shared scalar
+        need = per_world_rungs(self._world_bounds(w, armed), self._census_band[1] if rows else band,
+                               ClockGrid(control_dt, clock.dt_x_max, clock.j_max),
+                               AttemptLevels(floor=floor, extra=extra, j_attempt=j_attempt))
+        j_w = np.where(parked, j_attempt, need.j)                # parked: counted as it ran
         n = 2 ** j_attempt
         kept, self._census_kept = self._census_kept, 0
-        out = {"j_world": j_w.tolist(), "world_exchanges": w * n, "per_world_exchanges": int(np.sum(2 ** j_w)),
-               "rerun_kept_exchanges": kept * n, "drift": drift}
+        out = {"j_world": np.where(parked, PARKED_RUNG, j_w).tolist(), "world_exchanges": w * n,
+               "per_world_exchanges": int(np.sum(2 ** j_w)), "rerun_kept_exchanges": kept * n, "drift": drift,
+               "term_world": need.terms(), "band_rule": "world rows" if rows else "shared"}
         totals = self._census_totals or {"world_exchanges": 0, "per_world_exchanges": 0, "rerun_kept_exchanges": 0,
                                          "attempts": 0}
         for k in ("world_exchanges", "per_world_exchanges", "rerun_kept_exchanges"):
@@ -113,6 +122,28 @@ class ClockCensusMixin:
         totals["attempts"] += 1
         self._census_totals, self._census_counted, self._census_last = totals, self._census_attempt, out
         return out
+
+    def keep_world_rows(self, on: bool = True) -> None:
+        """Opt in to (or out of) the contact band's per-world rows: the census's ``j_world`` then carries each world's
+        own band need (``band_rule``: "world rows"), not the shared scalar. Off by default: no extra kernel work."""
+        band = getattr(self, "_band", None)
+        if band is not None and hasattr(band, "keep_world_rows"):
+            band.keep_world_rows(on)
+
+    def _world_band(self, shared: float) -> tuple[np.ndarray, np.ndarray] | None:
+        """Before an attempt: the per-world band bounds behind the clock's ``shared`` band bound, as (the shared rule
+        world by world, each world's own need); None when the band keeps no per-world rows, or when their minimum is
+        not the shared bound (a bound adopted from elsewhere, e.g. the fine re-run pack: the scalar then stands for
+        every world). The rows exist only once asked for (``keep_world_rows``); the resize is on the host here, outside
+        any captured period."""
+        band = getattr(self, "_band", None)
+        if band is None or not hasattr(band, "ensure_worlds"):
+            return None
+        band.ensure_worlds(int(self._watchdog.world_count))      # rows only when asked (band.keep_world_rows)
+        rule, need = band.world_bounds(need=False), band.world_bounds(need=True)
+        if rule is None or float(rule.min()) != shared:
+            return None
+        return rule, need
 
     def _world_bounds(self, w: int, armed: np.ndarray | None = None) -> np.ndarray:
         """Per world [s]: the gated bound over its armed proxies (``armed``: the attempt's), else each pair's bound at
@@ -122,7 +153,7 @@ class ClockCensusMixin:
             ends = gate.ends
             armed = np.asarray(gate.armed_host if armed is None else armed, dtype=bool)
             out = np.full(w, float(ends.fixed_bound_s))
-            np.minimum.at(out, np.asarray(ends.world)[armed], np.asarray(ends.bound_s)[armed])
+            np.minimum.at(out, np.asarray(ends.world, dtype=np.int64)[armed], np.asarray(ends.bound_s)[armed])
             return out
         clock = self._alloy_policy.clock
         masses = self._census_masses(w)
@@ -156,4 +187,4 @@ class ClockCensusMixin:
         return self._census_mass
 
 
-__all__ = ["ClockCensusMixin"]
+__all__ = ["PARKED_RUNG", "ClockCensusMixin"]

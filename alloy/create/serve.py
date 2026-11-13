@@ -40,15 +40,16 @@ def handle(body: dict[str, Any]) -> dict[str, Any]:
     from alloy.create.gen3d_local import generate_local  # noqa: PLC0415
     from alloy.create.generate import MODELS  # noqa: PLC0415
 
+    bad = request_problem(body)
+    if bad is not None:
+        return bad
     text, photo_b64, seed = body.get("text"), body.get("photo_b64"), int(body.get("seed", 0))
-    if (text is None) == (photo_b64 is None):
-        return {"error": "send exactly one of text or photo_b64", "fix": '{"text": "a ceramic mug"}'}
     with tempfile.TemporaryDirectory(prefix="alloy-gen-") as tmp, _LOCK:
         work = Path(tmp)
         photo = None
         if photo_b64 is not None:
             photo = work / "input.png"
-            photo.write_bytes(base64.b64decode(photo_b64))
+            photo.write_bytes(base64.b64decode(photo_b64, validate=True))
         try:
             out = generate_local(photo=str(photo) if photo else None, text=text, work=work, seed=seed)
         except Exception as exc:  # noqa: BLE001 - the client gets the error as data
@@ -58,6 +59,28 @@ def handle(body: dict[str, Any]) -> dict[str, Any]:
         return {"mesh_obj_b64": base64.b64encode(Path(out["mesh"]).read_bytes()).decode("ascii"),
                 "image_png_b64": base64.b64encode(image.read_bytes()).decode("ascii") if image else None,
                 "models": MODELS, "prompt": out.get("prompt"), "seconds": out.get("seconds")}
+
+
+def request_problem(body: Any) -> dict[str, str] | None:
+    """Why ``body`` is not a generation request, as an ``{"error", "fix"}`` reply; None when it is one."""
+    example = '{"text": "a ceramic mug", "seed": 0}'
+    if not isinstance(body, dict):
+        return {"error": f"the body must be a JSON object, got {type(body).__name__}", "fix": f"send {example}"}
+    text, photo_b64, seed = body.get("text"), body.get("photo_b64"), body.get("seed", 0)
+    if (text is None) == (photo_b64 is None):
+        return {"error": "send exactly one of text or photo_b64", "fix": f"send {example}"}
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        return {"error": f"seed must be an integer, got {seed!r}", "fix": f"send {example}"}
+    if text is not None and (not isinstance(text, str) or not text.strip()):
+        return {"error": "text must be a non-empty string", "fix": f"send {example}"}
+    if photo_b64 is not None:
+        try:
+            ok = isinstance(photo_b64, str) and bool(base64.b64decode(photo_b64, validate=True))
+        except ValueError:
+            ok = False
+        if not ok:
+            return {"error": "photo_b64 is not base64 image data", "fix": "send the image file's bytes, base64-encoded"}
+    return None
 
 
 def health(token: str) -> dict[str, Any]:
@@ -98,14 +121,21 @@ class _Handler(BaseHTTPRequestHandler):
         if not self._authorized():
             self._reply(401, {"error": "bad or missing token", "fix": "send Authorization: Bearer $ALLOY_GEN3D_TOKEN"})
             return
-        n = int(self.headers.get("Content-Length", "0"))
+        length = self.headers.get("Content-Length", "0").strip()
+        n = int(length) if length.isdigit() else -1
         if self.path.rstrip("/") != "/generate" or not 0 < n <= MAX_BODY:
-            self._reply(400, {"error": "POST /generate with a JSON body up to 32 MB", "fix": "see the module doc"})
+            self.close_connection = True                        # the body, if any, was not read
+            self._reply(400, {"error": "POST /generate with a JSON body up to 32 MB and its Content-Length",
+                              "fix": "see the module doc"})
             return
         try:
             body = json.loads(self.rfile.read(n).decode("utf-8"))
         except ValueError as exc:
             self._reply(400, {"error": f"bad JSON: {exc}", "fix": '{"text": "a ceramic mug"}'})
+            return
+        bad = request_problem(body)
+        if bad is not None:
+            self._reply(400, bad)
             return
         self._reply(200, handle(body))
 

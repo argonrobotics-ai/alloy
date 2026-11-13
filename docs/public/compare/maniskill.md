@@ -87,3 +87,5 @@ Alloy's limits are listed on one page, each with its size and a workaround: [Kee
 ## Next
 
 - [Cloth](../guides/cloth.md), [Liquids](../guides/liquids.md), [Which simulator?](index.md)
+- Related: [deformable object manipulation](../answers/deformable-object-manipulation.md),
+  [simulators that install with pip](../answers/pip-installable-simulators.md).

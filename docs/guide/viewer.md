@@ -13,7 +13,9 @@ pip install pyglet imgui_bundle      # desktop window ("gl"): needs a display
 pip install rerun-sdk                # "rerun"
 pip install usd-core                 # "usd": writes a time-sampled USD file
 ```
-These packages are optional: installing Alloy, with or without extras, does not bring them.
+These packages are optional: `pip install alloy-engine` alone does not bring them. The `viewer` extra
+(`pip install "alloy-engine[viewer]"`) brings the browser and desktop-window packages (viser, pyglet,
+imgui_bundle); Rerun stays a separate install, and `usd-core` also comes with the `usd` extra.
 
 ## 60 seconds
 ```python
@@ -123,7 +125,8 @@ print(len(c["depth"]), list(zip(c["body_a"], c["body_b"])))
 `body_b`. Signs: `normal` points from `body_a` toward `body_b`, and `force` is the force **on `body_b`** (the force on
 `body_a` is its negative). Which object is `a` and which is `b` is the solver's choice and differs from pair to pair
 (a block on a table may read table-block, a ball beside it ball-table), so never sum `c["force"]` over mixed pairs:
-`alloy.viewer.force_on(sim, name, world=0)` sums one object's contacts with the right signs. `depth` is positive when
+`alloy.viewer.force_on(sim, name, world=0)` sums one object's contacts with the right signs. A robot's or a rod's name
+counts all its parts (`"gripper"`: every `"gripper/<link>"`), a part's name that part alone. `depth` is positive when
 the shapes overlap. Contacts are those of the last physics step; a pair listed just before touching (robot shapes:
 from 5 mm apart) has a negative depth and zero force.
 
@@ -192,7 +195,10 @@ re-applies the pull every period. `python examples/viewer/04_drag.py` drags boxe
 - Port in use: viser takes the next free port; read `view.url` (or pick one: `launch(sim, port=8781)`, `--port 8781`).
 - Blank page or no connection on a remote machine: forward the port (`ssh -L 8080:localhost:8080 host`) and open
   `localhost`, not the machine's name.
-- `"gl"` fails to open a window: it needs a display and OpenGL; on a cloud VM or over ssh use `"viser"`.
+- `"gl"` fails to open a window: it needs a display and OpenGL; on a cloud VM or over ssh use `"viser"`, or draw off
+  screen with `launch(sim, backend="gl", headless=True)` (it needs the system EGL / OpenGL libraries; the error names
+  them when they are missing). One process holds one gl mode: after a gl window, or a failed attempt to open one on a
+  broken display, `headless=True` needs a new Python process (the error says so).
 - No browser at hand (a remote machine): `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080` from a
   second shell prints 200 while the viewer serves; `--backend null` runs the same loop with no output.
 - The run is slow with the viewer: show fewer worlds, or call `view.sync()` every N steps.

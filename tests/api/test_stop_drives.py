@@ -10,11 +10,9 @@ routes (CPU): after ``stop_drives`` or ``set_pose`` the body is at rest at its p
 duration.
 
 Law 1 (physics' ruling, WP7's press-and-hold, ``probe_stop/stop.py``): the hold after ``stop_drives`` equals, bit for
-bit, the hold after a drive that ends by its duration with that drive's last-substep velocity zeroed ("duration0"),
-steady, the material at rest. Known, 0.1.1: a drive that ends by its ``duration`` leaves its velocity in the state for
-one substep past the end (its kernel's ``now < t1`` holds at the last step in float32), so the material gets one more
-substep at the old speed: on WP7's rig the hold reads 3.2 % higher (2.867 N against 2.776 N). A new ``sim.drive`` that
-replaces a running one has the same one-substep lag.
+bit, the hold after a drive that ends by its duration, steady, the material at rest. Until API-17 (0.1.1,
+``test_drive_timing.py``) the duration case kept its velocity one substep past the end and read 3.2 % higher (2.867 N
+against 2.776 N), so the law compared with that case's velocity zeroed ("duration0").
 """
 
 from __future__ import annotations

@@ -26,6 +26,7 @@ class Layout:
     neighbours: np.ndarray | None
     saturation: float
     grid: tuple[int, int] | None
+    board: Any = None                  # an OpenTac Board (opentac/board.py) when the config names one
 
 
 def _axis(n: int, pitch: float, gamma: float) -> np.ndarray:
@@ -57,6 +58,8 @@ def points_layout(points: Any) -> tuple[np.ndarray, float]:
 def build_layout(c: Any) -> Layout:
     """The layout of a ``Tactile.Config``: its preset if named, else its points, else its grid."""
     grid, pitch, points, reach, sat = c.grid, c.pitch, c.points, c.reach, c.saturation
+    if getattr(c, "opentac", ""):
+        return _board_layout(c)
     if c.preset:
         p = preset(c.preset)
         grid, pitch, points = p.grid, p.pitch, p.points
@@ -73,3 +76,13 @@ def build_layout(c: Any) -> Layout:
         xy, default_reach = grid_layout(grid, pitch, c.foveation)
         neighbours, g = grid_neighbours(int(grid[0]), int(grid[1])), (int(grid[0]), int(grid[1]))
     return Layout(np.asarray(xy, np.float64), float(reach or default_reach), neighbours, float(sat), g)
+
+
+def _board_layout(c: Any) -> Layout:
+    """The taxels of an OpenTac board (``Tactile.Config.opentac``): manifest points, reach half a cell diagonal."""
+    from alloy.plugins.tactile.opentac.presets import resolve  # noqa: PLC0415 - opentac imports this package
+
+    if c.preset or c.points:
+        raise ValueError("opentac sets the layout: leave preset and points empty")
+    board = resolve(c.opentac, bumps=c.opentac_bumps)
+    return Layout(board.xy.copy(), float(c.reach or board.reach), None, float(c.saturation), None, board)

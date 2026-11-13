@@ -14,15 +14,14 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import logging
-import os
 import re
-import sys
 from unittest import mock
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, fields
 from typing import Any
 
 from alloy.api.errors import FeatureUnavailableError, SceneError
+from alloy.viewer import _gl_mode
 
 log = logging.getLogger("alloy.viewer")
 
@@ -162,9 +161,7 @@ def _viser(nv: Any, o: BackendOptions) -> tuple[Callable[..., Any], dict[str, An
 def _gl(nv: Any, o: BackendOptions) -> tuple[Callable[..., Any], dict[str, Any]]:
     kwargs = {"width": o.width, "height": o.height, "headless": o.headless, "paused": o.paused,
               "num_frames": o.frames}
-    import pyglet  # noqa: PLC0415 - optional package; the option must be set before pyglet opens a display
-
-    pyglet.options["headless"] = bool(o.headless)      # headless=True draws off screen (EGL), no display needed
+    _gl_mode.prepare(bool(o.headless))                 # headless=True draws off screen (EGL), no display needed
     return nv.ViewerGL, _drop_none(kwargs)
 
 
@@ -207,19 +204,13 @@ _FACTORIES: dict[str, Callable[[Any, BackendOptions], tuple[Callable[..., Any], 
 }
 
 
-def _is_display_error(exc: BaseException, kwargs: Mapping[str, Any]) -> bool:
-    """True for a window that could not open: pyglet says so, or no display is set and off-screen was not asked."""
-    if type(exc).__name__ == "NoSuchDisplayException" or "display" in str(exc).lower():
-        return True
-    no_display = not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
-    return no_display and sys.platform.startswith("linux") and not kwargs.get("headless")
-
-
 def _construct(spec: BackendSpec, factory: Callable[..., Any], kwargs: dict[str, Any]) -> Any:
     """Call the Newton viewer's constructor, turning its install and display failures into API errors."""
     try:
         return factory(**kwargs)
     except ImportError as exc:
+        if spec.name == "gl":
+            raise _gl_mode.explain(exc, kwargs) from exc
         raise FeatureUnavailableError(f"the {spec.name} viewer backend failed to import a package: {exc}",
                                       spec.install or "reinstall Alloy", field="backend") from exc
     except TypeError as exc:
@@ -229,12 +220,10 @@ def _construct(spec: BackendSpec, factory: Callable[..., Any], kwargs: dict[str,
                          "pass port=, host=, path=, frames= or a keyword of the backend's Newton viewer",
                          field="options") from exc
     except Exception as exc:
-        if spec.name != "gl" or not _is_display_error(exc, kwargs):
+        explained = _gl_mode.explain(exc, kwargs) if spec.name == "gl" else None
+        if explained is None:
             raise
-        raise FeatureUnavailableError(f"the gl viewer backend needs a display and found none ({exc})",
-                                      "run it in a desktop session (DISPLAY set), pass headless=True to draw off "
-                                      "screen, or use backend='viser' and open view.url in a browser",
-                                      field="backend") from exc
+        raise explained from exc
 
 
 def create(name: str, options: BackendOptions) -> Any:

@@ -30,13 +30,23 @@ class DatasetSpec:
     fps: float                                 # control steps per simulated second (1 / env.sim.dt)
     obs_shapes: dict[str, tuple[int, ...]]     # per observation key, the shape of one step ("state": (D,))
     obs_dtypes: dict[str, str]                 # per observation key, "float32" or "uint8" (camera images)
-    obs_names: list[str]                       # one label per column of obs["state"]
+    obs_names: list[str]                       # one label per column of the main vector (``state_key``)
     action_names: list[str]                    # one label per action column
     action_mode: str = "delta"                 # the env's ActionSpec.mode: what an action value means
     state_names: list[str] = field(default_factory=list)   # one label per column of Episode.states ([] = none)
     device: str = "cpu"
     alloy_version: str = ""
     env_kwargs: dict[str, Any] = field(default_factory=dict)   # what the caller says rebuilds the env (free form)
+    obs_key_names: dict[str, list[str]] = field(default_factory=dict)   # labels of every vector key the env names
+
+    @property
+    def state_key(self) -> str:
+        """The main vector observation: ``"state"``, or the first group of ``Task(obs={...})`` (``"policy"``).
+
+        Example: ``episode.obs[spec.state_key]``."""
+        if "state" in self.obs_shapes or not self.obs_key_names:
+            return "state"
+        return next(iter(self.obs_key_names))
 
     @property
     def image_keys(self) -> list[str]:
@@ -54,12 +64,13 @@ class DatasetSpec:
                 "obs_shapes": {k: list(v) for k, v in self.obs_shapes.items()}, "obs_dtypes": dict(self.obs_dtypes),
                 "obs_names": list(self.obs_names), "action_names": list(self.action_names),
                 "action_mode": self.action_mode, "state_names": list(self.state_names), "device": self.device,
-                "alloy_version": self.alloy_version, "env_kwargs": dict(self.env_kwargs)}
+                "alloy_version": self.alloy_version, "env_kwargs": dict(self.env_kwargs),
+                "obs_key_names": {k: list(v) for k, v in self.obs_key_names.items()}}
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> DatasetSpec:
         """The inverse of ``to_json``. Example: ``DatasetSpec.from_json(json.loads(text))``."""
-        data = dict(data)
+        data = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}     # a newer file's extra fields
         data["obs_shapes"] = {k: tuple(v) for k, v in data["obs_shapes"].items()}
         return cls(**data)
 

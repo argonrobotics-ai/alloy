@@ -5,13 +5,17 @@
 what each row needed. ``regrow_rows`` is the host side, called once per attempt of a period, outside any captured
 graph (as ``grid_growth.regrow``, whose restore it shares):
 
-- no row over its fill mark: nothing happens (one read of four ints per solver);
+- no row over its fill mark: nothing happens (on CUDA, while no row is over half full, the read is a period late
+  and never waits for the period it just queued: ``self_contact_rows.PeriodWords``; it is queued on the current
+  stream, which is the period's own, since step_period runs it and every graph launch on that stream);
 - rows over the mark, none over its size: they grow, the captured graphs are dropped (they hold the old arrays) and
   the period stands, since no pair was dropped;
 - a row over its size: the rows grow, every world goes back to the period start and the period re-runs, so the
   accepted period has every pair. Health's dropped-pairs count goes back to its value at the period start too
-  (``save_period_start`` keeps it, after any reset between periods), so
-  the abandoned attempt raises no SELF_CONTACT_OVERFLOW.
+  (``save_period_start`` keeps it, after any reset between periods), so the abandoned attempt raises no
+  SELF_CONTACT_OVERFLOW. One exception, on CUDA: a row that went from under half full to over its size within one
+  period is seen a period late, so that period stands with its dropped pairs (health keeps the flag) and the reads
+  wait every period from then on.
 
 Rows at their cap, or a scene at its bytes cap, do not grow: their pairs drop and the flag stays, as before.
 ``sim.row_regrows`` counts the re-runs and ``RowGuard.grown`` lists every growth.
@@ -47,6 +51,10 @@ class RowGuard:
     def for_solvers(cls, solvers: Mapping[str, Any]) -> RowGuard | None:
         rows = {name: s.alloy_rows for name, s in solvers.items() if getattr(s, "alloy_rows", None) is not None}
         return cls(rows) if rows else None
+
+    def take_rebind(self) -> bool:
+        """Whether a solver's folds changed arrays (its captured graphs must go)."""
+        return any([state.take_rebind() for state in self.rows.values()])
 
     def grow(self) -> list[Growth]:
         """Grow every solver's rows that ask for it (host reads); the growths made."""
@@ -97,9 +105,11 @@ def regrow_rows(sim: Any, start: tuple[int, int]) -> bool:
     if guard is None:
         return False
     grown = guard.grow()
+    rebind = guard.take_rebind()
+    if grown or rebind:
+        drop_graphs(sim)                             # the captured graphs hold the old arrays
     if not grown:
         return False
-    drop_graphs(sim)
     if not any(g.dropped for g in grown):
         return False
     restore_period_start(sim, start)             # also puts health's dropped counts back (the guard is on sim)

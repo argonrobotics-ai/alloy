@@ -51,6 +51,16 @@ class ActuatorRows:
     position: bool = False   # its control is the joint's position target (an affine position servo, gear 1)
 
 
+@dataclass(frozen=True)
+class RodRows:
+    """A rod's segments (``Scene.add_rod``, either route) in order: their body rows in every world and each
+    segment's start and end in its body frame, the geometry ``sim.state()``'s ``"<rod>.points"`` reads."""
+
+    rows: np.ndarray         # (N, W) segment k's body row in each world, into state.body_q
+    start: np.ndarray        # (N, 3) segment k's start in its body frame
+    end: np.ndarray          # (N, 3) its end
+
+
 @dataclass
 class Layout:
     """Rows of every named body, joint and particle object, plus the world of each engine row."""
@@ -65,6 +75,7 @@ class Layout:
     free: dict[str, np.ndarray] = field(default_factory=dict)       # free object -> (W,) first joint_q row (7 coords)
     free_frame: dict[str, np.ndarray] = field(default_factory=dict)  # free object -> its joint's parent rotation (xyzw)
     actuators: dict[str, ActuatorRows] = field(default_factory=dict)  # "robot/actuator" -> ctrl rows (MuJoCo-native)
+    rods: dict[str, RodRows] = field(default_factory=dict)           # rod -> its segments ("<rod>.points")
 
     @classmethod
     def from_sim(cls, sim: Any) -> Layout:
@@ -81,7 +92,19 @@ class Layout:
             lay._add_free(idx, model)
             lay._add_actuators(idx, model)
         lay.objects = [n for n in idx.bodies if "/" not in n and not any(b.startswith(n + "/") for b in idx.bodies)]
+        lay._add_rods(idx, getattr(sim.engine, "built", None))
         return lay
+
+    def _add_rods(self, idx: Any, built: Any) -> None:
+        """Every rod's segments, as ``sim.state()`` reads its centre line (``alloy.api._rods.rod_lines``)."""
+        if built is None or not hasattr(built, "handles"):
+            return
+        from alloy.api import _rods  # noqa: PLC0415
+
+        for name, line in _rods.rod_lines(built).items():
+            if name in self.bodies:
+                rows = np.stack([idx.per_world(int(b), "body") for b in line.bodies])
+                self.rods[name] = RodRows(rows, np.asarray(line.start), np.asarray(line.end))
 
     def _add_joints(self, idx: Any, model: Any) -> None:
         q_start, qd_start = model.joint_q_start.numpy(), model.joint_qd_start.numpy()
@@ -212,7 +235,7 @@ def _ids(model: Any, attr: str, count: int) -> np.ndarray:
     return arr.numpy().astype(np.int32)
 
 
-__all__ = ["ActuatorRows", "JointRows", "Layout", "UNBOUNDED"]
+__all__ = ["ActuatorRows", "JointRows", "Layout", "RodRows", "UNBOUNDED"]
 
 
 def _position_servos(mj: Any, count: int) -> np.ndarray:

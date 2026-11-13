@@ -1,0 +1,115 @@
+diff --git a/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py b/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
+index c6c8067f3..8bd5b1d97 100644
+--- a/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
++++ b/alloy/_vendor/newton/_src/solvers/mujoco/solver_mujoco.py
+@@ -10268,13 +10268,20 @@ class SolverMuJoCo(SolverBase, CouplingInterface):
+ 
+     def _resolve_dampratio_cpu(self, actuators: list[int]) -> None:
+         """CPU counterpart of the ``dampratio`` resolution in :meth:`_update_physical_qpos0_inertia`."""
+-        mujoco = self._mujoco
+         m, d = self.mj_model, self.mj_data
+         ratio = self._actuator_dampratio.numpy()[0]
+         actuators = [a for a in actuators if ratio[a] > 0.0]
+         if not actuators:
+             return
+         qpos = d.qpos.copy()
++        for actuator, bias2 in self._dampratio_bias_cpu(m, d, ratio, actuators).items():
++            m.actuator_biasprm[actuator, 2] = bias2
++        d.qpos[:] = qpos
++
++    def _dampratio_bias_cpu(self, m: Any, d: Any, ratio: np.ndarray, actuators: list[int]) -> dict[int, float]:
++        """{actuator: biasprm[2]} for ``dampratio`` ``ratio[actuator]`` on MuJoCo C model ``m`` at its ``qpos0``, as
++        MuJoCo's compiler: ``-ratio * 2 * sqrt(kp * reflected inertia)`` (``d.qpos`` is overwritten)."""
++        mujoco = self._mujoco
+         d.qpos[:] = m.qpos0
+         mujoco.mj_kinematics(m, d)
+         mujoco.mj_comPos(m, d)
+@@ -10284,6 +10291,7 @@ class SolverMuJoCo(SolverBase, CouplingInterface):
+         mujoco.mj_transmission(m, d)
+         moment = np.zeros((1, m.nv))
+         inv_mass_moment = np.zeros((1, m.nv))
++        out = {}
+         for actuator in actuators:
+             # Average over the actuator's force outputs, like MuJoCo's compiler.
+             outputs = range(m.actuator_outadr[actuator], m.actuator_outadr[actuator] + m.actuator_outnum[actuator])
+@@ -10295,10 +10303,56 @@ class SolverMuJoCo(SolverBase, CouplingInterface):
+                 mujoco.mj_solveM(m, d, inv_mass_moment, moment)
+                 inv_weight += float(moment[0] @ inv_mass_moment[0]) / len(outputs)
+             inertia = 1.0 / inv_weight if inv_weight > MJ_MINVAL else 0.0
+-            m.actuator_biasprm[actuator, 2] = (
+-                -ratio[actuator] * 2.0 * np.sqrt(m.actuator_gainprm[actuator, 0] * inertia)
+-            )
+-        d.qpos[:] = qpos
++            out[actuator] = -ratio[actuator] * 2.0 * np.sqrt(m.actuator_gainprm[actuator, 0] * inertia)
++        return out
++
++    # Alloy (cpu-dampratio-every-world): the batched Warp-model fields that set an actuator's reflected inertia at
++    # qpos0 or its gain.
++    _DAMPRATIO_WORLD_FIELDS = ("qpos0", "body_pos", "body_quat", "body_ipos", "body_iquat", "body_mass",
++                               "body_inertia", "jnt_pos", "jnt_axis", "dof_armature", "actuator_gear",
++                               "actuator_gainprm")
++
++    def _resolve_dampratio_cpu_worlds(self, bias: np.ndarray, ratio: np.ndarray) -> None:
++        """Alloy (cpu-dampratio-every-world): resolve ``dampratio`` for worlds 1+ of the CPU path into ``bias``
++        ``[nworld, nu, 10]``.
++
++        Native CPU MuJoCo steps the template only, so :meth:`_resolve_dampratio_cpu` resolves world 0 alone; Alloy's
++        CPU route steps one MuJoCo C model per world from the Warp model's rows. A world whose inertia fields and
++        gains equal world 0's takes world 0's resolved damping bit for bit. Any other world (a per-world mass or kp
++        draw) is resolved like world 0, on a copy of the template with that world's differing values written, as
++        the GPU path resolves each world from its own inertia."""
++        import copy  # noqa: PLC0415
++
++        mujoco = self._mujoco
++        nworld = ratio.shape[0]
++        rows = {}
++        for name in self._DAMPRATIO_WORLD_FIELDS:
++            arr = getattr(self.mjw_model, name, None)
++            if name in _MJW_BATCHED_MODEL_FIELDS and arr is not None and arr.shape[0] == nworld:
++                rows[name] = arr.numpy()
++        for world in range(1, nworld):
++            actuators = [a for a in range(ratio.shape[1]) if ratio[world, a] > 0.0]
++            if not actuators:
++                continue
++            diff = {n: host[world] != host[0] for n, host in rows.items() if np.any(host[world] != host[0])}
++            if not diff:
++                same = [a for a in actuators if ratio[world, a] == ratio[0, a]]
++                for a in same:
++                    bias[world, a, 2] = bias[0, a, 2]
++                actuators = [a for a in actuators if a not in same]
++                if not actuators:
++                    continue
++            m = copy.copy(self.mj_model)
++            for name, mask in diff.items():
++                getattr(m, name)[mask] = rows[name][world][mask]
++            if "body_mass" in diff:
++                # mj_setConst's subtree masses from this world's masses (mj_comPos divides by them).
++                sub = np.array(m.body_mass, dtype=np.float64)
++                for b in range(m.nbody - 1, 0, -1):
++                    sub[m.body_parentid[b]] += sub[b]
++                m.body_subtreemass[:] = sub
++            for actuator, bias2 in self._dampratio_bias_cpu(m, mujoco.MjData(m), ratio[world], actuators).items():
++                bias[world, actuator, 2] = bias2
+ 
+     def _update_dof_armature(self, lock: bool = False):
+         """Publish Newton ``joint_armature`` to MuJoCo ``dof_armature``, optionally locking kinematic roots."""
+@@ -11410,8 +11464,9 @@ class SolverMuJoCo(SolverBase, CouplingInterface):
+                 continue
+             # Ball axes share the imported actuator's base DOF and damping ratio.
+             source_dof = int(source_dofs[source_rows[actuator]])
+-            # Native CPU MuJoCo only simulates the template world.
+-            for world in range(1 if self.use_mujoco_cpu else nworld):
++            # Alloy (cpu-dampratio-every-world): every world. Native CPU MuJoCo simulates the template only, but
++            # Alloy's CPU route steps one MuJoCo C model per world from these rows; worlds 1+ kept zero damping.
++            for world in range(nworld):
+                 global_dof = world * dofs_per_world + int(dof)
+                 row = position_source_rows.get(world * dofs_per_world + source_dof)
+                 if row is None or modes[global_dof] != JointTargetMode.POSITION:
+@@ -11437,6 +11492,7 @@ class SolverMuJoCo(SolverBase, CouplingInterface):
+         bias = self.mjw_model.actuator_biasprm.numpy()
+         if self.use_mujoco_cpu:
+             bias[0] = self.mj_model.actuator_biasprm
++            self._resolve_dampratio_cpu_worlds(bias, ratio)
+         for world, actuator, dof, row, _ in damping:
+             ratio[world, actuator] = 0.0
+             if kd[world, dof] == 0.0:

@@ -62,3 +62,5 @@ the first compile.
 - [Errors and fixes](../errors.md)
 - [Quickstart](../quickstart.md)
 - [Train with RL](../guides/rl.md)
+- Related: [the MCP server](../answers/mcp-server-physics-engine.md),
+  [error messages and fixes](../answers/error-messages.md).

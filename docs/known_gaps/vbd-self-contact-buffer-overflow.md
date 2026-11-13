@@ -39,7 +39,9 @@
 - What it does (`alloy/solvers/vbd/self_contact_rows.py`, `alloy/integration/row_growth.py`):
   - each row has its own size, never under 32 / 64;
   - at the end of every control period, rows more than 75 % full grow, before they drop a pair;
-  - a period in which a row did drop pairs is run again on the larger rows, so no accepted period has a dropped pair;
+  - a period in which a row did drop pairs is run again on the larger rows, so no accepted period has a dropped pair
+    (one exception on a GPU: a row that fills from under half full to past its size within one period is seen a
+    period late, so that period stands and health keeps SELF_CONTACT_OVERFLOW; see the limits below);
   - inside a period nothing is read on the host; a growth drops the captured CUDA graphs, which are captured again.
 - Numbers (one world, CPU, 1 s, flat 16 x 16 cotton sheets of 0.3 m stacked 2.5 mm apart on a table; a
   development script, not shipped):
@@ -73,6 +75,9 @@
     start only by the pairs the first attempt dropped; the first attempt is discarded;
   - a grown row is sized past its need (overshoot): growth at least doubles a row, so the largest rows ended at
     144 / 256 slots for a peak of 56 / 91 pairs (12 sheets, GPU). Tighter growth is open;
+  - on a GPU, while no row is over half full, the rows are read a period late: a row that goes from under half full
+    to over full within one period drops pairs without a re-run (health keeps SELF_CONTACT_OVERFLOW for it); from
+    then on the rows are tracked per row and read every period, so the next drop re-runs;
   - growing costs time once, in the periods that grow: a growth captures the CUDA graphs again, and a period that
     dropped pairs runs twice. On the 12-sheet, 16-world GPU run below that was 19 s more over 1 s of simulation
     (53 s against 34 s for the first half second); later periods ran at the fixed rows' speed;
@@ -101,6 +106,13 @@
     4-sheet stack differ by 6 um, and a sized-row run differs from a fixed-row one by the same 6 um. The bit for bit
     law is a CPU law.
   - Not measured: the GPU's total memory at the peak (the table is the rows' own bytes).
+  - A scene that never fills a row (a finding from the rc1 audit): a calm drape (one L4, 64 worlds, default accuracy,
+    wall plus read time, 3 rounds; development notes, not shipped) ran 6.3 % slower with sized rows than with
+    fixed rows in rc1, and 0.2 % slower after 0.1.1. There were two causes. A host read every period made the host
+    wait for the GPU; it is now a period late while no row is over half full. The two per-row arrays allocated at
+    build were never used in such a scene, yet made every captured period 5 % slower (`notes/gap-13b/vmprobe3`;
+    mechanism unknown); they are now allocated when a row first passes half full. Law R5 (L4): a calm 64-world sheet
+    makes no read that waits and runs within 3 % of fixed rows.
 - The default since 2026-11-10: it changes nothing below the fill mark (CPU bit for bit,
   law R3) and replaces dropped pairs where a scene is crowded (law R1).
 

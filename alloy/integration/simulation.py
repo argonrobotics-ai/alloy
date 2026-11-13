@@ -58,6 +58,7 @@ from alloy.core.snapshot import WorldSnapshot
 from alloy.coupling.capture_passes import merge_reports, short_worlds  # merge_reports: re-exported
 from alloy.coupling.capture_passes import rerun_mask as _rerun_mask
 from alloy.coupling.onset import escalated_beyond_onset
+from alloy.coupling import world_clock_api
 from alloy.coupling.types import CouplingReport
 from alloy.integration.graph_memory_note import note_graph_memory
 from alloy.integration.built_copy import draw_seed
@@ -70,7 +71,8 @@ from alloy.integration.grid_growth import regrow
 from alloy.integration.mpm_memory import room_to_step
 from alloy.integration.row_growth import regrow_rows
 from alloy.integration.latch_log import LatchLog
-from alloy.integration.period_snapshots import save_period_start
+from alloy.integration.park_latched import park_latched, prepare as prepare_park
+from alloy.integration.period_snapshots import make_period_snapshots, save_period_start
 from alloy.integration.reset_graphs import after_reset, watch
 from alloy.integration.stepper import entry_solvers
 from alloy.precision.types import PrecisionConfig
@@ -112,13 +114,8 @@ class IntegratedSimulation(Simulation):
         self.memory_notes: list[str] = []       # one plain line per step down (alloy.core.log's NullHandler hides logs)
         self.rollbacks = self.short_reruns = 0      # short re-runs (lever #1) apart: bench rows read rollbacks
         watch(self)                                 # reset keeps the period graphs when safe (reset_graphs)
-        self._latch_snap = self._good if not self._good.whole_arrays else self._per_world_snapshot()
-        self._latch_snap.save(self.state)
         self._end_snap: WorldSnapshot | None = None
-        self._health_snap = self._health_snapshot()
-        for name in ("_latch", "_end"):     # newer WP2 bases keep their own copies; this class uses its own
-            if hasattr(self, name):
-                setattr(self, name, self._latch_snap if name == "_latch" else None)
+        make_period_snapshots(self)                 # _latch_snap, _end_snap, _health_snap (_pour.start remakes them)
         self._state_names = tuple(sorted(k for k, v in vars(self.state).items() if isinstance(v, wp.array)))
         self._warm: set = set()
         self._graphs = None
@@ -130,6 +127,7 @@ class IntegratedSimulation(Simulation):
 
             self._graphs = GraphCache(str(device), use_graph=True, buffers=self._graph_buffers)
         self.latch_log = LatchLog.for_health(self.health)      # SCR-JOB2-4: a latched world says so, once
+        prepare_park(self)                                      # F2 (opt-in): band rows for parking
         self._health_dt = _takes_dt(self.health)
         self._set_energy_references()
         log.info("IntegratedSimulation: graph %s (%s), solvers %s", self.use_graph, device,
@@ -187,6 +185,7 @@ class IntegratedSimulation(Simulation):
 
     def step_period(self) -> None:
         """One control period; per-world re-run while the stepper asks for a rollback (SCR-WP4-1)."""
+        world_clock = world_clock_api.begin_period(self)     # clock_worlds: residents move first (None: off)
         save_period_start(self)       # every period, or after check steps when nothing else restores them (S1)
         start = (self.clock.ticks, self.steps)
         self._observer_clocks("save_period")
@@ -215,11 +214,13 @@ class IntegratedSimulation(Simulation):
                 break
             keep, first = self._roll_back(report, start), report
         self.periods += 1
+        world_clock_api.end_period(world_clock)     # the fine pack's period, the residents mirrored, report merged
         pin = getattr(getattr(self, "parts", None), "rung_pin", None)      # SCR-JOB2-1: precision rung pinned
         if pin is not None:
             pin.update(self._last_coupling)
         if self.latch_log is not None:
             self.latch_log.poll()
+            park_latched(self)                            # F2: opt-in, latched worlds leave the clock
 
     def _observer_clocks(self, what: str) -> None:
         """Observers with a clock of their own (``sim.drive``) keep it at the period start and go back with a re-run."""
@@ -436,6 +437,7 @@ class IntegratedSimulation(Simulation):
     def reset(self, world_mask: wp.array | None = None) -> None:
         """WP2's reset, with the redraw at the scene's draw seed (``built_copy.draw_seed``: the seed the assembled
         values were drawn at), not at this simulation's ``seed`` (SCR-DC3-8: one seed for assembly and reset)."""
+        world_clock_api.on_reset(self, world_mask)            # clock_worlds: residents leave before the reset
         seed, self.seed = self.seed, draw_seed(self.built)    # WP2's Simulation.reset redraws at self.seed
         try:
             super().reset(world_mask)

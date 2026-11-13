@@ -160,14 +160,18 @@ def rise(body: str) -> Check:
 
 
 def fraction_inside(particles: str, lo: Sequence[float], hi: Sequence[float]) -> Check:
-    """Fraction of a liquid's / cloth's particles inside the box [lo, hi].
+    """Fraction of a liquid's / cloth's particles inside the box [lo, hi]; for a pour, of its whole volume (drops
+    still at the nozzle count as outside).
 
     Example: ``C.fraction_inside("water", (-0.05, -0.05, 0), (0.05, 0.05, 0.1))``."""
     def fn(s: BatchState) -> Any:
         pts, xp = s[f"{particles}.points"], s.xp
         lo_a, hi_a = xp.asarray(lo).reshape(1, 1, 3), xp.asarray(hi).reshape(1, 1, 3)
         ins = (pts >= lo_a) & (pts <= hi_a)
-        return xp.float(ins[..., 0] & ins[..., 1] & ins[..., 2]).mean(-1)
+        ins = ins[..., 0] & ins[..., 1] & ins[..., 2]
+        if particles in s.rows.pours:
+            ins = ins & s[f"{particles}.active"]
+        return xp.float(ins).mean(-1)
     return Check(f"fraction_inside({particles})", fn)
 
 

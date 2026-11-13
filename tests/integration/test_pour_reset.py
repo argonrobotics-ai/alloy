@@ -4,13 +4,14 @@
 Before the fix ``sim.reset()`` put a pour's particles back at the nozzle but not its emitter's place in line (cursor)
 and layer clock: the build's start snapshot is taken before the pours' emitters exist. A finished pour then never
 poured again (0 of 294 particles), a pour reset part-way delivered only its unpoured rest, and ``Pour-v0`` poured
-water in its first episode only (0 of 448 particles in every later one).
+water in its first episode only (0 of 448 particles in every later one). The counts here are 0.1.0's: since
+0.1.1 a pour holds its asked volume within half a particle (20 ml: 312 particles, Pour-v0's 30 ml: 469).
 - a finished pour, reset, pours the same particles at the same steps, bit for bit, and the mass ledger balances;
 - a pour reset part-way pours its whole reservoir again;
 - a reset of one world (a mask) re-pours that world as a fresh build's and leaves the other bit for bit;
-- ``Pour-v0``: episode 2 (after the autoreset) pours the same water as episode 1 (``ALLOY_DEVICE=cuda:0`` runs this
-  law on a GPU, within 1 %: the emitter repeats, but a splash does not, and a particle that leaves the world bounds
-  is retired, so ``"water.active"`` can read a few particles less in one episode).
+- ``Pour-v0``: episode 2 (after the autoreset) pours the same particles at the same steps as episode 1, exactly, on
+  any device (``ALLOY_DEVICE=cuda:0``); each autoreset rewinds the pour to 0; and every poured particle is active or
+  retired at the world bounds. The active count may differ: each reset moves the bowl, so the spray differs.
 
     PYTHONPATH=. python -m pytest tests/integration/test_pour_reset.py -q
 """
@@ -33,7 +34,7 @@ def cup(worlds: int = 1, volume: float = 20e-6) -> alloy.Scene:
     s = alloy.Scene(worlds=worlds, dt=0.01)
     s.add_ground()
     s.add_open_box("cup", inner=(0.08, 0.08, 0.06), wall=0.005, pos=(0, 0, 0))
-    s.add_pour("water", volume, pos=(0, 0, 0.12), rate=2e-4)        # 200 ml/s: 20 ml is out in 0.1 s
+    s.add_pour("water", volume, pos=(0, 0, 0.12), rate=2e-4)        # 200 ml/s: 20 ml is out in 0.11 s
     return s
 
 
@@ -50,6 +51,14 @@ def run(sim: alloy.Sim, steps: int) -> tuple[list[np.ndarray], bytes]:
     return counts, np.ascontiguousarray(sim.state()["water.points"]).tobytes()
 
 
+def poured_and_retired(sim: alloy.Sim) -> tuple[list[int], list[int]]:
+    """Per world: particles the pour's emitter has released (its cursor; one emitter per world) and particles retired
+    at the world bounds this episode (both rewind at a reset)."""
+    sph = liquid_solvers(sim.engine)[0]
+    cursor = sph.emitters.dev.cursor.numpy()[: sim.worlds]
+    return [int(c) for c in cursor], [int(e) for e in np.asarray(sph.report().escaped)[: sim.worlds]]
+
+
 def balanced(sim: alloy.Sim) -> bool:
     led = liquid_solvers(sim.engine)[0].mass_ledger()
     return bool(np.array_equal(led["active"] + led["out"], led["initial"] + led["in"]))
@@ -64,7 +73,7 @@ def mask(sim: alloy.Sim, *worlds: int) -> wp.array:
 def test_a_finished_pour_pours_again_after_a_reset() -> None:
     sim = alloy.build(cup(), device="cpu", seed=0)
     first, points = run(sim, 20)
-    assert first[-1][0] == first[9][0] > 200, first                  # done by 0.1 s, all of it out
+    assert first[-1][0] == first[10][0] == 312, first                # done by 0.11 s (13 layers), all of it out
     sim.reset()
     assert active(sim)[0] == 0 and balanced(sim)
     again, points_again = run(sim, 20)
@@ -106,17 +115,22 @@ def test_pour_env_pours_in_every_episode() -> None:
                volume=30e-6, vary=False)
     env.reset(seed=0)
     act = np.zeros((2,) + tuple(env.single_action_space.shape), np.float32)
-    counts, ends = [], []
+    counts, poured, retired, ends = [], [], [], []
     for k in range(60):
         _, _, _, trunc, _ = env.step(act)
         counts.append(active(env.sim).tolist())
+        p, r = poured_and_retired(env.sim)
+        poured.append(p)
+        retired.append(r)
         if np.asarray(trunc).any():
             ends.append(k)
     assert ends == [29, 59], ends
     assert counts[29] == [0, 0] and counts[59] == [0, 0]              # each autoreset puts the water back
-    first, second = np.array(counts[0:29]), np.array(counts[30:59])
-    assert first[-1].min() > 400, counts                              # before the fix: episode 2 poured 0
-    if str(env.sim.device).startswith("cpu"):
-        assert np.array_equal(second, first), counts
-    else:   # a GPU splash does not repeat: on an L4 2 of 448 left the world bounds (retired) in one of two worlds
-        assert np.all(np.abs(second - first) <= np.ceil(0.01 * first)), counts
+    assert np.array(poured)[29].tolist() == [0, 0] and np.array(poured)[59].tolist() == [0, 0]
+    first, second = np.array(poured[0:29]), np.array(poured[30:59])
+    assert first[-1].min() > 400, poured                              # before the fix: episode 2 poured 0
+    assert np.array_equal(second, first), poured                      # the emitter repeats exactly, on any device
+    # every poured particle is still active or was retired at the world bounds. The active counts themselves need not
+    # repeat: each episode draws a new bowl position, and a stream hitting its edge from 25 cm throws spray past the
+    # world bounds (COUPLE-9, 2026-11-11: 10 of 469 in one world of episode 2, 2 in the base, after its window)
+    assert np.array_equal(np.array(counts) + np.array(retired), np.array(poured)), (counts, retired, poured)

@@ -16,8 +16,9 @@ of interface work into a 3.4 g bag, health silent).
   (``_refresh_body_inertial_view_overrides``, which then notifies). They stay proxied: their shapes stay collidable
   in the destination. The source model is never touched;
 - guards each exchange on the device: a kinematic proxy whose destination pose differs from the source pose after
-  the exchange (> ``POS_TOL`` m or > ``ROT_TOL`` rad) flags its world, and ``capacity_flags()`` hands that per-world
-  flag to HealthMonitor with JOINT_FAIL | PEN_FAIL (the weld is violated; PEN_FAIL makes it INVALID, fail closed);
+  the exchange (> ``POS_TOL`` m or > ``ROT_TOL`` rad, plus float32 rounding: ``F32_ULPS``) flags its world, and
+  ``capacity_flags()`` hands that per-world flag to HealthMonitor with JOINT_FAIL | PEN_FAIL (the weld is violated;
+  PEN_FAIL makes it INVALID, fail closed);
 - lists the kinematic proxies per pair (``kinematic_proxies``) for the plan report.
 """
 
@@ -35,8 +36,15 @@ from alloy.precision.types import HealthFlags
 log = logging.getLogger("alloy.coupling")
 
 FIXED = int(newton.JointType.FIXED)
-POS_TOL = 1e-9          # [m]   (coordinator ruling SCR-SC8-2)
+POS_TOL = 1e-9          # [m]   (coordinator ruling SCR-SC8-2): the floors; plus the float32 allowance below
 ROT_TOL = 1e-9          # [rad]
+# The destination holds a kinematic proxy's pose while the source recomputes it every step (MuJoCo Warp's forward
+# kinematics, float32). On CUDA the two differ by rounding: 3.75e-9 rad measured on a clamped chain hose, which the
+# 1e-9 floors alone read as a broken weld and froze every world at the first exchange. So the
+# guard also allows F32_ULPS float32 ulps of the pose's scale (positions: of max(1 m, |p|)); a real weld violation
+# (SC8's 2.7 mm per period) is three orders and more above it.
+F32_ULPS = 8.0
+F32_EPS = 1.1920929e-7  # float32 machine epsilon
 GUARD_BITS = int(HealthFlags.JOINT_FAIL | HealthFlags.PEN_FAIL)
 
 
@@ -64,16 +72,21 @@ def world_welded_bodies(model: Any) -> np.ndarray:
 @wp.kernel(enable_backward=False)
 def kinematic_moved_kernel(dst_q: wp.array[wp.transform], local_ids: wp.array[wp.int32],
                            global_ids: wp.array[wp.int32], src_q: wp.array[wp.transform],
-                           body_world: wp.array[wp.int32], pos_tol: float, rot_tol: float, out: wp.array[wp.int32]):
-    """Flag the world of a kinematic proxy whose destination pose left the source pose (rotation from the relative
-    quaternion's vector part: well conditioned for small angles, unlike acos of the dot product)."""
+                           body_world: wp.array[wp.int32], pos_tol: float, rot_tol: float, slack: float,
+                           out: wp.array[wp.int32]):
+    """Flag the world of a kinematic proxy whose destination pose left the source pose by more than the tolerances
+    plus ``slack`` (float32 rounding, relative: of max(1 m, |p|) for positions); rotation from the relative
+    quaternion's vector part: well conditioned for small angles, unlike acos of the dot product."""
     i = wp.tid()
     a = dst_q[local_ids[i]]
     b = src_q[global_ids[i]]
-    dp = wp.length(wp.transform_get_translation(a) - wp.transform_get_translation(b))
+    pa = wp.transform_get_translation(a)
+    pb = wp.transform_get_translation(b)
+    dp = wp.length(pa - pb)
     rel = wp.mul(wp.quat_inverse(wp.transform_get_rotation(a)), wp.transform_get_rotation(b))
     ang = 2.0 * wp.length(wp.vec3(rel[0], rel[1], rel[2]))
-    if dp > pos_tol or ang > rot_tol:
+    scale = wp.max(1.0, wp.max(wp.length(pa), wp.length(pb)))
+    if dp > pos_tol + slack * scale or ang > rot_tol + slack:
         w = body_world[global_ids[i]]
         if w >= 0:
             out[w] = 1
@@ -150,7 +163,7 @@ class KinematicProxyMixin:
         for dst, local_ids, global_ids in getattr(self, "_kinematic_groups", ()):
             wp.launch(kinematic_moved_kernel, dim=local_ids.shape[0], device=self.model.device,
                       inputs=[self._entries[dst].state_1.body_q, local_ids, global_ids, state_out.body_q,
-                              self.model.body_world, POS_TOL, ROT_TOL, self._kinematic_moved])
+                              self.model.body_world, POS_TOL, ROT_TOL, F32_ULPS * F32_EPS, self._kinematic_moved])
 
     def capacity_flags(self) -> list[Any]:
         flags = list(super().capacity_flags())

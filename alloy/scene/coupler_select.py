@@ -58,6 +58,16 @@ class StrongPairBesideLiquidError(AssemblyError):
         self.fix = fix
 
 
+class UnsupportedSceneError(AssemblyError):
+    """Solvers Alloy cannot couple in one scene yet (a liquid beside two other deformable solvers): the message
+    names each solver's objects; ``fix`` the nearest scene that steps (the API shows it
+    as the error's fix)."""
+
+    def __init__(self, message: str, fix: str) -> None:
+        super().__init__(message)
+        self.fix = fix
+
+
 @dataclass(frozen=True)
 class EntryMass:
     """What D5 needs about one entry: its routes, total dynamic mass and the objects it carries."""
@@ -182,9 +192,7 @@ def _hub_partner_sph(dyn: Sequence[EntryMass], inp: CouplerInputs) -> CouplerCho
     sph = next(e for e in dyn if e.name == "sph")
     hubs = [e for e in dyn if e.name in RIGID_ENTRIES]
     partners = [e for e in dyn if e is not sph and e.name not in RIGID_ENTRIES]
-    if len(hubs) != 1 or len(partners) != 1:
-        raise AssemblyError(f"SPH beside {[e.name for e in dyn if e is not sph]}: supported is one rigid hub with one "
-                            "two-way partner plus SPH as a one-way follower (SCR-DC5-7)")
+    _check_beside_liquid(dyn)
     src, dst = _ordered(hubs[0], partners[0])
     pol = _pair_policy(src, dst, inp)
     m_a, m_s = _ratio(pol, src, inp)
@@ -202,6 +210,42 @@ def _hub_partner_sph(dyn: Sequence[EntryMass], inp: CouplerInputs) -> CouplerCho
     log.info("P3 chain: %s -> %s lagged, %s -> %s %s, %s -> %s one-way", src.name, dst.name, wet.source,
              wet.destination, wet.mode, hubs[0].name, sph.name)
     return CouplerChoice(kind="proxy", pairs=(pol, wet, follower), strong_unrouted=unrouted)
+
+
+def _side(e: EntryMass) -> str:
+    """``towel, sheet (cloth)``: an entry's objects and what they are, in a user's words."""
+    from alloy.coupling.unsupported import ROUTE_WORDS  # noqa: PLC0415
+
+    what = "rigid bodies" if e.name in RIGID_ENTRIES else " and ".join(
+        sorted({ROUTE_WORDS.get(r, str(r)) for r in e.routes}))
+    names = list(e.objects) or [e.name]
+    return ", ".join(names[:4]) + (f" and {len(names) - 4} more" if len(names) > 4 else "") + f" ({what})"
+
+
+def _beside_liquid(sph: EntryMass, hubs: Sequence[EntryMass], partners: Sequence[EntryMass]) -> UnsupportedSceneError:
+    """The refusal of a liquid beside two other solvers, in the scene's terms: a liquid steps beside one solver of rigid
+    bodies and one more deformable solver (cloth, soft bodies, cables and film sheets; or sand, paste and powder)."""
+    msg = (f"the liquid {_side(sph)} beside {'; '.join(_side(e) for e in (*hubs, *partners))} is not supported in "
+           "one scene yet: a scene with a liquid steps its rigid bodies and robots and one more kind of deformable "
+           "object (cloth, soft bodies, cables or film sheets; or sand, paste or powder), not two")
+    if len(partners) > 1:
+        fix = (f"keep only one of {' or '.join(_side(e) for e in partners)} beside the liquid: take the others out, "
+               "make the sand, paste or soft bodies among them rigid (rigid=True), or build them in a separate scene")
+    else:
+        fix = "keep the scene's rigid bodies and robots on one rigid solver (MuJoCo, the default) beside the liquid"
+    return UnsupportedSceneError(msg, fix)
+
+
+def _check_beside_liquid(dyn: Sequence[EntryMass]) -> None:
+    """The supported shape beside a liquid: a liquid (entry "sph") beside more than one other solver steps only as
+    one rigid hub with one deformable partner; else ``UnsupportedSceneError`` naming every solver's objects."""
+    sph = next((e for e in dyn if e.name == "sph"), None)
+    if sph is None or len(dyn) <= 2:
+        return
+    hubs = [e for e in dyn if e.name in RIGID_ENTRIES]
+    partners = [e for e in dyn if e is not sph and e.name not in RIGID_ENTRIES]
+    if len(hubs) != 1 or len(partners) != 1:
+        raise _beside_liquid(sph, hubs, partners)
 
 
 def _strong_beside_liquid(src: EntryMass, dst: EntryMass, pol: PairPolicy, m_a: float,
@@ -242,7 +286,10 @@ def _strong_mode(dst: EntryMass) -> str:
 
 def select_coupler(inp: CouplerInputs) -> CouplerChoice:
     """D5 coupler choice and per-pair policies (strong pairs → ``_strong_mode``, reported strong-unrouted)."""
+    from alloy.coupling.unsupported import check_entries  # noqa: PLC0415
+
     dyn = [e for e in inp.entries if e.name]
+    check_entries(dyn)              # route pairs no solver steps together: refused here, so estimate refuses them too
     if any(e.fluid_density is not None and e.name == "sph" for e in dyn) and len(dyn) > 2:
         return _hub_partner_sph(dyn, inp)
     if len(dyn) <= 1:

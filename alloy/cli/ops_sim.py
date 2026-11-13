@@ -17,6 +17,7 @@ from typing import Any
 
 import numpy as np
 
+from alloy.api.errors import SimulationError
 from alloy.cli.errors import RequestError
 from alloy.cli.scenes import to_scene
 from alloy.cli.session import Session
@@ -64,6 +65,16 @@ def state_view(sim: Any, names: list[str] | None, world: Any, points: str = "sum
     return out
 
 
+def check_view(sim: Any, names: list[str] | None, world: Any) -> None:
+    """Raise before anything changes when ``world`` is not a world of ``sim`` or ``names`` holds an unknown name, so
+    a failed call leaves the simulation where it was. Example: ``check_view(sim, ["cube"], 0)``."""
+    if world != "all" and not 0 <= int(world) < sim.worlds:
+        raise SimulationError(f"world {world} is outside 0..{sim.worlds - 1}",
+                              f'pass world 0 to {sim.worlds - 1}, or "all"', field="world")
+    if names:
+        sim.state(names)                              # an unknown name raises UnknownNameError listing the valid ones
+
+
 def _targets(spec: dict[str, Any], ramps: bool) -> dict[str, Any]:
     """JSON targets -> API targets: a number or per-world list holds; ``{"from": a, "to": b}`` ramps (run only)."""
     out = {}
@@ -72,9 +83,9 @@ def _targets(spec: dict[str, Any], ramps: bool) -> dict[str, Any]:
             if not ramps or set(value) != {"from", "to"}:
                 raise RequestError(f"target {name!r}: {value!r} is not a value", 'pass a number, a list (one per '
                                    'world), or {"from": a, "to": b} to ramp during run', field=f"targets.{name}")
-            out[name] = (np.asarray(value["from"], float), np.asarray(value["to"], float))
+            out[name] = (value["from"], value["to"])     # the API checks each value (a SimulationError naming it)
         elif isinstance(value, (int, float, list)) and not isinstance(value, bool):
-            out[name] = np.asarray(value, float) if isinstance(value, list) else float(value)
+            out[name] = value if isinstance(value, list) else float(value)
         else:
             raise RequestError(f"target {name!r} has a {type(value).__name__}", "pass a number (m or rad) or a "
                                "list with one per world", field=f"targets.{name}")
@@ -127,8 +138,10 @@ def liquid_setting(sim: Any) -> dict[str, Any]:
 def op_step(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     """Advance ``steps`` control periods (after setting ``targets``) and report state and health."""
     sid, sim = session.get(a)
-    if a["targets"]:
-        sim.set_targets(_targets(a["targets"], ramps=False), a["kind"])
+    check_view(sim, a["names"], a["world"])
+    targets = _targets(a["targets"], ramps=False) if a["targets"] else None
+    if targets:
+        sim.set_targets(targets, a["kind"])
     t0 = time.perf_counter()
     sim.step(a["steps"])
     return {"sim": sid, "t": now(sim), "steps": a["steps"], "physics_steps": sim.physics_steps,
@@ -139,6 +152,7 @@ def op_step(session: Session, a: dict[str, Any]) -> dict[str, Any]:
 def op_run(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     """Run ``seconds`` of simulated time, recording frames; save them to ``out`` (.npz) and sample a few."""
     sid, sim = session.get(a)
+    check_view(sim, a["names"], a["world"])
     targets = _targets(a["targets"], ramps=True) if a["targets"] else None
     traj = sim.run(a["seconds"], record=a["names"], every=a["every"], targets=targets)
     out = {"sim": sid, "t": now(sim), "frames": traj.frames, "wall_s": round(traj.meta["wall_s"], 4),
@@ -164,6 +178,7 @@ def _samples(traj: Any, k: int, world: int) -> list[dict[str, Any]]:
 def op_state(session: Session, a: dict[str, Any]) -> dict[str, Any]:
     """Current state of named bodies, joints and particle objects."""
     sid, sim = session.get(a)
+    check_view(sim, None, a["world"])
     return {"sim": sid, "t": now(sim), "state": state_view(sim, a["names"], a["world"], a["points"])}
 
 

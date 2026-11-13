@@ -20,6 +20,7 @@ from pathlib import Path
 
 from alloy.cards import types as ct
 from alloy.cards.library import CardLibrary
+from alloy.io.errors import ExportError
 from alloy.io.model import IOModel, Unmapped
 from alloy.io.quiet import quiet_engine
 
@@ -50,15 +51,17 @@ def _check_formats(formats) -> tuple[str, ...]:
     return fmts
 
 
-def _library(library: CardLibrary | str | Path | None) -> CardLibrary:
-    """The default library, a library folder searched before the default one, or any library object as given."""
+def _library(library: CardLibrary | str | Path | list | tuple | None) -> CardLibrary:
+    """The default library; one library folder or a list of them, searched in order before the default roots
+    (``alloy.check``'s rule); or any library object as given."""
     if library is None:
         return CardLibrary()
-    if not isinstance(library, (str, Path)):
+    if not isinstance(library, (str, Path, list, tuple)):
         return library
-    from alloy.cards.library import default_root  # noqa: PLC0415
+    from alloy.cards.roots import assets_root, default_roots  # noqa: PLC0415
 
-    return CardLibrary([Path(library), default_root()])
+    roots = [library] if isinstance(library, (str, Path)) else list(library)
+    return CardLibrary([*map(Path, roots), *default_roots()], assets=assets_root())
 
 
 def _with_cards(lib: CardLibrary, cards: list, folder: Path) -> CardLibrary:
@@ -113,6 +116,11 @@ def _write(io: IOModel, built, out: Path, fmts: tuple[str, ...], res: ExportResu
     from alloy.io.usd_write import write_usd  # noqa: PLC0415
 
     stem = out / io.name
+    if io.unwritable and set(fmts) & {"urdf", "usd"}:        # never a body silently left free of its joint
+        joints = "; ".join(f"{body}: {why}" for body, why in io.unwritable.items())
+        raise ExportError(f"URDF and USD export cannot write these joints ({joints}); the body would come out free",
+                          'export MJCF only (formats=["mjcf"]), or give each axis its own body in the robot file '
+                          "(one joint per body)")
     if "mjcf" in fmts:
         res.counts["mjcf"] = write_mjcf(built, io, stem.with_suffix(".xml"))
         res.files["mjcf"] = str(stem.with_suffix(".xml"))
@@ -125,12 +133,13 @@ def _write(io: IOModel, built, out: Path, fmts: tuple[str, ...], res: ExportResu
 
 
 def export_scene(scene: ct.SceneCard | str | Path, out_dir: str | Path, formats=FORMATS, *,
-                 library: CardLibrary | str | Path | None = None, name: str | None = None) -> ExportResult:
+                 library: CardLibrary | str | Path | list | None = None, name: str | None = None) -> ExportResult:
     """Export a scene (library name, ``.yaml`` path, ``SceneCard`` or an ``alloy.Scene``) to ``out_dir``.
 
     Writes ``<name>.xml`` (MJCF, checked by loading it in MuJoCo), ``urdf/<object>.urdf`` + ``urdf/index.json``
     and ``<name>.usda``. Only world 0 at nominal values is exported; deformables, liquids and Alloy-only contact
-    features are listed in ``unmapped``. Raises ``alloy.io.mjcf_export.ExportError`` with the fix to try.
+    features are listed in ``unmapped``, and for an ``alloy.Scene`` its yielding joints, robot randomization, timed
+    pushes and heat. Raises ``alloy.io.mjcf_export.ExportError`` with the fix to try.
     """
     from alloy.io.build import scene_model  # noqa: PLC0415 - heavy import
 
@@ -138,8 +147,14 @@ def export_scene(scene: ct.SceneCard | str | Path, out_dir: str | Path, formats=
     if callable(getattr(scene, "save", None)) and not isinstance(scene, (str, Path, ct.SceneCard)):
         import tempfile  # noqa: PLC0415
 
+        if library is None and getattr(scene, "roots", None):     # its own card folders (alloy.Scene(roots=))
+            library = list(scene.roots)
+        from alloy.api._unsaved import alloy_only  # noqa: PLC0415 - the Scene's physics its cards cannot hold
+
         with tempfile.TemporaryDirectory() as tmp:       # an alloy.Scene: export from its saved cards
-            return export_scene(scene.save(Path(tmp) / "cards"), out_dir, fmts, library=library, name=name)
+            res = export_scene(scene.save(Path(tmp) / "cards"), out_dir, fmts, library=library, name=name)
+        res.unmapped += [Unmapped("all", item, reason) for item, reason in alloy_only(scene)]
+        return res
     card, default_name, lib = _scene_card(scene, _library(library))
     with quiet_engine():
         io, built = scene_model(card, lib, name or default_name)
@@ -151,7 +166,7 @@ def export_scene(scene: ct.SceneCard | str | Path, out_dir: str | Path, formats=
 
 
 def export_object(obj: ct.ObjectCard | str, out_dir: str | Path, formats=FORMATS, *,
-                  library: CardLibrary | str | Path | None = None,
+                  library: CardLibrary | str | Path | list | None = None,
                   materials: tuple[ct.MaterialCard, ...] = ()) -> ExportResult:
     """Export one object card at the origin, as :func:`export_scene` does. ``obj`` is a library name or an
     ``ObjectCard``; a card (and ``materials``) not in the library are used for this call only."""

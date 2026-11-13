@@ -312,15 +312,15 @@ def fake_scheduler(model: newton.Model, *, mode: str = "staggered", policy: Any 
 
 
 def cloth_seed_model(masses: Sequence[float], speeds: Sequence[float], contact_ke: float,
-                     spec: ClothSceneSpec = ClothSceneSpec(), device: str | None = None) -> newton.Model:
+                     spec: ClothSceneSpec = ClothSceneSpec(), device: str | None = None, dz: float = 0.0) -> newton.Model:
     """CPL-5 seeds: world w has a box of ``masses[w]`` kg moving down at ``speeds[w]`` m/s at t = 0 above the cloth
-    (cloth mass ``spec.cloth_mass``); every world shares the model-wide contact stiffness ``contact_ke``."""
+    (cloth mass ``spec.cloth_mass``), raised by ``dz`` [m]; every world shares the contact stiffness ``contact_ke``."""
     if len(masses) != len(speeds):
         raise ValueError("masses and speeds need one value per world")
     top = newton.ModelBuilder()
     SolverMuJoCo.register_custom_attributes(top)
     for m in masses:
-        top.add_world(_world_builder(dataclasses.replace(spec, box_mass=float(m))))
+        top.add_world(_world_builder(dataclasses.replace(spec, box_mass=float(m)), dz))
     top.color()
     model = top.finalize(device=device)
     model.soft_contact_ke = float(contact_ke)

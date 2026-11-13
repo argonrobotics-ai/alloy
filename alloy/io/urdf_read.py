@@ -22,8 +22,9 @@ from pathlib import Path
 import numpy as np
 
 from alloy.io.errors import ImportFileError
-from alloy.io.geometry import compose, quat_matrix, quat_mul, read_obj
+from alloy.io.geometry import compose, outward, quat_matrix, quat_mul, read_obj, scaled_mesh
 from alloy.io.model import IDENTITY, IOBody, IOJoint, IOMaterial, IOMesh, IOModel, IOShape, Pose
+from alloy.io.robot_file import RobotFileError, check_xacro, floating_base
 
 log = logging.getLogger("alloy.io")
 _JOINTS = {"revolute": "revolute", "continuous": "revolute", "prismatic": "prismatic", "fixed": "fixed",
@@ -79,9 +80,13 @@ def read_stl(path: Path) -> IOMesh:
 def resolve_mesh(filename: str, urdf_dir: Path, package_dirs: tuple[Path, ...] = ()) -> Path:
     """Find a URDF mesh file: ``package://pkg/rel`` under the given package folders or the URDF's parents,
     ``file://`` and relative paths from the URDF folder."""
-    name = filename.replace("file://", "")
-    if name.startswith("package://"):
-        pkg, _, rel = name[len("package://"):].partition("/")
+    name = filename
+    if name.lower().startswith("file:"):
+        from urllib.parse import unquote, urlparse  # noqa: PLC0415
+
+        name = unquote(urlparse(name).path)
+    if name.startswith(("package://", "model://")):
+        pkg, _, rel = name.split("://", 1)[1].partition("/")
         for root in (*package_dirs, *[urdf_dir, *urdf_dir.parents][:4]):
             for cand in (root / pkg / rel, root / rel):
                 if cand.exists():
@@ -103,7 +108,7 @@ def load_mesh_file(path: Path, scale) -> IOMesh:
         mesh = read_stl(path)
     else:
         raise ImportFileError(f"{path.name}: {suffix} meshes are not read; convert it to .obj or .stl")
-    return IOMesh(mesh.vertices * np.asarray(scale, np.float64), mesh.faces)
+    return outward(scaled_mesh(mesh.vertices, mesh.faces, scale))
 
 
 class _Reader:
@@ -112,7 +117,9 @@ class _Reader:
     def __init__(self, path: Path, package_dirs: tuple[Path, ...]) -> None:
         self.path, self.dirs = path, package_dirs
         self.io = IOModel(name=path.stem)
-        self.root = ET.parse(path).getroot()
+        text = path.read_text(encoding="utf-8", errors="replace")
+        check_xacro(text, path.name)
+        self.root = ET.fromstring(text)
         if self.root.tag != "robot":
             raise ImportFileError(f"{path}: root element is <{self.root.tag}>, a URDF needs <robot>")
 
@@ -201,6 +208,12 @@ class _Reader:
                        damping=g(dyn, "damping") or 0.0, friction=g(dyn, "friction") or 0.0)
 
     def read(self, base_pose: Pose, floating: bool) -> IOModel:
+        free = floating_base(self.root, self.path.name)      # a floating joint on an empty root link: a free base
+        if free is not None:
+            base_pose, floating = compose(base_pose, origin_pose(free)), True
+            self.root.remove(next(lk for lk in self.root.findall("link")
+                                  if lk.get("name") == free.find("parent").get("link")))
+            self.root.remove(free)
         links = {lk.get("name"): lk for lk in self.root.findall("link")}
         joints = [self.joint(el) for el in self.root.findall("joint")]
         children = {j.child for j in joints}
@@ -220,7 +233,8 @@ class _Reader:
         root_joint = IOJoint(f"{roots[0]}_root", "free" if floating else "fixed", None, roots[0],
                              base_pose if not floating else IDENTITY)
         self.io.joints = [root_joint, *joints]
-        self.io.groups = {self.root.get("name", self.path.stem): "robot" if joints else "object"}
+        moving = any(j.kind != "fixed" for j in joints)             # links welded together are one object
+        self.io.groups = {self.root.get("name", self.path.stem): "robot" if moving else "object"}
         for k, b in enumerate(self.io.bodies):
             self.io.bodies[k] = IOBody(**{**b.__dict__, "group": self.root.get("name", self.path.stem)})
         return self.io
@@ -228,13 +242,69 @@ class _Reader:
 
 def read_urdf(path: str | Path, *, floating: bool | None = None, base_pose: Pose = IDENTITY,
               package_dirs: tuple[str | Path, ...] = ()) -> IOModel:
-    """``IOModel`` of a URDF file. ``floating`` None: free root when the file has no joints (a loose object),
-    fixed root otherwise (a robot); True/False forces it."""
+    """``IOModel`` of a URDF file. ``floating`` None: free root when the file has no moving joint (a loose object,
+    also one made of links welded by fixed joints), fixed root otherwise (a robot); True/False forces it."""
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"URDF {path} not found")
-    r = _Reader(path, tuple(Path(p) for p in package_dirs))
-    has_joints = r.root.find("joint") is not None
-    io = r.read(tuple(base_pose), (not has_joints) if floating is None else floating)
+    try:
+        r = _Reader(path, tuple(Path(p) for p in package_dirs))
+        has_joints = any(j.get("type", "fixed") != "fixed" for j in r.root.findall("joint"))
+        io = r.read(tuple(base_pose), (not has_joints) if floating is None else floating)
+    except RobotFileError as exc:
+        raise ImportFileError(str(exc), exc.fix) from exc
+    except ET.ParseError as exc:
+        raise ImportFileError(f"{path.name} is not well-formed XML: {exc}", "fix the line the message names") from exc
+    except (ValueError, AttributeError) as exc:
+        if isinstance(exc, ImportFileError):
+            raise
+        raise ImportFileError(f"{path.name}: a value could not be read ({exc})",
+                              "check the URDF's numbers and that every joint names a parent and a child link") from exc
     log.info("read URDF %s: %d links, %d joints", path.name, len(io.bodies), len(io.joints) - 1)
+    return io
+
+
+def copy_urdf(src: str | Path, dst: str | Path, package_dirs: tuple[str | Path, ...] = ()) -> Path:
+    """A copy of the URDF ``src`` at ``dst`` with its mesh files copied into ``files/`` beside it (``package://``
+    paths resolved), so the folder can be moved. Raises ImportFileError naming a mesh that is not found."""
+    from alloy.io.mjcf_prune import localize_files  # noqa: PLC0415
+
+    src, dst = Path(src).resolve(), Path(dst)
+    root = ET.parse(src).getroot()
+    for mesh in root.iter("mesh"):
+        if mesh.get("filename"):
+            mesh.set("filename", str(resolve_mesh(mesh.get("filename"), src.parent,
+                                                  tuple(Path(p) for p in package_dirs)).resolve()))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    localize_files(root, dst.parent, attrs=("filename",))
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="  ")
+    tree.write(dst, encoding="unicode", xml_declaration=True)
+    return dst
+
+
+def _merge(io: IOModel, part: IOModel, group: str) -> None:
+    """Add ``part`` (one URDF of an export index) to ``io``; a name already taken gets the group as a prefix."""
+    taken = {b.name for b in io.bodies}
+    new = {b.name: (f"{group}_{b.name}" if b.name in taken else b.name) for b in part.bodies}
+    io.bodies += [IOBody(**{**b.__dict__, "name": new[b.name], "group": group}) for b in part.bodies]
+    jtaken = {j.name for j in io.joints}
+    io.joints += [IOJoint(**{**j.__dict__, "name": f"{group}_{j.name}" if j.name in jtaken else j.name,
+                             "parent": new.get(j.parent), "child": new[j.child]}) for j in part.joints]
+    io.materials.update(part.materials)
+    io.unmapped += [u for u in part.unmapped if u not in io.unmapped]
+
+
+def read_urdf_index(path: str | Path) -> IOModel:
+    """``IOModel`` of an ``index.json`` written by ``alloy.io.export_scene``: each listed URDF at its base pose,
+    free or fixed as the index says."""
+    import json  # noqa: PLC0415
+
+    path = Path(path)
+    index = json.loads(path.read_text(encoding="utf-8"))
+    io = IOModel(name=str(index.get("scene") or path.parent.name))
+    for g in index["groups"]:
+        part = read_urdf(path.parent / g["file"], floating=not g["fixed_base"], base_pose=tuple(g["base_pose"]))
+        _merge(io, part, g["name"])
+        io.groups[g["name"]] = "robot" if g.get("kind") == "robot" else "object"
     return io

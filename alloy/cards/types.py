@@ -122,6 +122,9 @@ class MaterialCard:
     # route cloth_film only (alloy/solvers/film); a None block is left out of digests, so cards without it keep
     # their card_hash (WP1 ruling, 2026-11-06)
     film: Film | None = field(default=None, metadata=OMIT_IF_NONE)
+    # the material whose sourced pair cards this one takes where it has none of its own (alloy.Scene's per-object
+    # materials: mass, density or restitution set on one object; alloy.scene.pairs.pair_card); None is left out
+    pairs_from: str | None = field(default=None, metadata=OMIT_IF_NONE)
     schema: Literal["alloy.material/1"] = "alloy.material/1"
 
 

@@ -84,8 +84,8 @@ def compose(request: str | SceneSpec | dict, *, variations: int = 0, seed: int =
     sup = support(spec.support, cat)
     work = Path(tempfile.mkdtemp(prefix="alloy-compose-"))
     files: dict[str, bytes] = {}
-    spec = _robot_copies(spec, cat, files, work)
     try:
+        spec = _robot_copies(spec, cat, files, work)              # raises on a robot file that is missing or broken
         critic = Critic(_library(cat, sup, work), device, check, worlds, seconds, spec.worlds,
                         jitter=JITTER_SHARE * CLEARANCE[spec.clutter] if spec.jitter else 0.0, work=work)
         scenes = _scenes(spec, cat, sup, critic, seed, variations, swap)
@@ -126,18 +126,19 @@ def _with(spec: SceneSpec, robots: Sequence[RobotSpec | dict | str], area: Seque
 
 def _robot_copies(spec: SceneSpec, cat: Catalog, files: dict[str, bytes], work: Path) -> SceneSpec:
     """Robots whose MJCF also holds a floor, a table or objects, swapped for robot-only copies written into
-    ``work`` (and kept in ``files`` for the saved folder)."""
-    from alloy.compose.robot_files import robot_copy  # noqa: PLC0415
+    ``work`` (and kept in ``files`` for the saved folder). Each robot's file is checked first (``robot_file``): a
+    missing or unreadable one raises before any object is placed, in every check mode."""
+    from alloy.compose.robot_files import robot_copy, robot_file  # noqa: PLC0415
 
     robots, notes = [], list(spec.notes)
-    for r in spec.robots:
+    for r in [robot_file(r, cat.library) for r in spec.robots]:
         r2, note = robot_copy(r, cat.library, files)
         robots.append(r2)
         notes += [note] if note else []
     for rel, data in files.items():
         (work / rel).parent.mkdir(parents=True, exist_ok=True)
         (work / rel).write_bytes(data)
-    return dataclasses.replace(spec, robots=tuple(robots), notes=tuple(notes)) if files else spec
+    return dataclasses.replace(spec, robots=tuple(robots), notes=tuple(notes))
 
 
 def _library(cat: Catalog, sup: Support, work: Path):
@@ -181,7 +182,8 @@ def _one(spec: SceneSpec, cat: Catalog, sup: Support, critic: Critic, seed: int,
     critic.log = list(choice.notes)
     _solids(queue, spec, cat, critic)
     skip = soft_queries(spec)
-    missing = [f"{i.count} x {i.query}" for i in spec.items if i.query not in skip and not choice.cards.get(i.query)]
+    unmatched = [f"{i.count} x {i.query}" for i in spec.items if i.query not in skip and not choice.cards.get(i.query)]
+    missing = list(unmatched)
     first: dict[str, str] = {}
     counts: dict[str, int] = {}
     k = 0
@@ -211,7 +213,9 @@ def _one(spec: SceneSpec, cat: Catalog, sup: Support, critic: Critic, seed: int,
     missing += [f"{i.query} ({i.card})" for i in _dropped(queue, layout)]
     missing += planner.soft.missing + planner.soft.dropped(layout.placed)
     critic.log.extend(_shell_notes(layout, cat))
-    return _composed(name, seed, layout, critic, spec, report, _dedupe(missing))
+    scene = _composed(name, seed, layout, critic, spec, report, _dedupe(missing))
+    scene.unmatched = unmatched
+    return scene
 
 
 def _soft_placer(planner: SoftPlanner, inst: _Instance | None, soft_items: list) -> Any:

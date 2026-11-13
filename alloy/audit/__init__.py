@@ -18,7 +18,7 @@ from typing import Any
 
 from alloy.audit.report import AuditFinding, AuditReport
 
-__all__ = ["AuditFinding", "AuditReport", "audit"]
+__all__ = ["AuditFinding", "AuditReport", "audit", "library"]
 
 
 def audit(scene: Any, **kwargs: Any) -> AuditReport:
@@ -26,3 +26,11 @@ def audit(scene: Any, **kwargs: Any) -> AuditReport:
     from alloy.audit.run import audit as _audit  # noqa: PLC0415 - keeps `import alloy.audit` light
 
     return _audit(scene, **kwargs)
+
+
+def library(roots: Any = ()) -> Any:
+    """The card library an audit reads (your ``roots`` first, then the roots ``alloy.check`` uses); see
+    ``alloy.audit.run.library``. Example: ``replay_finding(handle, library=alloy.audit.library(["my_scenes"]))``."""
+    from alloy.audit.run import library as _library  # noqa: PLC0415
+
+    return _library(roots)

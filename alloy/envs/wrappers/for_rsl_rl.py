@@ -30,7 +30,8 @@ except ImportError:
     _Base = object  # type: ignore[assignment, misc]
 
 from alloy.envs.errors import EnvError
-from alloy.envs.wrappers._common import EpisodeTally, image_keys, require, require_torch_env, state_groups
+from alloy.envs.wrappers._common import (EpisodeTally, image_keys, require, require_same_step, require_torch_env,
+                                         state_groups)
 
 log = logging.getLogger("alloy.envs")
 
@@ -46,6 +47,7 @@ class RslRlVecEnv(_Base):  # type: ignore[misc, valid-type]
     def __init__(self, env: Any, *, clip_actions: bool = True) -> None:
         require("rsl_rl")
         require_torch_env(env, "rsl_rl")
+        require_same_step(env, "rsl_rl")
         if not isinstance(clip_actions, bool):
             raise EnvError(f"clip_actions is {clip_actions!r}", "pass True (clip to the env's action space) or False",
                            field="clip_actions")
@@ -82,6 +84,11 @@ class RslRlVecEnv(_Base):  # type: ignore[misc, valid-type]
         Example: ``cfg["obs_groups"] = venv.default_obs_groups()``."""
         groups = state_groups(self.env, self._obs)
         critic = "critic" if "critic" in groups else "policy"
+        images = image_keys(self.env)
+        if images:                                   # rsl_rl's MLP policies take flat vectors: say so, once
+            log.warning("rsl_rl: the camera images %s are in the observations but not in these obs_groups, so the "
+                        "policy does not see them; add them to obs_groups with an image encoder of your own, or "
+                        "train on the state groups", sorted(images))
         return {"actor": ["policy"], "critic": [critic]}
 
     def get_observations(self) -> TensorDict:
@@ -116,8 +123,10 @@ class RslRlVecEnv(_Base):  # type: ignore[misc, valid-type]
         return episodes, successes, mean_return
 
     def seed(self, seed: int = 0) -> int:
-        """Seed the action sampler and the randomisation. Example: ``venv.seed(3)``."""
-        self.env.reset(seed=seed, options={"reset_mask": self.env.xp.zeros(self.num_envs, "bool")})
+        """Seed the action sampler and the randomisation and restart every world from that seed, so the episode the
+        runner reads next (``get_observations``) is the seed's, as in ``make(..., seed=seed)``. Example:
+        ``venv.seed(3)``."""
+        self._obs, _ = self.env.reset(seed=seed)
         return seed
 
     def close(self) -> None:

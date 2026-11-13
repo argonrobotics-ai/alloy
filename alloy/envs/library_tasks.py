@@ -26,7 +26,7 @@ from alloy.envs import checks as C
 from alloy.envs.errors import EnvError, install_fix
 from alloy.envs.placement import rest_on_floor
 from alloy.envs.randomize import jitter_body, jitter_joint
-from alloy.envs.robots import fingers, gantry_actions, gantry_gripper
+from alloy.envs.robots import WALL_SAFE, fingers, gantry_actions, gantry_gripper
 from alloy.envs.state import BatchState
 from alloy.envs.task import Task
 
@@ -100,7 +100,7 @@ def pick_place_scene(worlds: int = 1, seed: int = 0, obj: str = PICK_OBJECTS[0],
     scene = _scene(worlds)
     scene.add_open_box("bin", inner=BIN_INNER, wall=0.006, pos=BIN_POS)
     add_library_object(scene, "obj", obj, "PickPlace-v0", pos=(-0.12, 0.0, 0.001), anchor="origin")
-    scene.add_robot(GRIP, mjcf=gantry_gripper(), pos=(0.0, 0.0, 0.2))
+    scene.add_robot(GRIP, mjcf=gantry_gripper(**WALL_SAFE), pos=(0.0, 0.0, 0.2))
     return maybe_vary(scene, vary, seed, pos=0.02, yaw_deg=30)
 
 
@@ -139,7 +139,7 @@ def peg_insert_scene(worlds: int = 1, seed: int = 0, clearance: float = 0.0005, 
     tip_z = BLOCK[2] + 0.02
     scene.add_box("peg", size=PEG, pos=(HOLE_AT[0], HOLE_AT[1], tip_z + PEG[2] / 2), mass=0.02, friction=0.8)
     palm_z = tip_z + PEG_OUT + 0.07                      # the palm sits 7 cm above the fingertips
-    scene.add_robot(GRIP, mjcf=gantry_gripper(reach_z=0.12), pos=(HOLE_AT[0], HOLE_AT[1], palm_z))
+    scene.add_robot(GRIP, mjcf=gantry_gripper(reach_z=0.12, **WALL_SAFE), pos=(HOLE_AT[0], HOLE_AT[1], palm_z))
     return maybe_vary(scene, vary, seed)
 
 
@@ -184,7 +184,8 @@ def drawer_open_scene(worlds: int = 1, seed: int = 0, cabinet: str = CABINET, va
     Example: ``alloy.build(drawer_open_scene(16), worlds=16)``."""
     scene = _scene(worlds)
     add_library_object(scene, "cabinet", cabinet, "DrawerOpen-v0", pos=(0.0, 0.3, 0.36), anchor="origin")
-    scene.add_robot(GRIP, mjcf=gantry_gripper(reach_z=0.3), pos=(0.0, -0.3, 0.36), rpy=(math.pi / 2, 0.0, 0.0))
+    scene.add_robot(GRIP, mjcf=gantry_gripper(reach_z=0.3, **WALL_SAFE), pos=(0.0, -0.3, 0.36),
+                    rpy=(math.pi / 2, 0.0, 0.0))
     return maybe_vary(scene, vary, seed)
 
 

@@ -10,7 +10,10 @@ values are drawn on the device from the environment's seed). Example::
 
 ``jitter_body`` shifts a free object (uniform in +-pos metres, and +-yaw_deg about the vertical); ``jitter_joint``
 offsets a robot joint (uniform in +-by, kept inside its limits) and moves its position target (or the control of the
-MuJoCo servo driving it) there too, so the servo holds the new start instead of snapping back.
+MuJoCo servo driving it) there too, so the servo holds the new start instead of snapping back. A jittered joint is
+teleported: a finger set into a resting object starts inside it (START_PEN, DEGRADED) and the overlap is pushed apart
+hard, so start such a hand open (or the object clear of the pose) and close it with actions. A slide joint's
+``carry=`` moves free objects and particle objects (a liquid in a cup, a cloth on a tray) with it.
 """
 
 from __future__ import annotations
@@ -36,7 +39,7 @@ class Jitter:
     yaw_deg: float = 0.0
     by: float = 0.0
     at: float | None = None                     # joints: the centre of the jitter (None: the reset value)
-    carry: tuple[str, ...] = ()                 # slide joints: free bodies that move with it (a held object)
+    carry: tuple[str, ...] = ()                 # slide joints: free bodies or particle objects that move with it
     target: float | None = None                 # joints: the servo target to set (None: the new joint value)
 
 
@@ -54,11 +57,15 @@ def jitter_body(name: str, pos: Sequence[float] = (0.0, 0.0, 0.0), yaw_deg: floa
 def jitter_joint(name: str, by: float = 0.0, at: float | None = None, carry: Sequence[str] = (),
                  target: float | None = None) -> Jitter:
     """Start a robot joint at ``at`` (default: its reset value) plus up to +-by (m or rad), within its limits.
-    ``carry``: free objects that move with a slide joint (an object the gripper holds at the start). ``target``: the
-    servo target to start with (default: the joint's new value; set it past a held object to squeeze it).
+    ``carry``: what moves with a slide joint: free objects (one the gripper holds at the start) and particle objects
+    (the liquid in a cup the slide carries, a cloth on a tray). ``target``: the servo target to start with (default:
+    the joint's new value; set it past a held object to squeeze it; in delta action mode the action window caps how
+    far past the joint it stays). The joint is teleported: a pose that puts a finger inside a resting object starts
+    overlapping it (START_PEN), so start the hand open and close it with actions.
 
     Example: ``jitter_joint("gripper/lift", by=0.01)``; a home pose: ``jitter_joint("arm/elbow", at=-1.57)``;
-    a held peg: ``jitter_joint("g/x", by=0.02, carry=["peg"])``."""
+    a held peg: ``jitter_joint("g/x", by=0.02, carry=["peg"])``; a cup of water on the slide:
+    ``jitter_joint("pourer/x", by=0.03, carry=["water"])``."""
     if by < 0:
         raise EnvError(f"jitter_joint({name!r}, by={by})", "pass by >= 0 (a half-range)", field="by")
     return Jitter(name, "joint", by=float(by), at=None if at is None else float(at), carry=tuple(carry),
@@ -88,12 +95,23 @@ class Randomizer:
             raise EnvError(f"{j.name!r} has {rows.width} coordinates", "jitter 1-dof joints (hinge or slide)",
                            field="randomize")
         full = next((n for n, r in lay.joints.items() if r is rows and "/" in n), j.name)
-        ctrl = [a.rows for a in lay.actuators.values() if a.joint == full]      # a MuJoCo servo driving it
+        ctrl = [a.rows for a in lay.actuators.values() if a.joint == full and a.position]   # its position servo
+        #                                                (a <motor>'s control is a torque: never a joint value)
         return {"q": xp.asarray(rows.q[:, 0], "int64"), "t": xp.asarray(rows.target_q[:, 0], "int64"),
                 "c": xp.asarray(ctrl[0], "int64") if ctrl else None,
                 "lo": float(rows.lower[0]), "hi": float(rows.upper[0]),
-                "carry": [self._plan(Jitter(b, "body")) for b in j.carry],
+                "carry": [self._carried(b) for b in j.carry],
                 "axis": self._slide_axis(j.name, int(rows.qd[0, 0])) if j.carry else None}
+
+    def _carried(self, name: str) -> dict[str, Any]:
+        """A carried free body's plan, or a particle object's (W, n) rows into ``state.particle_q``."""
+        lay = self.layout
+        if name in lay.particles:
+            return {"points": self.xp.asarray(lay.particles[name], "int64")}
+        if name not in lay.free:
+            raise EnvError(f"carry={name!r} is not a free object or a particle object", "carry one of "
+                           f"{sorted(lay.free) + sorted(lay.particles) or 'none'}", field="carry")
+        return self._plan(Jitter(name, "body"))
 
     def _slide_axis(self, name: str, dof: int) -> np.ndarray:
         """World direction of a slide joint (world 0, at the build pose): what a carried object moves along."""
@@ -118,15 +136,25 @@ class Randomizer:
             if j.kind == "body":
                 xp.update(self.engine.state.joint_q, lambda q, j=j, p=plan: self._body(q, j, p, mask))
             else:
-                values, delta = self._joint_values(j, plan, mask)
-                xp.update(self.engine.state.joint_q, lambda q, p=plan, v=values: q.__setitem__(p["q"], v))
-                for held in plan["carry"]:
-                    xp.update(self.engine.state.joint_q, lambda q, h=held, p=plan, d=delta: self._shift(q, h, p, d))
+                values = self._move_joint(j, plan, mask)
                 hold = values if j.target is None else values * 0.0 + j.target
                 xp.update(ctrl.joint_target_q, lambda t, p=plan, v=hold: _put(xp, t, p["t"], v, mask))
                 if plan["c"] is not None:
                     xp.update(ctrl.mujoco.ctrl, lambda c, p=plan, v=hold: _put(xp, c, p["c"], v, mask))
         self._forward_kinematics(mask)
+
+    def _move_joint(self, j: Jitter, plan: dict[str, Any], mask: Any) -> Any:
+        """Draw the masked worlds' new joint values and teleport the joint and what it carries there. Returns the
+        drawn values (W,), the servo target to hold."""
+        xp, state = self.xp, self.engine.state
+        values, delta = self._joint_values(j, plan, mask)
+        xp.update(state.joint_q, lambda q, p=plan, v=values: q.__setitem__(p["q"], v))
+        for held in plan["carry"]:
+            if "points" in held:
+                xp.update(state.particle_q, lambda x, h=held, p=plan, d=delta: self._shift_points(x, h, p, d))
+            else:
+                xp.update(state.joint_q, lambda q, h=held, p=plan, d=delta: self._shift(q, h, p, d))
+        return values
 
     def _body(self, q: Any, j: Jitter, plan: dict[str, Any], mask: Any) -> None:
         xp, w = self.xp, self.layout.worlds
@@ -156,6 +184,11 @@ class Randomizer:
         d_joint = (held["rot"][None, :, :] * d_world[:, None, :]).sum(-1)
         rows = held["q0"][:, None] + xp.asarray(np.arange(3), "int64")[None, :]
         q[rows] = q[rows] + d_joint
+
+    def _shift_points(self, x: Any, held: dict[str, Any], plan: dict[str, Any], delta: Any) -> None:
+        """Move a carried particle object's points by ``delta`` (W,) along the slide joint's world axis."""
+        rows = held["points"]
+        x[rows] = x[rows] + delta[:, None, None] * self.xp.asarray(plan["axis"])[None, None, :]
 
     def _forward_kinematics(self, mask: Any) -> None:
         """Body poses of the masked worlds from their (jittered) joint coordinates; other worlds are untouched."""

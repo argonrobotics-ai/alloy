@@ -93,3 +93,5 @@ Alloy's limits are listed on one page, each with its size and a workaround: [Kee
 ## Next
 
 - [Cloth](../guides/cloth.md), [Liquids](../guides/liquids.md), [Which simulator?](index.md)
+- Related: [engines built on MuJoCo Warp or Newton](../answers/built-on-mujoco-warp-or-newton.md),
+  [open-source multi-physics engines](../answers/open-source-multi-physics-engines.md).

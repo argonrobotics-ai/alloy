@@ -24,6 +24,11 @@ warp / weft bending; ``alloy.cards.types.ClothAniso``) on CLOTH_VBD gets this me
   the angle of the curvature (perpendicular to the edge) from the warp. KES B_warp is the rigidity of a strip whose
   warp yarns bend, so an edge along the weft gets B_warp.
 
+On a mesh whose triangles have no warp and weft edges (below ALIGNED_MIN aligned; an imported or Delaunay mesh) the
+stiff yarns would lock: such a triangle reads yarn strain to first order in its size and the sheet gets four stiff
+conditions per vertex for three freedoms (Petrak F1 on the R6 disc: DC 0.488 against 0.222 measured). There each
+triangle carries one yarn (``yarn_split``, SPLIT, H_FLOOR): R6 disc F1 0.26, F4 0.30 (measured 0.222, 0.319).
+
 The emitter writes Newton's membrane off on these triangles (tri_ke = tri_ka = tri_kd = 0, so its kernels skip them)
 and the per-triangle data into ``alloy:tri_ortho_*`` model attributes (one row per triangle; zero where isotropic).
 The VBD entry's factory (``builtin_plugins._vbd``) calls ``install``, which adds the membrane through
@@ -48,6 +53,7 @@ log = logging.getLogger("alloy.scene.ortho_membrane")
 
 NS = "alloy"
 K_ATTR, DM_ATTR = "tri_ortho_k", "tri_ortho_dm"     # vec4 (k_u, k_v, k_s, beta), vec4 Dm^-1 (00, 01, 10, 11)
+H_ATTR = "tri_ortho_h"                               # vec4 (h_u, h_v, 0, 0): Hessian-only yarn stiffness (yarn_split)
 _EPS = wp.constant(1.0e-12)
 _EPS_NP = 1.0e-12
 
@@ -57,7 +63,7 @@ def _register(b: Any) -> None:
     import alloy._vendor.newton as newton  # noqa: PLC0415
 
     CA, F = newton.ModelBuilder.CustomAttribute, newton.Model.AttributeFrequency
-    for name in (K_ATTR, DM_ATTR):
+    for name in (K_ATTR, DM_ATTR, H_ATTR):
         if f"{NS}:{name}" not in b.custom_attributes:
             b.add_custom_attribute(CA(name=name, dtype=wp.vec4, frequency=F.TRIANGLE, namespace=NS,
                                       default=wp.vec4(0.0, 0.0, 0.0, 0.0)))
@@ -98,7 +104,54 @@ def aligned_share(uv: np.ndarray, tris: np.ndarray, tol: float = 1.0e-3) -> floa
     return float(np.mean(u & v)) if len(tris) else 1.0
 
 
-def emit(b: Any, aniso: Any, beta: float, rest: np.ndarray, starts: tuple[int, int, int], b_card: float) -> None:
+SPLIT = 0.99               # the yarn split on a mesh without warp / weft edges (yarn_split): a triangle carries one
+#                            yarn at 1.99x and the other at 0.01x. At 1.0 the sheet has real zero-energy modes where
+#                            neighbours share a yarn (350-570 % stretch on the R6 disc); 0 = both yarns everywhere
+#                            (it locks). The drape still depends on it: Petrak F1 on the R6 disc 0.334 / 0.289 /
+#                            0.263 / 0.251 / 0.245 at 0.90 / 0.97 / 0.99 / 0.995 / 0.998 (measured 0.222)
+H_FLOOR = 0.2              # share of the given-up yarn's stiffness kept in the Hessian only: without it one F1 world
+#                            of 16 blew up at 60 iterations at SPLIT 0.99 and 0.995
+
+
+def yarn_split(tris: np.ndarray) -> np.ndarray:
+    """[T] +1 / -1: the yarn each triangle carries on a mesh without warp / weft edges (+1 the warp, -1 the weft),
+    neighbours across an edge alternating wherever the mesh allows it (a hex mesh's triangles alternate exactly; an
+    odd ring of triangles leaves one same-yarn pair). Breadth first from each piece's first triangle, then a triangle
+    whose neighbours mostly carry its own yarn changes over, until none does.
+
+    Why: a triangle with no edge along a yarn reads that yarn's strain to first order in its size (the shear's
+    variation across it leaks in), and two stiff conditions per triangle are four per vertex for three freedoms, so
+    the sheet locks. One per triangle is two per vertex, as a warp / weft grid's edges give."""
+    edge: dict[tuple[int, int], int] = {}
+    nb: list[list[int]] = [[] for _ in range(len(tris))]
+    for i, tri in enumerate(tris.tolist()):
+        for a, c in ((tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])):
+            j = edge.setdefault((min(a, c), max(a, c)), i)
+            if j != i:
+                nb[i].append(j)
+                nb[j].append(i)
+    side = np.zeros(len(tris), np.int8)
+    for start in range(len(tris)):
+        if side[start]:
+            continue
+        side[start], queue = 1, [start]
+        for i in queue:                                   # the list grows while it is read: breadth first
+            for j in nb[i]:
+                if not side[j]:
+                    side[j] = -side[i]
+                    queue.append(j)
+    for _ in range(50):
+        changed = False
+        for i, around in enumerate(nb):
+            if 2 * sum(1 for j in around if side[j] == side[i]) > len(around):
+                side[i], changed = -side[i], True
+        if not changed:
+            break
+    return side
+
+
+def emit(b: Any, aniso: Any, beta: float, rest: np.ndarray, starts: tuple[int, int, int], b_card: float,
+         split: float | None = None) -> None:
     """Write the orthotropic rows for the cloth just added (`starts` = its first triangle, edge, particle) and scale
     its hinges to the orthotropic bending (after ``cloth_profile.rewrite_hinges``); `rest` its flat mesh vertices in
     the panel frame (x = warp, y = weft, z = 0)."""
@@ -111,9 +164,17 @@ def emit(b: Any, aniso: Any, beta: float, rest: np.ndarray, starts: tuple[int, i
     tris = np.asarray(b.tri_indices[tri0:], np.int64) - p0
     dm = panel_dm_inv(uv, tris)
     k = (float(aniso.stretch_warp.value), float(aniso.stretch_weft.value), float(aniso.shear.value), float(beta))
+    share = aligned_share(uv, tris)
+    if split is None:
+        split = SPLIT if share < ALIGNED_MIN else 0.0
+    side = split * yarn_split(tris) if split else np.zeros(len(tris))
     kv, dv = b.custom_attributes[f"{NS}:{K_ATTR}"].values, b.custom_attributes[f"{NS}:{DM_ATTR}"].values
+    hv, floor = b.custom_attributes[f"{NS}:{H_ATTR}"].values, H_FLOOR
     for i, row in enumerate(dm):
-        kv[tri0 + i], dv[tri0 + i] = wp.vec4(*k), wp.vec4(*(float(x) for x in row))
+        kv[tri0 + i] = wp.vec4(k[0] * (1.0 + side[i]), k[1] * (1.0 - side[i]), k[2], k[3])
+        if split:                 # the yarn a triangle gave up stays in its Hessian (forces exact): no free modes
+            hv[tri0 + i] = wp.vec4(floor * k[0] * max(0.0, -side[i]), floor * k[1] * max(0.0, side[i]), 0.0, 0.0)
+        dv[tri0 + i] = wp.vec4(*(float(x) for x in row))
     edges = np.asarray(b.edge_indices[e0:], np.int64)
     if len(edges):
         scale = edge_bending_scale(uv, np.where(edges >= 0, edges - p0, edges), float(aniso.bend_warp.value),
@@ -121,8 +182,7 @@ def emit(b: Any, aniso: Any, beta: float, rest: np.ndarray, starts: tuple[int, i
         b.edge_bending_properties[e0:] = [(float(ke) * s, float(kd) * s)
                                           for (ke, kd), s in zip(b.edge_bending_properties[e0:], scale)]
     log.debug("orthotropic membrane: %d triangles, k_u %.4g, k_v %.4g, k_s %.4g N/m", len(dm), *k[:3])
-    share = aligned_share(uv, tris)
-    if share < ALIGNED_MIN:
+    if share < ALIGNED_MIN and not split:
         log.warning("orthotropic membrane: only %.0f %% of the sheet's edges run along its warp, weft or a cell "
                     "diagonal; its stiff yarns lock on such a mesh and it drapes far too stiff (Petrak F1 on an "
                     "irregular disc: DC 0.500 against 0.252 on a warp-aligned grid). Use a grid sheet (add_cloth's "
@@ -185,6 +245,7 @@ def _shear(wu: wp.vec3, wv: wp.vec3, wu_prev: wp.vec3, wv_prev: wp.vec3, a: floa
 def accumulate_ortho_membrane(dt: float, particles: wp.array[wp.int32], pos: wp.array[wp.vec3],
                               pos_prev: wp.array[wp.vec3], tri_indices: wp.array2d[wp.int32],
                               tri_areas: wp.array[float], tri_k: wp.array[wp.vec4], tri_dm: wp.array[wp.vec4],
+                              tri_h: wp.array[wp.vec4],
                               adjacency: MeshAdjacencyData, piece: wp.array[wp.int32], near_self: wp.array[wp.int32],
                               near_body: wp.array[wp.int32], forces: wp.array[wp.vec3], hessians: wp.array[wp.mat33]):
     p = particles[wp.tid()]
@@ -218,6 +279,13 @@ def accumulate_ortho_membrane(dt: float, particles: wp.array[wp.int32], pos: wp.
         f, h = _stretch(wu, wu_prev, a, k[0], area, k[3], inv_dt, f, h)
         f, h = _stretch(wv, wv_prev, b, k[1], area, k[3], inv_dt, f, h)
         f, h = _shear(wu, wv, wu_prev, wv_prev, a, b, k[2], area, k[3], inv_dt, f, h)
+        kh = tri_h[t]
+        if kh[0] > 0.0:
+            nu = wu / wp.max(wp.length(wu), _EPS)
+            h = h + (kh[0] * area * a * a) * wp.outer(nu, nu)
+        if kh[1] > 0.0:
+            nv = wv / wp.max(wp.length(wv), _EPS)
+            h = h + (kh[1] * area * b * b) * wp.outer(nv, nv)
         if regularise:
             nrm = wp.cross(d1, d2)
             nrm = nrm / wp.max(wp.length(nrm), _EPS)
@@ -229,8 +297,8 @@ def accumulate_ortho_membrane(dt: float, particles: wp.array[wp.int32], pos: wp.
 class OrthoMembrane:
     """The colour callback (``install``): adds the orthotropic membrane for each colour's particles."""
 
-    def __init__(self, solver: Any, k: wp.array, dm: wp.array) -> None:
-        self.solver, self.k, self.dm, self.dt = solver, k, dm, None
+    def __init__(self, solver: Any, k: wp.array, dm: wp.array, h: wp.array) -> None:
+        self.solver, self.k, self.dm, self.h, self.dt = solver, k, dm, h, None
 
     def wrap_step(self) -> None:
         """Record each step's dt (the callback signature carries none); a captured graph records it per launch."""
@@ -249,7 +317,7 @@ class OrthoMembrane:
         group = m.particle_color_groups[colour]
         wp.launch(accumulate_ortho_membrane, dim=group.size,
                   inputs=[self.dt, group, state.particle_q, solver.particle_q_prev, m.tri_indices, m.tri_areas,
-                          self.k, self.dm, solver.particle_adjacency, solver.particle_cloth_piece,
+                          self.k, self.dm, self.h, solver.particle_adjacency, solver.particle_cloth_piece,
                           solver.piece_near_self_contact, solver.piece_near_body_contact],
                   outputs=[solver.particle_forces, solver.particle_hessians], device=solver.device)
 
@@ -269,7 +337,7 @@ def install(solver: Any, model: Any) -> Any:
         raise RuntimeError(f"orthotropic membrane: {k.shape[0]} rows for {model.tri_count} triangles, or a VBD solver "
                            f"without colour callbacks ({type(solver).__name__}); orthotropic cloth needs the full "
                            "model on SolverVBDAlloy")
-    cb = OrthoMembrane(solver, k, dm)
+    cb = OrthoMembrane(solver, k, dm, getattr(ns, H_ATTR))
     cb.wrap_step()
     solver.add_colour_callback(cb, external=False, when="after_accumulate")
     return solver

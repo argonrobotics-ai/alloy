@@ -21,7 +21,8 @@ import numpy as np
 
 from alloy.api.errors import FeatureUnavailableError
 from alloy.envs.errors import EnvError
-from alloy.il.teleop import TeleopCommand, check_value, resolve_column
+from alloy.il.teleop import (DISCARD_KEY, QUIT_KEY, SAVE_KEY, ZERO_KEY, TeleopCommand, check_value,
+                             resolve_column)
 
 
 AXIS_NAMES = ("x", "y", "z", "roll", "pitch", "yaw")
@@ -106,7 +107,12 @@ class SpaceMouseTeleop:
     together save the episode (once per press).
 
     ``axes`` maps "x", "y", "z", "roll", "pitch", "yaw" to ``(column, scale)``; ``buttons`` maps "left"/"right" to
-    ``(column, value)``, held while pressed. ``device=`` injects any object with ``read(n)`` and ``close()``.
+    ``(column, value)``, held while pressed. ``link={"gripper/close_left": ["gripper/close_right"]}`` copies a
+    column's value to others (one button closes both fingers), as ``KeyboardTeleop``'s does. The device has two
+    buttons, so discard and quit come from the keyboard: ``keys=TerminalKeys()`` (or ``ScriptKeys``) adds Enter
+    (save), Backspace (discard), Esc (quit) and Space (zero the action for this step); without ``keys`` only
+    save exists and the loop ends with Ctrl-C or ``max_steps``. ``device=`` injects any object with ``read(n)``
+    and ``close()``.
 
     Example::
 
@@ -115,10 +121,15 @@ class SpaceMouseTeleop:
 
     def __init__(self, action_names: Sequence[str], *, axes: Mapping[str, tuple[int | str, float]],
                  buttons: Mapping[str, tuple[int | str, float]] | None = None, deadband: float = 0.05,
-                 device: Any = None, vendor_id: int = 0x256F, product_id: int | None = None) -> None:
+                 device: Any = None, vendor_id: int = 0x256F, product_id: int | None = None,
+                 link: Mapping[int | str, Sequence[int | str]] | None = None, keys: Any = None) -> None:
         self.action_names = list(action_names)
         self.axes = self._resolve(axes, AXIS_NAMES, "axes")
         self.buttons = self._resolve(buttons or {}, tuple(BUTTON_BITS), "buttons")
+        self.links = {resolve_column(self.action_names, src, "link"):
+                      [resolve_column(self.action_names, dst, "link") for dst in dsts]
+                      for src, dsts in (link or {}).items()}
+        self.keys = keys
         self.deadband = deadband
         self.state = SpaceMouseState()
         self._both_down = False
@@ -157,16 +168,32 @@ class SpaceMouseTeleop:
         for name, (column, value) in self.buttons.items():
             if not both and self.state.buttons & BUTTON_BITS[name]:
                 action[column] += value
-        return TeleopCommand(np.clip(action, -1.0, 1.0).astype(np.float32), save=save)
+        pressed = set(self.keys.poll()) if self.keys is not None else set()
+        if ZERO_KEY in pressed:
+            action[:] = 0.0
+        for source, targets in self.links.items():
+            action[targets] = action[source]
+        return TeleopCommand(np.clip(action, -1.0, 1.0).astype(np.float32), save=save or SAVE_KEY in pressed,
+                             discard=DISCARD_KEY in pressed, quit=QUIT_KEY in pressed)
 
     def help(self) -> str:
         """A table of the mapped axes and buttons. Example: ``print(device.help())``."""
         rows = [f"{'input':<10}{'action column':<28}scale"]
         rows += [f"{n:<10}{self.action_names[c]:<28}{s:g}" for n, (c, s) in self.axes.items()]
         rows += [f"{'btn ' + n:<10}{self.action_names[c]:<28}{v:g}" for n, (c, v) in self.buttons.items()]
+        rows += [f"{'  also':<10}{self.action_names[d]:<28}(linked to {self.action_names[s]})"
+                 for s, dsts in self.links.items() for d in dsts]
         rows.append(f"{'both btns':<10}save the episode")
+        if self.keys is not None:
+            rows += [f"{SAVE_KEY:<10}save the episode", f"{DISCARD_KEY:<10}discard the episode",
+                     f"{ZERO_KEY:<10}zero every column for this step", f"{QUIT_KEY:<10}quit"]
+        else:
+            rows.append("no keyboard: Ctrl-C quits and drops the running episode; there is no discard")
         return "\n".join(rows)
 
     def close(self) -> None:
         """Close the HID device. Example: ``device.close()``."""
         self.device.close()
+        close = getattr(self.keys, "close", None)
+        if close is not None:
+            close()

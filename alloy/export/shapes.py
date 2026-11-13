@@ -6,6 +6,10 @@ Sizes are full sizes, as in ``alloy.Scene`` (OSS-3): box ``size`` (full edges); 
 and cone ``radius`` and ``height`` (a capsule's straight part between its caps, as ``add_capsule``); ellipsoid ``size``
 (full axes); plane ``size`` (full width and length, 0 = infinite); mesh and convex mesh ``vertices`` (scaled) and
 ``faces``. Poses are ``pos`` and ``quat_xyzw``.
+
+The shapes listed are the ones the camera draws (``alloy.camera.from_newton.drawn_shapes``): the VISIBLE ones plus the
+colliders of a moving body that has none, so a robot file with one visual-only geom (the Gym tasks' gantry gripper)
+still shows its links (TA-7 finding 3).
 """
 
 from __future__ import annotations
@@ -14,9 +18,10 @@ from typing import Any
 
 import numpy as np
 
+from alloy.camera.from_newton import drawn_shapes
+
 KINDS = {1: "plane", 2: "heightfield", 3: "sphere", 4: "capsule", 5: "ellipsoid", 6: "cylinder", 7: "box", 8: "mesh",
          9: "cone", 10: "convex_mesh", 11: "gaussian"}
-VISIBLE = 1                                             # newton ShapeFlags.VISIBLE
 
 
 def describe(kind: int, scale: np.ndarray, source: Any) -> dict[str, Any]:
@@ -49,26 +54,26 @@ def _posed(desc: dict[str, Any], xf: np.ndarray) -> dict[str, Any]:
 def model_shapes(model: Any) -> dict[str, np.ndarray]:
     """Host copies of the shape arrays the descriptions read (once per plan)."""
     return {"body": model.shape_body.numpy(), "type": model.shape_type.numpy(), "scale": model.shape_scale.numpy(),
-            "xf": model.shape_transform.numpy(), "flags": model.shape_flags.numpy(),
+            "xf": model.shape_transform.numpy(), "drawn": drawn_shapes(model),
             "world": model.shape_world.numpy() if getattr(model, "shape_world", None) is not None
             else np.full(model.shape_count, -1, np.int32)}
 
 
 def body_shapes(model: Any, arrays: dict[str, np.ndarray], bodies: np.ndarray) -> list[list[dict[str, Any]]]:
-    """Per body of ``bodies`` (global rows of one world), its visible shapes in the body frame."""
+    """Per body of ``bodies`` (global rows of one world), its drawn shapes in the body frame."""
     by_body: dict[int, list[int]] = {}
     for s, b in enumerate(arrays["body"]):
-        if b >= 0 and arrays["flags"][s] & VISIBLE:
+        if b >= 0 and arrays["drawn"][s]:
             by_body.setdefault(int(b), []).append(s)
     return [[_posed(describe(arrays["type"][s], arrays["scale"][s], model.shape_source[s]), arrays["xf"][s])
              for s in by_body.get(int(b), [])] for b in bodies]
 
 
 def statics(model: Any, arrays: dict[str, np.ndarray], world: int) -> list[dict[str, Any]]:
-    """The visible static shapes world ``world`` sees (its own and the shared ones), each with its world pose."""
+    """The drawn static shapes world ``world`` sees (its own and the shared ones), each with its world pose."""
     out = []
     for s, b in enumerate(arrays["body"]):
-        if b >= 0 or not arrays["flags"][s] & VISIBLE or int(arrays["world"][s]) not in (world, -1):
+        if b >= 0 or not arrays["drawn"][s] or int(arrays["world"][s]) not in (world, -1):
             continue
         label = str(model.shape_label[s]) if getattr(model, "shape_label", None) else f"shape_{s}"
         desc = describe(arrays["type"][s], arrays["scale"][s], model.shape_source[s])

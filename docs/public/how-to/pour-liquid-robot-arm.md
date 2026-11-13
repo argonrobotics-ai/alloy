@@ -88,3 +88,5 @@ One measured number: on an AMD EPYC 7B13 CPU, no GPU, this program took about 16
 - Liquids in more detail: [Liquids](../guides/liquids.md).
 - Joint targets and robots: [Robots](../guides/robots.md).
 - Read the health checks: [World health](../guides/health.md).
+- Related: [robots, cloth and liquids in one scene](../answers/robots-cloth-liquids-one-scene.md),
+  [imitation data with liquids](imitation-data-with-liquids.md).

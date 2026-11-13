@@ -23,7 +23,7 @@ from alloy.envs.errors import EnvError
 
 #: snapshot key -> (engine State array, ``Layout.world_of`` key)
 STATE_ARRAYS = {"joint_q": ("joint_q", "q"), "joint_qd": ("joint_qd", "qd")}
-TARGET, GOAL = "target.", "goal."
+TARGET, GOAL, RANDOM = "target.", "goal.", "random."
 
 
 class WorldSnapshot:
@@ -48,9 +48,19 @@ class WorldSnapshot:
 
     # --- reading ---------------------------------------------------------------------------------------------------
 
-    def capture(self) -> dict[str, np.ndarray]:
-        """Every world's state now: ``{key: (W, n) float32}``. Example: ``snap.capture()["joint_q"].shape``."""
-        xp, out = self.xp, {}
+    def randomized(self) -> dict[str, np.ndarray]:
+        """What ``Scene.randomize`` drew for robots and gravity, per world: ``{"random.<target>.<field>": (W, n)}``.
+        A replay cannot set these; it checks them. Example: ``snap.randomized()``."""
+        read = getattr(self.env.sim, "randomized", None)
+        values = read() if callable(read) else {}
+        worlds = int(self.env.num_envs)
+        return {RANDOM + name: np.asarray(v, np.float64).reshape(worlds, -1) for name, v in values.items()
+                if np.size(v) and np.size(v) % worlds == 0}
+
+    def capture(self, randomized: bool = False) -> dict[str, np.ndarray]:
+        """Every world's state now: ``{key: (W, n) float32}``; with ``randomized`` also ``randomized()`` (what an
+        episode's ``start`` keeps). Example: ``snap.capture()["joint_q"].shape``."""
+        xp, out = self.xp, dict(self.randomized()) if randomized else {}
         for key, rows in self.rows.items():
             out[key] = xp.to_numpy(xp.view(getattr(self.engine.state, STATE_ARRAYS[key][0])))[rows].copy()
         for kind, rows in self.targets.items():

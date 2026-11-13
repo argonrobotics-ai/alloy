@@ -34,7 +34,12 @@ Disclosed:
   trowel and the pocket penetrometer at the pad"; CARRY_CAP margin_trowel 0.00015). The lifts are Alloy's policy
   with their tool, as pad-finish's margin pass is.
 - The scripted policy reads the paste at each lift to set the margin trowel down (privileged sight, like the
-  carriage's).
+  carriage's). A run that meets nothing over its level is set down 20 um over it (``SET_DOWN_CLEAR``, WP15 ruling 7),
+  not at it: at the level, the paste stood up to 7.3 um over the planned sole in 6 of 16 worlds (the plan's
+  prediction against the run's surface), pressing up to 0.03 mm3.
+- That clearance changes the stage count on some lines, so the paste takes another path and the margin's highest
+  strip cell differs per world in both directions (16 worlds against the run without it): higher in world 13
+  (216 um against 42 um at the end), lower in worlds 4, 5 and 12. GA's finish measures move by at most 2.8 um.
 - The last lane round's end spill leaves a 0.8-1 mm ridge rectangle over |x| < 0.22. Nothing re-trowels there, so it
   is not knifed. GA's criteria read it only through the straightedge (their own report keeps its excess piles as a
   stated limitation).

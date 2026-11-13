@@ -22,18 +22,21 @@ from alloy.compose.catalog import import_roots
 
 
 def library(roots: Sequence[str | Path] = ()):
-    """A ``CardLibrary`` over ``roots`` (searched first), Alloy's library, the fetch cache of each import library,
-    every import root and alloy-assets.
+    """A ``CardLibrary`` over ``roots`` (searched first), Alloy's library, every fetch cache (each import library's
+    and every one on disk under ``$ALLOY_CACHE/imports``, so a Hub object fetched on an install with no import
+    root is found), every import root and alloy-assets. A card in ``roots`` is never shadowed by a cache.
 
     Example: ``alloy.check(card, library=library(["my_scenes"]))``."""
     from alloy.cards.library import CardLibrary, default_root  # noqa: PLC0415
     from alloy.cards.roots import assets_root  # noqa: PLC0415
     from alloy.compose.fetch import cache_root  # noqa: PLC0415
 
+    from alloy.cards.roots import fetched_roots  # noqa: PLC0415
+
     extra = [Path(r).expanduser().resolve() for r in roots]
     imports = import_roots()
-    return CardLibrary(roots=[*extra, default_root(), *(cache_root(r.name) for r in imports), *imports],
-                       assets=assets_root())
+    caches = list(dict.fromkeys([*(cache_root(r.name) for r in imports), *fetched_roots(imports)]))
+    return CardLibrary(roots=[*extra, default_root(), *caches, *imports], assets=assets_root())
 
 
 def load_scene(path: str | Path, *, worlds: int | None = None):

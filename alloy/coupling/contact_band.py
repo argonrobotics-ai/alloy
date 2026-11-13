@@ -66,16 +66,37 @@ BAND_TRAVEL = 1.0 / 6.0       # largest fraction of a pipeline's detection band 
 V_FLOOR = 1.0e-6              # [m/s] below this a pipeline sets no bound
 BAND_RERUN = 3.0              # re-run a period whose own bound is under dt_x / BAND_RERUN (ClockPolicy.band_rerun)
 RERUNS_PER_PERIOD = 1         # band re-runs per control period
+NO_ROWS = -1                  # kernel ``base`` without per-world rows (``ContactBandBound.keep_world_rows`` off)
+
+
+@wp.func
+def skipped_particle(p: int, world: wp.array[wp.int32], skip: wp.array[wp.int32], worlds: int) -> bool:
+    """A particle of a world whose contacts set no bound (``ContactBandBound.park``). ``worlds`` 0: no world map."""
+    if worlds == 0:
+        return False
+    w = world[p]
+    if w < 0 or w >= skip.shape[0]:
+        return False
+    return skip[w] != 0
 
 
 @wp.kernel(enable_backward=False)
 def sheet_speed_kernel(count: wp.array[wp.int32], particle_qd: wp.array[wp.vec3], particle_mass: wp.array[float],
-                       slot: int, vmax: wp.array[float]):
-    """vmax[slot] = the fastest particle with mass, when the pipeline holds at least one record this exchange."""
+                       slot: int, world: wp.array[wp.int32], skip: wp.array[wp.int32], worlds: int, base: int,
+                       vmax: wp.array[float]):
+    """vmax[slot] = the fastest particle with mass, when the pipeline holds at least one record this exchange.
+    One world signature for both band kernels: ``world`` the particle -> world map (``worlds`` 0: none), ``skip`` the
+    parked worlds, whose particles set no bound, ``base`` >= 0 the first slot of this route's per-world row (NO_ROWS:
+    none): the same speed then also goes to the particle's own world, vmax[base + world]."""
     i = wp.tid()
-    if count[0] <= 0 or particle_mass[i] <= 0.0:
+    if count[0] <= 0 or particle_mass[i] <= 0.0 or skipped_particle(i, world, skip, worlds):
         return
-    wp.atomic_max(vmax, slot, wp.length(particle_qd[i]))
+    s = wp.length(particle_qd[i])
+    wp.atomic_max(vmax, slot, s)
+    if base >= 0 and worlds > 0:
+        w = world[i]
+        if w >= 0 and w < worlds:
+            wp.atomic_max(vmax, base + w, s)
 
 
 @wp.kernel(enable_backward=False)
@@ -83,14 +104,17 @@ def band_speed_kernel(count: wp.array[wp.int32], cap: int, indices: wp.array[wp.
                       body_pos: wp.array[wp.vec3], body_vel: wp.array[wp.vec3], shape_body: wp.array[wp.int32],
                       local_to_global: wp.array[wp.int32], body_q: wp.array[wp.transform],
                       body_qd: wp.array[wp.spatial_vector], body_com: wp.array[wp.vec3], bodies: int,
-                      particle_qd: wp.array[wp.vec3], slot: int, vmax: wp.array[float]):
+                      particle_qd: wp.array[wp.vec3], slot: int, world: wp.array[wp.int32],
+                      skip: wp.array[wp.int32], worlds: int, base: int, vmax: wp.array[float]):
     """vmax[slot] = max over the valid soft-contact records of |qd(particle) - v(body point)| over their particles
     (one for a vertex record, two for an edge, three for a face). The body point moves with its body, v + w x r about
     the centre of mass, plus the record's own surface velocity (body frame), as the solvers read it
     (semi_implicit/kernels_contact.py). The body's twist is the scene's at the exchange start (``body_q``/``body_qd``
     global, through the entry's ``local_to_global``): a lagged proxy restarts there every exchange, so that is how fast
     it sweeps the band; the destination's own end-of-exchange proxy has already been slowed by the contact. ``bodies``
-    0: no body state, only the record's velocity."""
+    0: no body state, only the record's velocity. ``world``, ``skip``, ``worlds``, ``base`` as in
+    ``sheet_speed_kernel``: a parked world's particles are left out, and with rows each particle's relative speed also
+    goes to its own world, vmax[base + world], and vmax[base + 2 worlds + world] is set to 1 (it holds a record)."""
     i = wp.tid()
     if i >= wp.min(count[0], cap):
         return
@@ -109,8 +133,14 @@ def band_speed_kernel(count: wp.array[wp.int32], cap: int, indices: wp.array[wp.
     s = float(0.0)
     for k in range(3):
         p = idx[k]
-        if p >= 0:
-            s = wp.max(s, wp.length(particle_qd[p] - v))
+        if p >= 0 and not skipped_particle(p, world, skip, worlds):
+            sp = wp.length(particle_qd[p] - v)
+            s = wp.max(s, sp)
+            if base >= 0 and worlds > 0:
+                w = world[p]
+                if w >= 0 and w < worlds:
+                    wp.atomic_max(vmax, base + w, sp)
+                    wp.atomic_max(vmax, base + 2 * worlds + w, 1.0)
     wp.atomic_max(vmax, slot, s)
 
 
@@ -125,7 +155,7 @@ class ContactBandBound:
     """Per proxy pipeline (deduplicated factories) and its destination entry: the largest relative contact speed of
     the period on the device, and the exchange-step bound on the host."""
 
-    def __init__(self, routes: Sequence[tuple[Any, str]], device: Any) -> None:
+    def __init__(self, routes: Sequence[tuple[Any, str]], device: Any, worlds: int = 1) -> None:
         seen: set[int] = set()
         self.routes: list[tuple[Any, str]] = []
         for factory, destination in routes:
@@ -137,6 +167,50 @@ class ContactBandBound:
                       wp.zeros(1, dtype=wp.spatial_vector, device=device), wp.zeros(1, dtype=wp.vec3, device=device))
         self.last_speed = np.zeros(len(self.routes))        # [m/s] the last period's maxima (report notes)
         self.last_bound = math.inf                          # [s]
+        self.skip = wp.zeros(max(int(worlds), 1), dtype=wp.int32, device=device)   # 1: a parked world (``park``)
+        self.per_world = False                              # keep per-world rows when asked (keep_world_rows)
+        self.worlds = 0                                     # per-world rows (ensure_worlds); 0: only the maxima
+        self.last_world = np.zeros((len(self.routes), 3, 0))    # [route, (record, sheet, has record), world]
+        self.last_travel: float | None = BAND_TRAVEL
+
+    def park(self, worlds: np.ndarray | None) -> None:
+        """``worlds`` (bool [W]; None: none) are parked (``parked.py``): their particles and records set no bound."""
+        if worlds is None:
+            self.skip.zero_()
+        else:
+            self.skip.assign(np.asarray(worlds, dtype=np.int32))
+
+    def keep_world_rows(self, on: bool = True) -> None:
+        """Ask for (or drop) the per-world rows; they appear at the next ``ensure_worlds``. Off (the default) the
+        array and the kernels' writes are the shared maxima alone."""
+        self.per_world = bool(on)
+
+    def ensure_worlds(self, worlds: int) -> None:
+        """Host, before an attempt (never inside a captured period): keep per-world rows behind the shared maxima, in
+        the same array (so every ``vmax.zero_()`` clears them too). Layout: [routes] the shared maxima, then per route
+        three rows of ``worlds``: record speed, sheet speed, has-a-record. The shared maxima are written as before."""
+        worlds = int(worlds) if self.per_world else 0
+        if worlds == self.worlds or not self.routes:
+            return
+        n = len(self.routes)
+        grown = np.zeros(n * (1 + 3 * worlds), dtype=np.float32)
+        grown[:n] = self.vmax.numpy()[:n]
+        self.vmax = wp.array(grown, dtype=float, device=self.vmax.device)
+        self.worlds = worlds
+        self.last_world = np.zeros((n, 3, worlds))
+
+    def _world_inputs(self, views: tuple[Any, Any], slot: int, row: int, count: int) -> list[Any]:
+        """The band kernels' world inputs (world, skip, worlds, base) for route ``slot``'s per-world row ``row`` (0
+        record, 1 sheet). The particle -> world map is the destination entry's view's, else the pipeline's view's
+        (``views``); ``worlds`` 0 when neither covers ``count`` particles: then nothing is skipped and no row is
+        written. ``base`` is NO_ROWS without per-world rows."""
+        world = next((m for m in (getattr(v, "particle_world", None) for v in views)
+                      if m is not None and int(m.shape[0]) >= count), None)
+        if world is None:
+            return [self._none[0], self.skip, 0, NO_ROWS]
+        if not self.worlds:
+            return [world, self.skip, int(self.skip.shape[0]), NO_ROWS]
+        return [world, self.skip, self.worlds, len(self.routes) + (3 * slot + row) * self.worlds]
 
     def accumulate(self, entries: Mapping[str, Any], scene: Any = None, model: Any = None) -> None:
         """After an exchange: fold each pipeline's records against its destination's end-of-exchange particle
@@ -147,14 +221,18 @@ class ContactBandBound:
             for view, _pipeline, contacts, _excluded in factory.built:
                 if contacts is None or state.particle_qd is None or not int(contacts.soft_contact_max):
                     continue
+                count = max(int(state.particle_qd.shape[0]), int(mass.shape[0]) if mass is not None else 0)
+                views = (getattr(entry, "view", None), view)
                 wp.launch(band_speed_kernel, dim=int(contacts.soft_contact_max), device=self.vmax.device,
                           inputs=[contacts.soft_contact_count, int(contacts.soft_contact_max),
                                   contacts.soft_contact_indices, *self._bodies(view, entry, contacts, scene, model),
-                                  state.particle_qd, slot],
+                                  state.particle_qd, slot,
+                                  *self._world_inputs(views, slot, 0, count)],
                           outputs=[self.vmax])
                 if mass is not None and int(mass.shape[0]):
                     wp.launch(sheet_speed_kernel, dim=int(mass.shape[0]), device=self.vmax.device,
-                              inputs=[contacts.soft_contact_count, state.particle_qd, mass, slot],
+                              inputs=[contacts.soft_contact_count, state.particle_qd, mass, slot,
+                                      *self._world_inputs(views, slot, 1, count)],
                               outputs=[self.vmax])
 
     def _bodies(self, view: Any, entry: Any, contacts: Any, scene: Any, model: Any) -> list[Any]:
@@ -176,7 +254,10 @@ class ContactBandBound:
         None: the policy turned it off); clears them."""
         if not self.routes:
             return math.inf
-        self.last_speed = self.vmax.numpy()[: len(self.routes)].copy()
+        host = self.vmax.numpy()
+        self.last_speed = host[: len(self.routes)].copy()
+        self.last_world = host[len(self.routes):].astype(np.float64).reshape(len(self.routes), 3, self.worlds)
+        self.last_travel = travel
         self.vmax.zero_()
         if travel is None:
             self.last_bound = math.inf
@@ -185,6 +266,27 @@ class ContactBandBound:
                   for (factory, _d), v in zip(self.routes, self.last_speed, strict=True)]
         self.last_bound = min(bounds, default=math.inf)
         return self.last_bound
+
+    def world_speed(self, need: bool = True) -> np.ndarray:
+        """[route, world] m/s, the last period's per-world speeds (zeros without rows). ``need``: a world's own need,
+        its records' relative speed and, when it held a record in the period, its fastest particle. Not ``need``: the
+        shared rule world by world (the sheet counts whenever any world of the pipeline holds a record), whose maximum
+        over worlds is ``last_speed`` bit for bit when every particle has a world."""
+        record, sheet, has = self.last_world[:, 0], self.last_world[:, 1], self.last_world[:, 2]
+        return np.maximum(record, np.where(has > 0.0, sheet, 0.0) if need else sheet)
+
+    def world_bounds(self, need: bool = True) -> np.ndarray | None:
+        """(worlds,) s: each world's band bound from ``world_speed`` (the last read's ``travel``); None without
+        per-world rows."""
+        if not self.routes or not self.worlds:
+            return None
+        out = np.full(self.worlds, math.inf)
+        if self.last_travel is None:
+            return out
+        for (factory, _d), speeds in zip(self.routes, self.world_speed(need), strict=True):
+            gap = _gap(factory)
+            out = np.minimum(out, [band_bound(gap, float(np.float32(v)), self.last_travel) for v in speeds])
+        return out
 
 
 class BandRerun:
@@ -266,5 +368,5 @@ def _gap(factory: Any) -> float:
     return min(gaps) if gaps else 0.0
 
 
-__all__ = ["BAND_RERUN", "BAND_TRAVEL", "RERUNS_PER_PERIOD", "BandRerun", "ContactBandBound", "band_bound",
+__all__ = ["BAND_RERUN", "BAND_TRAVEL", "NO_ROWS", "RERUNS_PER_PERIOD", "BandRerun", "ContactBandBound", "band_bound",
            "band_speed_kernel", "read_band", "sheet_speed_kernel"]

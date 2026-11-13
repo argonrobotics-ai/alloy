@@ -133,3 +133,37 @@ def test_a_drop_test_that_raises_is_a_finding_not_a_crash(monkeypatch, tmp_path)
     assert "material=" in report["findings"][0]["fix"]
     r.check = report
     assert not r.ok and r.verify[0].startswith("drop test failed: the drop test could not run")
+
+
+def test_material_words_in_any_case_and_several_words_pick_the_material_meant():
+    """Gemini audit S2-035: 'Steel', 'stainless steel' and 'titanium' all became abs with a false 'soft' note."""
+    lib = CardLibrary([default_root()], assets=None)
+    assert choose_material(lib, "steel", None, None)[0] == "steel_carbon"
+    name, row = choose_material(lib, "Steel", None, None)
+    assert name == "steel_carbon" and row.tag == "ESTIMATE" and "soft" not in row.source
+    assert choose_material(lib, "stainless steel", None, None)[0].startswith("stainless_")
+    assert choose_material(lib, "Stainless 304", None, None) == choose_material(lib, "stainless_304", None, None)
+    assert choose_material(lib, "stainless_304", None, None)[1].tag == "USER"
+    assert choose_material(lib, "paper", None, None)[0] == "paper_80gsm"          # the preferred pick, not cardboard
+    assert choose_material(lib, None, None, "a paper cup")[0] == "paper_80gsm"
+
+
+def test_an_unknown_material_or_a_liquid_is_refused_with_the_fix():
+    lib = CardLibrary([default_root()], assets=None)
+    with pytest.raises(CreateError) as e:
+        choose_material(lib, "titanium", None, None)
+    assert e.value.field == "material" and "'steel'" in e.value.fix and "alloy list materials" in e.value.fix
+    with pytest.raises(CreateError) as e:
+        choose_material(lib, "water", None, None)
+    assert "a liquid" in e.value.message and e.value.field == "material"
+    assert choose_material(lib, None, None, "a titanium widget")[0] == "abs"     # a description is only a hint
+
+
+def test_a_material_word_prefers_alloys_own_library_over_imported_materials(tmp_path):
+    (tmp_path / "materials").mkdir()
+    text = (default_root() / "materials" / "abs.yaml").read_text(encoding="utf-8")
+    (tmp_path / "materials" / "aa_book_paperback.yaml").write_text(text.replace("name: abs", "name: aa_book_paperback"),
+                                                                    encoding="utf-8")
+    lib = CardLibrary([tmp_path, default_root()], assets=None)
+    assert "aa_book_paperback" in lib.names("materials")
+    assert choose_material(lib, "kraft", None, None)[0].startswith("paper_kraft")

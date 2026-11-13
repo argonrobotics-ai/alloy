@@ -146,8 +146,9 @@ def _pad_depth(mj) -> float:
     return max((-dist for dist, a, b in rows if {a, b} & pads), default=0.0)
 
 
-def _grip(rule: bool, monkeypatch) -> tuple[float, float, float]:
-    """WP9's F2 rig: (follow at the ramp's end, follow after a 0.2 s hold, deepest pad-cable penetration in m)."""
+def _grip(rule: bool, monkeypatch, boxes: int = 0) -> tuple[float, float, float]:
+    """WP9's F2 rig: (follow at the ramp's end, follow after a 0.2 s hold, deepest pad-cable penetration in m);
+    ``boxes`` free 3 cm cubes on a ground 1 m away (clutter in the same entry)."""
     build0 = CH.build_chain
     with monkeypatch.context() as mp:
         mp.setattr(CH, "build_chain", lambda b, rod, pts, opts, label=None: build0(
@@ -157,6 +158,10 @@ def _grip(rule: bool, monkeypatch) -> tuple[float, float, float]:
         sc = alloy.Scene(dt=0.01)
         sc.add_rod("cable", length=L, radius=R, pos=(0.0, 0.0, Z), material="cable_usb_composite", segments=N)
         sc.add_robot("hand", mjcf=_wrist((L - 0.012, 0.0, Z)))
+        if boxes:
+            sc.add_ground(z=-0.5)
+        for i in range(boxes):
+            sc.add_box(f"box{i}", size=(0.03,) * 3, pos=(1.0 + 0.05 * (i % 4), 0.05 * (i // 4), -0.485), mass=0.05)
         sim = alloy.build(sc, device="cpu")
     seg = [n for n in sim.names()["bodies"] if n.startswith("cable/")][-1]
     q0 = sim.state([seg], world=0)[f"{seg}.quat_xyzw"].copy()
@@ -212,3 +217,26 @@ def test_a_cg_entry_keeps_its_own_impratio():
     mjcf = NS(values={"impratio": 1.0})
     assert CG.KEY in entry_overrides([chain, hand], set(), False, mjcf, True)
     assert CG.KEY not in entry_overrides([chain, hand], {"mujoco:solver=cg"}, False, mjcf, False)
+
+
+@pytest.mark.timeout(1800)
+def test_a_gripped_chain_beside_clutter_holds_on_the_block_path(monkeypatch):
+    """Gemini audit T2-009 (0.1.2): the chain-grip rule's pivot floor no longer keeps the entry dense, and the
+    cable's tree (over 6 dofs) is split into runs, so the rig beside 16 boxes (nv over mjw_block.NV_MIN) factors on
+    the block path. The hold is the dense path's (ALLOY_MJW_BLOCK_CHUNK=0)."""
+    from alloy.precision import mjw_block
+
+    monkeypatch.setenv("ALLOY_CPU_ROUTE", "warp")
+    out = {}
+    for chunk in ("1", "0"):
+        calls, solve = [0], mjw_block.factor_solve
+        with monkeypatch.context() as mp:
+            mp.setenv(mjw_block.CHUNK_ENV, chunk)
+            mp.setattr(mjw_block, "factor_solve", lambda *a, **k: calls.__setitem__(0, calls[0] + 1) or solve(*a, **k))
+            out[chunk] = (*_grip(True, mp, boxes=16), calls[0])
+        print(f"chain grip beside 16 boxes, chunking {chunk}: ramp end {out[chunk][0]:.4f}, after 0.2 s "
+              f"{out[chunk][1]:.4f}, pad depth {1e3 * out[chunk][2]:.3f} mm, block solves {out[chunk][3]}")
+    (ramp, held, deep, n), (ramp0, held0, deep0, n0) = out["1"], out["0"]
+    assert n > 0 and n0 == 0
+    assert ramp == pytest.approx(1.0, abs=0.01) and held == pytest.approx(1.0, abs=0.01) and deep < 2e-4
+    assert (ramp, held) == pytest.approx((ramp0, held0), abs=2e-3) and deep == pytest.approx(deep0, abs=2e-5)

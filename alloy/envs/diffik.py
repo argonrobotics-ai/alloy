@@ -30,7 +30,7 @@ from typing import Any
 
 import numpy as np
 
-from alloy.envs.actions import WINDOW_STEPS, ActionSpec, ActionWriter
+from alloy.envs.actions import UNBOUNDED, WINDOW_STEPS, ActionSpec, ActionWriter, resolve_kind
 from alloy.envs.errors import EnvError
 from alloy.envs.layout import Layout
 
@@ -209,6 +209,26 @@ class EEActionSpec:
         return EEWriter(self, layout, engine, xp)
 
 
+def _target_limits(layout: Layout, kind: str, names: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    """Each target column's (lower, upper) range from the robot file, a joint without limits (a continuous hinge)
+    open both ways: inverse kinematics sets its target, so it needs no range to scale into."""
+    lows, highs = [], []
+    for name in names:
+        if kind == "ctrl":
+            a = layout.actuator(name)
+            lows.append(np.array([a.lower], np.float64))
+            highs.append(np.array([a.upper], np.float64))
+            continue
+        r = layout.joint(name)
+        width = (r.target_q if kind == "position" else r.qd).shape[1]
+        same = width == len(r.lower)
+        lows.append(np.asarray(r.lower, np.float64) if same else np.full(width, -np.inf))
+        highs.append(np.asarray(r.upper, np.float64) if same else np.full(width, np.inf))
+    lo, hi = np.concatenate(lows), np.concatenate(highs)
+    open_ = ~(np.isfinite(lo) & np.isfinite(hi)) | (np.abs(lo) >= UNBOUNDED) | (np.abs(hi) >= UNBOUNDED)
+    return np.where(open_, -np.inf, lo), np.where(open_, np.inf, hi)
+
+
 class EEWriter:
     """Turns (W, 3 or 6 + extras) end-effector actions into arm joint targets; same surface as ``ActionWriter``."""
 
@@ -218,7 +238,11 @@ class EEWriter:
         arm = list(spec.joints)
         self.n_arm, self.n_extra = len(arm), len(spec.extra)
         self.n_ee = 6 if spec.orientation else 3
-        self.inner = ActionWriter(ActionSpec([*arm, *spec.extra], kind=spec.kind, mode="absolute"), layout, engine, xp)
+        names = [*arm, *spec.extra]
+        kind = resolve_kind(ActionSpec(names, kind=spec.kind, mode="absolute"), layout)
+        lo, hi = _target_limits(layout, kind, names)
+        inner = ActionSpec(names, kind=spec.kind, mode="absolute", low=lo, high=hi)
+        self.inner = ActionWriter(inner, layout, engine, xp)
         self.arm = ArmKinematics.build(layout, engine, xp, spec.body, [_joint_name(layout, j) for j in arm])
         self._scale = xp.asarray(np.array([spec.delta] * 3 + [spec.rot_delta] * 3, np.float32)[:self.n_ee])
         self._extra_delta = xp.asarray(np.broadcast_to(np.asarray(spec.extra_delta, np.float32),

@@ -70,6 +70,10 @@ def soft_chunk(raw: list[str], d: Any, after_with: bool) -> bool:
         return _pour(tokens, amounts, d)
     noun_at = _soft_noun(tokens)
     if noun_at is None:
+        unknown = unknown_material(raw)
+        if unknown is not None:
+            raise ComposeError(f"{unknown!r} is not a liquid or grain the scene builder has", _MATERIALS_FIX,
+                               field="sentence")
         if fill is not None:
             d.pending_fill = fill                   # "a cup filled" + "with water"
         return False
@@ -82,6 +86,36 @@ def soft_chunk(raw: list[str], d: Any, after_with: bool) -> bool:
         _cable(tokens, noun_at, amounts, d)
     d.pending_fill = None
     return True
+
+
+#: what to ask for instead of a liquid or grain the builder does not have (the words it reads as one)
+_MATERIALS_FIX = (f"ask for one of the liquids ({', '.join(sorted(V.LIQUIDS))}; milk, juice, coffee, tea, wine and "
+                  f"beer are made as water) or grains ({', '.join(sorted(V.GRAINS))})")
+
+
+def unknown_material(tokens: list[str]) -> str | None:
+    """The noun of "<number> <volume or mass unit> of <noun>" ("200 ml of detergent") when no other soft noun is in
+    the phrase: an amount of a material the builder does not have, not a count of objects. None otherwise.
+
+    Example: ``unknown_material("a cup with 200 ml of detergent".split()) == "detergent"``."""
+    for i in range(len(tokens)):
+        dims, j = _dims(tokens, i)
+        if dims and j < len(tokens) and tokens[j] == "of" and V.unit_kind(tokens[j - 1]) in ("volume", "mass"):
+            noun, _adj, _n = _phrase([t for t in tokens[j + 1:] if t not in _ROLES])
+            return noun
+    return None
+
+
+def _pour_noun(tokens: list[str]) -> str | None:
+    """The word a pour names where its liquid should be ("pour detergent from a bottle": "detergent"), or None."""
+    at = next((i for i, t in enumerate(tokens) if t in V.POUR_WORDS), None)
+    if at is None:
+        return None
+    tail = tokens[at + 1:]
+    stop = next((i for i, t in enumerate(tail) if t in ("from", "out", "into", "in", "inside", "onto", "over")),
+                len(tail))
+    noun, _adj, _n = _phrase(tail[:stop])
+    return noun
 
 
 # --- amounts -----------------------------------------------------------------------------------------------------
@@ -273,6 +307,11 @@ def _role_target(tail: list[str], d: Any) -> tuple[str | None, str | None]:
 def _pour(tokens: list[str], amounts: dict[str, float], d: Any) -> bool:
     at = next((i for i, t in enumerate(tokens) if V.kind_of(W.singular(t)) == "liquid"), None)
     if at is None:
+        noun = _pour_noun(tokens)
+        if noun is not None:
+            raise ComposeError(f"{noun!r} is not a liquid the scene builder has", f"pour one of {', '.join(sorted(
+                V.LIQUIDS))}, e.g. 'pour water from a bottle into a cup' (milk, juice, coffee, tea, wine and beer are "
+                "made as water)", field="sentence")
         raise ComposeError("a pour names no liquid", "say what pours, e.g. 'pour water from a bottle into a cup'",
                            field="sentence")
     noun = W.singular(tokens[at])
@@ -316,7 +355,7 @@ def _cloth(tokens: list[str], at: int, amounts: dict[str, float], d: Any) -> Non
             relation, form = ("over", "draped") if draped else ("on", form or "flat")
     if form is None:
         form = "hanging" if d.edge else "flat"
-    _, count, _ = _count_of(tokens[:at])
+    count = _count_of(tokens[:at], tokens[at], d)
     soft = SoftSpec("cloth", form, length_m=amounts.get("length_m"), width_m=amounts.get("width_m"))
     d.items.append(ItemSpec(noun, count, tuple(adjectives), relation, target, soft=soft))
 
@@ -330,7 +369,7 @@ def _cable(tokens: list[str], at: int, amounts: dict[str, float], d: Any) -> Non
     if length is not None and length < 0.02:                                    # "a 3 mm cable": the gauge
         length, gauge = None, length * 1e3
     ends = _cable_ends(tokens[at + 1:], d)
-    _, count, _ = _count_of(tokens[:at])
+    count = _count_of(tokens[:at], tokens[at], d)
     soft = SoftSpec("cable", form, length_m=length, diameter_mm=gauge, attach=tuple(ends))
     d.items.append(ItemSpec(noun, count, tuple(adjectives), soft=soft))
 
@@ -353,10 +392,16 @@ def _cable_ends(tail: list[str], d: Any) -> list[str]:
     return ends[:2]
 
 
-def _count_of(tokens: list[str]) -> tuple[None, int, None]:
-    n = next((W.NUMBERS[t] for t in tokens if t in W.NUMBERS), None) or \
-        next((int(float(t)) for t in tokens if _NUM.match(t)), 1)
-    return None, min(max(int(n), 1), W.MAX_COUNT), None
+def _count_of(tokens: list[str], noun: str, d: Any) -> int:
+    """How many of a soft item: a number word or numeral before its ``noun`` ("two towels", "a few cables"), else
+    ``W.PLURAL_COUNT`` for a bare plural ("cables", as "cubes" for objects; noted in ``d.notes``), else 1."""
+    said = [W.NUMBERS[t] for i, t in enumerate(tokens) if t in W.NUMBERS
+            and not (t in ("a", "an") and tokens[i + 1:i + 2] and tokens[i + 1] in W.NUMBERS)]      # "a few": few
+    n = said[0] if said else next((int(float(t)) for t in tokens if _NUM.match(t)), None)
+    if n is None and W.singular(noun) != noun:
+        n = W.PLURAL_COUNT
+        d.notes.append(f"{W.singular(noun)}: plural with no number, placing {n}")
+    return min(max(int(n or 1), 1), W.MAX_COUNT)
 
 
 def normalise(items: list[ItemSpec]) -> list[ItemSpec]:

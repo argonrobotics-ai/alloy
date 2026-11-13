@@ -16,7 +16,8 @@ import warp as wp
 from alloy._vendor import newton
 from alloy._vendor.newton.solvers import SolverMuJoCo, SolverVBD
 from alloy.core.newton_compat import SolverCoupledProxy
-from alloy.coupling.kinematic import GUARD_BITS, world_welded_bodies
+from alloy.coupling.kinematic import F32_EPS, F32_ULPS, GUARD_BITS, POS_TOL, ROT_TOL, kinematic_moved_kernel, \
+    world_welded_bodies
 from alloy.coupling.scheduler import Scheduler
 from alloy.coupling.types import AlloyEntry, PairPolicy, SchedulerPolicy
 from alloy.precision.health import HealthMonitor
@@ -202,3 +203,36 @@ def test_world_welded_bodies():
     b.add_body(label="free")                     # FREE joint
     model = b.finalize(device="cpu")
     assert world_welded_bodies(model).tolist() == [True, True, False, False]
+
+
+def _moved(src: np.ndarray, dst: np.ndarray) -> int:
+    """The guard's flag for one kinematic proxy whose source pose is ``src`` and destination pose ``dst`` (float32
+    transforms: p, q xyzw)."""
+    arr = lambda x: wp.array([wp.transform(*np.asarray(x, np.float32).tolist())], dtype=wp.transform)  # noqa: E731
+    out = wp.zeros(1, dtype=wp.int32)
+    one = wp.array([0], dtype=wp.int32)
+    wp.launch(kinematic_moved_kernel, dim=1, inputs=[arr(dst), one, one, arr(src), one, POS_TOL, ROT_TOL,
+                                                      F32_ULPS * F32_EPS, out])
+    return int(out.numpy()[0])
+
+
+def test_float32_rounding_of_a_welded_pose_is_not_a_broken_weld():
+    """Audit S2-014 (0.1.2): on CUDA a clamped chain hose's welded first link came back from MuJoCo Warp 3.75e-9 rad
+    off the pose the destination held, and the 1e-9 floors alone froze every world at the first exchange. A pose a few
+    float32 ulps off (in position and in rotation) is the same weld; a real move of 10 um or 10 urad is not."""
+    q = np.array([0.0, 0.17364818, 0.0, 0.98480775], np.float32)                 # 20 deg about y
+    src = np.array([0.35, 0.02, 0.56, *q], np.float32)
+    off = src.copy()
+    for k in (0, 2):                                                           # 2 ulps in x and z
+        off[k] = np.nextafter(np.nextafter(off[k], np.float32(1)), np.float32(1))
+    off[4] = np.nextafter(np.nextafter(off[4], np.float32(1)), np.float32(1))  # 2 ulps in the quaternion's y
+    assert np.abs(off - src).max() > 1e-9                                      # past the old floors
+    assert _moved(src, src) == 0 and _moved(src, off) == 0
+    shifted = src.copy()
+    shifted[0] += 1e-5
+    half = 0.5 * 1e-5                                                          # 10 urad about x
+    turned = src.copy()
+    turned[3:] = np.array([np.sin(half) * q[3], q[1] * np.cos(half), -np.sin(half) * q[1], q[3] * np.cos(half)],
+                          np.float32)
+    assert _moved(src, shifted) == 1 and _moved(src, turned) == 1
+

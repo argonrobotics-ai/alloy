@@ -88,7 +88,7 @@ def test_prune_keeps_the_robot_as_written(tmp_path):
     np.testing.assert_allclose(m.key_ctrl[0], [0.5, 0.02])
     np.testing.assert_allclose(m.key_act[0], [0.01])
     mesh = ET.parse(rep.path).getroot().find("asset/mesh")
-    assert mesh.get("file") == str((tmp_path / "parts" / "tri.obj").resolve())   # absolute: the file can move
+    assert mesh.get("file") == "files/tri.obj" and (tmp_path / "out" / "files" / "tri.obj").is_file()   # copied
     assert m.body_pos[1] == pytest.approx([0.1, 0.2, 0.0])                   # the base keeps its place in the world
 
 
@@ -103,10 +103,10 @@ def test_prune_keeps_world_geoms_the_robot_is_excluded_from(tmp_path):
 
 def test_import_cuts_the_robot_and_cards_the_rest(tmp_path):
     res = import_file(_scene_file(tmp_path), tmp_path / "lib")
-    assert [r["name"] for r in res.robots] == ["cell_base"] and res.robots[0]["base_pose"][:3] == [0.0, 0.0, 0.0]
-    assert sorted(res.objects) == ["cell_crate", "cell_floor"]
+    assert [r["name"] for r in res.robots] == ["cell_robots"] and res.robots[0]["base_pose"][:3] == [0.0, 0.0, 0.0]
+    assert sorted(res.objects) == ["cell_floor"]        # the crate is welded to the finger: it stays in the file
     m = mujoco.MjModel.from_xml_path(res.robots[0]["path"])
-    assert (m.nu, m.ntendon, m.nexclude) == (2, 1, 1)
+    assert (m.nu, m.ntendon, m.nexclude, m.neq) == (3, 1, 1, 1)
     assert not [u for u in res.unmapped if "generated" in u.reason]
 
 

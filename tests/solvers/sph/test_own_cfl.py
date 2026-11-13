@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Coupled SPH takes its substeps from its own CFL step (``ClockPolicy.own_cfl``, default on; S4 2026-11-09), CPU.
 
+COUPLE-9 (2026-11-11): SPH's stable-step estimate now takes ``DFSPHConfig.speed_margin`` (0.25) of its CFL term, so
+fast liquid gets 4x the margin while liquid at rest keeps dt_max. At its bare CFL step, a pour beside cloth splashed a
+fifth of itself over a static box's rim (tests/solvers/sph/test_pour_stays_in_box.py). At rest SPH still runs 2
+substeps per exchange, as under S4; the tilt below now runs up to 4 (2 under S4).
+
 The coupled clock picks an entry's rung n so that dt_x / n <= ClockPolicy.safety (0.5) x the entry's stable step. SPH's
 stable step is already its CFL step, cfl (0.2) x spacing / v_max, so the margin counted twice: coupled SPH ran at least
 2 substeps per exchange even at rest, and 4 in the tilt below, where SPH alone runs 1 at the same speed. With
@@ -112,10 +117,10 @@ def test_the_default_clock_runs_coupled_sph_at_half_the_old_substeps():
 
 @pytest.mark.law
 @pytest.mark.timeout(900)
-def test_a_coupled_tilt_at_sphs_own_cfl_runs_half_the_substeps_and_keeps_its_water():
+def test_a_coupled_tilt_at_sphs_own_cfl_keeps_its_water_with_the_speed_margin():
     loc, sim, subs = _tilt(free=True)
     print(f"own_cfl: SPH substeps per period {dict(sorted(subs.items()))}")
-    assert max(subs) == 2, subs                         # own_cfl off runs 4 here
+    assert max(subs) == 4, subs                         # S4 (no speed margin) ran 2
     inside = (np.abs(loc[:, 0]) < IN / 2 + 1e-3) & (np.abs(loc[:, 1]) < IN / 2 + 1e-3)
     assert inside.all(), int((~inside).sum())
     assert float(loc[:, 2].min()) > WALL / 2 - 1.5e-3, float(loc[:, 2].min())

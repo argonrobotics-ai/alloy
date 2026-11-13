@@ -30,6 +30,8 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
     "object": {"type": "object"},
     "strings": {"type": "array", "items": {"type": "string"}},
     "numbers": {"type": "array", "items": {"type": "number"}},
+    "vector": {"type": "array", "items": {"anyOf": [{"type": "number"},
+                                                    {"type": "array", "items": {"type": "number"}}]}},
     "scene": {"type": ["string", "object"]},
     "world": {"anyOf": [{"type": "integer", "minimum": 0}, {"const": "all"}]},
     "any": {},
@@ -132,11 +134,13 @@ def check_request(op: Op, args: dict[str, Any] | None) -> dict[str, Any]:
 def _check_value(op: Op, p: Param, value: Any) -> Any:
     ok = _TYPE_OK.get(p.kind, lambda v: True)(value)
     if not ok:
-        raise RequestError(f"{op.name}: {p.name} must be {p.kind}, got {value!r}"[:300], _fix_for(p), field=p.name)
+        finite = " (finite)" if p.kind in ("numbers", "vector") else ""
+        raise RequestError(f"{op.name}: {p.name} must be {p.kind}{finite}, got {value!r}"[:300], _fix_for(p, op),
+                           field=p.name)
     if p.kind == "number":
         value = float(value)
         if not math.isfinite(value):
-            raise RequestError(f"{op.name}: {p.name} must be finite, got {value!r}", _fix_for(p), field=p.name)
+            raise RequestError(f"{op.name}: {p.name} must be finite, got {value!r}", _fix_for(p, op), field=p.name)
     if p.choices and value not in p.choices:
         raise RequestError(f"{op.name}: {p.name} must be one of {list(p.choices)}, got {value!r}",
                            f"pass {p.name}={p.choices[0]!r}", field=p.name)
@@ -154,6 +158,10 @@ def _is_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
+def _is_finite(v: Any) -> bool:
+    return _is_number(v) and math.isfinite(v)
+
+
 _TYPE_OK: dict[str, Callable[[Any], bool]] = {
     "string": lambda v: isinstance(v, str),
     "integer": _is_int,
@@ -161,15 +169,23 @@ _TYPE_OK: dict[str, Callable[[Any], bool]] = {
     "boolean": lambda v: isinstance(v, bool),
     "object": lambda v: isinstance(v, dict),
     "strings": lambda v: isinstance(v, list) and all(isinstance(x, str) for x in v),
-    "numbers": lambda v: isinstance(v, list) and all(_is_number(x) for x in v),
+    "numbers": lambda v: isinstance(v, list) and all(_is_finite(x) for x in v),           # no NaN or Infinity
+    "vector": lambda v: isinstance(v, list) and all(_is_finite(x) or (isinstance(x, list) and all(map(_is_finite, x)))
+                                                    for x in v),
     "scene": lambda v: isinstance(v, (str, dict)),
     "world": lambda v: v == "all" or (_is_int(v) and v >= 0),
 }
 
 
-def _fix_for(p: Param) -> str:
+def _fix_for(p: Param, op: Op | None = None) -> str:
+    """What to pass: the operation's own example value of ``p`` when it has one, else a value of its kind."""
+    if op is not None and p.name in op.example:
+        return f"pass {p.name}={json.dumps(op.example[p.name])} ({p.help})"
+    if p.kind == "numbers":                   # how many depends on the parameter: its description says
+        return f"pass {p.name} as a list of finite numbers: {p.help}"
     examples = {"string": '"text"', "integer": "10", "number": "0.5", "boolean": "true", "object": '{"key": 1}',
-                "strings": '["a", "b"]', "numbers": "[0.1, 0.2]", "scene": '"demo_peg_d12" or {"objects": [...]}',
+                "strings": '["a", "b"]', "numbers": "[0.1, 0.2]", "vector": "[0.1, 0, 0] (or one per world: "
+                "[[0.1, 0, 0], ...])", "scene": '"demo_peg_d12" or {"objects": [...]}',
                 "world": '0 (a world index) or "all"'}
     return f"pass {p.name}={examples.get(p.kind, 'a JSON value')} ({p.help})"
 
@@ -179,7 +195,8 @@ def _fix_for(p: Param) -> str:
 def add_arguments(parser: argparse.ArgumentParser, op: Op) -> None:
     """Flags for ``op`` on ``parser``: ``--worlds 4``, ``--record cube,peg``, ``--targets '{"j": 0.1}'``,
     booleans as ``--quick / --no-quick``; a positional list takes several words (``alloy fetch a b``); values are
-    parsed by ``parse_flag``. Example: see ``alloy.cli.command``."""
+    parsed by ``parse_flag``; a list flag given twice keeps both (``--library a --library b``). Example: see
+    ``alloy.cli.command``."""
     for p in op.params:
         flag = "--" + p.name.replace("_", "-")
         if p.kind == "boolean":
@@ -188,8 +205,45 @@ def add_arguments(parser: argparse.ArgumentParser, op: Op) -> None:
         if p.positional:
             parser.add_argument(p.name, nargs="*" if p.kind == "strings" else "?", default=None, help=p.help)
             continue
-        metavar = {"strings": "A,B", "numbers": "X,Y", "object": "JSON", "scene": "SCENE"}.get(p.kind, p.kind.upper())
-        parser.add_argument(flag, dest=p.name, default=None, metavar=metavar, help=_flag_help(p))
+        metavar = {"strings": "A,B", "numbers": "X,Y", "vector": "X,Y,Z", "object": "JSON",
+                   "scene": "SCENE"}.get(p.kind, p.kind.upper())
+        action = "append" if p.kind == "strings" else "store"      # --library a --library b: both
+        parser.add_argument(flag, dest=p.name, default=None, metavar=metavar, help=_flag_help(p), action=action)
+
+
+def dash_values(parser: argparse.ArgumentParser, argv: Sequence[str]) -> list[str]:
+    """``argv`` with a value that starts with "-" joined to its flag (``--up -y`` -> ``--up=-y``, ``--look-at
+    -1.2,-1.2,0.9,0,0,0.2`` likewise), so argparse does not read the value as another option. Only flags of
+    ``parser`` (and its sub-commands) that take one value are joined, and never to a word that is itself one of its
+    options. Example: ``parser.parse_args(dash_values(parser, ["create", "--up", "-y"]))``."""
+    takes_value: set[str] = set()
+    options: set[str] = set()
+    _flags(parser, takes_value, options)
+    out, args, i = [], list(argv), 0
+    while i < len(args):
+        word, nxt = args[i], args[i + 1] if i + 1 < len(args) else None
+        if word == "--":
+            return out + args[i:]
+        if (word in takes_value and nxt is not None and nxt.startswith("-") and nxt != "-"
+                and nxt.split("=", 1)[0] not in options):
+            out.append(f"{word}={nxt}")
+            i += 2
+            continue
+        out.append(word)
+        i += 1
+    return out
+
+
+def _flags(parser: argparse.ArgumentParser, takes_value: set[str], options: set[str]) -> None:
+    for action in parser._actions:  # noqa: SLF001 - argparse keeps its options there
+        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+            for sub in action.choices.values():
+                _flags(sub, takes_value, options)
+            continue
+        options.update(action.option_strings)
+        if action.option_strings and action.nargs is None and isinstance(
+                action, (argparse._StoreAction, argparse._AppendAction)):  # noqa: SLF001
+            takes_value.update(action.option_strings)
 
 
 def _flag_help(p: Param) -> str:
@@ -207,7 +261,7 @@ def parse_flag(p: Param, text: Any) -> Any:
         return _parse(text, int, p)
     if p.kind == "number":
         return _parse(text, float, p)
-    if p.kind in ("strings", "numbers"):
+    if p.kind in ("strings", "numbers", "vector"):
         if text.lstrip().startswith("["):
             return _json(text, p)
         conv = str if p.kind == "strings" else (lambda s: _parse(s, float, p))
@@ -244,8 +298,10 @@ def flags_to_args(op: Op, ns: argparse.Namespace) -> dict[str, Any]:
     out = {}
     for p in op.params:
         value = getattr(ns, p.name, None)
-        if isinstance(value, list):                     # positional list words: "a b" and "a,b c" alike
-            value = ",".join(value) or None
+        if isinstance(value, list):         # positional words or a repeated flag: "a b", "a,b c", '["a"] b' alike
+            if value:
+                out[p.name] = [x for text in value for x in parse_flag(p, text)]
+            continue
         if value is not None:
             out[p.name] = parse_flag(p, value)
     return out

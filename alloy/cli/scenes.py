@@ -9,11 +9,13 @@ A recipe::
      "materials": [{"name": "rubber_pad", "density": 1100, "friction": 1.2}],
      "objects": [{"add": "ground"},
                  {"add": "box", "name": "cube", "size": [0.1, 0.1, 0.1], "pos": [0, 0, 0.5], "mass": 1.0},
-                 {"add": "robot", "name": "arm", "path": "arm.xml"}],
+                 {"add": "robot", "name": "arm", "path": "emb_e2_panda"}],      # a file or a shipped robot
+     "set": [{"set": "heat", "time_scale": 60}],              # Scene.set_<set>: heater, heat, temperature, ...
      "friction": [{"a": "cube", "b": "ground", "mu": 0.9}],
      "randomize": [{"name": "cube", "field": "x", "lo": -0.01, "hi": 0.01}]}
 
-Each object's keys are the keyword arguments of ``Scene.add_<add>`` (``alloy ops scene`` lists the kinds).
+Each object's keys are the keyword arguments of ``Scene.add_<add>`` (``alloy list adds`` lists the kinds), and each
+"set" row's those of ``Scene.set_<set>``.
 Example: ``scene = to_scene({"objects": [{"add": "ground"}, {"add": "sphere", "name": "ball", "radius": 0.05,
 "pos": [0, 0, 0.3]}]})``.
 """
@@ -29,12 +31,16 @@ from typing import Any
 from alloy.api import catalog
 from alloy.api.errors import SceneError
 from alloy.api.scene import Scene
+from alloy.cli.robots import resolve as resolve_robot
 
-RECIPE_KEYS = ("schema", "base", "worlds", "dt", "liquid_accuracy", "materials", "objects", "friction", "randomize")
-#: recipe "add" kinds -> Scene method
-ADDERS: dict[str, str] = {k: f"add_{k}" for k in (
-    "ground", "box", "sphere", "cylinder", "capsule", "mesh", "open_box", "open_cylinder", "block_with_hole",
-    "cloth", "liquid", "rod", "robot", "object")}
+RECIPE_KEYS = ("schema", "base", "worlds", "dt", "liquid_accuracy", "materials", "objects", "set", "friction",
+               "randomize")
+#: recipe "add" kinds -> Scene method: every ``Scene.add_*`` (materials have their own key)
+ADDERS: dict[str, str] = {m[len("add_"):]: m for m in dir(Scene)
+                          if m.startswith("add_") and m != "add_material" and callable(getattr(Scene, m))}
+#: recipe "set" kinds -> Scene method: every ``Scene.set_*`` (heater, heat, temperature, friction, ...)
+SETTERS: dict[str, str] = {m[len("set_"):]: m for m in dir(Scene)
+                           if m.startswith("set_") and callable(getattr(Scene, m))}
 SCENE_SCHEMA = "alloy.api.scene/1"
 
 
@@ -60,10 +66,25 @@ def to_scene(value: Any, *, worlds: int | None = None, library: Sequence[str] = 
     if library:
         scene.roots = list(dict.fromkeys([*map(str, library), *scene.roots]))
     if worlds is not None and worlds != scene.worlds:
+        check_per_world(scene, int(worlds))
         scene = Scene.from_dict({**scene.to_dict(), "worlds": int(worlds)})
     if liquid_accuracy is not None and liquid_accuracy != scene.liquid_accuracy:
         scene = Scene.from_dict({**scene.to_dict(), "liquid_accuracy": liquid_accuracy})
     return scene
+
+
+def check_per_world(scene: Scene, worlds: int, *, more: bool = False) -> None:
+    """Raise ``SceneError`` when an object of ``scene`` has one start per world for another world count than
+    ``worlds`` (a build would refuse it); ``more`` allows more starts than worlds (an estimate uses the first ones).
+
+    Example: ``check_per_world(scene, 4)``."""
+    for name, item in scene.items.items():
+        rows = item.get("per_world_pos")
+        if rows is None or len(rows) == worlds or (more and len(rows) > worlds):
+            continue
+        raise SceneError(f"{name!r} has {len(rows)} per-world starts but worlds={worlds}",
+                         f"pass worlds={len(rows)} (the scene's own), or give {name!r} {worlds} starts "
+                         f"(pos as a list of {worlds} [x, y, z])", field="worlds")
 
 
 def _from_text(text: str, library: Sequence[str]) -> Scene:
@@ -102,6 +123,8 @@ def from_recipe(recipe: dict[str, Any], library: Sequence[str] = ()) -> Scene:
         _call(scene, "add_material", row, f"materials[{i}]")
     for i, row in enumerate(_rows(recipe, "objects")):
         add_object(scene, row, f"objects[{i}]")
+    for i, row in enumerate(_rows(recipe, "set")):
+        set_value(scene, row, f"set[{i}]")
     for i, row in enumerate(_rows(recipe, "friction")):
         _call(scene, "set_friction", row, f"friction[{i}]")
     for i, row in enumerate(_rows(recipe, "randomize")):
@@ -140,16 +163,41 @@ def add_object(scene: Scene, row: dict[str, Any], where: str = "object") -> Any:
     if kind not in ADDERS:
         raise SceneError(f"{where}: unknown add {kind!r}", f"use one of {sorted(ADDERS)}", field=f"{where}.add")
     args = {k: v for k, v in row.items() if k != "add"}
+    if kind == "robot" and isinstance(args.get("path"), str):
+        args["path"] = _robot_path(args["path"], scene.roots, where)
     return _call(scene, ADDERS[kind], args, where)
+
+
+def _robot_path(path: str, roots: Sequence[str], where: str) -> str:
+    """A robot file as given, else the library robot it names (``alloy list robots``) or a library-relative path."""
+    if Path(path).expanduser().exists():
+        return path
+    hit = resolve_robot(path, roots)
+    if hit is None:
+        raise SceneError(f"{where}: robot {path!r} is not a file, a library robot or a path in a library",
+                         'pass a name from alloy list robots (e.g. "emb_e2_panda"), a library path such as '
+                         '"robots/emb_e2_panda/scene.xml", or an MJCF (.xml), URDF or USD file', field=f"{where}.path")
+    return str(hit)
+
+
+def set_value(scene: Scene, row: dict[str, Any], where: str = "set") -> Any:
+    """Apply one recipe "set" row ``{"set": kind, ...keyword arguments}``: ``Scene.set_<kind>``.
+
+    Example: ``set_value(scene, {"set": "heater", "name": "pan_floor", "temperature": 353.15})``."""
+    kind = row.get("set")
+    if kind not in SETTERS:
+        raise SceneError(f"{where}: unknown set {kind!r}", f"use one of {sorted(SETTERS)}", field=f"{where}.set")
+    return _call(scene, SETTERS[kind], {k: v for k, v in row.items() if k != "set"}, where)
 
 
 def _call(scene: Scene, method: str, args: dict[str, Any], where: str) -> Any:
     fn = getattr(scene, method)
     params = inspect.signature(fn).parameters
     allowed = [n for n, p in params.items() if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL)]
-    if any(p.kind is p.VAR_KEYWORD for p in params.values()):
+    open_kw = any(p.kind is p.VAR_KEYWORD for p in params.values())
+    if open_kw and method.startswith("add_"):        # an adder's **kw are the shared shape keywords
         allowed += [n for n in inspect.signature(Scene.add_sphere).parameters if n not in ("self", "name", "radius")]
-    unknown = [k for k in args if k not in allowed]
+    unknown = [] if open_kw and not method.startswith("add_") else [k for k in args if k not in allowed]
     if unknown:
         raise SceneError(f"{where}: {method} has no argument(s) {unknown}", f"use only {allowed}",
                          field=f"{where}.{unknown[0]}")

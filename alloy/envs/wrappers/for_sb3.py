@@ -29,8 +29,8 @@ from typing import Any
 
 import numpy as np
 
-from alloy.envs.errors import EnvError
-from alloy.envs.wrappers._common import POLICY, EpisodeTally, image_keys, require, require_vector_env, state_groups
+from alloy.envs.wrappers._common import (POLICY, EpisodeTally, image_keys, require, require_same_step,
+                                         require_vector_env, state_groups)
 
 log = logging.getLogger("alloy.envs")
 
@@ -48,10 +48,7 @@ class Sb3VecEnv(_VecEnv):  # type: ignore[misc, valid-type]
     def __init__(self, env: Any) -> None:
         require("sb3")
         require_vector_env(env, "sb3")
-        if getattr(env, "autoreset", "same_step") != "same_step":
-            raise EnvError(f"the Stable-Baselines3 wrapper needs autoreset='same_step', this env has "
-                           f"{env.autoreset!r}", "make the env with autoreset='same_step' (the default)",
-                           field="autoreset")
+        require_same_step(env, "Stable-Baselines3")
         self.env, self.tally = env, EpisodeTally()
         self._images = image_keys(env)
         self._actions: Any = None
@@ -69,7 +66,8 @@ class Sb3VecEnv(_VecEnv):  # type: ignore[misc, valid-type]
         state = self._np(state_groups(self.env, obs)[POLICY])
         if not self._images:
             return state
-        return {"state": state, **{k: self._np(obs[k]) for k in self._images}}
+        cams = {k: self._np(obs[k]) for k in self._images}
+        return {"state": state, **cams} if state.shape[-1] else cams      # a camera-only task has no state entry
 
     def _row(self, obs: Any, i: int) -> Any:
         if isinstance(obs, dict):
@@ -167,12 +165,13 @@ def _obs_space(env: Any, images: list[str]) -> Any:
 
     if not images and not getattr(env, "obs_groups", None):
         return _gym_space(env.single_observation_space)
-    width = int(state_groups(env, env._observe(env.state))[POLICY].shape[1])
-    state = gymnasium.spaces.Box(-np.inf, np.inf, (width,), np.float32)
+    shape = tuple(int(d) for d in state_groups(env, env._observe(env.state))[POLICY].shape[1:])  # (D,) or (H, D)
+    state = gymnasium.spaces.Box(-np.inf, np.inf, shape, np.float32)
     if not images:
         return state
     cams = env.single_observation_space.spaces
-    return gymnasium.spaces.Dict({"state": state, **{k: _gym_space(cams[k]) for k in images}})
+    images_only = {k: _gym_space(cams[k]) for k in images}
+    return gymnasium.spaces.Dict({"state": state, **images_only} if shape[-1] else images_only)
 
 
 __all__ = ["Sb3VecEnv"]

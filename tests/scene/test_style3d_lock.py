@@ -36,6 +36,7 @@ def test_a_soft_anisotropic_card_does_not_warn(caplog):
     scene = alloy.Scene(dt=0.01)
     scene.add_ground()
     scene.add_cloth("napkin", size=(0.3, 0.3), pos=(0.0, 0.0, 0.1), resolution=8, material="cotton_woven_aniso")
+    scene.items["napkin"]["card_extra"]["route"] = {"route": "cloth_style3d", "reason": "test: the Style3D solver"}
     with caplog.at_level(logging.WARNING, logger="alloy.scene"):
         sim = alloy.build(scene, device="cpu")
     assert sim.routes()["napkin"]["route"] == "cloth_style3d" and _ratio(sim) < L.LOCK_RATIO

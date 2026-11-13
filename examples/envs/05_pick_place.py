@@ -5,9 +5,10 @@ The policy reads named state (``env.state["obj.com"]``, the gripper palm) and se
 x, y, z and fingers. Run: python examples/envs/05_pick_place.py [num_envs] [object card]
 (object cards: alloy.envs.library_tasks.PICK_OBJECTS; the first build fetches the object's files)
 Prints ``in_bin``, the share of worlds whose object ends in the bin. The script never checks that the grasp
-held and does not succeed in every world. On the CPU: 4 of 4, 8 of 8 and 64 of 64 worlds (CPU runs repeat bit for
-bit). On one L4: 4 of 4 and 8 of 8 worlds, 60 to 62 of 64 worlds in four runs (0.94-0.97) and 250 of 256 in one;
-runs with the same seed differ there, because contacts on a GPU do not repeat bit for bit.
+held and does not succeed in every world. On the CPU: 64 of 64 worlds (CPU runs repeat bit for bit). On one L4:
+62 and 64 of 64 worlds in two runs and 254 of 256 in one; runs with the same seed differ there, because contacts on
+a GPU do not repeat bit for bit. Before the gripper's force cap (0.1.0): 4 of 4, 8 of 8 and 64 of 64 on the CPU;
+on one L4 4 of 4, 8 of 8, 60 to 62 of 64 in six runs and 249 and 250 of 256.
 """
 import json
 import sys

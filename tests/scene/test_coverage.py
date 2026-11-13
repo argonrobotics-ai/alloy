@@ -59,14 +59,36 @@ def test_light_cube_rests_on_the_table():
     assert row.covered, row
 
 
-def _built(name: str, then=None):
-    """Assemble `name` alone on the table (1 world); `then(built)` runs inside the same solver registry."""
+def _pin_route(lib, name: str, route: str) -> None:
+    """Make `lib` hand out object `name` with a card route override (a woven box sheet now defaults to cloth_vbd)."""
+    import dataclasses
+
+    from alloy.cards import types as ct
+
+    for method in ("object", "peek_object"):
+        get = getattr(lib, method)
+        pinned = {}
+
+        def _get(n, *a, _get=get, _pinned=pinned, **k):
+            card = _get(n, *a, **k)
+            if n != name:
+                return card
+            return _pinned.setdefault(n, dataclasses.replace(card, route=ct.RouteOverride(route, "test: pinned route")))
+
+        setattr(lib, method, _get)
+
+
+def _built(name: str, then=None, route: str | None = None):
+    """Assemble `name` alone on the table (1 world); `then(built)` runs inside the same solver registry. `route`
+    pins the object's route with a card override."""
     from alloy.core.registry import isolated_registry
     from alloy.route.router import Router
     from alloy.scene.assembler import SceneAssembler
     from alloy.scene.builtin_plugins import register_builtin_solvers
 
     lib = _lib()
+    if route is not None:
+        _pin_route(lib, name, route)
     card, _ = C.scene_for(name, lib, 1)
     with isolated_registry(empty=True):
         register_builtin_solvers()
@@ -86,7 +108,7 @@ def test_style3d_napkin_steps_finite():
             sim.step_period()
         return sim.state.particle_q.numpy()
 
-    built, q = _built("napkin_cotton_aniso", _step)
+    built, q = _built("napkin_cotton_aniso", _step, route="cloth_style3d")
     assert float(built.model.style3d.edge_rest_area.numpy().min()) > 0.0
     assert np.isfinite(q).all()
 

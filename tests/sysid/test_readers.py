@@ -198,9 +198,45 @@ def test_lerobot_names_from_state_feature_and_explicit_joints(tmp_path):
 
 
 def test_lerobot_state_action_width_mismatch(tmp_path):
+    from dataclasses import fields
+
+    from alloy.sysid.fitter import FitConfig
+
     write_lerobot(tmp_path / "ds", state_width=3)
     err = raises_field("data", load_lerobot, tmp_path / "ds")
     assert "joints=" in err.fix and "columns=" in err.fix
+    assert "--column-names" in err.fix and "--state-columns" in err.fix
+    options = {f.name for f in fields(FitConfig)}           # the fix names fit options that exist
+    assert {"column_names", "state_columns"} <= options and "column_names=" in err.fix and "state_columns=" in err.fix
+
+
+IL_STATE = ("arm/shoulder.q", "arm/shoulder.qd", "arm/elbow.q", "arm/elbow.qd")
+
+
+def test_lerobot_il_recording_picks_the_position_columns_by_name(tmp_path):
+    """An alloy.il recording: actions named by joint, a state of <joint>.q and <joint>.qd columns."""
+    write_lerobot(tmp_path / "ds", state_width=4, names=("arm/shoulder", "arm/elbow"), state_names=IL_STATE)
+    _, state, lengths = write_lerobot.expected
+    rec = load_recording(tmp_path / "ds")
+    assert rec.joints == ["shoulder", "elbow"]
+    np.testing.assert_allclose(rec.episodes[0].position, state[: lengths[0]][:, [0, 2]], atol=1e-12)
+
+
+def test_lerobot_actions_named_by_actuator_read_by_joint(tmp_path):
+    write_lerobot(tmp_path / "ds", state_width=4, names=("arm/motor_e", "arm/motor_s"), state_names=IL_STATE)
+    _, state, lengths = write_lerobot.expected
+    rec = load_recording(tmp_path / "ds", aliases={"motor_s": "shoulder", "motor_e": "elbow"})
+    assert rec.joints == ["elbow", "shoulder"]
+    np.testing.assert_allclose(rec.episodes[0].position, state[: lengths[0]][:, [2, 0]], atol=1e-12)
+    err = raises_field("data", load_lerobot, tmp_path / "ds")          # without the robot: no column of that name
+    assert "state_columns=" in err.fix
+
+
+def test_lerobot_unlabelled_or_ambiguous_state_is_not_guessed(tmp_path):
+    write_lerobot(tmp_path / "a", state_width=4, names=("x", "y"), state_names=("x.q", "x.q", "y.q", "y.qd"))
+    raises_field("data", load_lerobot, tmp_path / "a")
+    write_lerobot(tmp_path / "b", state_width=4, names=("x", "y"))
+    raises_field("data", load_lerobot, tmp_path / "b")
 
 
 def test_lerobot_folder_without_info_json_does_not_need_pyarrow(tmp_path):

@@ -18,19 +18,23 @@ pages. The limit's own file has the numbers and the status of the fix.
 
 ## Doing next
 
-Larger pieces of work that are planned and not built yet. None of them is in this release, and we promise no dates.
+Larger pieces of work that are planned and not built yet, and one that was tried and did not work (the welding
+score). None of them is in this release, and we promise no dates.
 
 - Cloth that takes up liquid. Today a liquid and a cloth collide and nothing more: no wetting, no soaking in, so a
   towel does not absorb a spill ([liquid-on-cloth.md](../known_gaps/liquid-on-cloth.md)). Planned: an absorption and
   wetting model, first as a reviewed design (the model, the law that checks it, its cost), then as an opt-in
   prototype.
-- The welding task score. Gym-Anything's four welding tasks, judged by a port of its evaluator, score 0.75 to 0.78
-  of 1 and none succeeds: the bead's steady part is sound, but the arc start, the tack starts and the end crater are
-  wrong
-  ([weld-bead-starts-and-craters.md](../known_gaps/weld-bead-starts-and-craters.md)). Planned: those three misses,
-  one at a time.
+- The welding task score. Gym-Anything's four welding tasks, judged by a port of its evaluator, score 0.76 to 0.81 of
+  1 and none succeeds (Gym-Anything's own weld model scores 0.894 on fillet-2f): the bead's steady part and a crater
+  at a joint's end are sound, but the arc start, the tack starts and a crater where a pass stops mid-joint are short
+  ([weld-bead-starts-and-craters.md](../known_gaps/weld-bead-starts-and-craters.md)). No fix is planned in this weld
+  model: measured, it is not solvable with it. Two changes were tried, a pool shape that carries the liquid's weight
+  and Gym-Anything's cold starts (the droplets stacked on cold steel), each with the wire landing under the arc; they
+  leave fillet-2f at 0.79 to 0.80, against the shipped 0.81.
 - Dents in solid parts by default. Today a metal sheet or wire keeps a dent or a bend (`deformables.md`, `rods.md`),
-  and a solid block that yields is opt-in and reads a punch's force low
+  and a solid block that yields is opt-in (a metal block only with quasi-static mass scaling,
+  `scene.set_quasi_static_mass_scale`), and its punch laws are not claimed yet
   ([plasticity-mpm-solid-punch-force.md](../known_gaps/plasticity-mpm-solid-punch-force.md)). Planned: the punch
   laws checked against the textbook indentation depth first, then yielding solids on that route by default.
 

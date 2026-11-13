@@ -66,6 +66,11 @@ _INSTALL_FIX = ("install Alloy with its pinned engine packages: `pip install all
 #: (engine error class name, message regex, fix). First match wins; the regex runs on the engine message.
 _REMEDIES: tuple[tuple[str, str, str], ...] = (
     ("CardError", r"inside out", "flip the mesh's triangle winding (or re-export it with outward normals)"),
+    ("CardError", r"file not found", "the file named in the message is missing: pass an existing file to "
+                                     "add_robot / add_mesh, and move or copy a saved card folder whole (its robots/ "
+                                     "and meshes/ paths are relative to the folder)"),
+    ("CardError", r"non-finite vertex", "repair or remove the mesh's NaN / inf vertices: every coordinate must be a "
+                                         "finite number in metres"),
     ("CardError", r"unknown (material|object|scene)|no (material|object|scene)|not found",
      "use a name from alloy.materials() / alloy.scenes(), or add the card with Scene.add_material"),
     ("CardError", r"", "change the field named in the message (Scene.add_* argument of that object, or its card)"),
@@ -91,6 +96,9 @@ _REMEDIES: tuple[tuple[str, str, str], ...] = (
     ("CouplingError", r"", "too many different solvers touch each other in one scene: split it or make some objects "
                            "static"),
     ("AssemblyError", r"world_count", "pass worlds >= 1"),
+    ("AssemblyError", r"encloses no volume", "give a closed mesh with every face wound counter-clockwise seen from "
+                                             "outside (trimesh.repair.fix_normals(mesh) repairs the winding), or make "
+                                             "the object static"),
     ("AssemblyError", r"cloth", "a cloth needs a thin box (Scene.add_cloth) or a triangle mesh"),
     ("AssemblyError", r"", "check the object named in the message; Scene.summary() lists every object"),
     ("ImportError", r"pxr|usd", 'reading USD needs the usd extra: pip install "alloy-engine[usd]"'),

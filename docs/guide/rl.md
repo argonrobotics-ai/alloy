@@ -70,35 +70,39 @@ worlds are 3.28 M samples; 150 at 1,024 are 4.92 M.
 
 | Library | Environment | Worlds x iterations | Runs | Reached 90 % | Lowest to highest result |
 |---|---|---|---|---|---|
-| rsl_rl | `GripperLift-v0` | 512 x 200 | 6 | 6 | 91.5 % to 99.9 % |
+| rsl_rl | `GripperLift-v0` | 512 x 200 | 3 | 1 | 0 % to 91.6 % |
 | rsl_rl | GripperLift, privileged critic | 512 x 200 | 1 | 0 | 74 % (its best window: 99.6 %) |
 | rsl_rl | `PandaReach-v0` | 1,024 x 150 | 1 | 1 | 100 % |
-| skrl | `GripperLift-v0` | 512 x 200 | 4 | 4 | 97 % to 100 % |
+| skrl | `GripperLift-v0` | 512 x 200 | 4 | 3 | 0 % to 100 % |
 | skrl | GripperLift, privileged critic | 512 x 200 | 1 | 1 | 100 % |
 | skrl | `PandaReach-v0` | 1,024 x 150 | 2 | 2 | 100 % |
-| Stable-Baselines3 | `GripperLift-v0` | 512 x 200 | 3 | 3 | 92 % to 99 % |
+| Stable-Baselines3 | `GripperLift-v0` | 512 x 200 | 3 | 1 | 71 % to 98 % |
 | Stable-Baselines3 | GripperLift, policy group only | 512 x 200 | 1 | 0 | 39 % (its best window: 83 %) |
 | Stable-Baselines3 | `PandaReach-v0` | 1,024 x 150 | 2 | 0 | 65 % to 85 % |
 
-The rows above were measured before delta and end-effector targets were kept within a window of the measured joints
-([envs.md](envs.md), `ActionSpec`). With the window, one rsl_rl run each (seed 0, one L4): `GripperLift-v0` 96.6 %,
-`PandaReach-v0` 100 % (55 % at iteration 30, 100 % from iteration 60), the end-effector reach below 100 % (75 % at
+The three `GripperLift-v0` rows were measured with delta targets kept within a window of the measured joints
+([envs.md](envs.md), `ActionSpec`), on one L4 with the environment code of Alloy 0.1.2 (seeds 0 to 2, skrl 0 to 3,
+one run each); the other rows before that window, when all 13 `GripperLift-v0` runs reached the bar. With the
+window, one earlier rsl_rl run each (seed 0, one L4): `GripperLift-v0` 96.6 %, `PandaReach-v0` 100 % (55 % at iteration 30, 100 % from iteration 60), the end-effector reach below 100 % (75 % at
 iteration 30, 100 % from iteration 60; 71 % and 100 % in a run without the window).
 
 How to read it:
 
 - **A seed does not fix the outcome on a GPU.** Two runs of the first command with seed 0 on one machine ended at
-  99.8 % and 91.5 %; with earlier skrl settings, seed 0 ended at 0 % in one run and 96 % in another. Which part
+  99.8 % and 91.5 % (before the window); with earlier skrl settings, seed 0 ended at 0 % in one run and 96 % in
+  another. Which part
   does not repeat was not isolated: on a GPU the simulation itself does not repeat bit for bit once the robot
   touches things ([worlds.md](worlds.md), Determinism), GPU arithmetic in the training libraries is a second
   source, and training amplifies small differences. So no row is the result of "its" seed: a row says how many
   runs there were and where they ended, and with one to six runs per row that is a small sample.
-- **rsl_rl and skrl reached the bar on both tasks** in every run of the ready-made environments. skrl reached it
-  after we changed its settings (the entropy term and action clipping, below): with the earlier ones two of five
-  runs never left 0 %. Late in a
+- **On `GripperLift-v0` no library reached the bar in every run.** With the same settings a run can stay at 0 %
+  (one seed each of rsl_rl and skrl), and Stable-Baselines3 ended below 90 % in two of three. So train more than
+  one seed and read the success rate each run prints. rsl_rl and skrl reached the bar on `PandaReach-v0` (one
+  and two runs). skrl's settings (the entropy term and action clipping, below) were changed after two of five
+  earlier runs never left 0 %. Late in a
   `GripperLift-v0` run the rate still moves (the rsl_rl privileged-critic run was between 71 % and 99.6 % over its
   last 50 iterations and ended on a low window).
-- **Stable-Baselines3 reached the bar on `GripperLift-v0`, not on `PandaReach-v0`** (65 % and 85 %), and its
+- **Stable-Baselines3 did not reach the bar on `PandaReach-v0`** (65 % and 85 %), and its
   policy-group run of the example ended at 39 %.
 - Minutes: the first command took 3.2 min alone on the L4 and 5 to 7 min when three runs shared it.
 

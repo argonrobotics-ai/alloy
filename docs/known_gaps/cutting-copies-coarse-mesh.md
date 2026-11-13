@@ -20,14 +20,16 @@ Also: one knife per world. A second blade in a world raises `ValueError` at buil
 
 ## Number
 All on the CPU, on the example's 20 x 15 x 15 mm agar block (50 kPa) of 96 tets (cells 5 x 7.5 x 7.5 mm) and its
-1.2 mm knife at 0.05 m/s (`examples/topology/cut_anywhere.py`; main 6f5da6ef2 with this page's commit).
+1.2 mm knife at 0.05 m/s (`examples/topology/cut_anywhere.py`; main 6f5da6ef2 with this page's commit; the y cut's
+node positions, the parting and the creep speeds measured again on main 692add686, after a drive's velocity moved one
+physics step earlier: the same; the copy below the ground was 2.0 mm before this page's fix).
 
 | Limit | Case | Value |
 |---|---|---|
 | 1 | knife plane 1.7 mm off the middle y plane (2 cells across): the 5.8 mm piece has one node layer | its top outer nodes move from y 7.5 mm to 2.3 mm by 0.4 s (the knife's plane is at 1.7 mm); `sim.check()` ok |
 | 1 | knife plane 1.7 mm off the middle x plane (4 cells across): both pieces have two layers or more | every node within 0.1 mm of its settled height, none sideways; 24 tets cut; max penetration 1 um |
 | 2 | that x cut, knife still in the block | the pieces have parted 0.09 mm (blade 1.2 mm) |
-| 3 | that block | 135 points for 45 mesh nodes; in the y cut a copy read 2.0 mm below the ground plane |
+| 3 | that block | 135 points for 45 mesh nodes; in the y cut a copy read 1.8 mm below the ground plane |
 | 4 | that x cut, the 8.3 mm piece (1.8 g), after the knife stops | 0.56 mm/s for at least 2.7 s at 10 solver iterations; 0.41 at 20, 0.21 at 40, 0.007 at 160 (set on the engine's solver in a probe) |
 | 4 | the 11.7 mm piece (2.8 g) | 0.005 mm/s |
 

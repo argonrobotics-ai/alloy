@@ -78,17 +78,27 @@ def resolve(doc: Path, target: str) -> Path:
 
 def class_methods(module: Path, cls: str) -> set[str]:
     """Public methods, properties and ``self.<attr>`` set in ``__init__`` of class ``cls`` and of its base classes
-    defined in the same package folder (parsed, not imported).
+    defined in the same package folder (parsed, not imported). A base may be written bare (``FixtureMixin``) or
+    through its module (``_contact_relax.ContactRelaxMixin``).
 
     Example: ``"add_open_box" in class_methods(scene_py, "Scene")`` (inherited from FixtureMixin)."""
     node = _find_class(module.parent, cls, module)
     if node is None:
         raise LookupError(f"class {cls} not found in {module}")
     names = _own_members(node)
-    for base in node.bases:
-        if isinstance(base, ast.Name) and _find_class(module.parent, base.id) is not None:
-            names |= class_methods(_class_file(module.parent, base.id), base.id)
+    for base in filter(None, map(_base_name, node.bases)):
+        if _find_class(module.parent, base) is not None:
+            names |= class_methods(_class_file(module.parent, base), base)
     return names
+
+
+def _base_name(base: ast.expr) -> str | None:
+    """The class name of a base written ``Name`` or ``module.Name``; None for anything else (a call, a subscript)."""
+    if isinstance(base, ast.Name):
+        return base.id
+    if isinstance(base, ast.Attribute):
+        return base.attr
+    return None
 
 
 def _find_class(folder: Path, cls: str, first: Path | None = None) -> ast.ClassDef | None:

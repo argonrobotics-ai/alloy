@@ -73,6 +73,7 @@ python examples/api/01_drop_box.py          # GPU if present, else CPU; the firs
 | [`03_session.sh`](cli/03_session.sh) | Many calls in one process: build once, then step, ramp a joint, read state and check, all against the same |
 | [`04_mcp_client.py`](cli/04_mcp_client.py) | Talk to Alloy's MCP tool server the way an AI agent's client does: start it on stdio, list its tools, build a scene, step it, read the state and close it. Standard library only (no MCP SDK needed). |
 | [`05_vary.sh`](cli/05_vary.sh) | Scene variants: four copies of a table scene with the free objects moved (+-2 cm, +-15 degrees) and each look given |
+| [`06_conveyor.sh`](cli/06_conveyor.sh) | Act on a running simulation without Python: a kinematic belt carries a tote (drive), stops, and the tote is put back above it (pose) and falls. Also lists the library's robots, whose names a recipe takes as a robot's path. |
 
 ## compose
 

@@ -79,3 +79,59 @@ def test_escape_box_leaves_a_resting_scene_bitwise():
     q = [_run(plugin._factory(m, kw), m, 40).particle_q.numpy().copy()
          for kw in ({"particle_radius": R}, {"particle_radius": R, "world_bounds": None})]
     assert np.array_equal(q[0], q[1])
+
+
+def test_drive_reach_bounds_every_place_a_drive_takes_a_shape():
+    c, r = np.array([[0.1, 0.0, 0.2]]), np.array([0.05])
+    zero = np.zeros((1, 3))
+    lo, hi = eb.drive_reach(c, r, c, np.array([[5.0, 0.0, 0.0]]), zero, 0.15)       # a 0.75 m slide in +x
+    assert np.allclose(lo, [0.05, -0.05, 0.15], rtol=0.0, atol=1e-12)
+    assert np.allclose(hi, [0.9, 0.05, 0.25], rtol=0.0, atol=1e-12)
+    piv = np.array([[0.0, 0.0, 0.2]])                                                # a turn about a point 0.1 m off
+    lo, hi = eb.drive_reach(c, r, piv, zero, np.array([[0.0, 0.0, 1.0]]), 10.0)
+    assert np.allclose(lo, [-0.15, -0.15, 0.05], rtol=0.0, atol=1e-12)
+    assert np.allclose(hi, [0.15, 0.15, 0.35], rtol=0.0, atol=1e-12)
+    lo, hi = eb.drive_reach(c, r, c, np.array([[0.0, -1.0, 0.0]]), zero, float("inf"))   # no end: to -inf in y
+    assert lo[1] == -np.inf and np.isfinite(hi).all() and np.isfinite(lo[[0, 2]]).all()
+
+
+def test_widen_grows_only_an_automatic_box():
+    m = _scene(shot=False)
+    auto = plugin._factory(m, {"particle_radius": R})
+    lo0, hi0 = (np.array(v) for v in auto.config.world_bounds)
+    assert not eb.widen(auto, lo0 + 0.3, hi0 - 0.3)                    # inside the box: unchanged
+    assert eb.widen(auto, np.array([0.0, 0.0, 0.1]), np.array([2.0, 0.0, 0.1]))   # 2 m along +x, inside elsewhere
+    lo, hi = (np.array(v) for v in auto.config.world_bounds)
+    assert hi[0] == 2.0 + auto.escape_box_pad and np.array_equal(lo, lo0) and np.array_equal(hi[1:], hi0[1:])
+    assert np.allclose(np.array(auto.emitters.bounds[1]), hi, rtol=0.0, atol=1e-6)   # the retire kernel's copy
+    box = ((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0))
+    given = plugin._factory(m, {"particle_radius": R, "world_bounds": box})
+    assert not eb.widen(given, np.zeros(3), np.array([5.0, 0.0, 0.0])) and given.config.world_bounds == box
+
+
+@pytest.mark.compile_heavy
+def test_liquid_in_a_driven_sealed_box_is_carried_not_retired():
+    """S1-015: a sealed 20 mm box with 700 particles driven 0.75 m at 5 m/s left all 700 behind, retired and frozen
+    in mid-air where they crossed the build-time escape box (health ok). The drive widens the box: none retires and
+    every particle is inside the box at the end. The lid sits flush on the walls (the repro's 0.5 mm gap let 1 %
+    through under the 5 m/s start: a real gap, by design)."""
+    import alloy.api as alloy  # noqa: PLC0415
+
+    sc = alloy.Scene(dt=0.01)
+    sc.add_ground()
+    sc.add_open_box("vessel", inner=(0.08, 0.08, 0.08), wall=0.02, pos=(0.0, 0.0, 0.20), kinematic=True)
+    sc.add_box("lid", size=(0.12, 0.12, 0.02), pos=(0.0, 0.0, 0.31), kinematic=True)
+    sc.add_liquid("water", size=(0.04, 0.04, 0.03), pos=(0.0, 0.0, 0.24))
+    sim = alloy.build(sc, device="cpu")
+    try:
+        for name in ("vessel", "lid"):
+            sim.drive(name, velocity=(5.0, 0.0, 0.0), duration=0.15)
+        sim.step(16)
+        st, h = sim.state(world=0), sim.health()
+        rel = st["water.points"] - np.array([st["vessel.pos"][0], st["vessel.pos"][1], 0.0])
+        inside = (np.abs(rel[:, 0]) <= 0.06) & (np.abs(rel[:, 1]) <= 0.06) & (rel[:, 2] >= 0.2) & (rel[:, 2] <= 0.32)
+        assert float(st["vessel.pos"][0]) == pytest.approx(0.75, rel=0.0, abs=1e-5)
+        assert h["retired_particles"] == [0], h["retired_particles"]
+        assert int(inside.sum()) == len(rel), f"{len(rel) - int(inside.sum())} of {len(rel)} outside the vessel"
+    finally:
+        sim.close()

@@ -76,6 +76,13 @@ REMEDIES: dict[str, tuple[str, str]] = {
                "slow the body, or make the parts thicker; no travel per step is safe for every part (a pin of radius "
                "1.5 mm passed a 5 mm pane at 1.4 mm per step), so measure your own part at your speed and read "
                "sim.check() (docs/known_gaps/rigid-tunnelling.md)"),
+    "QUASI_STATIC": ("a solid under quasi-static mass scaling moved as a whole faster than half its declared "
+                     "tool_speed (it left its support, was thrown or pushed fast), or a body touching it moved "
+                     "faster than 12x that tool_speed: the solid is s times heavier for that motion, so it falls, "
+                     "slides or pushes back wrong",
+                     "keep the solid on its support and press no faster than the tool_speed given to "
+                     "scene.set_quasi_static_mass_scale (or give the real one); mass scaling is wrong for a solid "
+                     "that is dropped, thrown or hit fast (docs/known_gaps/plasticity-mpm-solid-punch-force.md)"),
     "SPIN": ("a body turned more than half a radian in one physics step, so contacts can add energy and fling it",
              "make the thin part heavier or thicker, or step rigid bodies finer: sim.routes() names the scene's rigid "
              "step; scene.rigid_step = 0.000625 pins a finer one, or Scene(dt=0.001) steps them at 1 ms"),
@@ -292,8 +299,8 @@ def _with_starts(problems: list[dict[str, Any]], fails: list[dict[str, Any]]) ->
     """Each start overlap that no problem of its world already names as one (first: it is the cause), then
     ``problems``; a penetration problem between the same two shapes points at the start overlap (WP13: its
     stiffness advice sends users the wrong way when the overlap was placed)."""
-    def names(p: dict[str, Any], f: dict[str, Any]) -> bool:
-        return all(n in str(p.get("what", "")) for n in f["shapes"])
+    def names(p: dict[str, Any], f: dict[str, Any]) -> bool:              # a robot part "arm/link3" by its robot
+        return all(n.split("/", 1)[0] in str(p.get("what", "")) for n in f["shapes"])
 
     def named(p: dict[str, Any], f: dict[str, Any]) -> bool:
         return p.get("world") == f["world"] and "start" in str(p.get("what", "")) and names(p, f)
@@ -318,7 +325,17 @@ def poll(engine: Any) -> Any:
         report = monitor.poll()
     except PrecisionError as exc:
         report = getattr(exc, "report", None)
-    return _with_tunnel_texts(_with_cloth_names(report, engine), engine)
+    return _with_tunnel_texts(_with_shape_names(_with_cloth_names(report, engine), engine), engine)
+
+
+def _with_shape_names(report: Any, engine: Any) -> Any:
+    """``report`` with ``shape_names`` in the scene's words (a robot's shapes under the name it was added with)."""
+    from alloy.api.names import scene_shape_names  # noqa: PLC0415
+
+    built = getattr(engine, "built", None)
+    if report is None or built is None or not getattr(report, "shape_names", ()):
+        return report
+    return dataclasses.replace(report, shape_names=scene_shape_names(built))
 
 
 def _with_cloth_names(report: Any, engine: Any) -> Any:
@@ -440,10 +457,15 @@ def check(sim: Any) -> dict[str, Any]:
     except ImportError:
         check_sim = None
     if check_sim is not None:
-        with _errors.reading(sim.engine):                    # profile "precision": check reads, it does not raise
+        from alloy.api._memory_errors import probe_memory  # noqa: PLC0415
+
+        with _errors.reading(sim.engine), probe_memory(sim):     # profile "precision": check reads, it does not raise
             checked = check_sim(sim)
         result = add_retired(checked, retired(sim.engine))
         h = sim.health()
+        from alloy.api._contact_relax import soft_on_purpose  # noqa: PLC0415
+
+        soft_on_purpose(result, h, sim.engine)              # scene.relax_contact_depth: its depth listed as a warning
         listed = result.get("problems", [])
         extra, blown, gains = start_problems(h), cloth_problems(h, listed), gain_problems(h)
         from alloy.precision.self_contact import cross_problems  # noqa: PLC0415

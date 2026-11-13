@@ -23,8 +23,10 @@ by the yield stress and are not affected.
 
 **Why.** The default sparse grid puts its node planes half a voxel off the origin, so the ground lies exactly between
 two and the boundary condition holds the bottom layers back over half a cell. The dense grid puts the planes on the
-ground; it is right for flows along the ground, but a floor thinner than a voxel resting on the ground (a 4 mm
-container floor) leaks there, so fills in containers keep the sparse grid.
+ground; it is right for flows along the ground, but through 0.1.2 a floor thinner than a voxel resting on the ground
+(a 4 mm container floor) leaked there. Every MPM step now ends by pushing particles back out of colliders, and the
+dense grid then holds the floor measured ([mpm-sparse-floor-offset.md](mpm-sparse-floor-offset.md)); fills in
+containers keep the sparse grid, the default.
 
 **Workaround.** For a flow along the ground with no floor thinner than a voxel (a film, a pour speed, a paste spreading
 on the ground plane), ask for the dense grid: `ALLOY_MPM_GRID=dense`, or

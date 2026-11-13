@@ -80,6 +80,30 @@ def is_identity(p: Pose, tol: float = 1e-9) -> bool:
                                                        np.abs(a[3:] + IDENTITY[3:]).max()) < tol)
 
 
+def scaled_mesh(vertices, faces, scale) -> IOMesh:
+    """The mesh with ``scale`` applied to its vertices. A mirroring scale (negative determinant) turns every
+    triangle inside out, so the winding is reversed to keep the normals pointing out.
+
+    >>> scaled_mesh([[0, 0, 0], [1, 0, 0], [0, 1, 0]], [[0, 1, 2]], (-1, 1, 1)).faces.tolist()
+    [[0, 2, 1]]
+    """
+    s = np.broadcast_to(np.asarray(scale, np.float64), (3,))
+    f = np.asarray(faces, np.int32).reshape(-1, 3)
+    return IOMesh(np.asarray(vertices, np.float64).reshape(-1, 3) * s, f[:, ::-1] if np.prod(s) < 0 else f)
+
+
+def signed_volume(mesh: IOMesh) -> float:
+    """Signed enclosed volume: negative when a closed mesh is wound inside out."""
+    v = mesh.vertices[mesh.faces]
+    return float(np.einsum("ij,ij->i", v[:, 0], np.cross(v[:, 1], v[:, 2])).sum() / 6.0)
+
+
+def outward(mesh: IOMesh) -> IOMesh:
+    """``mesh`` with outward normals: an inside-out mesh (negative signed volume, as a file's mirroring scale that
+    was baked into the vertices leaves it) gets its winding reversed."""
+    return IOMesh(mesh.vertices, mesh.faces[:, ::-1]) if signed_volume(mesh) < 0 else mesh
+
+
 def mesh_volume(mesh: IOMesh) -> float:
     """Enclosed volume of a closed, outward-wound triangle mesh (divergence theorem); 0 for open sheets."""
     v = mesh.vertices[mesh.faces]

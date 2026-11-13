@@ -35,7 +35,8 @@ def test_every_module_directory_is_a_package() -> None:
 def test_importer_extra() -> None:
     extras = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["optional-dependencies"]
     assert set(extras["import"]) == {"trimesh", "manifold3d", "coacd", "pillow", "huggingface_hub",
-                                     "scikit-image==0.25.2"}  # SCR-OSS19-4
+                                     "scikit-image==0.25.2",  # SCR-OSS19-4
+                                     "fast-simplification==0.2.0"}  # Gemini audit S2-005: meshops simplify needs it
 
 
 def test_usd_extra_carries_pxr_and_the_bundled_newtons_schema_pin() -> None:

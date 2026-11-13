@@ -187,7 +187,7 @@ print({k: est[k] for k in ("wall_time_s", "memory_bytes", "compile_s_first_run")
 
 ## Build options for speed
 
-Four more `alloy.build(...)` options, each in one process only (`processes=` refuses them):
+Five more `alloy.build(...)` options, each in one process only (`processes=` refuses them):
 - `contact_capacity=n` and `constraint_rows=m` (opt-in): MuJoCo's contact and constraint-row buffers per world. By
   default a robot of hundreds of collision shapes gets thousands of rows where it uses tens, and MuJoCo Warp (the
   GPU's route) runs its solver over the whole buffer. On one L4 at 2,048 worlds a Panda stepped 1.53x faster with
@@ -202,6 +202,20 @@ Four more `alloy.build(...)` options, each in one process only (`processes=` ref
   re-run ones match a whole re-run to rounding. Take `worlds // 16` as a rule of thumb (memory for n more worlds);
   `sim.report()["fine_reruns"]` counts the re-runs. It helps on the GPU. On the CPU's MuJoCo C route, beside a liquid
   or an MPM material, or when more worlds re-run than it holds, a re-run runs as before. Not with user plug-ins.
+- `clock_worlds=n` (opt-in; 0, the default, is off): in a scene with several solvers every world shares one exchange
+  step, the smallest any world needs. With `clock_worlds=n` the up to n worlds that need the smallest step move into
+  a second simulation of n worlds and step there at their own step; the rest share the larger step the neediest of
+  them asks for. Worlds that stay step bit for bit as if the moved ones were parked by hand; a moved world matches
+  its run without the option to rounding. `sim.report()["world_clock"]` has the books (`exchanges`,
+  `exchanges_shared`, an estimate: their ratio is the saving in exchanges, not in wall time). 64 worlds of a robot
+  beside a towel with randomized pad masses on one L4: 1.12-1.24x faster with `clock_worlds=4`; a 4-world CPU rig:
+  0.88x (slower, the second simulation's fixed cost). Not with `rerun_worlds` or `processes=` (BuildError); with
+  liquid, MPM, the contact gate, the CPU's default MuJoCo route or user plug-ins the build warns and steps as before;
+  `alloy.envs.VectorEnv` and `alloy.live` refuse such a simulation. Limits (also in
+  `sim.report()["world_clock"]["limits"]`): the clock floor and the coupling mode are each simulation's, not each
+  world's; a moved world takes the second simulation's substep rungs; moved worlds go through the host every period;
+  neither simulation keeps its captured graphs across a reset; no law yet covers a moved world that fails, or GPU
+  runs. Known gap: [coupling-shared-exchange-clock](../known_gaps/coupling-shared-exchange-clock.md).
 - `mpm_coupling`: how a robot or a body coupled to sand, soil or paste (MPM) trades forces with it. `"standard"`: two
   passes per exchange at 1.25 ms. The default, `"auto"`, runs one pass when the scene has a servo-driven robot and
   every body that starts near the material is that robot's link or welded, else standard (a free body that reaches the

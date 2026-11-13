@@ -100,13 +100,14 @@ def main() -> None:
     if args.save:
         rr.save(args.save)
     sim = alloy.build(scene(args.worlds))
-    exporter = FrameExporter(sim, worlds=[0, args.worlds - 1], max_points=20000)
+    exporter = FrameExporter(sim, worlds=sorted({0, args.worlds - 1}), max_points=20000)   # one world: [0]
     stop = threading.Event()
     thread = threading.Thread(target=publisher, args=(rr, exporter, stop), daemon=True)
     thread.start()
     for _ in range(int(round(args.seconds / sim.dt))):
         sim.step(1)
         exporter.capture()                              # never waits: a busy slot drops this frame
+    exporter.flush()                                    # the last copy lands before the publisher's final poll
     stop.set()
     thread.join(timeout=10.0)
     print(f"stepped {sim.t:.2f} s; frames dropped {exporter.dropped}")

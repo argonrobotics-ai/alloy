@@ -42,8 +42,11 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command line; returns the exit code."""
     logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
-    try:
-        ns = _parser().parse_args(argv)
+    from alloy.cli.spec import dash_values  # noqa: PLC0415
+
+    parser = _parser()
+    try:                                              # --up -y: a value starting with "-" stays the flag's value
+        ns = parser.parse_args(dash_values(parser, sys.argv[1:] if argv is None else argv))
     except SystemExit as exc:
         if exc.code in (0, None):
             return 0

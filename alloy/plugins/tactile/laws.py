@@ -25,13 +25,14 @@ import warp as wp
 from alloy._vendor import newton
 
 from alloy.plugins.harness.scene import Law, LawResult, TestScene, body_xform
+from alloy.plugins.tactile.coupled_law import PAD, coupled_check, normal_pad_force
 
 MU = 0.5
 PAD_H = 0.005          # pad half thickness (m)
 BOX = 0.006            # object half extent (m): its corners sit on taxel centres of the default 4 x 4 at 4 mm
 BOX_MASS = 0.05        # kg
 NOISE_OFF = {"noise": 0.0, "drift": 0.0, "tau_load": 0.0, "tau_unload": 0.0, "dead": 0.0, "crosstalk": 0.0,
-             "saturation": 0.0, "lsb": 0.0}
+             "saturation": 0.0, "lsb": 0.0, "opentac": ""}   # opentac "": these laws run on their own layouts
 SLIP_GRID = {**NOISE_OFF, "grid": (16, 4), "pitch": (0.004, 0.004)}
 SPHERE_AT = (0.0013, -0.0047)
 
@@ -156,4 +157,13 @@ def tactile_laws() -> list[Law]:
             doc="sliding: sensed shear/normal = μ"),
         Law("null", _check_null, scene=TestScene(build=_build_null, periods=10, ground_mu=1.0), config=NOISE_OFF,
             doc="no contact, no reading"),
+        Law("coupled_force", coupled_check(_tactile_on_probe, normal_pad_force),
+            scene=TestScene(build=_build_null, periods=1, ground_mu=1.0), config=NOISE_OFF,
+            doc="pad force beside liquid (a coupled scene) = rigid-only, within 2 %"),
     ]
+
+
+def _tactile_on_probe() -> Any:
+    from alloy.plugins.tactile.sensor import Tactile  # noqa: PLC0415 - sensor imports this module in laws()
+
+    return Tactile(**PAD)

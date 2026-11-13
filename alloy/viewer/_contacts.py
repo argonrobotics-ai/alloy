@@ -137,6 +137,8 @@ def force_on(sim: Any, name: str, world: int = 0) -> np.ndarray:
     """The net rigid-contact force on the object ``name`` in one world, (3,) newtons, world frame: the sum over its
     contacts, each taken with the sign for that object (``force`` where it is ``body_b``, ``-force`` where it is
     ``body_a``). A block resting on a table reads ``(0, 0, m g)``; the table reads the weight it carries, downward.
+    A robot or a rod's name counts all its parts (``"gripper"``: every ``"gripper/<link>"``; contacts between two
+    of its own parts cancel); a part's name (``"gripper/finger_left"``) counts that part alone.
     Example: ``alloy.viewer.force_on(sim, "block")[2]``."""
     known = sim.names()
     names = set(known.get("bodies", ())) | set(known.get("static", ()))
@@ -144,10 +146,32 @@ def force_on(sim: Any, name: str, world: int = 0) -> np.ndarray:
         from alloy.api.errors import UnknownNameError  # noqa: PLC0415 - keeps this module's import light
 
         raise UnknownNameError(f"no object named {name!r} in this sim", f"pick one of {sorted(names)}", field="name")
+    _warn_other_loads(sim)
     found = read(sim, [world])[int(world)]
-    on_b = np.array([b == name for b in found.body_b], dtype=bool)
-    on_a = np.array([a == name for a in found.body_a], dtype=bool)
+    on_b = np.array([_belongs(b, name) for b in found.body_b], dtype=bool)
+    on_a = np.array([_belongs(a, name) for a in found.body_a], dtype=bool)
     return found.force[on_b].sum(axis=0) - found.force[on_a].sum(axis=0)
+
+
+def _belongs(body: str, name: str) -> bool:
+    """True when a contact's body name is the object ``name`` or one of its parts (``"<name>/<part>"``)."""
+    return body == name or body.startswith(name + "/")
+
+
+#: routes whose loads on a rigid body are exchanged outside MuJoCo's contacts, so force_on does not see them
+OTHER_LOADS = ("cloth", "film", "soft", "sph", "liquid", "mpm", "rod_vbd")
+
+
+def _warn_other_loads(sim: Any) -> None:
+    """Once per sim, and only when it has them: say that cloth, soft-body, liquid and sand loads are not counted."""
+    if getattr(sim, "_alloy_force_on_noted", False):
+        return
+    sim._alloy_force_on_noted = True
+    routes = sorted({str(r.get("route", "")) for r in sim.routes().values()} if hasattr(sim, "routes") else ())
+    other = [r for r in routes if any(k in r for k in OTHER_LOADS)]
+    if other:
+        log.warning("force_on counts rigid contacts only (MuJoCo's): loads on an object from %s (cloth, soft bodies, "
+                    "liquid, sand) are not in it", ", ".join(other))
 
 
 def draw(backend: Any, sets: dict[int, ContactSet], *, points: bool = True, forces: bool = True) -> None:

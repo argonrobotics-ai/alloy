@@ -79,6 +79,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   folded.](../known_gaps/cloth-sleeve-fold-springback.md)
 - [Cloth held between pads by friction alone creeps out below the Coulomb limit, at about 2.9 mm/s at half the limit
   with default settings.](../known_gaps/cloth-friction-creep.md)
+- [Per-world and per-pair friction on cloth and soft bodies reaches their contacts with objects, not the friction
+  of a sheet with itself or between two cloths.](../known_gaps/cloth-friction-per-world.md)
 - [A robot's friction pinch on cloth creeps and lets go before the Coulomb limit, so lifting, carrying or folding
   cloth can lose it.](../known_gaps/cloth-robot-grasp-carry.md)
 - [Cloth gripped by friction on a moving rigid body can slip on it right after the body reverses, moving 0.35-0.65 of
@@ -93,6 +95,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   hold.](../known_gaps/vbd-self-contact-buffer-overflow.md)
 - [Paper and film keep only a flat fold made on one mesh line: a sheet bent 90 degrees over a plate edge does not keep
   the fold.](../known_gaps/film-fold-memory.md)
+- [A paper or film sheet given about 3x or more of its card's thickness is launched or goes INVALID when it is
+  folded.](../known_gaps/film-thick-sheet-fold.md)
 - [A very thin film (0.05 mm) draped over a sharp box edge goes INVALID, and the fix is opt-in in this
   release.](../known_gaps/film-thin-sheet-box-edge.md)
 - [Metal sheets sag far more than real ones at real density, which can yield them, and they bend unlike a plate across
@@ -152,6 +156,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
 
 - [A body dropped on a soft solid bounces back almost as fast as it arrived, far more than the materials' restitution
   says.](../known_gaps/soft-solid-bounce.md)
+- [A small body resting on a coarse soft solid can sink into one surface particle past health's
+  limit.](../known_gaps/soft-small-body-rests-on-one-particle.md)
 - [A flat tool pressed into a soft block compresses it without limit (up to 208 % strain) because only blade edges
   cut.](../known_gaps/soft-flat-tool-compression.md)
 - [Cutting with copied fragments on a coarse mesh has five limits, such as a piece needing two layers of mesh
@@ -204,6 +210,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   contact.](../known_gaps/health-mujoco-penetration.md)
 - [Worlds of a coupled scene share one exchange clock, so one world's events change the steps of every
   world.](../known_gaps/coupling-shared-exchange-clock.md)
+- [A frozen INVALID world still sets a coupled scene's clock, so a start overlap can make each control step take
+  minutes.](../known_gaps/coupling-frozen-world-sets-clock.md)
 - [With the opt-in contact gate, cloth resting on fixed geometry while the robot is away settles at a coarser
   step.](../known_gaps/coupling-contact-gate-settling.md)
 - [Contact between a soft or cloth particle and a MuJoCo body takes its gains from the exchange

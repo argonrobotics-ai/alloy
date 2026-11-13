@@ -22,6 +22,7 @@ from typing import Any
 
 import numpy as np
 
+from alloy.cards import types as ct
 from alloy.compose.body import Body
 from alloy.compose.errors import ComposeError
 from alloy.compose.layout import Layout, Placed
@@ -39,6 +40,8 @@ log = logging.getLogger("alloy.compose")
 
 SIZE_SCALE = {"small": 0.6, "large": 1.5}
 SETTLE_CABLE_S = 0.3
+CABLE_TURNS = (0.0, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 1.0, -1.0)   # rad: where a cable leaves its objects, in turn
+PORT_TRIES = 3                                   # ports drawn for a cable plugged in at one end
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,17 @@ class LayoutItem:
     thickness: float = 0.0
 
 
+def _box_size(item: ItemSpec, card: Any) -> tuple[float, float, float]:
+    """(length, width, thickness) of a thin-box sheet template at the size the item asks (or a size word's scale)."""
+    hx, hy, hz = card.shape.size
+    thick = float(card.features.thickness.value) if card.features.thickness is not None else 2 * hz
+    length, width = max(2 * hx, 2 * hy), min(2 * hx, 2 * hy)
+    scale = next((SIZE_SCALE[w] for w in item.words if w in SIZE_SCALE), 1.0)
+    length, width = item.soft.length_m or length * scale, item.soft.width_m or (
+        width * (item.soft.length_m / length) if item.soft.length_m else width * scale)
+    return length, width, thick
+
+
 class SoftPlanner:
     """Makes and places the soft items of one scene (``name``) into ``soft`` (a ``SoftScene``)."""
 
@@ -65,6 +79,7 @@ class SoftPlanner:
         self._templates: dict[int, Template] = {}
         self._n: dict[str, int] = {}
         self._draped: set[str] = set()                 # layout keys of drapes (a cable may run under one)
+        self._laid: list[np.ndarray] = []              # keep-out polygons of the cables laid so far (world xy)
 
     # --- items placed with the layout ---------------------------------------------------------------------------
 
@@ -92,16 +107,12 @@ class SoftPlanner:
     def _cloth(self, idx: int, item: ItemSpec) -> list[LayoutItem]:
         t = self._template(idx, item)
         card = self.library.object(t.card)
-        hx, hy, hz = card.shape.size
-        thick = float(card.features.thickness.value) if card.features.thickness is not None else 2 * hz
-        length, width = max(2 * hx, 2 * hy), min(2 * hx, 2 * hy)
-        scale = next((SIZE_SCALE[w] for w in item.words if w in SIZE_SCALE), 1.0)
-        length, width = item.soft.length_m or length * scale, item.soft.width_m or (
-            width * (item.soft.length_m / length) if item.soft.length_m else width * scale)
         mode = {"flat": "layout", "folded": "layout", "draped": "drape", "hanging": "hang"}[item.soft.form]
         if mode == "drape" and item.target is None:
             raise ComposeError(f"{item.query}: draped over nothing", "say what it covers: 'a towel draped over a "
                                "bowl'", field="items.target")
+        length, width, thick = self._mesh_size(item, t.card, card) if isinstance(card.shape, ct.MeshSource) else \
+            _box_size(item, card)
         out = []
         for _ in range(item.count):
             sc, body = self._sheet(item, card, length, width, thick)
@@ -115,9 +126,26 @@ class SoftPlanner:
             self.soft.settle_s = max(self.soft.settle_s, SH.SETTLE_DRAPE_S)
         return out
 
+    def _mesh_size(self, item: ItemSpec, name: str, card: Any) -> tuple[float, float, float]:
+        """(length, width, thickness) of a sheet whose shape is its own mesh (the scored kraft sheet: its crease is
+        in the mesh), at its own size; asking for another size, or for it folded in half, raises with what to ask."""
+        sx, sy, _sz = self.catalog.info(name).size
+        length, width = max(sx, sy), min(sx, sy)
+        if item.soft.form == "folded":
+            raise ComposeError(f"{item.query}: {name} has its crease in its mesh, so the builder does not fold it in "
+                               "half", f"ask for it flat ('{item.query} on a table'): it folds on its crease when "
+                               "pushed; or ask for kraft paper folded in half", field="items.soft.form")
+        if item.soft.length_m or item.soft.width_m or any(w in SIZE_SCALE for w in item.words):
+            raise ComposeError(f"{item.query}: {name} comes at its own size ({length:.2f} x {width:.2f} m)",
+                               "leave the size out, or ask for kraft paper at that size", field="items.soft")
+        return length, width, float(card.features.thickness.value)
+
     def _sheet(self, item: ItemSpec, card: Any, length: float, width: float, thick: float) -> tuple[Any, Any]:
-        """(card, layout body) of one sheet: the template at this size, or folded in half as a two-layer mesh."""
+        """(card, layout body) of one sheet: the template at this size, a mesh sheet as it is, or folded in half as a
+        two-layer mesh."""
         name = self._name(item.query)
+        if isinstance(card.shape, ct.MeshSource):
+            return K.mesh_sheet(name, card), SH.sheet_body(name, length, width, thick)
         if item.soft.form != "folded":
             return K.cloth_sheet(name, card, length, width), SH.sheet_body(name, length, width, thick)
         from alloy.scene.emitters.deformable import CLOTH_VERTS_TARGET  # noqa: PLC0415 - the grid sheets' density
@@ -204,11 +232,9 @@ class SoftPlanner:
         radius = item.soft.diameter_mm * 5e-4 if item.soft.diameter_mm else float(card.shape.radius)
         base = float(np.linalg.norm(np.subtract(card.shape.points[-1], card.shape.points[0])))
         length = item.soft.length_m or base
-        ends = [self.targets(layout, q)[:1] for q in item.soft.attach]
-        if any(not e for e in ends):
-            raise ComposeError(f"{item.query}: an object it is attached to was not placed", "see the missing list")
+        ends = self._ends(layout, item)
         for _ in range(item.count):
-            pts, keys = self._lay(layout, [e[0] for e in ends], length, radius, item.soft.form == "straight")
+            pts, keys = self._lay(layout, ends, length, radius, item.soft.form == "straight")
             name = self._name(item.query)
             sc = K.cable_curve(name, card, pts - pts[0], radius, length if len(ends) < 2 else None)
             pts = pts[0] + np.asarray(sc.obj.shape.points)             # as laid: a free end is cut to the length
@@ -219,6 +245,7 @@ class SoftPlanner:
                 raise ComposeError(f"{name}: the engine cannot route a {length:.2f} m cable: {err[:300]}",
                                    "ask for a shorter or thicker cable")
             links = int(nums.get("links", 0))
+            self._laid += C.footprint(pts, radius)                     # the next cables keep clear of this one
             start = tuple(float(v) for v in pts[0])
             self.soft.extras.append(Extra(sc, tuple(keys), lambda placed, s=start: s + (0.0, 0.0, 0.0, 1.0), {}))
             self.soft.watches.append(Watch("cable", name, expect={"length": C.path_length(pts)}))
@@ -232,22 +259,47 @@ class SoftPlanner:
                       diameter_mm=round(2e3 * radius, 3), route=route, links=links, attached=list(keys))
             self.soft.settle_s = max(self.soft.settle_s, SETTLE_CABLE_S)
 
+    def _ends(self, layout: Layout, item: ItemSpec) -> list[Placed]:
+        """The objects a cable's ends are fixed to, one per named end, never one object for both ("from a mug to a
+        mug" takes two mugs)."""
+        ends: list[Placed] = []
+        for q in item.soft.attach:
+            found = self.targets(layout, q)
+            if not found:
+                raise ComposeError(f"{item.query}: an object it is attached to was not placed", "see the missing list")
+            free = [p for p in found if all(p.key != e.key for e in ends)]
+            if not free:
+                raise ComposeError(f"{item.query}: both its ends are on the one {q} in the scene",
+                                   f"ask for a second {q}, or end the {item.query} on another object")
+            ends.append(free[0])
+        return ends
+
     def _lay(self, layout: Layout, ends: list[Placed], length: float, radius: float, straight: bool
              ) -> tuple[np.ndarray, list[str]]:
+        """A free path for one cable, clear of the cables laid before it: between its two ends (leaving them further
+        round at each try, ``CABLE_TURNS``), from its one end, or anywhere on the table."""
         keys = [e.key for e in ends]
         under = tuple(keys) + tuple(k for k in self._draped if k in layout.placed and layout.placed[k].target in keys)
         centre = np.mean(layout.area, axis=0)
+        pts = None
         if len(ends) == 2:
-            a, _ = C.port(ends[0], ends[1].outline.mean(axis=0), radius)
-            b, _ = C.port(ends[1], ends[0].outline.mean(axis=0), radius)
-            pts = C.between(layout, a, b, max(length, 1.15 * float(np.linalg.norm(b[:2] - a[:2]))), radius,
-                            under)
+            for turn in CABLE_TURNS:                   # the ends turn opposite ways: the cable shifts to one side
+                a, _ = C.port(ends[0], ends[1].outline.mean(axis=0), radius, turn)
+                b, _ = C.port(ends[1], ends[0].outline.mean(axis=0), radius, -turn)
+                pts = C.between(layout, a, b, max(length, 1.15 * float(np.linalg.norm(b[:2] - a[:2]))), radius,
+                                under, self._laid)
+                if pts is not None:
+                    break
         elif len(ends) == 1:
-            toward = centre + layout.rng.normal(0.0, 0.1, 2)
-            a, heading = C.port(ends[0], toward, radius)
-            pts = C.loose_path(layout, length, radius, straight=straight, start=a, heading=heading, skip=under)
+            for _ in range(PORT_TRIES):
+                toward = centre + layout.rng.normal(0.0, 0.1, 2)
+                a, heading = C.port(ends[0], toward, radius)
+                pts = C.loose_path(layout, length, radius, straight=straight, start=a, heading=heading, skip=under,
+                                   avoid=self._laid)
+                if pts is not None:
+                    break
         else:
-            pts = C.loose_path(layout, length, radius, straight=straight)
+            pts = C.loose_path(layout, length, radius, straight=straight, avoid=self._laid)
         if pts is None:
             raise ComposeError(f"no free path for a {length:.2f} m cable on the table", "ask for a shorter cable, a "
                                "tidier table or fewer objects")

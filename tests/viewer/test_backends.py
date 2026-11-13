@@ -82,7 +82,7 @@ def test_import_failure_inside_the_backend_names_the_pip_line(monkeypatch):
     monkeypatch.setitem(_backends._FACTORIES, "gl", broken)
     with pytest.raises(alloy.FeatureUnavailableError) as err:
         create("gl", BackendOptions())
-    assert "libGL" in err.value.message and PIP["gl"] in err.value.fix
+    assert "libGL" in err.value.message and PIP["gl"] in err.value.fix and "libgl1" in err.value.fix
 
 
 @pytest.mark.parametrize(("text", "parts"), [("1.1.1", (1, 1, 1)), ("1.1.1rc2", (1, 1, 1)), ("0.2.23", (0, 2, 23)),

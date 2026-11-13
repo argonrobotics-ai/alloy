@@ -315,17 +315,27 @@ class KeyboardTeleop:
 
 
 
+COUNTERS = {"saved": "saved", "discarded": "dropped"}      # teleop_loop's count -> the Recorder attribute behind it
+
+
 def teleop_loop(session: Any, device: Any, *, realtime: bool = True, max_steps: int | None = None,
                 on_step: Callable[[int, Any], None] | None = None) -> dict[str, int]:
     """Drive ``session`` (an ``alloy.il.Recorder``) from ``device`` until quit, ``max_steps`` periods, or the
     device's ``ScriptKeys`` run out. Save/discard end the running episode; quit (or Ctrl-C) drops it. The device is
-    always closed. Returns ``{"steps": n, "saved": k, "discarded": m}``.
+    always closed. Returns ``{"steps": n, "saved": k, "discarded": m}``: episodes written and episodes dropped,
+    one per world, the one running at quit included.
+
+    The operator decides what is saved: while the loop runs the recorder is in ``manual`` mode, so an episode the
+    env itself ends is saved only when it passed the success check (and ``keep`` allows it); an attempt that ran
+    into the task's ``max_steps`` without Save is dropped and counted in ``discarded``.
 
     Call ``session.reset()`` first (the loop raises "step before reset" otherwise).
 
     Example: ``recorder.reset(); teleop_loop(recorder, KeyboardTeleop(env.action_names(), dt=env.sim.dt))``."""
     dt, deadline = float(session.env.sim.dt), time.perf_counter()
     stats = {"steps": 0, "saved": 0, "discarded": 0}
+    before = {k: int(getattr(session, a)) for k, a in COUNTERS.items() if hasattr(session, a)}
+    manual, session.manual = getattr(session, "manual", False), True
     try:
         for index in (count() if max_steps is None else range(max_steps)):
             if getattr(getattr(device, "keys", None), "exhausted", False):
@@ -342,6 +352,9 @@ def teleop_loop(session: Any, device: Any, *, realtime: bool = True, max_steps: 
         session.finish(save=False)
     finally:
         device.close()
+        session.manual = manual
+    for key, start in before.items():                      # a Recorder counts what it wrote and dropped itself
+        stats[key] = int(getattr(session, COUNTERS[key])) - start
     return stats
 
 
@@ -349,10 +362,8 @@ def _apply(session: Any, cmd: TeleopCommand, stats: dict[str, int], index: int,
            on_step: Callable[[int, Any], None] | None) -> None:
     """Run one command on the session and update the counters."""
     if cmd.save or cmd.discard:
-        before = getattr(session, "saved", None)
         session.finish(save=cmd.save)
-        wrote = 1 if before is None else int(session.saved - before)       # a Recorder counts what it wrote
-        stats["saved" if cmd.save else "discarded"] += wrote if cmd.save else 1
+        stats["saved" if cmd.save else "discarded"] += 1       # a session that is not a Recorder: one per key press
         return
     out = session.step(np.tile(cmd.action, (session.num_envs, 1)))
     stats["steps"] += 1

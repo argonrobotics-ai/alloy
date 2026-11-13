@@ -142,8 +142,9 @@ def test_follower_leaves_the_coupled_pair_unchanged():
 
 
 def test_follower_rung_follows_the_sph_cfl():
-    """Adaptive leaf: a particle at 2 m/s needs dt <= safety·cfl·2r/v = 0.5·0.2·2e-3/2 = 1e-4 s -> rung 8 at 0.625 ms;
-    raised at once, then lowered one ladder step after the quiet periods once the liquid is slow."""
+    """Adaptive leaf: a particle at 2 m/s needs dt <= safety·margin·cfl·2r/v = 0.5·0.25·0.2·2e-3/2 = 2.5e-5 s -> rung 32
+    at 0.625 ms (``DFSPHConfig.speed_margin`` 0.25 while the liquid moves fast, COUPLE-9; rung 8 before); raised at
+    once, then lowered one ladder step after the quiet periods once the liquid is slow."""
     cfg = default_config(coupling="one_way")
     sc = water_column(4, 4, 4, cfg=cfg)
     m = sc.model
@@ -157,11 +158,12 @@ def test_follower_rung_follows_the_sph_cfl():
     s0.particle_qd.assign(qd)
     follower.step(s0, s1, None, None, DT)
     stable = follower._leaves[0].stable.numpy()[0]
-    assert stable <= cfg.cfl * cfg.spacing / 1.5                     # the 2 m/s particle sets the step
-    assert follower.choose_clock(0.02, None)[1]["sph"] == 8
+    margin = "speed_margin 0.25 of the CFL step while the liquid moves fast: 0.25 x cfl x 2r / v (COUPLE-9)"
+    assert stable <= cfg.speed_margin * cfg.cfl * cfg.spacing / 1.5, margin   # the 2 m/s particle sets the step
+    assert follower.choose_clock(0.02, None)[1]["sph"] == 32, f"rung 32 at 2 m/s (8 before): {margin}"
     follower._leaves[0].stable.fill_(cfg.dt_max)                     # liquid at rest
     rungs = [follower.choose_clock(0.02, None)[1]["sph"] for _ in range(4)]
-    assert rungs == [8, 4, 4, 2]
+    assert rungs == [32, 16, 16, 8], f"the ladder steps down from rung 32 ([8, 4, 4, 2] before): {margin}"
 
 
 class _NoBodies:
@@ -185,7 +187,8 @@ def test_sph_estimator_is_the_solver_cfl_step():
     est.alloy_stable_dt(state, None, out)
     got = out.numpy()
     assert got[0] == pytest.approx(cfg.dt_max)                     # at rest: the solver's dt_max clamp
-    assert got[1] == pytest.approx(cfg.cfl * cfg.spacing / 1.0, rel=1e-6)
+    assert got[1] == pytest.approx(cfg.speed_margin * cfg.cfl * cfg.spacing / 1.0, rel=1e-6), \
+        "speed_margin 0.25 of the CFL step while the liquid moves fast: 0.25 x cfl x 2r / v (COUPLE-9)"
 
 
 def _floating_box_scheduler(calls: dict, pipeline=lambda _m: None):

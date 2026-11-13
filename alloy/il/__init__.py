@@ -33,7 +33,7 @@ from __future__ import annotations
 from alloy.il.episode import DatasetSpec, Episode, MemoryWriter, Writer
 from alloy.il.evaluate import EvalResult, evaluate, wilson_interval
 from alloy.il.generate import DEMONSTRATORS, GenerateResult, demonstrator, generate
-from alloy.il.hdf5 import HDF5Writer, load_hdf5
+from alloy.il.hdf5 import HDF5Writer, copy_hdf5, load_hdf5
 from alloy.il.lerobot import LeRobotWriter
 from alloy.il.recorder import Recorder
 from alloy.il.replay import ReplayResult, replay
@@ -45,4 +45,4 @@ from alloy.il.teleop import KeyboardTeleop, ScriptKeys, TeleopCommand, TerminalK
 __all__ = ["DEMONSTRATORS", "DatasetSpec", "Episode", "EvalResult", "GenerateResult", "HDF5Writer", "KeyboardTeleop",
            "LeRobotWriter", "MemoryWriter", "Phase", "PhaseScript", "Recorder", "ReplayResult", "ScriptKeys",
            "SpaceMouseTeleop", "TeleopCommand", "TerminalKeys", "WorldSnapshot", "Writer", "demonstrator", "evaluate",
-           "generate", "load_hdf5", "replay", "teleop_loop", "wilson_interval"]
+           "copy_hdf5", "generate", "load_hdf5", "replay", "teleop_loop", "wilson_interval"]

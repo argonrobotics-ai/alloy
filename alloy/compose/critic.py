@@ -23,6 +23,7 @@ from typing import Any
 import numpy as np
 
 from alloy.cards import types as ct
+from alloy.compose.errors import ComposeError
 from alloy.compose.layout import Layout, Placed
 
 log = logging.getLogger("alloy.compose")
@@ -101,7 +102,9 @@ class Critic:
 
     def seat_robots(self, layout: Layout) -> None:
         """Lift each robot whose base geometry reaches into the support (a mount flange below the base origin) by
-        the overlap the load check measures, so it stands on the table top. Lifts are kept per robot file."""
+        the overlap the load check measures, so it stands on the table top. Lifts are kept per robot file. Robots
+        that fail that check otherwise (the scene does not assemble, a mesh they name is missing) raise
+        ``ComposeError`` (field "robots") naming their files, before any object is placed."""
         if self.mode == "none" or not self.robots:
             return
         from alloy.check import check_load  # noqa: PLC0415
@@ -113,9 +116,15 @@ class Critic:
             self.robots = [dataclasses.replace(r, pose=(*r.pose[:2], r.pose[2] + lift.get(r.spec.path, 0.0),
                                                         r.pose[3])) for r in base]
             robots = tuple(ct.RobotRef(r.spec.path, r.spec.kind, r.base_pose(), r.spec.name) for r in self.robots)
-            report = check_load(ct.SceneCard(robots=robots, objects=(sup,)), worlds=1, device=self.device,
-                                library=self.library)
+            try:
+                report = check_load(ct.SceneCard(robots=robots, objects=(sup,)), worlds=1, device=self.device,
+                                    library=self.library)
+            except Exception as exc:         # the loader could not read a robot (a mesh it names is missing)
+                raise _robots_fail(self.robots, _why(exc)) from exc
             self.checks_run += 1
+            bad = [f for f in report.errors() if f.check != "overlap"]      # overlaps: lifted below
+            if bad:
+                raise _robots_fail(self.robots, bad[0].message, bad[0].fix)
             deep = {o: float(f.value or 0.0) for f in report.findings if f.check == "overlap" and f.level == "error"
                     for o in f.objects if o != layout.support.card}
             if not deep:
@@ -180,7 +189,7 @@ class Critic:
                 return
             if not bad:
                 errors = [f.message for f in report.findings if f.level == "error"] or ["load check failed"]
-                self._drop_soft(errors[0] + (f"; {MIX_FIX}" if "SCR-DC5-7" in errors[0] else ""), None)
+                self._drop_soft(errors[0] + (f"; {MIX_FIX}" if _too_many_kinds(errors[0]) else ""), None)
                 return
             for name, why in bad.items():
                 self._drop_soft(why, name)
@@ -217,6 +226,9 @@ class Critic:
             card, names = self.card(layout)
             try:
                 report = check_load(card, worlds=1, device=self.device, library=self.library)
+                if _pair_refused(report):        # not this pose's doing: drop_refused_pairs takes a side out later
+                    card, names = self._without_refused_pairs(card, names, key)
+                    report = check_load(card, worlds=1, device=self.device, library=self.library)
             except Exception as exc:  # noqa: BLE001 - an object that breaks the build is not placed, with why
                 self.log.append(f"{key}: the scene does not build with it ({_why(exc)})")
                 return BROKEN
@@ -235,6 +247,29 @@ class Critic:
                 return RETRY
             self.log.extend(f"{key}: fixed: {a}" for a in applied)
         return RETRY
+
+    def _without_refused_pairs(self, card: ct.SceneCard, names: dict[str, str],
+                               key: str) -> tuple[ct.SceneCard, dict[str, str]]:
+        """``card`` and ``names`` for ``key``'s load check without the partners of each solver pair the engine refuses
+        in one scene (a towel and a pile of sand): the side without ``key`` (the second side when ``key`` is on
+        neither) is left out of the check only; ``drop_refused_pairs`` later takes a side out of the scene, with why.
+        """
+        from alloy.compose.soft import pairs  # noqa: PLC0415
+
+        rods = frozenset(n for n, c in self.soft.cards.items() if not _solid(c)) if self.soft else frozenset()
+        for _ in range(3):
+            hit = pairs.refused(card, self.library, rods)
+            if hit is None:
+                break
+            exc, routes = hit
+            sides = [{n for n, r in routes.items() if r == str(p)} for p in exc.pair]
+            out = sides[0] if any(names.get(n) == key for n in sides[1]) else sides[1]
+            keep = [n not in out for n in names]
+            card = dataclasses.replace(
+                card, objects=tuple(o for o, k in zip(card.objects, keep) if k),
+                attachments=tuple(a for a in card.attachments if not {a.a.split(":")[0], a.b.split(":")[0]} & out))
+            names = {n: v for n, v in names.items() if n not in out}
+        return card, names
 
     def _take_lifts(self, layout: Layout, before: ct.SceneCard, after: ct.SceneCard, names: dict[str, str]) -> bool:
         """Copy small position changes back into the layout; False if a fix wants a rotation or a big move."""
@@ -317,6 +352,23 @@ def _spread(pose: tuple[float, ...], j: float) -> tuple[ct.Randomization, ...]:
     return (ct.Randomization("pose.0", pose[0] - j, pose[0] + j), ct.Randomization("pose.1", pose[1] - j, pose[1] + j))
 
 
+def _pair_refused(report: Any) -> bool:
+    """A load check that failed at assembly on a solver pair the engine refuses in one scene
+    (``alloy.coupling.unsupported``), which ``drop_refused_pairs`` resolves, not the placement."""
+    from alloy.coupling.unsupported import UnsupportedPairError  # noqa: PLC0415
+
+    tag = f"{UnsupportedPairError.__name__}:"
+    return any(f.check == "cards" and f.level == "error" and tag in f.message for f in report.findings)
+
+
+def _too_many_kinds(message: str) -> bool:
+    """The engine's refusal of a liquid beside more deformable kinds than it couples (``UnsupportedSceneError``;
+    older refusals of it carry their decision tag)."""
+    from alloy.scene.coupler_select import UnsupportedSceneError  # noqa: PLC0415
+
+    return f"{UnsupportedSceneError.__name__}:" in message or "SCR-DC5-7" in message
+
+
 def _solid(card: Any) -> bool:
     """A generated card that is not a cable (whose curve route runs a slow self-test and is in no refused pair).
 
@@ -334,6 +386,15 @@ def _why(exc: Exception, most: int = 200) -> str:
     if isinstance(fix, str) and fix and fix not in text[:most]:
         out += f"; to fix: {fix[:most]}"
     return out
+
+
+def _robots_fail(robots: list, why: str, fix: str | None = None) -> ComposeError:
+    """The error for robots that fail the load check on the bare table (``seat_robots``): a robot the engine cannot
+    read or assemble would otherwise fail every later placement and be blamed on each object in turn."""
+    files = ", ".join(repr(r.spec.path) for r in robots)
+    what = f"robot {files} does" if len(robots) == 1 else f"robots {files} do"
+    return ComposeError(f"the {what} not load on the table: {why}", fix or "fix the robot file or give another robot",
+                        field="robots")
 
 
 def _overlap_warning(f, names: dict[str, str], key: str) -> bool:

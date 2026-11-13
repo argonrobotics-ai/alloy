@@ -235,6 +235,34 @@ def check_riders(items: Mapping[str, Mapping[str, Any]], attachments: Sequence[M
                                  field="attachments")
 
 
+def random_target(items: Mapping[str, Mapping[str, Any]], name: str, field: str, lo: float,
+                  hi: float) -> tuple[str, float, float]:
+    """The object ``Scene.randomize(name, field, lo, hi)`` draws on, and its range: ``name`` itself, or for a kinematic
+    fixture's name and an x / y / z draw its floor, the body that carries every part (``z`` moved from the fixture's
+    bottom face, its ``pos``, to the floor's centre). Anything else named by a fixture is a SceneError when called,
+    with a fix that builds: a static fixture's start (the same in every world), a kinematic fixture's density (one
+    body, as ``check_riders`` says at build) and any other field (drawn part by part). A part named by itself is drawn
+    as named (``check_riders`` refuses a rider's start at build).
+
+    Example: ``random_target(scene.items, "bin", "z", 0.0, 0.1)`` -> ``("bin_floor", 0.002, 0.102)`` (4 mm floor)."""
+    from alloy.api import _random, _worlds  # noqa: PLC0415
+
+    parts = [n for n, it in items.items() if it.get("fixture") == name] if name not in items else []
+    if not parts:
+        return name, lo, hi                                      # an object or a part, not a fixture's name
+    path, kinematic = _random.card_path(name, field), name in kinematic_groups(items)
+    if path not in _worlds.AXES:
+        if kinematic and path == "material.density":
+            raise SceneError(f"{name!r}: the kinematic fixture is one body, so its density cannot be drawn part by "
+                             "part", "drop the density draw (a kinematic fixture moves as driven)", field="field")
+        raise SceneError(f"{name!r} is a fixture of {len(parts)} parts: its {field!r} is drawn part by part",
+                         f"randomize each part you mean by its name: {', '.join(map(repr, parts))}", field="name")
+    if not kinematic:
+        _worlds.refuse_static(name, "a static fixture")
+    shift = float(items[parts[0]]["shape"]["primitive"]["size"][2]) if _worlds.AXES[path] == 2 else 0.0  # half height
+    return parts[0], float(lo) + shift, float(hi) + shift
+
+
 def own_rows(per_world_pos: Mapping[str, Any], items: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
     """Per-world start rows less a kinematic fixture's non-root parts: they ride the root's body, whose row moves
     them all. Example: ``own_rows(materialized.per_world_pos, scene.items)``."""

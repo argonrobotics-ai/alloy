@@ -81,6 +81,14 @@ with `python -m alloy.envs.loco.train`. The policy walks blind, and nothing here
 Draw a different value in every world with `scene.randomize("ball", "friction", 0.6, 1.0)`: it is seeded by
 `alloy.build(scene, seed=)`. Other fields such as `density` work the same way.
 
+## Trained policies to download
+
+Three checkpoints are on the Hugging Face Hub, each with an evaluation script and its measured result
+(alloy-engine 0.1.0rc2, one training run, one NVIDIA L4):
+[Go2 walking](https://huggingface.co/argonrobotics-ai/alloy-go2-walk),
+[cable lift](https://huggingface.co/argonrobotics-ai/alloy-cable-lift) and
+[pour](https://huggingface.co/argonrobotics-ai/alloy-pour).
+
 ## Keep in mind
 
 - No shipped trainer learns from camera images: on a camera environment (`GripperLiftCamera-v0`) the one-command

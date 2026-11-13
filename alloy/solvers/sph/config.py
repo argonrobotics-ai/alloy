@@ -63,6 +63,7 @@ class DFSPHConfig:
     min_iterations: int = 2
     max_iterations: int = 50
     cfl: float = 0.2  # dt <= cfl·2r/|v|max, snapped down to the D4 grid at period boundaries
+    speed_margin: float = 0.25  # coupled clock's estimate: this x the CFL step (a pour beside cloth splashed at 1)
     dt_min: float = 1.953125e-5
     dt_max: float = 1.25e-3
     viscosity: Literal["auto", "none", "xsph", "weiler2018"] = "auto"  # auto: weiler2018 if mu > 1e-2 Pa·s
@@ -171,6 +172,7 @@ class DFSPHConfig:
             (0.0 < self.min_density_error <= self.max_density_error,
              "need 0 < min_density_error <= max_density_error"),
             (0.0 < self.cfl <= 1.0, "cfl must be in (0, 1]"),
+            (0.0 < self.speed_margin <= 1.0, "speed_margin must be in (0, 1]"),
             (0.0 < self.dt_min <= self.dt_max, "need 0 < dt_min <= dt_max"),
             (self.viscosity in ("auto", "none", "xsph", "weiler2018"), f"unknown viscosity {self.viscosity!r}"),
             (self.surface_tension in ("none", "akinci2013", "csf"),

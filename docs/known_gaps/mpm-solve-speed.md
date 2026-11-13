@@ -35,8 +35,8 @@ synchronize, so a period reads about 1 s slower than untimed):
 The solve's loop (16 solves, counted on the host) averages 203 sweeps at 1e-4, with 9 of 16 at the cap. At 3e-4 it
 averages 130, with 2 of 16 at the cap. So the 22 % from the looser tolerance is all the solve's.
 
-One world on the CPU: a pressed dough ball takes 210 iterations per solve on average and often hits the 250 cap
-(0.2 s, 160 solves); at 3e-4 it takes 166. The sand fill converges in fewer iterations, so the tolerance barely
+One world on the CPU: a pressed dough ball takes 205 iterations per solve on average and often hits the 250 cap
+(0.2 s, 160 solves); at 3e-4 it takes 153. The sand fill converges in fewer iterations, so the tolerance barely
 changes its time.
 
 ## Why
@@ -53,8 +53,8 @@ square of its width in sweeps before its bulk mode settles. Newton's other solve
 - The default tolerance is 3e-4, a 3x looser residual than Newton's 1e-4. `ALLOY_MPM_TOLERANCE` changes it when a
   scene is built (`alloy.integration.mpm_solve`): `ALLOY_MPM_TOLERANCE=1e-4` for the tighter solve. A scene's own MPM
   solver arguments win over both.
-  - Effect: a pressed dough ball's particles move by mean 0.07 mm, max 0.52 mm against 1e-4, 2.4x the solver's own
-    floor (1e-4 against 1e-5: mean 0.03, max 0.22 mm).
+  - Effect: a pressed dough ball's particles move by mean 0.08 mm, max 0.65 mm against 1e-4, 2.3x the solver's own
+    floor (1e-4 against 1e-5: mean 0.035, max 0.14 mm).
   - Validation: every MPM law and the dough, paste and soil tasks pass at it within their own bands.
   - Accepted range: 1e-5 to 3e-4. Looser values are refused, because every solve would stop unconverged.
 - Fewer worlds per GPU also help, since time scales with worlds once the GPU is busy. The CPU runs one world per core

@@ -28,6 +28,9 @@ GEO = newton.GeoType
 COLLIDE = int(newton.ShapeFlags.COLLIDE_SHAPES)
 CELLS_PER_PASS = 4_000_000      # worlds x bodies x bodies booleans per numpy pass (start drops and loads)
 RESTING_TOL = 1.0e-3            # m: a body this far into what is under it still rests on it (start contact)
+WIDTH_ONE_PASS = 25_000_000     # vertices x directions: a mesh's width probe in one projection up to this (200 MB)
+WIDTH_WORK = 400_000_000        # vertices x directions in all for a larger mesh (its hull vertices, fewer directions)
+WIDTH_PASS = 4_000_000          # vertices x directions per projection pass of a larger mesh (32 MB)
 
 
 @dataclass(frozen=True)
@@ -76,13 +79,50 @@ def _mesh_box(src: Any, scale: np.ndarray, convex: bool) -> tuple[np.ndarray, np
     v = np.asarray(src.vertices, np.float64) * scale
     f = np.asarray(src.indices, np.int64).reshape(-1, 3)
     lo, hi = v.min(axis=0), v.max(axis=0)
-    n = np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]])
-    n = n[np.linalg.norm(n, axis=1) > 1e-12]
-    dirs = np.vstack([np.eye(3), n / np.linalg.norm(n, axis=1, keepdims=True)]) if len(n) else np.eye(3)
-    proj = v @ dirs.T
-    width = float((proj.max(axis=0) - proj.min(axis=0)).min())
     mesh = None if convex else geo.MeshData(v, f)
-    return 0.5 * (lo + hi), 0.5 * (hi - lo), width, mesh
+    return 0.5 * (lo + hi), 0.5 * (hi - lo), min_width(v, f), mesh
+
+
+def min_width(v: np.ndarray, f: np.ndarray) -> float:
+    """Smallest width of the vertices ``v`` over the axes and the unit normals of the faces ``f``: a mesh's thinnest
+    member as the caps read it. Up to ``WIDTH_ONE_PASS`` vertex x direction products it is one projection. A width is
+    an extent, which the convex hull's vertices carry alone, so a larger mesh is probed on its hull vertices, over at
+    most ``WIDTH_WORK`` / (hull vertices) directions (``_fewer``), in passes of ``WIDTH_PASS`` products (a
+    1.3 M-face scan asked one projection for 6.25 TiB)."""
+    c = np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]])
+    area = np.linalg.norm(c, axis=1)
+    n = c[area > 1e-12] / area[area > 1e-12, None]
+    if len(v) * (len(n) + 3) <= WIDTH_ONE_PASS:
+        proj = v @ np.vstack([np.eye(3), n]).T
+        return float((proj.max(axis=0) - proj.min(axis=0)).min())
+    v = _hull_vertices(v)
+    dirs = np.vstack([np.eye(3), _fewer(n, area[area > 1e-12], max(64, WIDTH_WORK // len(v)))])
+    step = max(1, WIDTH_PASS // len(v))
+    return float(min(np.ptp(v @ dirs[i:i + step].T, axis=0).min() for i in range(0, len(dirs), step)))
+
+
+def _hull_vertices(v: np.ndarray) -> np.ndarray:
+    """The convex hull's vertices of ``v`` (every vertex for a flat or degenerate set qhull refuses)."""
+    from scipy.spatial import ConvexHull, QhullError  # noqa: PLC0415 - large meshes only
+
+    try:
+        return v[ConvexHull(v).vertices]
+    except (QhullError, ValueError):
+        return v
+
+
+def _fewer(n: np.ndarray, area: np.ndarray, k: int) -> np.ndarray:
+    """At most about ``k`` of the unit normals ``n``: binned on a polar x azimuth grid of about ``k`` cells, each
+    cell's largest face (a flat side's own normal survives, so a thin plate keeps its exact width)."""
+    if len(n) <= k:
+        return n
+    m = max(1, int(math.sqrt(k / 2.0)))
+    theta = np.minimum((np.arccos(np.clip(n[:, 2], -1.0, 1.0)) / math.pi * m).astype(np.int64), m - 1)
+    phi = np.minimum(((np.arctan2(n[:, 1], n[:, 0]) + math.pi) / (2.0 * math.pi) * 2 * m).astype(np.int64), 2 * m - 1)
+    cell = theta * (2 * m) + phi
+    order = np.lexsort((-area, cell))
+    first = order[np.r_[True, cell[order][1:] != cell[order][:-1]]]
+    return n[np.sort(first)]
 
 
 def shape_box(b: newton.ModelBuilder, s: int) -> ShapeBox | None:

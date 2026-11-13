@@ -25,7 +25,8 @@ default 3e-4 the slower press never reached yield (14 % low); 1e-5 with 1,000 it
 A punch needs more than a squeeze (slice 2, ``[internal note]``): a 5 mm ball pressed 1 mm into a
 4,000-particle block (E 3 MPa, yield 50 kPa) read 0.84 of its converged force at slice 1's 1e-4 and 250 iterations,
 0.99 at ``TOLERANCE`` 1e-5 and ``MAX_ITERATIONS`` 1,000 (1.35x the wall time on a CPU; 1.4-1.5x on an L4 at 1,024
-worlds, 3.31 -> 3.86 N in every world). The whole entry runs at this tolerance and cap: every MPM material beside the
+worlds, 3.31 -> 3.86 N in every world). The whole entry runs at this tolerance and cap, and with the Delassus
+regularization ``DELASSUS_REGULARIZATION`` (slice 2b; vendored patch 0015): every MPM material beside the
 j2 solid pays for it (``install_notes`` says so in ``sim.routes()``). Stiff solids do not converge at any cap a run
 can afford: the sweeps a step needs grow as (c dt / h)^2 (``sweeps_needed``), so a real metal reads its force a few %
 of the truth (``stiffness_warning``). The entry runs on the dense grid (``grid_type``).
@@ -39,13 +40,16 @@ from typing import Any
 from alloy.cards.types import MaterialCard
 from alloy.core.errors import AssemblyError
 
-__all__ = ["EFFECT", "MAX_ITERATIONS", "NO_PRESSURE_CAP", "SQRT3", "SWEEPS_PER_CFL2", "TOLERANCE", "TYPICAL_STEP",
-           "grid_type", "holds_j2", "install_notes", "j2_mpm_values", "stiffness_warning", "sweeps_needed"]
+__all__ = ["DELASSUS_REGULARIZATION", "EFFECT", "MAX_ITERATIONS", "NO_PRESSURE_CAP", "SQRT3", "SWEEPS_PER_CFL2",
+           "TOLERANCE", "TYPICAL_STEP", "grid_type", "holds_j2", "install_notes", "j2_mpm_values", "stiffness_warning",
+           "sweeps_needed"]
 
 SQRT3 = math.sqrt(3.0)
 TOLERANCE = 1e-5                 # the MPM rheology tolerance of an entry holding a j2 solid (module docstring)
 NO_PRESSURE_CAP = 1.0e15         # Pa: Newton's default mpm:yield_pressure
 MAX_ITERATIONS = 1000            # the entry's rheology sweeps per step (Newton's default 250: a punch read 15 % low)
+DELASSUS_REGULARIZATION = 1e-12  # the entry's Delassus regularization (Newton's 1e-6 swamps a mass-scaled metal's
+#                                  1e-9..1e-7 diagonal: vendored patch 0015; soft cards read the same to 5 digits)
 SWEEPS_PER_CFL2 = 0.2            # sweeps per (c dt / h)^2: a rough fit to the converged rows (E 3-300 MPa: 0.05-0.2)
 TYPICAL_STEP = 0.00125           # s: the MPM step at a 10 ms or 5 ms control period (1/600 s snapped to the grid)
 PUNCH = (" A punch's force is not verified against the indentation laws yet "
@@ -89,21 +93,23 @@ def sweeps_needed(youngs: float, density: float, voxel: float, dt: float = TYPIC
     return SWEEPS_PER_CFL2 * (youngs / density) * (dt / h) ** 2
 
 
-def stiffness_warning(name: str, material: MaterialCard, voxel: float) -> str | None:
+def stiffness_warning(name: str, material: MaterialCard, voxel: float, mass_scale: float = 1.0) -> str | None:
     """The build warning for a j2 solid too stiff for its entry's solve (``sweeps_needed`` over ``MAX_ITERATIONS`` at
-    the typical step), or None."""
+    the typical step, at the density times ``mass_scale``: ``quasi_static``), or None."""
     youngs, density = float(material.elastic.youngs.value), float(material.density.value)
-    need = sweeps_needed(youngs, density, voxel)
+    need = sweeps_needed(youngs, density * mass_scale, voxel)
     if need <= MAX_ITERATIONS:
         return None
     shown = float(f"{need:.2g}")                   # two significant figures: an estimate
-    return (f"{name}: {material.name} (E {youngs:.3g} Pa, {density:.4g} kg/m3) is too stiff for implicit MPM's stress "
-            f"solve: at a {TYPICAL_STEP * 1e3:g} ms step and {voxel * 1e3:g} mm voxels it needs far more sweeps per "
-            f"step than the entry's {MAX_ITERATIONS:,} (about {shown:,.0f} by a rule fitted at E 3-300 MPa), so "
-            "forces on a tool read low (a brass punch: 3 % of the force at 4,000 sweeps). A tool that is moved still "
-            "leaves its dent. Fix: a card with a smaller E / density (about 7,000 m2/s2 converges at 3 mm voxels), or "
-            "leave the route override off; metals are not supported on this route yet "
-            "(docs/known_gaps/plasticity-mpm-solid-punch-force.md)")
+    scaled = "" if mass_scale == 1.0 else f", with quasi-static mass scaling x{mass_scale:,.0f},"
+    return (f"{name}: {material.name} (E {youngs:.3g} Pa, {density:.4g} kg/m3){scaled} is too stiff for implicit "
+            f"MPM's stress solve: at a {TYPICAL_STEP * 1e3:g} ms step and {voxel * 1e3:g} mm voxels it needs far "
+            f"more sweeps per step than the entry's {MAX_ITERATIONS:,} (about {shown:,.0f} by a rule fitted at E "
+            "3-300 MPa), so forces on a tool read low (a brass punch: 3 % of the force at 4,000 sweeps). A tool that "
+            "is moved still leaves its dent. Metals are supported on this route only with quasi-static mass scaling. "
+            "Fix: for a solid that rests under a tool, scene.set_quasi_static_mass_scale(name, tool_speed=...) "
+            "(quasi-static only); else a card with a smaller E / density (about 7,000 m2/s2 converges at 3 mm "
+            "voxels), or leave the route override off (docs/known_gaps/plasticity-mpm-solid-punch-force.md)")
 
 
 # --- the entry that holds a j2 solid ---------------------------------------------------------------------------
@@ -133,9 +139,11 @@ def install_notes(solver: Any, view: Any, grid: str) -> None:
         return
 
     def notes() -> dict[str, str]:
+        reg = getattr(solver, "delassus_regularization", None)          # None: a solver before patch 0015
+        named = "" if reg is None else f", Delassus regularization {reg:g}"
         return {"mpm_j2_solid": f"this entry runs at tolerance {solver.tolerance:g}, at most {solver.max_iterations} "
-                                f"iterations, {grid} grid, because a j2 solid is in it; every MPM material in the "
-                                "entry pays for it (the entry's voxel is also the smallest of its objects'). "
+                                f"iterations{named}, {grid} grid, because a j2 solid is in it; every MPM material "
+                                "in the entry pays for it (the entry's voxel is also the smallest of its objects'). "
                                 + GRID_LIMITS.get(grid, "") + PUNCH}
     from alloy.integration.mpm_solve import attach_notes  # noqa: PLC0415
 

@@ -24,10 +24,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from alloy.api import _args as A, catalog
+from alloy.api import _args as A, _contact_relax, catalog
 from alloy.api._cloth_route import add_cloth_route
 from alloy.api.errors import SceneError
-from alloy.api import _heat, _liquid, _liquid_accuracy, _random, _rigid_step, _robots, _rods, _worlds
+from alloy.api import _heat, _liquid, _liquid_accuracy, _quasi_static, _random, _rigid_step, _robots, _rods, _worlds
 from alloy.api._items import _box_volume, _cloth_vertices, _mesh_spec, _overrides
 from alloy.api._heat import HeatMixin
 from alloy.api._joint_yield import JointYieldMixin
@@ -43,7 +43,8 @@ COLLISIONS = ("convex", "decompose", "sdf", "mesh")
 RANDOM_FIELDS = _random.FIELDS     # short names accepted by Scene.randomize -> card paths
 
 
-class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin):
+class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticMixin, _rigid_step.RigidStepMixin,
+            _contact_relax.ContactRelaxMixin):
     """A scene under construction. ``worlds``: parallel copies; ``dt``: control period in seconds; ``roots``: your
     own card folders (``materials/``, ``objects/``, ...: e.g. cards made by ``alloy.create`` or ``alloy.io``),
     searched before the shipped and imported libraries; ``liquid_accuracy``: "default" (liquid particles 4 mm apart)
@@ -239,9 +240,11 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
                  material: str = LIQUID_MATERIAL, temperature: float | None = None,
                  heat_material: str | None = None) -> str:
         """Pour ``volume`` m^3 of liquid from a nozzle at ``pos`` straight down at ``rate`` m^3/s, leaving at about
-        ``speed`` m/s (a square nozzle of whole particles; the exit speed is set so the rate is exact). This is how to fill a container: a block of liquid dropped from
-        above splashes several percent over the rim (flat-impact pressure jets, real physics), a stream does not.
-        The particles wait at the nozzle until released: ``sim.state()["<name>.active"]`` marks the poured ones.
+        ``speed`` m/s (a square nozzle of whole particles; the exit speed is set so the rate is exact). This is how to
+        fill a container: a block of liquid dropped from above splashes several percent over the rim (flat-impact
+        pressure jets, real physics), a stream does not. The liquid waits at the nozzle as whole particles, so it
+        pours ``volume`` within half a particle (0.03 ml at the default liquid accuracy; ``sim.liquid_volume(name)``
+        reads it). ``sim.state()["<name>.active"]`` marks the poured particles.
         The energy a pour brings in (and takes out when particles retire) is booked as external work, so the health
         monitor's energy check stays on. ``temperature``: the liquid's start temperature in K (it then takes heat).
 
@@ -256,12 +259,12 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
         if k * s > 0.2:
             raise SceneError(f"a {q} m^3/s pour at {c} m/s needs a {k * s:.2f} m nozzle", "lower rate or raise speed",
                              field="rate")
-        n_total = v / s ** 3                                 # reservoir: whole particles, about `volume` in all
-        n = max(1, round(n_total ** (1.0 / 3.0)))
-        m = max(1, round(n_total / (n * n)))
-        size = ((n + 0.5) * s, (n + 0.5) * s, (m + 0.5) * s)
+        from alloy.api._pour import reservoir  # noqa: PLC0415
+
+        (a, b, m), count = reservoir(v, s)                   # whole particles: `volume` within half a particle
+        size = ((a + 0.5) * s, (b + 0.5) * s, (m + 0.5) * s)
         name = self.add_liquid(name, size=size, pos=p0, material=material)
-        self.items[name]["pour"] = {"pos": p0, "rate": q, "volume": n * n * m * s ** 3,
+        self.items[name]["pour"] = {"pos": p0, "rate": q, "volume": count * s ** 3, "asked": v, "count": count,
                                     "velocity": [0.0, 0.0, -q / (k * s) ** 2],
                                     "half_extents": [(k + 0.5) * s / 2, (k + 0.5) * s / 2, s / 2]}
         return self._heated(name, temperature, heat_material)
@@ -288,10 +291,14 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
         return name
 
     def add_object(self, name: str, card: str, *, pos: Any = (0.0, 0.0, 0.0), quat_xyzw: Any = None,
-                   quat_wxyz: Any = None, rpy: Any = None, static: bool | None = None,
+                   quat_wxyz: Any = None, rpy: Any = None, static: bool | None = None, kinematic: bool = False,
+                   rigid: bool | None = None, material: str | None = None, mass: float | None = None,
+                   density: float | None = None, friction: float | None = None, restitution: float | None = None,
                    temperature: float | None = None, heat_material: str | None = None, anchor: str = "auto") -> str:
-        """An object from the card library by card name (``alloy.api.catalog.objects()`` lists them; on a fresh install,
-        with the ``import`` extra, also the Hub's object library, fetched at build or by ``alloy fetch``).
+        """An object from the card library by card name (``alloy.objects()`` lists them; on a fresh install, with
+        the ``import`` extra, also the Hub's object library, fetched at build or by ``alloy fetch``).
+        The shared keywords of ``add_sphere`` (``static``, ``kinematic``, ``rigid``, ``material``, ``mass`` or
+        ``density``, ``friction``, ``restitution``) change this object only; without them it is as its card says.
         ``temperature`` (K) heats a particle object (MPM or SPH card) as ``Scene.set_temperature`` does. ``anchor``: the
         point of the object that goes to ``pos``: "center" (its bounding box's centre), "base" (its bottom's centre:
         ``pos`` z is what it stands on), "origin" (its card's frame), or "auto" (default): "base" for scanned objects
@@ -302,15 +309,11 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
         ``"<name>.body_pos"`` is the card frame's origin (for objects placed by an anchor off their origin).
 
         Example: ``scene.add_object("peg", "peg_d12", pos=(0, 0, 0.04))``."""
-        A.check_name(name, list(self.items))
-        if not catalog.can_place(card, self.roots):
-            raise catalog.missing_object(card, self.roots)
-        if static and _worlds.per_world(pos):
-            _worlds.refuse_static(name)
-        p0, per_world = A.positions(pos, self.worlds)
-        self.items[name] = {"kind": "card", "card_name": card, "static": static, "per_world_pos": per_world,
-                            "pose": p0 + A.orientation(quat_xyzw, quat_wxyz, rpy), "randomize": [],
-                            "anchor": A.one_of(anchor, ("auto", "center", "base", "origin"), "anchor")}
+        from alloy.api._card_objects import card_item  # noqa: PLC0415
+
+        shared = {"static": static, "kinematic": kinematic, "rigid": rigid, "material": material, "mass": mass,
+                  "density": density, "friction": friction, "restitution": restitution}
+        self.items[name] = card_item(self, name, card, pos, (quat_xyzw, quat_wxyz, rpy), anchor, shared)
         return self._heated(name, temperature, heat_material)
 
     # --- materials, friction, randomization ---------------------------------------------------------------------
@@ -409,7 +412,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
                 **_liquid_accuracy.saved(self.liquid_accuracy), **_rigid_step.saved(self.rigid_step),
                 **({"joint_yield": copy.deepcopy(self.joint_yield)} if self.joint_yield else {}),
                 **({"robot_random": copy.deepcopy(self.robot_random)} if self.robot_random else {}),
-                **({"pushes": copy.deepcopy(self.pushes)} if self.pushes else {}),
+                **({"pushes": copy.deepcopy(self.pushes)} if self.pushes else {}), **_contact_relax.saved(self),
                 **({} if self.cloth_accuracy == "default" else {"cloth_accuracy": self.cloth_accuracy})}
 
     @classmethod
@@ -429,20 +432,19 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _rigid_step.RigidStepMixin
         scene.joint_yield = copy.deepcopy(data.get("joint_yield") or {})
         scene.robot_random = copy.deepcopy(data.get("robot_random") or [])
         scene.pushes = copy.deepcopy(data.get("pushes") or [])
-        return scene
+        return _contact_relax.load(scene, data)                 # the relaxed names back; returns the scene
 
     def to_json(self) -> str:
         """``to_dict()`` as a JSON string. Example: ``Path("scene.json").write_text(scene.to_json())``."""
         return json.dumps(self.to_dict(), indent=1)
 
     def save(self, directory: str | Path) -> Path:
-        """Write the engine's YAML cards (materials/, objects/, scenes/scene.yaml) to ``directory``; returns the
-        scene file. Example: ``scene.save("my_scene")`` then ``alloy.load("my_scene/scenes/scene.yaml")``."""
-        from alloy.api._materialize import materialize  # noqa: PLC0415 - imports the card layer
-
-        _rods.warn_unsaved_clamps(self.items)
-        _robots.warn_unsaved_sysid(self.items)
-        return materialize(self, Path(directory)).scene_file
+        """Write the engine's YAML cards (materials/, objects/, scenes/scene.yaml) to ``directory``, with the cards
+        and meshes it takes from its own card roots; returns the scene file; it warns for what cards cannot keep
+        (per-world starts, heat, ...). Example: ``scene.save("my_scene")`` then
+        ``alloy.load("my_scene/scenes/scene.yaml")``."""
+        from alloy.api import _save  # noqa: PLC0415 - imports the card layer
+        return _save.save(self, directory)
 
     # --- internals ----------------------------------------------------------------------------------------------
 

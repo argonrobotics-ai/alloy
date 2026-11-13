@@ -43,6 +43,7 @@ from .rheology_solver_kernels import (
     build_flat_offsets,
     build_strain_to_batch,
     commit_batched_stress,
+    _DELASSUS_PROXIMAL_REG,  # Alloy (delassus-regularization): the default regularization
     compute_batch_base_offsets,
     compute_delassus_diagonal,
     compute_vel_node_multiplicity,
@@ -443,9 +444,11 @@ class _DelassusOperator:
         rheology: RheologyData,
         momentum: MomentumData,
         temporary_store: fem.TemporaryStore | None = None,
+        regularization: float = float(_DELASSUS_PROXIMAL_REG),  # Alloy (delassus-regularization)
     ):
         self.rheology = rheology
         self.momentum = momentum
+        self.regularization = float(regularization)  # Alloy (delassus-regularization): added to each local diagonal block
 
         self.delassus_rotation = fem.borrow_temporary(temporary_store, shape=self.size, dtype=mat55)
         self.delassus_diagonal = fem.borrow_temporary(temporary_store, shape=self.size, dtype=vec6)
@@ -532,6 +535,7 @@ class _DelassusOperator:
                 batch_map,
                 mult,
                 majorize,
+                self.regularization,  # Alloy (delassus-regularization)
             ],
             outputs=[
                 self.delassus_rotation,
@@ -1889,6 +1893,7 @@ def solve_rheology(
     temporary_store: fem.TemporaryStore | None = None,
     use_graph: bool = True,
     verbose: bool | None = None,
+    delassus_regularization: float = float(_DELASSUS_PROXIMAL_REG),  # Alloy (delassus-regularization)
 ):
     """Solve coupled plasticity and collider contact to compute grid velocities.
 
@@ -1944,6 +1949,8 @@ def solve_rheology(
         use_graph: If True, uses conditional CUDA graphs for the iteration loop.
         verbose: If True, log residuals/iteration counts. If False, suppress details. If None, log details when
             ``wp.config.log_level`` is configured for debug logging.
+        delassus_regularization: Alloy (delassus-regularization): the number added to each local Delassus diagonal block
+            (default 1e-6, Newton's constant; see ``rheology_solver_kernels._DELASSUS_PROXIMAL_REG``).
 
     Returns:
         A captured execution graph handle when ``use_graph`` is True and the
@@ -1959,7 +1966,8 @@ def solve_rheology(
 
     contact_solver.apply_initial_guess()
 
-    delassus_operator = _DelassusOperator(rheology, momentum, temporary_store)
+    delassus_operator = _DelassusOperator(  # Alloy (delassus-regularization): with the configured regularization
+        rheology, momentum, temporary_store, regularization=delassus_regularization)
     batch_tolerance_scales = None
     if rheology.strain_environment_offsets is None:
         tolerance_scale = math.sqrt(1 + delassus_operator.size)

@@ -31,6 +31,7 @@ Example::
 
 from __future__ import annotations
 
+import inspect
 import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -46,9 +47,17 @@ from alloy.envs.ports.run import PortRun
 log = logging.getLogger("alloy.envs.ports")
 
 try:  # a Gymnasium VectorEnv when Gymnasium is installed; the same API without it
+    from gymnasium.vector import AutoresetMode as _AutoresetMode
     from gymnasium.vector import VectorEnv as _Base
 except ImportError:  # pragma: no cover - exercised where gymnasium is missing
-    _Base = object
+    _Base, _AutoresetMode = object, None
+
+
+def _mode(name: str) -> Any:
+    """Gymnasium's ``AutoresetMode`` for ``name`` (the plain name without Gymnasium)."""
+    if _AutoresetMode is None:
+        return name
+    return {"same_step": _AutoresetMode.SAME_STEP, "disabled": _AutoresetMode.DISABLED}[name]
 
 
 @dataclass(frozen=True)
@@ -78,6 +87,7 @@ class _Slot:
         self.spec, self.worlds, self.device, self.seed, self.options = spec, worlds, device, seed, options
         self.run: PortRun | None = None
         self.mover, self.camera, self.bound, self.scene = spec.mover(), None, None, None
+        self.fresh = False                           # started and not stepped since
 
     def start(self) -> None:
         if self.run is not None:
@@ -88,6 +98,7 @@ class _Slot:
             raise EnvError(f"{spec.name}: the port's run ended before its first control period",
                            "check the port's options (a run with no periods has nothing to control)")
         self._rebind()
+        self.fresh = True
 
     def _rebind(self) -> None:
         sim = self.run.sim
@@ -97,7 +108,7 @@ class _Slot:
 
     def step(self, action: np.ndarray) -> bool:
         """Write ``action`` (worlds, A) for this period and step it; False once the run has ended."""
-        mover = self.mover
+        mover, self.fresh = self.mover, False
         alive = self.run.resume(write=lambda sim: mover.write(sim, action))
         if alive:
             self._rebind()
@@ -107,23 +118,28 @@ class _Slot:
 class PortEnv(_Base):  # type: ignore[misc, valid-type]
     """A task port over ``num_envs`` worlds. Example: see the module docstring."""
 
-    metadata: dict[str, Any] = {"render_modes": ["rgb_array"], "autoreset_mode": "same_step"}
+    metadata: dict[str, Any] = {"render_modes": ["rgb_array"], "autoreset_mode": _mode("same_step")}
 
     def __init__(self, spec: PortSpec, num_envs: int = 1, device: str | None = None, seed: int = 0,
                  camera: tuple[int, int] | bool | None = None, spp: int = 4, autoreset: str = "same_step",
-                 **options: Any) -> None:
+                 backend: str = "numpy", **options: Any) -> None:
         if autoreset not in ("same_step", "disabled"):
-            raise EnvError(f"autoreset is {autoreset!r}", "use 'same_step' or 'disabled'", field="autoreset")
+            raise EnvError(f"autoreset is {autoreset!r}", "a task port restarts a finished run inside step: use "
+                           "'same_step' (the default) or 'disabled'; 'next_step' is not supported", field="autoreset")
+        if backend != "numpy":
+            raise EnvError(f"backend is {backend!r}", "a task port returns NumPy arrays: leave backend out (or pass "
+                           "'numpy') and convert, e.g. torch.as_tensor(obs)", field="backend")
         self.spec, self.num_envs, self.autoreset = spec, int(num_envs), autoreset
+        self.metadata = {**type(self).metadata, "autoreset_mode": _mode(autoreset)}
         self.device = device or _default_device()
         self.options = {**spec.options, **options}
+        check_options(spec, self.options)
         self.camera_size = (64, 64) if camera is True else (tuple(camera) if camera else None)
         self.spp, self.render_mode, self.closed = int(spp), "rgb_array", False
         per = self.num_envs if spec.batched else 1
         self._slots = [_Slot(spec, per, self.device, seed + k, self.options) for k in range(self.num_envs // per)]
         self._returns = np.zeros(self.num_envs, np.float32)
         self._lengths = np.zeros(self.num_envs, np.int64)
-        self._fresh = False
         self._start_all()
         self._make_spaces(seed)
         log.info("PortEnv %s (%s): %d worlds on %s, %d runs, actions %d", spec.name, spec.ga_task, self.num_envs,
@@ -149,17 +165,47 @@ class PortEnv(_Base):  # type: ignore[misc, valid-type]
     def _start_all(self) -> None:
         for slot in self._slots:
             slot.start()
-        self._fresh = True
 
-    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[Any, dict]:  # noqa: ARG002
-        """Start every world's run again (a run that has not stepped yet is kept)."""
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[Any, dict]:
+        """Start runs again: every world's, or only those in ``options={"reset_mask": (W,) bool}``. A port that runs
+        all worlds in one simulation (``spec.batched``) restarts them only together and raises ``EnvError`` for a
+        mask of some of them. ``seed`` reseeds the runs it restarts and the action space; a run that has not stepped
+        since it started, with its seed unchanged, is kept."""
         if seed is not None:
-            for k, slot in enumerate(self._slots):
-                slot.seed = seed + k
-        if not self._fresh:
-            self._start_all()
-        self._returns[:], self._lengths[:] = 0.0, 0
+            self.action_space.seed(int(seed))
+        mask = self._reset_mask(options)
+        picked = self._slots_in(mask)
+        for k, slot in picked:
+            wanted = slot.seed if seed is None else int(seed) + k
+            if wanted != slot.seed or not slot.fresh:
+                slot.seed = wanted
+                slot.start()
+        self._returns[mask], self._lengths[mask] = 0.0, 0
         return self._observe(), {"expert_action": self.expert_action()}
+
+    def _reset_mask(self, options: dict | None) -> np.ndarray:
+        m = (options or {}).get("reset_mask")
+        if m is None:
+            return np.ones(self.num_envs, bool)
+        m = np.asarray(_numpy(m), bool).reshape(-1)
+        if m.shape != (self.num_envs,):
+            raise EnvError(f"reset_mask has {m.size} values", f"pass {self.num_envs}, one per world",
+                           field="reset_mask")
+        return m
+
+    def _slots_in(self, mask: np.ndarray) -> list[tuple[int, _Slot]]:
+        """(index, slot) of the runs whose worlds the mask holds; ``EnvError`` if it holds part of one run."""
+        out, row = [], 0
+        for k, slot in enumerate(self._slots):
+            rows = mask[row:row + slot.worlds]
+            row += slot.worlds
+            if rows.any() and not rows.all():
+                raise EnvError(f"{self.spec.name} runs its {slot.worlds} worlds in one simulation, so they restart "
+                               "only together, but a reset of some of them was asked", "call reset() without a "
+                               "reset_mask, or with all of them in it", field="reset_mask")
+            if rows.any():
+                out.append((k, slot))
+        return out
 
     def expert_action(self) -> np.ndarray:
         """(W, A) the port's scripted command for the coming period (finished runs: zeros)."""
@@ -174,7 +220,6 @@ class PortEnv(_Base):  # type: ignore[misc, valid-type]
                            field="actions")
         if any(slot.run.finished for slot in self._slots):
             raise EnvError("an episode has ended and autoreset is off", "call reset() before stepping again")
-        self._fresh = False
         reward = np.zeros(self.num_envs, np.float32)
         done = np.zeros(self.num_envs, bool)
         success = np.zeros(self.num_envs, bool)
@@ -311,6 +356,23 @@ def _not_capturing(sim: Any) -> None:
         raise EnvError("a render was asked for inside a graph capture", "render between control periods")
 
 
+def check_options(spec: PortSpec, options: Mapping[str, Any]) -> None:
+    """Raise ``EnvError`` for an option the port's run function does not take (it would otherwise fail inside the
+    run with a ``TypeError``). Example: ``check_options(PORTS["PaintClearCoat-v0"], {"size": "small"})``."""
+    try:
+        params = inspect.signature(spec.run).parameters
+    except (TypeError, ValueError):                  # a callable without a signature: nothing to check
+        return
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return
+    known = sorted(n for n in params if n not in ("worlds", "device", "seed"))
+    unknown = sorted(set(options) - set(known))
+    if unknown:
+        raise EnvError(f"{spec.name} has no option {', '.join(map(repr, unknown))}",
+                       f"its options are {known} (its family's module in alloy/envs/ports/ describes them)",
+                       field=unknown[0])
+
+
 def _default_device() -> str:
     import warp as wp  # noqa: PLC0415
 
@@ -321,4 +383,4 @@ def _numpy(x: Any) -> Any:
     return x.detach().cpu().numpy() if hasattr(x, "detach") else x
 
 
-__all__ = ["PortEnv", "PortSpec", "frame"]
+__all__ = ["PortEnv", "PortSpec", "check_options", "frame"]

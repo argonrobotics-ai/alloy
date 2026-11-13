@@ -59,10 +59,15 @@ def _gather(xp: Any, buf: Any, idx: Any) -> Any:
 class _Stream:
     """A random stream of a layer's own, so a layer's draws never move the env's stream (the starts the randomizer
     draws at a reset stay those of an env without the layer). It is seeded from the env's stream at the first draw and
-    again at every reset of all worlds, so ``env.reset(seed=...)`` repeats it."""
+    again after the env's stream is seeded anew (``env.reset(seed=...)``), so a seeded reset repeats it; any other
+    reset, an episode end of every world at once included, keeps drawing from it, so each episode gets fresh draws."""
 
     def __init__(self, xp: Any) -> None:
-        self.xp, self.own, self.seeded = xp, pick_backend(xp.name, xp.device), False
+        self.xp, self.own, self.seeded, self.source = xp, pick_backend(xp.name, xp.device), False, None
+
+    def _env_stream(self) -> Any:
+        """The env's generator object; ``xp.seed`` replaces it, so a new object means the env was seeded again."""
+        return getattr(self.xp, "_gen", None) or getattr(self.xp, "_rng", None)
 
     def reseed(self) -> None:
         """Seed from the env's stream without advancing it. Example: ``stream.reseed()``."""
@@ -71,7 +76,7 @@ class _Stream:
         raw = gen.get_state().cpu().numpy().tobytes() if gen is not None else repr(
             rng.bit_generator.state).encode() if rng is not None else b""
         self.own.seed(int.from_bytes(hashlib.sha256(raw).digest()[:8], "little") >> 1)
-        self.seeded = True
+        self.seeded, self.source = True, self._env_stream()
 
     def uniform(self, shape: Sequence[int], lo: Any, hi: Any) -> Any:
         """Uniform draws in [lo, hi). Example: ``stream.uniform((4,), 0, 1)``."""
@@ -93,8 +98,9 @@ class _Stream:
         return self.xp.asarray(self.xp.clip(floored, lo, hi), "int64")
 
     def on_reset(self, mask: Any) -> None:
-        """Reseed when every world resets. Example: ``stream.on_reset(mask)``."""
-        if bool(mask.all()):
+        """Reseed only when the env's stream was seeded since the last seeding (``env.reset(seed=...)``); a reset
+        without a new seed, of some worlds or all of them, draws on. Example: ``stream.on_reset(mask)``."""
+        if self.seeded and self._env_stream() is not self.source:
             self.reseed()
 
 
@@ -166,7 +172,7 @@ def obs_names(env: Any, group: str | None = None) -> list[str]:
 
     Example: ``obs_names(env, "policy")[:3]``."""
     group = group or POLICY
-    names = env.obs_names(group)
+    names = env.obs_names(group if env.obs_groups else None)       # an env without groups has one flat vector
     for layer in env.layers:
         names = layer.names(group, names)
     return list(names)

@@ -3,7 +3,8 @@
 seed. Not the engine's per-world randomization (``Scene.randomize``): each variant is its own scene.
 
 - Placement: every free object's start x/y (and an optional small yaw) moves within +-``pos`` / +-``yaw_deg``;
-  robots, fixtures, static and kinematic objects, liquids and objects held by a robot stay. Objects that touch at the
+  robots, fixtures, static and kinematic objects and objects held by a robot stay. Liquids, grains, pastes and pours
+  move only with the free object they are in or on (a pour: under its nozzle), else stay. Objects that touch at the
   start move together. A draw that overlaps anything or takes an object off what it rests on is redrawn
   (``alloy.scene.variants.place``). ``settle=`` seconds also builds each variant and runs ``alloy.check`` (start
   overlap, a short settle, health) before keeping it.
@@ -37,7 +38,7 @@ import numpy as np
 from alloy.scene.variants import contrast as C
 from alloy.scene.variants import looks as L
 from alloy.scene.variants import sheet as SH
-from alloy.scene.variants.base import Base, assemble, free_objects
+from alloy.scene.variants.base import Base, assemble, free_objects, particle_links
 from alloy.scene.variants.place import Placer, edit_poses
 from alloy.scene.variants.xform import Move
 
@@ -127,7 +128,7 @@ def vary(scene: Any, n: int, pos: float = 0.005, yaw_deg: float = 0.0, textures:
     opts.check(n)
     base = assemble(scene)
     free = free_objects(scene, base)
-    placer = Placer.make(base, free, opts.pos, opts.yaw_deg)
+    placer = Placer.make(base, free, opts.pos, opts.yaw_deg, particle_links(scene, base))
     plan = LookPlan(L.texture_pool(base.lib) if opts.textures != "keep" else {},
                     {name: L.item_look(name, item, base.lib) for name, item in scene.items.items()},
                     C.surfaces(scene, base, placer.supports, free))
@@ -228,7 +229,7 @@ def _sheet(out: Path, variants: list[Variant], base: Base, placer: Placer, cfg: 
     size = (int(cfg.get("width", 240)), int(cfg.get("height", 180)))
     spp, quality = int(cfg.get("spp", 4)), str(cfg.get("quality", "full"))
     look_at = SH.view(base, placer.state_for([]), [n for g in placer.groups for n in g])
-    images, paths, dropped = [], [], set()
+    images, paths, dropped = [], [], set(SH.not_drawn(base))
     for v in variants:
         look = None
         if quality == "full":

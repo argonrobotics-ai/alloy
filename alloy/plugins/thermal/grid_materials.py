@@ -44,6 +44,7 @@ class GridMaterial:
     latent: float  # J/kg (0 with t_liquidus = t_solidus: no phase change)
     t_boil: float  # K, the enthalpy cap
     breaks: tuple[float, ...] = ()  # K, where c(T) or k(T) change formula (added as table nodes)
+    contact_effusivity: float = 0.0  # W s^0.5/(m² K) for the bead's contact test; 0: from k, ρ, c near 1300 °C
     source: str = ""
     _nodes: dict = field(default_factory=dict, compare=False, repr=False)
 
@@ -199,6 +200,18 @@ MATERIALS: dict[str, GridMaterial] = {m.name: m for m in (
         "law_fast", density=7850.0, c_solid=_const(600.0), k_solid=_const(400.0), c_liquid=600.0, k_liquid=400.0,
         t_solidus=1000.0, t_liquidus=1000.0, latent=0.0, t_boil=4000.0,
         source="law fixture: k 400 (copper-like) so a 5 mm block is near-lumped (Biot 0.025 at h_c 2000)"),
+    GridMaterial(
+        "law_insulated", density=7850.0, c_solid=_const(700.0), k_solid=_const(1.0e-3), c_liquid=800.0,
+        k_liquid=1.0e-3, t_solidus=1745.15, t_liquidus=1785.15, latent=2.7e5, t_boil=3134.0,
+        source="law fixture: steel's melting range with k 1e-3 (no conduction): a hot plate neither fuses nor "
+               "freezes the liquid's toe (slice 11's D-9)"),
+    GridMaterial(
+        "law_contact", density=7850.0, c_solid=_const(700.0), k_solid=_const(1.0e-3), c_liquid=800.0,
+        k_liquid=1.0e-3, t_solidus=1745.15, t_liquidus=1785.15, latent=2.7e5, t_boil=3134.0,
+        contact_effusivity=11800.0,
+        source="law fixture: law_insulated (no conduction, so the plate keeps its temperature) whose contact test "
+               "uses steel_a36's effusivity near 1300 °C (11,802, rounded): the toe freezes below a set plate "
+               "temperature (slice 11's D-11b)"),
 )}
 
 

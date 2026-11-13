@@ -9,14 +9,17 @@
              time += dt
 
 Plug-in forces therefore never accumulate in ``State`` and other writers of ``body_f`` keep their values. The
-stepper's ``state_arrays`` also lists every plug-in state array (``plugin/<label>/<name>``), so the simulation's
-snapshots, ``reset``, rollbacks and digests cover plug-in state. Install the host before the simulation is built:
+stepper's ``state_arrays`` also lists every plug-in state array (``plugin/<label>/<name>``) and input
+(``plugin/<label>/input:<name>``), so the simulation's snapshots, ``reset``, rollbacks and digests cover plug-in
+state, and ``sim.reset()`` returns an input (a heater's temperature, a pump's flow) to its value at the build or the
+last ``sim.settle``, as joint targets. Install the host before the simulation is built:
 ``simulation(built, plugins)`` does that for ``alloy.sim.Simulation``.
 """
 
 from __future__ import annotations
 
 import contextlib
+import inspect
 import logging
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
@@ -89,7 +92,8 @@ class PluginHost:
         sim.step_period(); host.read()["magnet"]
     """
 
-    def __init__(self, model: newton.Model, plugins: Sequence[Plugin], *, control_dt: float) -> None:
+    def __init__(self, model: newton.Model, plugins: Sequence[Plugin], *, control_dt: float,
+                 names: Any = None) -> None:
         self.model = model
         self.plugins: dict[str, Plugin] = {}
         for p in plugins:
@@ -99,7 +103,7 @@ class PluginHost:
             if p.label in self.plugins:
                 raise PluginError(f"two plug-ins labelled {p.label!r}: pass label='...' to tell them apart")
             self.plugins[p.label] = p
-        self.ctx = PluginContext(model, float(control_dt))
+        self.ctx = PluginContext(model, float(control_dt), names=names)  # names: the Scene's (alloy.build), or None
         self.forces = Forces(wp.zeros(model.body_count, dtype=wp.spatial_vector, device=model.device),
                              wp.zeros(model.particle_count, dtype=wp.vec3, device=model.device))
         self._saved = Forces(wp.zeros_like(self.forces.body_f), wp.zeros_like(self.forces.particle_f))
@@ -207,10 +211,13 @@ class PluginHost:
     # --- state ---------------------------------------------------------------------------------------------------
 
     def state_arrays(self) -> dict[str, wp.array]:
-        """Every plug-in state array as ``plugin/<label>/<name>``, plus the per-world clock ``plugin/time``."""
+        """Every plug-in state array as ``plugin/<label>/<name>`` and input as ``plugin/<label>/input:<name>``, plus
+        the per-world clock ``plugin/time``. Inputs do not change within a control period, so a rollback restores
+        what they already hold; ``reset`` restores their build (or settle) values."""
         out = {f"{PREFIX}/time": self.ctx.time}
         for label, p in self.plugins.items():
             out.update({f"{PREFIX}/{label}/{k}": v for k, v in p.state_arrays().items()})
+            out.update({f"{PREFIX}/{label}/input:{k}": v for k, v in p.inputs().items()})
         return out
 
     def read(self) -> dict[str, dict[str, np.ndarray]]:
@@ -262,11 +269,21 @@ class PluginHost:
         needing = sorted(p.label for p in self.plugins.values() if getattr(p, "needs_contacts", False))
         if not needing:
             return
-        solver = getattr(stepper, "solver", None)
+        solver = contact_solver(stepper)
         kind = newton.solvers.SolverBase.ObservableKind.CONTACT_F
-        if solver is None or not hasattr(solver, "get_max_contact_count") or kind not in solver.supported_observables:
-            raise PluginError(f"{needing} need contact forces, but {type(solver).__name__} does not export its own "
-                              f"contacts with forces: use the MuJoCo route on MuJoCo Warp (not use_mujoco_cpu)")
+        if solver is None:
+            raise PluginError(f"{needing} need contact forces, which come from the MuJoCo solver that steps the scene's "
+                              f"rigid bodies and robots, and this scene ({type(stepper).__name__}) has none",
+                              fix="give the scene a rigid body or robot for the sensor to touch (it steps on MuJoCo)")
+        if not hasattr(solver, "get_max_contact_count") or kind not in solver.supported_observables:
+            raise PluginError(f"{needing} need contact forces, but the rigid solver {type(solver).__name__} does not "
+                              f"export its own contacts with forces",
+                              fix="use the MuJoCo route on MuJoCo Warp or Alloy's CPU route (not use_mujoco_cpu)")
+        if not bool(getattr(solver, "_use_mujoco_contacts", True)):
+            raise PluginError(f"{needing} need contact forces, but this scene's MuJoCo solver steps on Newton's "
+                              "contacts (SDF or mesh collision shapes, precision pairs or a coupler put it there) and "
+                              "exports no forces for them, so every reading would be 0",
+                              fix="collide the scene's meshes as \"convex\" or \"decompose\" (add_mesh collision=...)")
         if self.ctx.world_count > 1 and _steps_world_zero_only(solver):
             raise PluginError(f"{needing} need contact forces in every world, but Newton's own MuJoCo C step "
                               f"(use_mujoco_cpu) simulates world 0 only of {self.ctx.world_count}, so the others "
@@ -277,9 +294,13 @@ class PluginHost:
         inner = solver.step
 
         def step(state_in, state_out, control, step_contacts, dt, **kwargs):
-            if step_contacts is None and "observables" not in kwargs:
-                return inner(state_in, state_out, control, contacts, dt, observables=observables, **kwargs)
-            return inner(state_in, state_out, control, step_contacts, dt, **kwargs)
+            if "observables" in kwargs:                 # the caller's own observables: its step, untouched
+                return inner(state_in, state_out, control, step_contacts, dt, **kwargs)
+            # With MuJoCo's own collision (checked above) the step's contacts are only where the export goes (MuJoCo
+            # Warp feeds them in only without it; the CPU route never reads them), so ours, whatever the caller
+            # passed: a coupled scheduler passes the entry's share of its contacts (0 N when this asked
+            # for no export).
+            return inner(state_in, state_out, control, contacts, dt, observables=observables, **kwargs)
 
         solver.step = step
         self._exported = contacts
@@ -287,6 +308,23 @@ class PluginHost:
 
 
 MASS_FIELDS = ("body_mass", "body_ipos", "body_inertia", "body_iquat")
+
+
+def contact_solver(stepper: Any) -> Any:
+    """The solver whose own contacts and forces ``needs_contacts`` plug-ins read: the scene's MuJoCo entry, on a
+    single-entry stepper or inside a coupled one (Scheduler, stock proxy, one-way followers over either), else the
+    stepper's own ``solver`` object; None when there is neither. A coupled stepper's ``solver`` is a lookup method,
+    not a solver."""
+    from alloy.integration.stepper import entry_solvers, mujoco_solver  # noqa: PLC0415 - integration imports plugins
+
+    inner = stepper
+    while inner is not None:
+        found = mujoco_solver(entry_solvers(inner))
+        if found is not None:
+            return found
+        inner = vars(inner).get("base") if hasattr(inner, "__dict__") else None   # OneWayFollower(base, leaves)
+    own = getattr(stepper, "solver", None)
+    return None if own is None or inspect.ismethod(own) else own
 
 
 def _steps_world_zero_only(solver: Any) -> bool:

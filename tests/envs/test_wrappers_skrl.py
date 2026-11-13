@@ -43,8 +43,8 @@ def test_contract_shapes_dtypes_spaces(env):
     obs, reward, term, trunc, info = env.step(env.zero_actions())
     assert obs.shape == (4, 22) and reward.shape == term.shape == trunc.shape == (4, 1)
     assert reward.dtype == torch.float32 and term.dtype == trunc.dtype == torch.bool
-    obs2, _ = env.reset()                                    # a repeated reset keeps the running episode
-    assert torch.equal(obs2, obs)
+    obs2, _ = env.reset()                                    # a reset restarts every world (Gemini audit T1-021)
+    assert obs2.shape == (4, 22) and env.unwrapped.stats.steps.tolist() == [0, 0, 0, 0]
     assert env.unwrapped is env._env and env.render() is None
 
 
@@ -173,3 +173,18 @@ def test_time_limit_bootstrap_uses_the_ended_episodes_last_observation(grouped_e
     finally:
         base.record_transition = original
     assert seen["next_observations"] is info[BOOTSTRAP_OBS] and seen["next_states"] is info[BOOTSTRAP_STATES]
+
+
+@pytest.mark.compile_heavy
+def test_an_unflattened_history_keeps_its_shape_through_a_reset():
+    """ObsHistory(flatten=False) gives (n, H, D): the space is (H, D) and a time-limit bootstrap broadcasts (T1-010)."""
+    from alloy.envs.realism import ObsHistory
+
+    task = dataclasses.replace(gripper_lift_task(max_steps=2), layers=[ObsHistory(3, flatten=False)])
+    env = SkrlEnv(VectorEnv(gripper_lift_scene(4), task, worlds=4, device="cpu", backend="torch"))
+    obs, _ = env.reset()
+    assert tuple(env.observation_space.shape) == tuple(obs.shape[1:]) and obs.dim() == 3
+    for _ in range(3):                                                   # past max_steps: a bootstrap step
+        obs, *_ = env.step(torch.zeros((4, env.action_space.shape[0])))
+    assert tuple(obs.shape[1:]) == tuple(env.observation_space.shape)
+    env.close()

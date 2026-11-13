@@ -58,8 +58,10 @@ If `ubuntu-drivers` picked a driver older than 580, `ubuntu-drivers list` shows 
   in one process per core (`processes=4` for four; `sim.close()` or a `with` block stops them): 64 worlds on 16 cores
   ran 13-20x faster for cloth, liquid and paste, 6.5x for a robot arm, each world as in one process (one exception:
   `docs/guide/install.md`). The CPU figures in this file are from an AMD EPYC 7B13 unless a line names another
-  machine. Or use a GPU. CPU and GPU runs give the same physics, not the same bits. `ALLOY_CPU_ROUTE=warp` keeps the
-  CPU on the GPU's code path.
+  machine. Or use a GPU. CPU and GPU runs give the same physics model, not the same bits; contact-rich outcomes such
+  as a grasp can differ between the CPU (MuJoCo C) and GPU (MuJoCo Warp) routes (one measured case: a Panda placed a
+  pepper mill in 8 of 8 worlds on a GPU and 0 of 8 on the CPU, health OK), so check a grasp on the device you train
+  on. `ALLOY_CPU_ROUTE=warp` keeps the CPU on the GPU's code path.
 - The first run of a new kind of scene compiles kernels once: about 45 s on a CPU (41 s on an 8-vCPU Linux machine,
   44 s on an Apple-silicon Mac) and 3 to 4 minutes on an NVIDIA GPU (190 to 240 s on L4s); a robot environment can
   take up to about 8 minutes (a first `PickCube-v0` build took 7.4 min on an L4). The result is cached, so later
@@ -128,8 +130,12 @@ editable copy. A `Scene` round-trips through `scene.to_json()` / `alloy.Scene.fr
   fixed things (tables, walls, bins: one pose shared by every world; fixtures are static already and accept it;
   `kinematic=True` holds still too and can start per world). Per-world random values: `scene.randomize(name, field,
   lo, hi)`, fields `x`, `y`, `z` (the start coordinate itself, in m: it replaces that coordinate of `pos` rather than
-  offsetting it, so give a range around it), `density`, `friction`, `youngs` or the card path
+  offsetting it, so give a range around it; for a robot it replaces a coordinate of the robot's `pos`, which moves
+  the whole file: section 5), `density`, `friction`, `youngs` or the card path
   `material.surface.mu_dynamic`; `mass` and `restitution` are not: randomize `density`, set `restitution=` for all.
+  On MuJoCo contacts (rigid bodies and robots) a restitution of 0 still rebounds at about 0.1-0.15 of the impact
+  speed, and every restitution reads a little higher than set (0.5 gives about 0.55); a fix is planned for a later
+  release (`docs/guide/scenes.md`, Materials and friction).
 - Materials and friction: `scene.add_material("my_rubber", density=1100, friction=1.2)`;
   `scene.set_friction("a", "b", 0.9)` for one pair of objects. Contact uses one friction coefficient per pair of
   materials. There is no separate static friction: a body starts to slide at the same coefficient it slides with. For
@@ -206,7 +212,10 @@ print(sim.state(world=0)["arm/shoulder.q"])
 - Robots come from MJCF, URDF or USD files (`add_robot(name, path)`) or an MJCF string (`mjcf=`). The base is welded
   to the world unless the file gives it a joint. A free base (`<freejoint/>` on the root body, e.g. a carton with
   flaps) can start per world (`pos=(worlds, 3)`, `scene.randomize("carton", "x", lo, hi)`) and move with
-  `sim.set_pose("carton", pos=...)`, links following. Robot shapes make contacts from 5 mm apart (`contact_gap=`).
+  `sim.set_pose("carton", pos=...)`, links following. A robot's `pos` moves the whole file in every form (tuple,
+  per-world rows, drawn coordinates): the root body ends there plus where the file places it (a base at
+  `pos="0 0 0.3"` in its file starts 0.3 m above `pos`); `sim.set_pose` puts the root body itself at `pos`.
+  Robot shapes make contacts from 5 mm apart (`contact_gap=`).
 - Shipped robots (MuJoCo Menagerie and makers' files, licences beside them): `from alloy.cards.library import
   default_root`, then `scene.add_robot("panda", default_root() / "robots" / "emb_e2_panda" / "scene.xml")`. Arms:
   `emb_e1_fr3` (Franka FR3), `emb_e2_panda` (Franka Panda), `emb_e3_ur10e_2f85` (UR10e + Robotiq 2F-85),
@@ -377,15 +386,16 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
   released sheet creeps sideways (`docs/guide/deformables.md`, Metal sheets; `docs/known_gaps/film-metal-sheets.md`).
 - To fill a container, pour: `add_pour(name, volume_m3, pos=nozzle, rate=2e-4, speed=0.5)` streams straight down
   from `pos`; `"<name>.active"` in the state marks the particles poured so far. A block of liquid dropped from above
-  splashes several percent over the rim (real flat-impact jets); a stream much less (4 % of a 6 ml pour from 12 cm),
-  but beside cloth a fifth or more, with health OK (`docs/known_gaps/liquid-pour-over-the-rim.md`).
+  splashes several percent over the rim (real flat-impact jets); a stream much less (3 % of a 6 ml pour from 12 cm,
+  with health OK: `docs/known_gaps/liquid-pour-over-the-rim.md`).
 - Pouring from a held container (a kinematic `add_open_box` tilted with `sim.drive(..., pivot=lip)`): the stream
   leaves the lip at about sqrt(g h) and lands about v sqrt(2 dz / g) beyond it, so place the target a few cm past
   the lip, not under it, and tilt slowly. `examples/api/06_tilt_pour.py`.
 - `add_liquid(name, size=(x, y, z), pos, material="water")`: liquid at rest filling that box (already in a container,
   or a puddle); contain it in `add_open_box` / `add_open_cylinder`. Match the container: in a round cup,
   `add_liquid(..., shape="cylinder")` with `size=(diameter, diameter, height)`; a box in a round cup splashes out. `sim.liquid_volume(name)` is the simulated
-  volume (whole particles, so a few percent under the box); `sim.particle_volume(name)` per particle.
+  volume (whole particles: a few percent under the box; a pour's within half a particle); `sim.particle_volume(name)`
+  per particle.
 - Liquid accuracy: particles sit 4 mm apart by default. `alloy.Scene(liquid_accuracy="super")` puts them 2 mm apart,
   for finer streams and narrower openings, at about 16x the work (8x the particles, 2x the steps). Measured, the cost
   depends on the device and world count: 11-20x on CPU pours; on one L4, 3.5-3.8x for one world (the GPU has room to
@@ -411,7 +421,8 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
   pour `self_contact=False` (it stayed OK in the one scene measured) or use a film sheet (`film_ldpe`). Cloth takes up
   no water (`docs/known_gaps/liquid-on-cloth.md`). Cost: cheap while cloth and liquid do not touch, very slow once
   they do: on one L4 a 10 cm cotton sheet on 0.8 l of water steps at about 50 s per 10 ms control step from first
-  touch (about 80 minutes per simulated second; no setting helps), a film-route sheet (paper, metal foil) far faster
+  touch (about 80 minutes per simulated second in 0.1.0 and 0.1.1, up to about 2.7x that after 0.1.1 while the sheet
+  stirs the water; no setting helps), a film-route sheet (paper, metal foil) far faster
   (`docs/guide/deformables.md`, Liquid, Cost with cloth).
 - Heat (temperatures in kelvin): `add_liquid(..., temperature=293.15)` (also `add_pour`) makes a liquid take heat;
   `scene.set_heater("pan_floor", temperature=353.15)` (or `power=` in W) makes a static box, such as an open box's
@@ -447,8 +458,9 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
 - `sim.check()`: `{"ok": bool, "problems": [{"world", "what", "fix", ...}], ...}`; physics checks on the run so far.
   `ok` is False for an INVALID world or a stopped run, and for a world that gained more than 10 % of the scene's
   energy scale with nothing adding it (ENERGY_JUMP as DEGRADED: a body that never comes to rest) or that started with
-  an overlap of more than 1 cm (START_PEN). Any other DEGRADED world (FAR_FROM_ORIGIN: an object more than 4 m from
-  the origin; PEN_WARN; CLOTH_STRETCH) passes it. A flag that came and went is in `problems` with level "warn"
+  an overlap of more than 1 cm (START_PEN). Any other DEGRADED world (PEN_WARN; CLOTH_STRETCH) passes it. Notices
+  are listed in a world's flags but leave it OK: FAR_FROM_ORIGIN (an object more than 4 m from the origin; INVALID
+  past 16 m under the precision profile), DET_DOWNGRADED (every GPU run with rigid bodies) and FALLBACK_USED. A flag that came and went is in `problems` with level "warn"
   (`seen_flags` in `sim.health()` has them all); one still on is in `sim.health()` flags only.
 
 ## 9. Errors
@@ -477,7 +489,8 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
 
 `import alloy` does not load the modules of this section: import each before you use it (`import alloy.io`,
 `import alloy.envs`, `import alloy.compose`, `import alloy.create`, `import alloy.plugins`, `import alloy.check`,
-`import alloy.viewer`, `import alloy.il`, `import alloy.sysid`), or `alloy.envs.make(...)` raises `AttributeError`.
+`import alloy.viewer`, `import alloy.il`, `import alloy.sysid`, `import alloy.isaaclab`), or `alloy.envs.make(...)`
+raises `AttributeError`.
 
 - Images: `sim.render(width=320, height=240, path="look.png")` (world 0, auto-framed, uint8 `(H, W, 3)`; scanned
   library objects show their photo textures, with Pillow from the `import` extra);
@@ -522,13 +535,12 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
   `env.sim.names()["actuators"]`); a rod's `.points` is not in the task state (read its link bodies,
   `"<rod>/<i>.pos"`); `VectorEnv(scene, ...)` cannot pass `alloy.build` options such as `contact_capacity`, so build
   first, `VectorEnv(alloy.build(scene, worlds=n, seed=s, contact_capacity=64), task)`, and set worlds, device and seed
-  in that build (the env's own are then dropped without a message); `ObsNoise` needs observation groups
-  (`obs={"policy": [...]}`); and no shipped trainer learns from camera images (on a camera env the rsl_rl command
-  trains a state MLP and does not say so). With rsl_rl, Stable-Baselines3 or skrl (each a separate `pip install`):
-  `from alloy.envs.wrappers import wrap; wrap(env, "rsl_rl")`, or one command,
+  in that build (the env's own are then dropped without a message); and no shipped trainer learns from camera images
+  (on a camera env the rsl_rl command trains a state MLP and does not say so). With rsl_rl, Stable-Baselines3 or skrl
+  (each a separate `pip install`): `from alloy.envs.wrappers import wrap; wrap(env, "rsl_rl")`, or one command,
   `python -m alloy.envs.wrappers.train GripperLift-v0 --lib rsl_rl` (PPO with one fixed setting per library, on small
-  tasks of ours: rsl_rl and skrl reached 90 % success on both ready-made environments in every run (1 to 6 runs each),
-  Stable-Baselines3 on one of the two, rows in the guide; `PickCube-v0`, a Franka picking a cube, has its own
+  tasks of ours; on `GripperLift-v0` runs with the same settings ended anywhere from 0 % to 100 %, so train more
+  than one seed, rows in the guide; `PickCube-v0`, a Franka picking a cube, has its own
   settings, a starting point (results vary between runs; watch the success rate the trainer prints):
   `docs/guide/rl.md`, Arm pick);
   `Task(obs={"policy": [...], "critic": [...]})` returns one
@@ -551,7 +563,8 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
   recordings, `evaluate` gives a policy's success rate with an interval, `KeyboardTeleop` drives action columns from
   the terminal, `generate(env, demonstrator(env), writers, episodes)` saves scripted demos from every world (scripts
   ship for 3 of the 9 ready-made envs; no trajectory augmentation or motion planning). It records, replays and
-  evaluates; it trains no policy. Joint-space teleoperation only, no live view, no cloth or liquid replay.
+  evaluates; it trains no policy. Teleoperation drives the env's action columns (joints, or the hand on an `EEActionSpec` env),
+  with no live view; no cloth or liquid replay.
   `docs/guide/imitation.md`.
 - System identification (optional; `import alloy.sysid`): a recording of your real robot (time, commanded joint
   targets, measured joint positions; CSV, HDF5 or a LeRobot dataset) becomes fitted joint parameters:
@@ -560,6 +573,14 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
   sysid="my_panda.sysid.json")`. Fitted per joint: servo stiffness, kd + damping, dry friction, action delay. Not
   fitted: link masses, backlash, flexibility, contact or payload. Checked against simulated robots with hidden
   parameters only, never on hardware. `docs/guide/sysid.md`.
+- Isaac Lab 3.0 (optional; `docs/guide/isaaclab.md`): with Isaac Lab installed, `pip install alloy-engine` in the
+  same environment, then `physics=alloy` on a task that offers `physics=newton_mjwarp`
+  (`isaaclab train --rl_library rsl_rl --task Isaac-Cartpole-Direct physics=alloy`) runs the unmodified task on
+  Alloy's rigid route at the task's own step (`rigid_step="alloy"` opts into Alloy's finer robot step) with Alloy's
+  per-world health checks; `alloy.isaaclab.alloy_physics(cfg)` does the same in Python. Trained on one GPU (L4):
+  Isaac-Cartpole-Direct, Isaac-Velocity-Flat-AnymalD, Isaac-Velocity-Flat-H1, Isaac-Reach-Franka; 18 rigid tasks
+  step and reset. Isaac Lab `main`: steps on the CPU only so far. Not yet: Isaac Lab's other Newton solvers, cloth,
+  soft bodies or liquid in its scenes.
 - A scene from a sentence: `alloy.compose.compose("a mug and two cubes on a table", variations=2).save(dir)`.
   `docs/guide/compose.md`.
 - Scene variants: `alloy.vary(scene, 8, pos=0.01, yaw_deg=10, seed=0, out="variants")` returns 8 edited scenes: free
@@ -619,4 +640,7 @@ copyright headers; `alloy/_vendor/VENDORED.md` lists the upstream commit each st
 - To run an unchanged script that does `import newton` on Alloy's copy, call `alloy._vendor.alias_top_level_names()`
   first. It is opt-in (the engine never calls it; the benchmark's engine shim does) and refuses when another
   `newton` is already imported in the process.
-- Warp (`warp-lang==1.18.0`) and MuJoCo (`mujoco==3.17.0`) come from PyPI at those exact versions.
+- Warp (`warp-lang==1.18.0`) and MuJoCo (`mujoco==3.17.0`) come from PyPI at those exact versions. Alloy replaces
+  one Warp function at run time when a scene has MPM material: fem's Nanogrid cell lookup picks a particle's cell
+  in integers, not float32, so worlds packed far along the grid keep their precision
+  (`alloy/integration/nanogrid_lookup.py`, guarded by the pinned Warp version).

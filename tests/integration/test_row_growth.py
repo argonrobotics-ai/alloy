@@ -167,6 +167,73 @@ def test_a_deterministic_solver_keeps_its_fixed_rows(caplog: pytest.LogCaptureFi
     assert "deterministic" in caplog.text
 
 
+def _late_state(monkeypatch: pytest.MonkeyPatch) -> R.RowState:
+    monkeypatch.setattr(R, "LATE_ON_CPU", True)                      # the CUDA reads, checked on the CPU
+    state = _state()
+    assert state.reader.late
+    return state
+
+
+def test_late_reads_never_wait_while_no_row_is_half_full(monkeypatch: pytest.MonkeyPatch) -> None:
+    """0.1.1 item 1 (XB4-10, rc1): a blocking read every period cost a calm drape 5.7 % on an L4."""
+    state = _late_state(monkeypatch)
+    for _ in range(30):
+        _detect(state, [16] * VERTS, [32] * EDGES)                   # exactly half full: not over ARM
+        assert state.grow() is None
+    assert state.reader.blocking == 0 and state.reader.late
+    assert state.need is None and not state.take_rebind()           # nothing per row allocated (5 % on an L4)
+
+
+def test_per_row_need_comes_in_with_the_first_row_past_half_full() -> None:
+    """Allocating the per-row need arrays at build alone cost a calm drape 5 % of GPU time (L4, vmprobe3): they come
+    when a row first passes ARM, and the captured graphs (whose folds hold the stand-in) are dropped once."""
+    state, calls = _state(), []
+    state.solver.alloy_rows = state
+    sim = _sim(state, calls)
+    _detect(state, [16] * VERTS, [32] * EDGES)
+    assert not G.regrow_rows(sim, (4, 5)) and state.need is None and calls == []
+    _detect(state, [20] + [0] * (VERTS - 1), [0] * EDGES)            # over half full, under the fill mark
+    assert not G.regrow_rows(sim, (4, 5)) and calls == ["graphs"]    # no growth; the graphs go once
+    assert state.need["vertex"].numpy().tolist() == [20] + [0] * (VERTS - 1)
+    _detect(state, [22] + [0] * (VERTS - 1), [0] * EDGES)
+    assert not G.regrow_rows(sim, (4, 5)) and calls == ["graphs"]
+    assert state.need["vertex"].numpy()[0] == 22                     # tracked from now on
+
+
+def test_past_half_full_the_reads_wait_until_the_rows_are_calm_again(monkeypatch: pytest.MonkeyPatch) -> None:
+    state = _late_state(monkeypatch)
+    _detect(state, [20] + [0] * (VERTS - 1), [0] * EDGES)            # over half full, under the fill mark
+    assert state.grow() is None and state.reader.blocking == 0       # the late read sees the period before
+    _detect(state, [25] + [0] * (VERTS - 1), [0] * EDGES)            # now over the fill mark too
+    g = state.grow()                                                 # the late read sees 20: waits for this period
+    assert g is not None and not g.dropped and state.reader.blocking == 1 and not state.reader.late
+    for k in range(R.CALM_PERIODS):
+        _detect(state, [0] * VERTS, [0] * EDGES)
+        assert state.grow() is None and state.reader.blocking == 2 + k
+    assert state.reader.late                                         # calm again: late reads
+    _detect(state, [0] * VERTS, [0] * EDGES)
+    assert state.grow() is None and state.reader.blocking == 1 + R.CALM_PERIODS
+
+
+def test_a_waiting_read_reruns_only_its_own_period(monkeypatch: pytest.MonkeyPatch,
+                                                   caplog: pytest.LogCaptureFixture) -> None:
+    """A row that fills past its size within one calm period drops pairs before a late read can see it: that period
+    stands (said once; health keeps the flag), the rows are tracked from then on, and the next drop re-runs."""
+    state = _late_state(monkeypatch)
+    _detect(state, [0] * VERTS, [0] * EDGES)
+    assert state.grow() is None
+    _detect(state, [40] + [0] * (VERTS - 1), [0] * EDGES)            # under half full to over full in one period
+    assert state.grow() is None                                      # not seen yet: that period stands
+    _detect(state, [10] + [0] * (VERTS - 1), [0] * EDGES)
+    with caplog.at_level(logging.WARNING, logger="alloy.solvers.vbd"):
+        g = state.grow()                                             # sees the drop a period late: no re-run
+    assert g is None and state.need is not None and not state.reader.late
+    assert sum("before the late read saw it" in r.getMessage() for r in caplog.records) == 1
+    _detect(state, [0] * VERTS, [200] + [0] * (EDGES - 1))           # the reads now wait: this period's drop re-runs
+    g = state.grow()
+    assert g is not None and g.dropped
+
+
 def test_a_simulation_without_such_rows_has_no_guard() -> None:
     sim = SimpleNamespace(solvers=(SimpleNamespace(),))
     assert G.row_guard(sim) is None and not G.regrow_rows(sim, (0, 0))

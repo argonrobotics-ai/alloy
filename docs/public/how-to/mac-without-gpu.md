@@ -47,3 +47,5 @@ and use one core.
 - [Quickstart](../quickstart.md)
 - [Cloth](../guides/cloth.md)
 - [Errors and fixes](../errors.md)
+- Related: [simulators that install with pip](../answers/pip-installable-simulators.md),
+  [error messages and fixes](../answers/error-messages.md).

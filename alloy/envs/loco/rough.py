@@ -70,14 +70,15 @@ class RoughEnv(LocoEnv):
                  curriculum: bool = True, **kwargs: Any) -> None:
         self.terrain, self.curriculum = terrain, curriculum
         self._start_levels = max(1, min(int(start_levels), terrain.levels))
-        self._placed = False
+        self._placed, self._restore = False, False
         super().__init__(sim, task, config, **kwargs)
         xp, w = self.xp, self.num_envs
         self._base_q = xp.asarray(self.layout.free[f"{config.name}/{config.robot.base}"], "int64")
         self._xyz = self._base_q[:, None] + xp.asarray(np.arange(3), "int64")[None, :]
         self._stand = float(xp.to_numpy(self.state["base.height"]).mean())
         self.kinds = xp.asarray(np.arange(w) % terrain.kinds, "int64")
-        self.levels = xp.asarray(np.arange(w) // terrain.kinds % self._start_levels, "int64")
+        self.start_levels = xp.asarray(np.arange(w) // terrain.kinds % self._start_levels, "int64")
+        self.levels = xp.copy(self.start_levels)
         self.spawn = xp.zeros((w, 2))
         self.randomizer = _Placer(self.randomizer, self)
         self._placed = True
@@ -92,11 +93,24 @@ class RoughEnv(LocoEnv):
             extra["terrain.spawn"] = self.spawn
         return extra
 
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
+        """As ``LocoEnv.reset``. A seeded reset (``seed=``) also puts the reset worlds back on their start levels,
+        so it repeats a fresh env's start; autoresets and unseeded resets keep the curriculum's levels.
+        Example: ``env.reset(seed=42)``."""
+        self._restore = seed is not None
+        try:
+            return super().reset(seed=seed, options=options)
+        finally:
+            self._restore = False
+
     def reset_worlds(self, mask: Any) -> None:
         """Reset the worlds in the bool (W,) ``mask``; each moves to a tile of its (updated) level."""
         mask = self._mask(mask)
-        if self._placed and self.curriculum and self.xp.any(mask):
-            self._update_levels(mask)
+        if self._placed and self.xp.any(mask):
+            if self.curriculum:
+                self._update_levels(mask)            # also on a seeded reset: the same random draws either way
+            if self._restore:
+                self.levels = self.xp.where(mask, self.start_levels, self.levels)
         super().reset_worlds(mask)
 
     def _update_levels(self, mask: Any) -> None:

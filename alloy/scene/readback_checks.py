@@ -220,8 +220,17 @@ def check_ortho(built: BuiltScene, t: TemplateObject) -> Result:
     beta = float(el.rayleigh_beta.value) if el.rayleigh_beta is not None else 0.0
     tris, edges, parts = gids(t, built, "tri"), gids(t, built, "edge"), gids(t, built, "particle")
     k, tm = getattr(m.alloy, OM.K_ATTR).numpy(), m.tri_materials.numpy()
-    checks = [Check(f"material.elastic.cloth.{n}", np.full(tris.shape, float(getattr(an, n).value)), k[tris, i])
-              for i, n in enumerate(("stretch_warp", "stretch_weft", "shear"))]
+    ku, kv = float(an.stretch_warp.value), float(an.stretch_weft.value)
+    yarns = 0.5 * (k[tris, 0] / ku + k[tris, 1] / kv)        # 1: a triangle's two yarn rows add up to the card's pair,
+    #                                                           both whole (a warp / weft grid) or split (yarn_split)
+    checks = [Check("material.elastic.cloth.stretch_warp", np.full(tris.shape, ku), ku * yarns),
+              Check("material.elastic.cloth.stretch_weft", np.full(tris.shape, kv), kv * yarns),
+              Check("material.elastic.cloth.shear", np.full(tris.shape, float(an.shear.value)), k[tris, 2])]
+    w = m.tri_areas.numpy()[tris]                            # a split must give each yarn half the area: totals = card
+    w = w / w.sum(axis=-1, keepdims=True)
+    for i, (n, kc) in enumerate((("stretch_warp", ku), ("stretch_weft", kv))):
+        total = (w * k[tris, i]).sum(axis=-1)
+        checks.append(Check(f"material.elastic.cloth.{n}", np.full(total.shape, kc), total, atol=0.05 * kc))
     checks += [Check("material.elastic.rayleigh_beta", np.full(tris.shape, beta), k[tris, 3], atol=1e-9),
                Check("material.elastic.youngs", np.zeros(tris.shape), tm[tris, 0]),
                Check("material.elastic.poisson", np.zeros(tris.shape), tm[tris, 1])]

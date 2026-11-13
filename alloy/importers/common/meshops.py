@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
-from alloy.importers.common.errors import ImporterError, need
+from alloy.importers.common.errors import ImporterError, MissingExtraError, need
 from alloy.importers.common.manifold_fix import fix_pinches, is_clean
 
 log = logging.getLogger("alloy.importers")
@@ -216,6 +216,17 @@ def simplify(g, max_faces: int = MAX_FACES) -> tuple[object, str]:
     raise ImporterError("<mesh>", "simplify", f"no clean simplification within {2 * max_faces} faces")
 
 
+_WARNED: list[bool] = []
+
+
+def _warn_kept(faces: int, max_faces: int, exc: MissingExtraError) -> None:
+    """Say once that meshes are kept unsimplified because the simplifier is not installed."""
+    if not _WARNED:
+        _WARNED.append(True)
+        log.warning("mesh of %d faces kept unsimplified (target %d): %s; later meshes up to %d faces are kept the "
+                    "same way", faces, max_faces, exc.message, KEEP_FACES)
+
+
 def physics_mesh(source, max_faces: int = MAX_FACES) -> tuple[object, RepairInfo]:
     """Watertight, consistently wound physics mesh of at most ``max_faces`` faces, plus how it was made.
 
@@ -229,8 +240,10 @@ def physics_mesh(source, max_faces: int = MAX_FACES) -> tuple[object, RepairInfo
     closed, method, pitch = make_watertight(g)
     try:
         small, how = simplify(closed, max_faces)
-    except ImporterError:
+    except ImporterError as exc:
         if len(closed.faces) <= KEEP_FACES:
+            if isinstance(exc, MissingExtraError):          # kept as before, but say the simplifier is missing
+                _warn_kept(len(closed.faces), max_faces, exc)
             small, how = closed, "kept"
         else:
             log.info("simplify failed on the %s mesh; retrying from a voxel remesh", method)

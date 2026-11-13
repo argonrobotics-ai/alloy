@@ -14,8 +14,8 @@ import pytest
 
 from alloy.api.errors import FeatureUnavailableError
 from alloy.envs.errors import EnvError
-from alloy.il.episode import DatasetSpec, Episode
-from alloy.il.hdf5 import HDF5Writer, load_hdf5
+from alloy.il.episode import DatasetSpec, Episode, MemoryWriter
+from alloy.il.hdf5 import HDF5Writer, copy_hdf5, load_hdf5
 
 HAS_H5PY = importlib.util.find_spec("h5py") is not None
 needs_h5py = pytest.mark.skipif(not HAS_H5PY, reason="h5py is not installed")
@@ -204,3 +204,67 @@ def test_robomimic_reads_the_file(tmp_path):
     assert FileUtils.get_env_metadata_from_dataset(path)["env_name"] == "Toy-v0"
     meta = FileUtils.get_shape_metadata_from_dataset(path)
     assert meta["ac_dim"] == 2 and meta["all_shapes"]["state"] == [4]
+
+
+@needs_h5py
+def test_resume_appends_to_an_earlier_file_and_checks_its_layout(tmp_path):
+    path = tmp_path / "d.hdf5"
+    first = write_file(path, [3, 4])
+    more = make_episode(5, seed=7, success=True)
+    with HDF5Writer(path, resume=True) as writer:
+        writer.open(make_spec())
+        assert (writer.episodes, writer.samples) == (2, 7)
+        writer.write(more)
+        assert more.index == 2
+    h5py = pytest.importorskip("h5py")
+    _, eps = load_hdf5(path)
+    assert [ep.length for ep in eps] == [3, 4, 5] and np.array_equal(eps[0].actions, first[0].actions)
+    with h5py.File(path, "r") as f:
+        assert [n.decode() for n in f["mask/success"][()]] == ["demo_0", "demo_2"] and f["data"].attrs["total"] == 12
+    other = make_spec()
+    other.action_names = ["x", "y", "z"]
+    with pytest.raises(EnvError, match="another layout"):
+        HDF5Writer(path, resume=True).open(other)
+    with pytest.raises(EnvError, match="resume and overwrite"):
+        HDF5Writer(path, resume=True, overwrite=True)
+    with HDF5Writer(tmp_path / "new.hdf5", resume=True) as writer:       # nothing there yet: a new file
+        writer.open(make_spec())
+        writer.write(make_episode(2))
+    assert len(load_hdf5(tmp_path / "new.hdf5")[1]) == 1
+
+
+@needs_h5py
+def test_next_obs_images_can_be_left_out_and_the_invalid_flag_is_stored(tmp_path):
+    path, ep = tmp_path / "d.hdf5", make_episode(4)
+    ep.invalid = True
+    with HDF5Writer(path, next_obs_images=False) as writer:
+        writer.open(make_spec())
+        writer.write(ep)
+    with pytest.importorskip("h5py").File(path, "r") as f:
+        assert "cam" in f["data/demo_0/obs"] and set(f["data/demo_0/next_obs"]) == {"state"}
+    _, (back,) = load_hdf5(path)
+    assert back.invalid and np.array_equal(back.obs["cam"], ep.obs["cam"]) and "cam" not in back.next_obs
+    assert not load_hdf5(_plain(tmp_path))[1][0].invalid
+
+
+def _plain(tmp_path: Path) -> Path:
+    write_file(tmp_path / "plain.hdf5", [2])
+    return tmp_path / "plain.hdf5"
+
+
+def test_a_spec_from_a_newer_file_loads_and_old_files_get_the_defaults():
+    data = make_spec().to_json()
+    assert DatasetSpec.from_json({**data, "a_later_field": 1}).obs_names == list("abcd")
+    del data["obs_key_names"]
+    old = DatasetSpec.from_json(data)
+    assert old.obs_key_names == {} and old.state_key == "state"
+
+
+@needs_h5py
+def test_copy_hdf5_feeds_another_writer_one_episode_at_a_time(tmp_path):
+    eps = write_file(tmp_path / "d.hdf5", [3, 4, 2])
+    sink = MemoryWriter()
+    assert copy_hdf5(tmp_path / "d.hdf5", sink) == 3 and sink.closed and sink.spec.env == "Toy-v0"
+    assert [np.array_equal(a.actions, b.actions) for a, b in zip(sink.episodes, eps)] == [True] * 3
+    picked = MemoryWriter()
+    assert copy_hdf5(tmp_path / "d.hdf5", picked, episodes=[2]) == 1 and picked.episodes[0].length == 2

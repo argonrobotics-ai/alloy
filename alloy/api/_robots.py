@@ -120,9 +120,11 @@ def add_random(item: dict[str, Any], name: str, field: str, lo: float, hi: float
 
 
 def starts(scene: Any, seed: int) -> dict[str, np.ndarray]:
-    """Per-world base positions (worlds, 3) of every robot that has per-world rows or randomized coordinates.
+    """Per-world shifts (worlds, 3) of every robot that has per-world rows or randomized coordinates: each world's
+    ``pos`` row (or the tuple with its drawn coordinates) minus the ``pos`` the robot was built at. A row moves the
+    whole file as a ``pos`` tuple does, so the root body keeps where the file places it (0.1.1; it was put at the row).
 
-    Example: ``starts(scene, seed=0)`` -> ``{"carton": array([[0, 0, 0.1], [0.01, 0, 0.1]])}``."""
+    Example: ``starts(scene, seed=0)`` -> ``{"carton": array([[0, 0, 0], [0.01, 0, 0]])}``."""
     from alloy.api import _worlds  # noqa: PLC0415
 
     out = {}
@@ -130,12 +132,13 @@ def starts(scene: Any, seed: int) -> dict[str, np.ndarray]:
         if item["kind"] != "robot" or not (item.get("per_world_pos") or item.get("randomize")):
             continue
         base = item["pose"] if item.get("pose") is not None else item["raw"]["base_pose"]
-        out[name] = _worlds.rows(name, base, item.get("per_world_pos"), item.get("randomize", []), scene.worlds, seed)
+        rows = _worlds.rows(name, base, item.get("per_world_pos"), item.get("randomize", []), scene.worlds, seed)
+        out[name] = rows - np.asarray(list(base)[:3], np.float64)
     return out
 
 
 def place(built: Any, rows: dict[str, np.ndarray]) -> None:
-    """Move each robot's start to its per-world base positions in the Model (root free joint, then FK of the robot),
+    """Shift each robot's start by its per-world ``starts`` rows in the Model (root free joint, then FK of the robot),
     before the simulation snapshots its start state, so ``reset`` returns there. Example: ``place(built, rows)``."""
     from alloy._vendor import newton  # noqa: PLC0415
 
@@ -153,8 +156,8 @@ def place(built: Any, rows: dict[str, np.ndarray]) -> None:
         bodies = idx.per_world(idx.body(name), "body")
         for w, (j, b) in enumerate(zip(joints, bodies)):
             a = int(q_start[j])
-            q[a:a + 7] = joint_coords(x_p[j], x_c[j], per_world[w], body_q[b, 3:7])
-        log.info("robot %s: per-world base positions for %d worlds", name, len(per_world))
+            q[a:a + 7] = joint_coords(x_p[j], x_c[j], body_q[b, :3] + per_world[w], body_q[b, 3:7])
+        log.info("robot %s: per-world starts for %d worlds", name, len(per_world))
     m.joint_q.assign(q)
     newton.eval_fk(m, m.joint_q, m.joint_qd, m)
 

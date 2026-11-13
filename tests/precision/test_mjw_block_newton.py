@@ -17,8 +17,9 @@ Kernel level (fake model, data and solver context; rows synthesized from the Hes
 - the buffers are keyed on the Data's ``solver_niter`` array, so a ``dataclasses.replace`` copy shares them.
 Engine level (Newton + MuJoCo Warp): an eligible 20-box pile (elliptic cone) is marked, has its buffers from
 ``put_data`` (before any step or capture), runs without overflow or clamps and matches the dense path over the first
-steps; ineligible scenes (small, a tree over 6 dofs, a pyramidal cone) stay dense, the small one bitwise; the skip
-flags keep the dense path; a pile steps bit for bit with the symbolic reuse on and off, and does reuse; the pin.
+steps; ineligible scenes (small, a tree over 6 dofs with ALLOY_MJW_BLOCK_CHUNK=0, a pyramidal cone) stay dense, the
+small one bitwise; the skip flags keep the dense path; a pile steps bit for bit with the symbolic reuse on and off,
+and does reuse; the pin.
 """
 
 from __future__ import annotations
@@ -416,7 +417,10 @@ def test_small_scene_stays_dense_and_bitwise() -> None:
     assert np.array_equal(_steps_with_block(True), _steps_with_block(False))
 
 
-def test_tree_over_six_dofs_is_not_eligible() -> None:
+def test_tree_over_six_dofs_is_not_eligible_with_chunking_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``ALLOY_MJW_BLOCK_CHUNK=0`` keeps the rule before 0.1.2 (Gemini audit T2-009): a tree over 6 dofs makes the
+    model dense. Default: it is split into runs (tests/precision/test_mjw_block.py)."""
+    monkeypatch.setenv(mjw_block.CHUNK_ENV, "0")
     b = newton.ModelBuilder()
     for k in range(16):
         b.add_shape_box(b.add_body(xform=wp.transform(wp.vec3(0.3 * k, 1.0, 0.5), wp.quat_identity())),

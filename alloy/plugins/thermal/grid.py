@@ -61,6 +61,7 @@ from alloy.plugins.thermal import grid_cap as C
 from alloy.plugins.thermal import grid_deposit as D
 from alloy.plugins.thermal import grid_flow as F
 from alloy.plugins.thermal import grid_kernels as K
+from alloy.plugins.thermal import grid_surface_flow as SF
 from alloy.plugins.thermal.grid_materials import GridMaterial, material
 
 log = logging.getLogger("alloy.plugins")
@@ -141,9 +142,11 @@ class Config:
     arc_pressure: tuple[float, float] = (0.0, 0.0)       # (N, m): the arc's force and σ; F > 0: the pool flows
     surface_tension: float = 1.2                         # N/m, liquid steel's (GA: POOL_TAU's 1.2)
     flow_moves: int = 64                                 # pool flow: liquid weld cells moved per world per exchange
-    bead_model: str = "nearest"                          # "nearest" | "cap" (grid_deposit: a cap between fused toes)
+    bead_model: str = "nearest"                          # "nearest" | "cap" | "surface" (grid_bead_surface)
+    gravity: float = 9.81                                # m/s², the surface model's weight (0: weightless)
     reshape_moves: int = 16                              # cap model: liquid weld cells moved per slice per exchange
     joint_root: tuple[float, float] | None = None        # (y, z) of the root, grid frame (None: the anchor's foot)
+    joint_down: tuple[float, float] | None = None        # (y, z) gravity: overfull slices spread (grid_cap.overflow)
     joint_rays: tuple[tuple[float, float], tuple[float, float]] = ((1.0, 0.0), (-1.0, 0.0))  # surfaces from the root
 
     def __post_init__(self) -> None:
@@ -291,6 +294,8 @@ class GridThermal(ForcePlugin):
             setattr(self, name, self.add_state(name, ctx.zeros(W, wp.float64)))
         self.slice_fed_m3 = self.add_state("slice_fed_m3", ctx.zeros((W, self._shape[0]), wp.float64))
         self.toes = self.add_state("toes", ctx.zeros((W, self._shape[0]), wp.vec2))
+        if c.bead_model == "surface":                      # warm starts, the lagged arc; radii, tables (scratch)
+            SF.allocate(self, ctx, W, self._shape[0])
         self.clock_s, self.arc_on_s = (self.add_state(n, ctx.zeros(W, wp.float64)) for n in ("clock_s", "arc_on_s"))
         self.liquid_s, self.live_s = (self.add_state(n, ctx.full((W, self._shape[0]), -1.0, wp.float64))
                                       for n in ("liquid_s", "live_s"))
@@ -401,6 +406,8 @@ class GridThermal(ForcePlugin):
                       inputs=[self._ga, self._bead, 0.5 * self._mat.h_liquidus, c.reshape_moves],
                       outputs=[self.cell, self.enthalpy, self.enthalpy_lo, self.peak, self.deposit_budget,
                                self.slice_fed_m3, self.toes, self._t, self._mass_d])
+        if c.bead_model == "surface":
+            SF.exchange(self, dev, float(dt), 0.5 * self._mat.h_liquidus)
         self._derive()
         self._pool_time(float(dt))                         # new metal is liquid now: a slice it froze in at once
         wp.launch(K.arc_power, dim=(W, N), device=dev, inputs=[self._ga, self.cell, self._arcs],

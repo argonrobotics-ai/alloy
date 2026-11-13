@@ -33,6 +33,7 @@ from alloy.coupling.graph_budget_rungs import GraphBudgetRungsMixin
 from alloy.coupling.kinematic import KinematicProxyMixin
 from alloy.coupling.match_reset import MatchResetMixin
 from alloy.coupling.mixin import NON_PRECISION_TOL_SCALE, SchedulerMixin
+from alloy.coupling.parked import ParkedWorldsMixin
 from alloy.coupling.proxy_contacts import (CONTACT_FREE_DESTINATIONS, ProxyContactPipeline, contact_free,
                                           entry_contact_sizing)
 from alloy.coupling.proxy_loop import IterationConfig, ProxyIterationLoop
@@ -110,8 +111,9 @@ def _one_pass_config(policy: SchedulerPolicy) -> IterationConfig:
     return dataclasses.replace(cfg, k_min=1, k_max=1)
 
 
-class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMassMixin, ClockCensusMixin,
-                VbdStepIterationsMixin, MatchResetMixin, GraphBudgetRungsMixin, SchedulerMixin, SolverCoupledProxy):
+class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMassMixin, ParkedWorldsMixin,
+                ClockCensusMixin, VbdStepIterationsMixin, MatchResetMixin, GraphBudgetRungsMixin, SchedulerMixin,
+                SolverCoupledProxy):
     """Proxy coupling with residual-gated iterations, adaptive clocks and an energy watchdog: two entries, or more over
     an acyclic proxy graph where Newton supports it (``alloy.coupling.compose``)."""
 
@@ -256,7 +258,7 @@ class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMa
         for pair in self._alloy_pairs:
             k_c = self._pair_k_c(pair)
             if k_c is not None:
-                out.append((k_c, float(self._pair_mass.get((pair.source, pair.destination), np.inf))))
+                out.append((k_c, self._clock_mass((pair.source, pair.destination))))    # parked.py
         return out
 
     def _pair_k_c(self, pair: PairPolicy) -> float | None:
@@ -281,7 +283,7 @@ class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMa
         """(c_d, m_eff) per pair whose destination resolves contacts: the destination's contact damping
         (``_default_damping``), which the lagged exchange holds as a force for a whole interval. Contact-free
         destinations (SPH) have none."""
-        return [(c_d, float(self._pair_mass.get((pair.source, pair.destination), np.inf)))
+        return [(c_d, self._clock_mass((pair.source, pair.destination)))
                 for pair in self._alloy_pairs if (c_d := self._pair_c_d(pair)) is not None]
 
     def _pair_c_d(self, pair: PairPolicy) -> float | None:

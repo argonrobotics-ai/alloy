@@ -2,11 +2,13 @@
 """Newton model -> :class:`~alloy.camera.scene.SceneData`: one instance per visible shape, in its own world.
 
 Shapes are tessellated like Newton's viewers (``newton.Mesh.create_*``) and coloured like them: the model's
-``shape_color`` when present, else the mesh's own colour, else a per-shape palette colour. A ``shape_color`` that is
-one colour for every visible shape counts as unset (scenes assembled object by object get the palette's first colour
-everywhere): the shapes then take palette colours. A ground plane whose colour is only a builder palette colour (none
-of its own) draws neutral grey, also beside shapes that carry their own colours (a robot's rgba), where it would
-otherwise share the objects' palette blue. Instances on a body follow ``state.body_q``; shapes with
+``shape_color`` when present, else the mesh's own colour, else a per-shape palette colour. A shape's ``shape_color``
+that is only a builder palette colour (what a shape added with no colour gets: scenes assembled object by object give
+every shape the palette's first colour) counts as unset, as does one colour for every visible shape: such shapes
+take palette colours by their index in their world (the same object has the same colour in every world), also beside
+shapes that carry their own colours (a robot's rgba), and a ground plane with no colour of its own draws neutral grey.
+The full-material tracer's shapes without a look take the same colours (``default_rgb``; before, they
+drew the raw palette blue, ground included). Instances on a body follow ``state.body_q``; shapes with
 ``shape_world == -1`` are shared by every world.
 
 Example::
@@ -80,14 +82,36 @@ def _palette(newton, i: int) -> tuple[float, float, float]:
     return tuple(c / 255.0 for c in pal[i % len(pal)][:3])
 
 
-def _shape_color(newton, s: int, colors, flags: int, src) -> tuple[float, float, float]:
-    if colors is not None:
+def _shape_color(newton, s: int, colors, flags: int, src, index: int | None = None) -> tuple[float, float, float]:
+    """Shape ``s``'s own colour (not a builder palette colour), else its mesh's, else the palette's by ``index``."""
+    if colors is not None and not _palette_only(newton, colors[s]):
         return tuple(float(c) for c in colors[s][:3])
     if src is not None and getattr(src, "color", None) is not None:
         return tuple(float(c) for c in src.color[:3])
     if (flags & int(newton.ShapeFlags.COLLIDE_SHAPES)) == 0:
         return (0.5, 0.5, 0.5)
-    return _palette(newton, s)
+    return _palette(newton, s if index is None else index)
+
+
+def default_rgb(newton, s: int, colors, geo_type: int, flags: int, src, index: int | None = None) -> tuple:
+    """The colour shape ``s`` is drawn in when no look covers it: neutral grey for a ground plane with no colour of
+    its own, else :func:`_shape_color`. ``colors``: :func:`_model_colors`; ``index``: its palette index (default s)."""
+    if _grey_ground(newton, geo_type, colors, s):
+        return GROUND_RGB
+    return _shape_color(newton, s, colors, flags, src, index)
+
+
+def palette_index(model) -> np.ndarray:
+    """(shape_count,) int: each shape's index as the matching shape of the first world (shared shapes: their own), so
+    the palette gives an object one colour in every world of a replicated scene."""
+    world = model.shape_world.numpy()
+    idx = np.arange(len(world))
+    own = world >= 0
+    if not own.any():
+        return idx
+    first = {int(w): int(np.flatnonzero(world == w)[0]) for w in np.unique(world[own])}
+    base = first[min(first)]
+    return np.where(own, idx - np.array([first.get(int(w), base) for w in world]) + base, idx)
 
 
 GROUND_RGB = (0.5, 0.5, 0.5)  # a ground plane without a colour of its own
@@ -152,7 +176,7 @@ def scene_from_model(model, lighting: Lighting | None = None, include=None) -> S
     body, world = model.shape_body.numpy(), model.shape_world.numpy()
     xf, flags = model.shape_transform.numpy(), model.shape_flags.numpy()
     drawn = drawn_shapes(model)
-    colors = _model_colors(model, drawn)
+    colors, pal = _model_colors(model, drawn), palette_index(model)
     labels = list(getattr(model, "shape_label", None) or getattr(model, "shape_key", None) or [""] * n)
     card_rgb = look_colors(labels)  # library objects: their card's look colour instead of the palette
     meshes, keys, rows = [], {}, []
@@ -168,8 +192,7 @@ def scene_from_model(model, lighting: Lighting | None = None, include=None) -> S
                 continue
             keys[key] = len(meshes)
             meshes.append(MeshGeom(f"{labels[s] or 'shape'}_{s}", *geom))
-        rgb = card_rgb.get(s) or (GROUND_RGB if _grey_ground(newton, int(ty[s]), colors, s)
-                                  else _shape_color(newton, s, colors, int(flags[s]), src))
+        rgb = card_rgb.get(s) or default_rgb(newton, s, colors, int(ty[s]), int(flags[s]), src, int(pal[s]))
         rows.append((keys[key], int(world[s]), int(body[s]), xf[s], rgb, labels[s] or f"shape_{s}"))
     if not rows:
         raise CameraError("no visible shapes", "set ShapeFlags.VISIBLE on the shapes to draw, or loosen include")

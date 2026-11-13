@@ -16,6 +16,7 @@ body in a liquid), the slowest block sets the pace. Workers run one thread each 
 
 from __future__ import annotations
 
+import copy
 import logging
 import os
 import pickle
@@ -181,6 +182,30 @@ def _hold_mpm_grids(workers: list[_Worker], worlds: int) -> None:
              [None if b is None else (b[0].tolist(), b[1].tolist()) for b in boxes])
 
 
+BOUND = ("_cam_body", "_cam_local", "_attached")    # alloy.camera.Camera's state from binding to one scene
+
+
+def portable(camera: Any) -> Any:
+    """``camera`` as it can travel to a worker process: a camera that rendered in this process holds its renderer
+    (ctypes handles) and device arrays, which do not pickle, so the copy sent leaves them here and binds again on its
+    first render there (``Camera._bind``). An unbound camera goes as it is."""
+    if getattr(camera, "_bound", None) is None:
+        return camera
+    sent = copy.copy(camera)
+    for key in BOUND:
+        sent.__dict__.pop(key, None)
+    sent.__dict__.update(_bound=None, _denoiser=None, _dirty=True, _clip_check=True)
+    return sent
+
+
+def join_images(parts: list[Any]) -> Any:
+    """The processes' camera images in world order: arrays joined along the world axis, or, for several outputs
+    (``output=("rgb", "depth")``: a dict per process), each output joined on its own."""
+    if parts and all(isinstance(p, dict) for p in parts):
+        return {k: np.concatenate([p[k] for p in parts], axis=0) for k in parts[0]}
+    return np.concatenate(parts, axis=0)
+
+
 def _gather(workers: list[_Worker], msgs: list[Any] | None) -> list[Any]:
     """Send each worker its message (None: only receive), then read every reply; the first error is raised after
     all replies are in, so every worker stays in step with the parent."""
@@ -310,10 +335,11 @@ class SplitSim:
 
     def drive(self, name: str, *, velocity: Any = (0.0, 0.0, 0.0), angular_velocity: Any = (0.0, 0.0, 0.0),
               pivot: Any = None, duration: float = float("inf")) -> SplitSim:
-        if pivot is None:                                    # a fixture turns about its centre in world 0
-            pivot = self._one(0, ("pivot", name))
-        kw = {"velocity": velocity, "angular_velocity": angular_velocity, "pivot": pivot, "duration": duration}
-        self._call_all("drive", lambda b: ((name,), kw))
+        W = self._worlds                     # pivot None: each worker turns its worlds about their own centres
+        self._call_all("drive", lambda b: ((name,), {
+            "velocity": M.cut(velocity, b, W, "velocity", row_ndim=1),
+            "angular_velocity": M.cut(angular_velocity, b, W, "angular_velocity", row_ndim=1),
+            "pivot": M.cut(pivot, b, W, "pivot", row_ndim=1), "duration": duration}))
         return self
 
     def stop_drives(self) -> SplitSim:
@@ -375,11 +401,14 @@ class SplitSim:
 
     def render(self, camera: Any = None, **kwargs: Any) -> Any:
         """One world's image (``world=``, default 0) from the process holding it; a ``Camera`` renders every world,
-        joined in world order."""
+        joined in world order (each image of an ``output=`` tuple joined on its own, as ``Sim.render`` returns them).
+        Each process renders with its own copy of the camera (a camera that already rendered elsewhere is sent
+        without its renderer, which stays with the process that built it)."""
         if camera is None:
             rank, local = M.owner(self.blocks, int(kwargs.pop("world", 0)))
             return self._one(rank, ("call", "render", (None,), {**kwargs, "world": local}))
-        return np.concatenate(self._call_all("render", lambda b: ((camera,), kwargs)), axis=0)
+        sent = portable(camera)
+        return join_images(self._call_all("render", lambda b: ((sent,), kwargs)))
 
     def report(self) -> dict[str, Any]:
         """``{"processes": N, "blocks": [(offset, count), ...], "workers": [each worker's engine report]}``."""

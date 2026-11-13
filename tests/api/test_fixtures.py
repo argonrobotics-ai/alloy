@@ -171,3 +171,81 @@ def test_randomize_names_the_valid_fields():
     scene.randomize("cube", "density", 900, 1100)
     scene.randomize("cube", "material.surface.mu_dynamic", 0.3, 0.4)     # poisson: tests/api/test_audit_stack.py
     assert [r["field"] for r in scene.items["cube"]["randomize"]] == ["material.density", "material.surface.mu_dynamic"]
+
+
+def _jugs_apart(worlds: int = 4, **kw):
+    """A kinematic open box and open cylinder in each world, 0.35 m apart in y from world to world (S1-024)."""
+    from alloy.api._build import build  # noqa: PLC0415
+
+    starts = np.array([[0.0, 0.35 * w, 0.12] for w in range(worlds)])
+    sc = Scene(worlds=worlds, dt=0.01)
+    sc.add_ground()
+    sc.add_open_box("jug", inner=(0.10, 0.10, 0.10), wall=0.008, pos=starts, kinematic=True)
+    sc.add_open_cylinder("cup", inner_radius=0.045, depth=0.10, wall=0.008, segments=8,
+                         pos=starts + np.array([0.25, 0.0, 0.0]), kinematic=True)
+    sc.add_sphere("marble", radius=0.022, pos=starts + np.array([0.0, 0.0, 0.04]), mass=0.08)   # a dynamic body
+    return build(sc, device="cpu", **kw)
+
+
+def _tilt_and_lift(sim) -> dict:
+    """Default-pivot tilts, then a per-world lift with an explicit (worlds, 3) pivot; the poses after."""
+    for n in ("jug", "cup"):
+        sim.drive(n, angular_velocity=(math.pi / 2, 0.0, 0.0), duration=0.5)
+    sim.step(60)
+    rows = sim.state(["jug"])["jug.pos"].copy()
+    sim.drive("jug", velocity=np.array([[0.0, 0.0, 0.1 * w] for w in range(4)]), angular_velocity=(0.0, 0.5, 0.0),
+              pivot=rows, duration=0.3)
+    sim.step(40)
+    st = sim.state(["jug", "cup"])
+    return {k: np.asarray(st[k]) for k in ("jug.pos", "jug.quat_wxyz", "cup.pos", "cup.quat_wxyz")}
+
+
+@pytest.mark.compile_heavy
+def test_a_drive_turns_each_worlds_fixture_about_its_own_centre():
+    """S1-024: the default pivot was world 0's fixture centre for every world, so a 90 deg tilt swung the fixtures of
+    worlds 1-3 round world 0's (1.49 m for world 3) with health ok. Each world now turns about its own centre: every
+    world moves as world 0 does. A (worlds, 3) velocity moves each world by its own row (it raised a bare
+    TypeError); a wrong shape or a NaN raises SimulationError naming the argument."""
+    from alloy.api.errors import SimulationError  # noqa: PLC0415
+
+    sim = _jugs_apart()
+    try:
+        p0 = {n: sim.state([n])[f"{n}.pos"].copy() for n in ("jug", "cup")}
+        for n in ("jug", "cup"):
+            sim.drive(n, angular_velocity=(math.pi / 2, 0.0, 0.0), duration=1.0)
+        sim.step(100)
+        for n in ("jug", "cup"):
+            moved = sim.state([n])[f"{n}.pos"] - p0[n]
+            assert float(np.linalg.norm(moved[0])) > 0.05, f"{n}: the tilt about its centre moves its frame"
+            # float32 poses: the worlds' frames differ by their y offsets (up to 1.05 m), so 1e-5 m, not 0
+            assert np.allclose(moved, moved[0], rtol=0.0, atol=1e-5), f"{n}: every world tilts as world 0 does"
+        sim.stop_drives()
+        z0 = sim.state(["jug"])["jug.pos"][:, 2].copy()
+        sim.drive("jug", velocity=np.array([[0.0, 0.0, 0.1 * w] for w in range(4)]), duration=0.5)
+        sim.step(60)
+        dz = sim.state(["jug"])["jug.pos"][:, 2] - z0
+        assert np.allclose(dz, [0.0, 0.05, 0.10, 0.15], rtol=0.0, atol=1e-5), "one velocity row per world"
+        bad = (({"velocity": np.zeros((3, 3))}, "velocity"), ({"angular_velocity": (0.0, math.nan, 0.0)},
+               "angular_velocity"), ({"pivot": [[0.0, 0.0]] * 4}, "pivot"), ({"duration": -1.0}, "duration"))
+        for kw, field in bad:
+            with pytest.raises(SimulationError) as err:
+                sim.drive("jug", **kw)
+            assert err.value.field == field and err.value.fix
+    finally:
+        sim.close()
+
+
+@pytest.mark.compile_heavy
+def test_a_drive_in_worker_processes_matches_one_process_bit_for_bit():
+    """S1-024 with processes=2: the parent asked worker 0 for world 0's centre and sent it to every worker. Each
+    worker now turns its own worlds about their own centres and takes its rows of a (worlds, 3) argument: the poses
+    equal one process's, bit for bit."""
+    one = _jugs_apart()
+    try:
+        ref = _tilt_and_lift(one)
+    finally:
+        one.close()
+    with _jugs_apart(processes=2) as split:
+        got = _tilt_and_lift(split)
+    for k in ref:
+        assert np.array_equal(got[k], ref[k]), k

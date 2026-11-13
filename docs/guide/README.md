@@ -29,6 +29,7 @@ each. Every code block is complete and runs as shown (GPU if present, else CPU).
 | [locomotion.md](locomotion.md) | legged robots: the Go2 velocity environment on flat ground or on rough terrain tiles with a level curriculum (commands, pushes, policy and critic observations, foot contact forces) and a PPO train command; no height scan, stairs or gaps, no actuator model |
 | [imitation.md](imitation.md) | imitation-learning data: record episodes to robomimic HDF5 or LeRobotDataset v3, keyboard teleoperation, scripted demo generation (3 of 9 ready-made envs), replay, policy evaluation (no training code) |
 | [sysid.md](sysid.md) | system identification (optional): fit a simulated robot's servo stiffness, damping, dry friction and action delay to a recording of the real one; one command, a report, then `add_robot(sysid=)`; what is not fitted |
+| [isaaclab.md](isaaclab.md) | Isaac Lab 3.0 (optional): run an unmodified task on Alloy with `physics=alloy`; install beside Isaac Lab, settings, health checks, what is verified and what is not yet |
 | [compose.md](compose.md) | the scene builder: a sentence in, a checked scene and variations out |
 | [variants.md](variants.md) | `alloy.vary` / `alloy vary`: copies of a scene with objects moved and textures swapped |
 | [fetch.md](fetch.md) | `alloy fetch`: download library objects from the Hugging Face Hub into the local cache |

@@ -1,6 +1,6 @@
 [project]
 name = "alloy-engine"   # the import name is `alloy`
-version = "0.1.2"
+version = "0.1.3"
 description = "Alloy: a multi-material, parallel physics engine for robot learning, built on Newton and MuJoCo Warp (Python 3.11 or 3.12)"
 requires-python = ">=3.11,<3.13"
 license = "Apache-2.0"
@@ -41,8 +41,11 @@ dependencies = [
 dev = ["pytest", "pytest-timeout"]
 mesh = ["pytetwild==0.2.3", "coacd"]   # 0.3+ imports pyvista at import time (undeclared dependency)
 # Asset importers (alloy.importers). scikit-image: marching cubes for the importers' voxel remesh; 0.25.2 is the
-# newest with cp310 and aarch64 wheels (0.26 dropped 3.10). BSD-3-Clause.
-import = ["trimesh", "manifold3d", "coacd", "pillow", "huggingface_hub", "scikit-image==0.25.2"]
+# newest with cp310 and aarch64 wheels (0.26 dropped 3.10). BSD-3-Clause. fast-simplification: quadric edge collapse,
+# which takes meshes down to 5,000 faces (alloy.importers.common.meshops; without it a mesh over 20,000 faces fails
+# and smaller ones are kept unsimplified). MIT, needs numpy only.
+import = ["trimesh", "manifold3d", "coacd", "pillow", "huggingface_hub", "scikit-image==0.25.2",
+          "fast-simplification==0.2.0"]
 # Barcode decoding for the camera-in-the-loop tasks (alloy.tasks.barcode_decode): zxing-cpp, Apache-2.0,
 # self-contained ~1 MB wheels (cp310/cp311, cp312 abi3; Linux x86_64 + aarch64, macOS arm64, Windows), no dependencies.
 barcode = ["zxing-cpp==3.1.1"]
@@ -67,8 +70,15 @@ lerobot = ["lerobot[dataset]>=0.7.0,<0.8; python_version >= '3.12'"]
 # the oldest that works with that viewer. The Rerun backend needs the user's own `pip install rerun-sdk`.
 viewer = ["viser>=1.1.1", "pyglet>=2.1.6,<3", "imgui_bundle>=1.92.0"]
 
+# Isaac Lab loads this group before it resolves a task (isaaclab train / play / zero_agent): it makes physics=alloy
+# resolve on tasks that offer physics=newton_mjwarp (alloy.isaaclab.presets). Nothing loads it without Isaac Lab.
+[project.entry-points."isaaclab.tasks"]
+alloy = "alloy.isaaclab.register"
+
 [project.scripts]
 alloy = "alloy.cli:main"   # JSON in and out
+alloy-engine = "alloy.cli:main"   # the same command under the package's name, so `uvx alloy-engine mcp` runs (MCP
+                                 # registry clients start a PyPI server as `uvx <package>`; GEO R3, coordinator)
 
 # The docs site, the repository and its issues.
 [project.urls]
@@ -76,6 +86,7 @@ Homepage = "https://alloy.argonrobotics.ai"
 Documentation = "https://alloy.argonrobotics.ai/docs/"
 Repository = "https://github.com/argonrobotics-ai/alloy"
 Issues = "https://github.com/argonrobotics-ai/alloy/issues"
+Paper = "https://arxiv.org/abs/2611.16312"   # on arXiv since 2026-11-12 (GEO ask)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

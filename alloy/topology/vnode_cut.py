@@ -45,6 +45,7 @@ import numpy as np
 import warp as wp
 
 from alloy._vendor import newton
+from alloy.core.errors import AssemblyError
 from alloy.topology.blade_contact import blade_face, blade_spine
 from alloy.topology.cut import edge_depth, knife_work
 from alloy.topology.tet_copies import TetCopies
@@ -183,11 +184,11 @@ class VNodeCutter:
         body_world = world_of(model.body_world.numpy())
         for j, b in enumerate(blades):
             if of_world[body_world[b.body]] >= 0:
-                raise ValueError("cut_model: copies takes one blade per world, and blades "
-                                 f"{of_world[body_world[b.body]]} and {j} are both in world {body_world[b.body]}. "
-                                 "Keep one knife (an object with a "
-                                 "`blade:` block) in each world, or give the objects a second knife must cut "
-                                 "`cut_model: seams` (docs/guide/cutting.md)")
+                err = AssemblyError("cut_model: copies takes one blade per world, and blades "
+                                    f"{of_world[body_world[b.body]]} and {j} are both in world {body_world[b.body]}")
+                err.fix = ("keep one knife (an object with a `blade:` block) in each world, or give the objects a "
+                           "second knife must cut `cut_model: seams` (docs/guide/cutting.md)")
+                raise err
             of_world[body_world[b.body]] = j
         bt = CutterBlades()
         bt.of_world = wp.array(of_world, dtype=wp.int32, device=dev)

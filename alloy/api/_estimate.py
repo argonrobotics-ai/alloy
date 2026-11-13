@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """``alloy.estimate(scene, worlds, seconds)``: memory, step time, wall time and compile time before a run.
 
-It assembles one world of the scene (no stepping) to count bodies, joints and particles and to see which solvers
-the scene routes to, then applies a per-step cost model calibrated on an NVIDIA L4 and on CPU (``COST`` in this module):
-warm wall time within 1.3x on its calibration rows (``tests/api/test_estimate_calibration.py``), further off for scenes
-unlike them; ``measure=True`` times a short real run instead (costs a compile).
+It assembles one world of the scene (no stepping; the explicit MuJoCo pair rows are counted, not built:
+``mujoco_pairs.count_only``) to count bodies, joints and particles and to see which solvers the scene routes to, then
+applies a per-step cost model calibrated on an NVIDIA L4 and on CPU (``COST`` in this module): warm wall time within
+1.3x on its calibration rows (``tests/api/test_estimate_calibration.py``), further off for scenes unlike them, and
+``caveats`` names what it knows it leaves out for the scene (mesh-on-mesh contact at the start); ``measure=True``
+times a short real run instead (costs a compile).
 
 Example::
 
@@ -23,6 +25,7 @@ from typing import Any
 import numpy as np
 
 from alloy.api import _liquid_accuracy as LA
+from alloy.api._estimate_caveats import caveats, touching_mesh_pairs
 from alloy.scene import cloth_accuracy as CA
 
 #: per physics step (s): ``floor_s`` once; then per pass (``_exchange_clock``: a coupled scene steps its entries once
@@ -34,13 +37,17 @@ from alloy.scene import cloth_accuracy as CA
 #: (MPM). Fit 2026-11-09 (FIX-LIST 7; least squares in log space with a weak pull to the earlier values) on the 55 rows
 #: in ``bench/results/estimate_calib/`` (robot + water, bins, arm, cloth, pour at 1 / 4 / 64 worlds, also 256 / 512 on
 #: the L4; one process per row on spot n2d CPUs, one L4; warm graphs): every row within 1.25x (the law holds 1.3x).
+#: ``pair_s`` (``wp7_s1_rows.json``): per explicit MuJoCo pair row (``mujoco_pairs``: up to one per
+#: shape pair) and world, x rk4_factor. MuJoCo C tests each every step: 4-32 decomposed bowls (4,482-362,448 rows) on
+#: a spot n2d stepped 1.06-3.41x the estimate without it, 0.93-1.07x with; on an L4 0.5-1.0x without it: 0 there.
 COST: dict[str, dict[str, Any]] = {
     "cuda": {"floor_s": 7.2e-5, "body_s": 4.0e-8, "dof_s": 5.0e-9, "particle_s": 2.0e-8, "contact_s": 4.5e-8,
              "fixed_s": {"mujoco": 4.9e-4, "sph": 2.0e-3, "coupled": 1.9e-3}, "sph_particle_s": 6.7e-8,
-             "coupled_particle": 1.27, "mjw_scale": 1.0, "rk4_factor": 2.85},
+             "coupled_particle": 1.27, "mjw_scale": 1.0, "rk4_factor": 2.85, "pair_s": 0.0},
     "cpu": {"floor_s": 6.6e-4, "body_s": 9.8e-6, "dof_s": 3.9e-6, "particle_s": 2.0e-6, "contact_s": 1.1e-6,
             "fixed_s": {"mujoco": 5.1e-5, "mujoco_warp": 3.6e-3, "sph": 6.5e-3, "coupled": 9.0e-3},
-            "sph_particle_s": 2.3e-5, "coupled_particle": 1.28, "mjw_scale": 1.03, "rk4_factor": 2.14},
+            "sph_particle_s": 2.3e-5, "coupled_particle": 1.28, "mjw_scale": 1.03, "rk4_factor": 2.14,
+            "pair_s": 1.47e-8},
 }
 SOLVER_FACTOR = {"mujoco": 1.0, "mpm": 8.0}     # particle_s multiples (MPM); SPH: sph_particle_s; VBD: VBD_COST
 #: one VBD solve over all worlds: step_call_s + iterations x iter_call_s (launches) + particles x (step_s + iterations x
@@ -68,6 +75,10 @@ COMPILE_S = {"cuda": 60.0, "cpu": 240.0}     # first run of a new scene kind; la
 BYTES_PER_PARTICLE = 400                      # state, neighbour lists and solver scratch (SPH / VBD); MPM: mpm_memory
 #: GPU device memory [B], fitted to one L4 (bench/results/estimate_calib/memory_rows.json: what nvidia-smi books to the
 #: process after 20 control periods, or the CUDA context + Warp's pool peak where the CUDA graph was dropped)
+#: a cloth or cable (VBD) coupled to rigid bodies (wp7_s1_rows.json): its own contact pipeline and the
+#: coupling's kernels: B, and B per world x colliding shapes ** COUPLED_POWER (it grew faster than its contact slots:
+#: 20 / 43 / 93 kB per shape and world at 19 / 111 / 445 shapes)
+COUPLED_BASE, COUPLED_SHAPE, COUPLED_POWER = 1.2e9, 4.36e3, 1.5
 GPU_MEMORY = {"base": 3.8e8,                  # the CUDA context (2.3e8), the kernels and the first CUDA graph
               "pools": 5.5e8,                 # more with self-colliding cloth / soft bodies (VBD) or a robot in liquid
               "pools_plain": 2.7e8,           # more with cloth that does not collide with itself
@@ -76,7 +87,8 @@ GPU_MEMORY = {"base": 3.8e8,                  # the CUDA context (2.3e8), the ke
               "contact_ccd": 5.4e3,           # the same on MuJoCo's convex path (meshes, cylinders: multiccd)
               "rk4": 1.5,                     # rk4 holds its stages' scratch
               "vbd_particle": 3.5e3,          # per VBD particle with self-contact (its pair buffers)
-              "vbd_particle_plain": 1.5e3, "sph_particle": 1.25e3}
+              "vbd_particle_plain": 1.5e3, "sph_particle": 1.25e3,
+              "coupled": COUPLED_BASE, "coupled_shape": COUPLED_SHAPE}
 
 
 def estimate(scene: Any, worlds: int | None = None, seconds: float = 1.0, device: str | None = None, *,
@@ -86,7 +98,8 @@ def estimate(scene: Any, worlds: int | None = None, seconds: float = 1.0, device
     Keys: physics_steps_per_world, step_time_s, wall_time_s, world_steps_per_s, real_time_factor, memory_bytes,
     compile_s_first_run, counts (per world), solvers, rigid_step (its "fast" row: the rigid fast mode's step, time and
     cost, for a scene of free bodies), routes (per object: route, solver, reasons, as ``Sim.routes()``), vbd (the
-    cloth / soft solver's particles per world, iterations and self-contact), basis.
+    cloth / soft solver's particles per world, iterations and self-contact), caveats (sentences: what the model
+    leaves out for this scene, e.g. meshes resting on meshes, which step slower than estimated), basis.
     Wall time is of warm stepping, fitted to measured runs (``bench/results/estimate_calib/``: robot + water, bins,
     an arm, cloth, a pour; 1-64 worlds, CPU and L4): within 1.3x on those 55 rows. Right after a build or reset a GPU
     run captures CUDA graphs first (up to 2.65x on a 1 s run); a scene far from those rows can be further off. Memory
@@ -161,7 +174,7 @@ def _modelled(scene: Any, n: int, seconds: float, dev: str) -> dict[str, Any]:
             "real_time_factor": n * seconds / wall if wall else math.inf,
             "memory_bytes": _memory(counts, n, template if kind == "cuda" else None),
             "compile_s_first_run": COMPILE_S[kind], "counts": counts, "solvers": sorted(solvers), "rigid_step": rigid,
-            "routes": routes, "vbd": vbd,
+            "routes": routes, "vbd": vbd, "caveats": caveats(template[6]),
             "basis": f"cost model ({kind} table, alloy.api._estimate.COST and VBD_COST; a coupled scene at its force "
                      "exchange clock, exchange_clock in vbd); warm wall time within 1.3x on its calibration rows"}
 
@@ -192,6 +205,7 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
         from alloy.cards.library import CardLibrary  # noqa: PLC0415
         from alloy.cards.roots import assets_root  # noqa: PLC0415
         from alloy.scene.assembler import SceneAssembler  # noqa: PLC0415
+        from alloy.scene.mujoco_pairs import count_only  # noqa: PLC0415
         from alloy.scene.rigid_step_warn import PREFIX as GAP_PREFIX  # noqa: PLC0415
 
         from alloy.api import _pour, _rigid_step  # noqa: PLC0415
@@ -204,8 +218,9 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
         lib = CardLibrary(roots=catalog.card_roots([tmp, *scene.roots]), assets=assets_root())
         fetch_imported(lib, mat.cards)
         step = _rigid_step.request(scene, "standard", (), mat.per_world_pos, announce=False)       # as the build asks
-        built = SceneAssembler(lib, LA.router_for(scene), rigid_step=step).assemble(lib.scene(mat.scene_file.stem),
-                                                                                    device, world_count=1)
+        with count_only() as pair_rows:              # the explicit MuJoCo pairs counted, not built
+            built = SceneAssembler(lib, LA.router_for(scene), rigid_step=step).assemble(
+                lib.scene(mat.scene_file.stem), device, world_count=1)
         m = built.model
         from alloy.integration.mpm_memory import mpm_particles  # noqa: PLC0415
 
@@ -227,7 +242,8 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
         vbd = {**_vbd_load(built.entries), "coupled": clock["coupled"], "exchange_clock": clock}
         if clock["coupled"]:            # a physics step per force exchange, or per the finest entry's own step
             steps_per_period = max(steps_per_period, clock["exchanges"] * max(1, round(scene.dt / built.control_dt)))
-        load = _load(scene, built, device)
+        load = {**_load(scene, built, device), "pair_rows": int(sum(pair_rows)),
+                "touching_mesh_pairs": touching_mesh_pairs(m)}
     return counts, solvers, steps_per_period, rigid, routes, vbd, load
 
 
@@ -374,7 +390,8 @@ def _step_time(counts: dict[str, int], solvers: set[str], worlds: int, kind: str
     vbd, load = vbd or {"particles": 0}, load or {}
     mj, sph, coupled = load.get("mujoco"), float(load.get("sph_active", 0.0)), bool(load.get("sph_coupled"))
     shapes = load.get("collide", counts["shapes"])          # colliding shapes (a robot's visual meshes are free)
-    rigid = counts["bodies"] * c["body_s"] + counts["dofs"] * c["dof_s"] + shapes * c["contact_s"]
+    rigid = (counts["bodies"] * c["body_s"] + counts["dofs"] * c["dof_s"] + shapes * c["contact_s"]
+             + int(load.get("pair_rows", 0)) * c["pair_s"])
     once = 0.0
     if mj is not None:
         once += fixed["mujoco_warp"] if mj == "warp" and "mujoco_warp" in fixed else fixed["mujoco"]
@@ -439,10 +456,18 @@ def _gpu_memory(template: tuple, worlds: int) -> int:
     per_world = (load["njmax"] * (g["row"] + g["row_dof"] * counts["dofs"]) + scratch + sph * g["sph_particle"]
                  + max(counts["particles"] - sph - mpm, 0) * g["vbd_particle" if touching else "vbd_particle_plain"])
     pools = g["pools"] if touching or load["sph_coupled"] else g["pools_plain"] if "vbd" in solvers else 0.0
+    if _vbd_coupled(vbd, load):                       # its own contact pipeline beside MuJoCo's
+        pools += g["coupled"]
+        per_world += g["coupled_shape"] * int(load["collide"]) ** COUPLED_POWER
     total = g["base"] + pools + per_world * worlds
     if mpm:
         total += predict(mpm * worlds, moving=counts["bodies"] > 0)
     return int(total)
+
+
+def _vbd_coupled(vbd: dict[str, Any] | None, load: dict[str, Any]) -> bool:
+    """A VBD entry exchanging forces with a MuJoCo entry: its own proxy contact pipeline (coupling.proxy_contacts)."""
+    return bool(vbd and vbd.get("coupled") and (vbd.get("particles") or vbd.get("links")) and load.get("mujoco"))
 
 
 def _measured(scene: Any, worlds: int, seconds: float, device: str) -> dict[str, Any]:

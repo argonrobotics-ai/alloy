@@ -24,6 +24,7 @@ import numpy as np
 from alloy.api import _cpu_note, _robot_random, _robot_random_push, _robots, catalog, fixtures as _fixtures
 from alloy.api.errors import BuildError, SceneError, world_limits, wrapped
 from alloy.api.scene import Scene
+from alloy.coupling import world_clock_api as second
 from alloy.route import weld_stiff
 
 log = logging.getLogger("alloy.api")
@@ -62,7 +63,7 @@ def pick_device(device: str | None = None) -> str:
 
 def build(scene: Scene | str | Path | dict, worlds: int | None = None, device: str | None = None, seed: int = 0,
           *, profile: str = "standard", contacts: str = "auto", plugins: Sequence[Any] = (),
-          processes: int | str | None = None, mpm_sweeps: str = "full", rerun_worlds: int = 0,
+          processes: int | str | None = None, mpm_sweeps: str = "full", rerun_worlds: int = 0, clock_worlds: int = 0,
           mpm_coupling: str | None = None, contact_capacity: int | None = None,
           constraint_rows: int | None = None, welds: str | None = None) -> Any:
     """Build ``scene`` (a ``Scene``, a path / library scene name for ``alloy.load``, or ``Scene.to_dict()`` data).
@@ -103,6 +104,26 @@ def build(scene: Scene | str | Path | dict, worlds: int | None = None, device: s
       does). Take about worlds // 16. It helps on the GPU: on the CPU's default MuJoCo route, beside liquid or MPM,
       or when more worlds re-run than it holds, a re-run runs as before. ``sim.report()["fine_reruns"]`` counts the
       re-runs it took. Not with ``processes`` or user ``plugins``.
+    - ``clock_worlds``: opt-in, 0 (default) is off. In a scene with several solvers, all worlds share one exchange
+      step, and it is the smallest any world needs (the world with the lightest object in contact, or the fastest
+      cloth). With ``clock_worlds=n``, the up to n worlds that need the smallest step move into a second
+      simulation of n worlds, built with this one (memory for n more worlds), and step there at their own step;
+      the remaining worlds then share the larger step that the neediest of them asks for. A world moves in and
+      out as its need changes. State, recordings and commands read and write the same names and world numbers
+      as without it. ``set_pose``, ``settle`` and a held ``apply_wrench`` first move the worlds they touch back
+      into the main simulation. Worlds that stay in the main simulation step bit for bit as if the moved ones
+      were parked by hand; a moved world matches its run without the option only to rounding (as a different
+      world count does). Take about worlds // 16. Raises ``BuildError`` with ``rerun_worlds`` or ``processes``.
+      In a scene that cannot take it (liquid, MPM, the contact gate, the CPU's default MuJoCo route, or user
+      plug-ins) the build warns, says why, and steps every world at the shared step as before.
+      ``sim.report()["world_clock"]`` has the books: ``exchanges`` taken, ``exchanges_shared`` (an estimate of
+      what one shared step would have taken, not a run; ``exchanges_shared / exchanges`` is the saving in
+      exchanges, not in wall time), ``residents`` (the worlds in the second simulation now) and ``paused`` (why it
+      is off this period, or None). On 64 worlds of a robot beside a towel with randomized pad masses (one L4) it
+      ran 1.12-1.24x faster with clock_worlds=4; on the CPU, a 4-world rig ran 0.88x (slower): the second
+      simulation's fixed cost. ``alloy.envs.VectorEnv`` and ``alloy.live`` refuse such a simulation. No law yet
+      covers a moved world that fails, or GPU runs (the speed row above is a measurement, not a law). Limits:
+      ``sim.report()["world_clock"]["limits"]`` and docs/guide/worlds.md.
     - ``contact_capacity``: MuJoCo's contact buffer, ``n`` contacts per world on average (``nconmax``: MuJoCo Warp
       keeps one pool of n x worlds that the worlds share). Unless ``constraint_rows`` is given it also sizes the rows
       per world from the model: each contact's rows (3 on the elliptic cone) x 2 n plus the scene's joint-limit,
@@ -137,10 +158,12 @@ def build(scene: Scene | str | Path | dict, worlds: int | None = None, device: s
     tau = _mpm_tau(mpm_sweeps)
     pair_clock = _pair_clock(mpm_coupling)
     plugins = _checked_plugins(plugins)
-    _check_rerun_worlds(rerun_worlds, n)
+    second.check_slots(rerun_worlds, n)
     _robot_random.refuse_rerun_worlds(scene, rerun_worlds)
     _robot_random_push.refuse(scene, rerun_worlds, processes)
     _robots.sysid_refuse_rerun_worlds(scene, rerun_worlds)
+    second.check_slots(clock_worlds, n, "clock_worlds")
+    second.refuse_with(clock_worlds, rerun_worlds, processes)
     cap = _capacity(contact_capacity, constraint_rows)
     weld_stiff.check(welds, processes, BuildError)
     if processes is not None:                          # the default path stays the one-process build, no extra import
@@ -153,8 +176,11 @@ def build(scene: Scene | str | Path | dict, worlds: int | None = None, device: s
     with requested(pair_clock), weld_stiff.requested(welds), world_limits(n):   # read when the stepper / model is wired
         sim = _mark_mpm(build_block(scene, n, dev, seed, profile=(profile, native), plugins=plugins, capacity=cap),
                         tau)
+        make = _pack_factory(scene, sim.device, seed, (profile, native), cap)     # gap #10b's second simulations
         if rerun_worlds:
-            _fine_pack(sim, scene, int(rerun_worlds), seed, (profile, native), bool(plugins), cap)
+            second.rerun_pack(sim, make, int(rerun_worlds), bool(plugins))
+        if clock_worlds:
+            second.clock_pack(sim, make, int(clock_worlds), bool(plugins))
     return _cpu_note.after_build(sim, device)        # GEO P6: one line on CPU speed when no GPU was found
 
 
@@ -175,14 +201,6 @@ def _checked_plugins(plugins: Sequence[Any]) -> list[Any]:
     from alloy.api._plugins import check  # noqa: PLC0415
 
     return list(check(plugins))
-
-
-def _check_rerun_worlds(rerun_worlds: Any, n: int) -> None:
-    """``rerun_worlds`` is 0 (off) or an int from 1 to ``n`` - 1 (BuildError otherwise)."""
-    if isinstance(rerun_worlds, bool) or not isinstance(rerun_worlds, (int, np.integer)) or rerun_worlds < 0 \
-            or (rerun_worlds and rerun_worlds >= n):
-        raise BuildError(f"rerun_worlds must be an int from 0 to worlds - 1 ({n - 1}), got {rerun_worlds!r}",
-                         f"pass rerun_worlds=0 (off) or about worlds // 16 ({max(1, n // 16)})", field="rerun_worlds")
 
 
 def _split_build(scene: Scene, n: int, dev: str, seed: int, processes: int | str, *, profile: str, contacts: str,
@@ -316,30 +334,11 @@ def build_block(scene: Scene, worlds: int, device: str, seed: int, *, profile: t
     return sim
 
 
-def _fine_pack(sim: Any, scene: Scene, slots: int, seed: int, profile: tuple[str, str | None], plugins: bool,
-               capacity: Capacity | None = None) -> None:
-    """``build(..., rerun_worlds=slots)``: the fine pack (alloy.coupling.fine_rerun) on ``sim.engine``, built now so
-    an out-of-memory shows at build; off, with a warning, with user plug-ins, and quietly where nothing re-runs."""
-    from alloy.api import _say  # noqa: PLC0415
-    from alloy.coupling.fine_rerun import FineRerun  # noqa: PLC0415
-
-    if plugins:
-        _say.warn("rerun_worlds is off: a user plug-in cannot serve two simulations; re-runs run every world")
-        return
-    if not callable(getattr(sim.engine.stepper, "rollback_requested", None)):
-        log.info("rerun_worlds off: nothing in this scene re-runs a period")
-        return
-    device = sim.device
-
-    def factory(n: int) -> Any:
-        return build_block(_with_worlds(scene, n, trim=True), n, device, seed, profile=profile, plugins=[],
-                           capacity=capacity)
-
-    fr = FineRerun(factory, slots)
-    if fr.pack() is None:
-        raise BuildError(f"the re-run simulation of {slots} worlds did not build: {fr.failed}",
-                         "pass a smaller rerun_worlds= or rerun_worlds=0", field="rerun_worlds")
-    sim.engine.fine_rerun = fr
+def _pack_factory(scene: Scene, device: str, seed: int, profile: tuple[str, str | None],
+                  capacity: Capacity | None) -> Any:
+    """n -> a ``Sim`` of n worlds of ``scene`` (no user plug-ins): ``rerun_worlds``' and ``clock_worlds``' packs."""
+    return lambda n: build_block(_with_worlds(scene, n, trim=True), n, device, seed, profile=profile, plugins=[],
+                                 capacity=capacity)
 
 
 def _as_scene(scene: Any) -> Scene:
@@ -374,15 +373,14 @@ def _contacts(scene: Scene, contacts: str) -> str | None:
 def _assemble_and_wire(scene: Scene, worlds: int, device: str, seed: int, profile: tuple[str, str | None],
                        workdir: Path, plugins: list[Any], block: tuple[int, int] | None = None,
                        capacity: Capacity | None = None) -> Any:
-    from alloy.api import _anchor, _heat, _joint_yield, _worlds  # noqa: PLC0415
+    from alloy.api import (_anchor, _contact_relax, _heat, _joint_yield, _liquid_accuracy, _pour,  # noqa: PLC0415
+                           _quasi_static, _rigid_step, _robot_random_apply, _rods, _worlds)
     from alloy.api._capacity import rows_from_contacts  # noqa: PLC0415
     from alloy.api._materialize import materialize  # noqa: PLC0415
     from alloy.api._plugins import build_engine  # noqa: PLC0415
 
-    from alloy.api import _liquid_accuracy, _pour, _rigid_step, _robot_random_apply, _rods  # noqa: PLC0415
-
     heat = _heat.plugin_for(scene)
-    yielding = _joint_yield.plugin_for(scene)
+    yielding, qs = _joint_yield.plugin_for(scene), _quasi_static.plugin_for(scene)
     sized = _pour.at_spacing(_with_worlds(scene, worlds), _liquid_accuracy.spacing(scene.liquid_accuracy))
     mat = materialize(sized, workdir)
     with wrapped("build"):
@@ -396,11 +394,11 @@ def _assemble_and_wire(scene: Scene, worlds: int, device: str, seed: int, profil
         fetch_imported(lib, mat.cards)
         with wp.ScopedDevice(device):
             offset, count = block or (0, worlds)
-            step = _rigid_step.request(scene, profile[0], [*plugins, heat, yielding], mat.per_world_pos,
+            step = _rigid_step.request(scene, profile[0], [*plugins, heat, yielding, qs], mat.per_world_pos,
                                        announce=offset == 0,      # its warning once, as the liquid's below
                                        newton_contacts=profile[1] == "newton")
             router = _rods.with_clamps(_liquid_accuracy.router_for(scene), scene.items)   # add_rod(route='chain')
-            router = _fixtures.with_bodies(router, scene.items)        # a kinematic fixture: one body (emit_part)
+            router = _quasi_static.with_scales(_fixtures.with_bodies(router, scene.items), scene)  # fixture: 1 body
             built = SceneAssembler(lib, router, rigid_step=step).assemble(
                 lib.scene(mat.scene_file.stem), device, world_count=count, world_id_offset=offset)
             if offset == 0:                                 # once: one process, or the first worker of a split
@@ -412,19 +410,22 @@ def _assemble_and_wire(scene: Scene, worlds: int, device: str, seed: int, profil
             _rods.clamp_ends(built, scene.items)            # add_rod(clamp=...): end segments kinematic
             _robots.sysid_install(scene, built)              # add_robot(sysid=): before the randomize draws
             _robot_random_apply.install(built, scene, seed)   # Scene.randomize robot / gravity rows (none: no-op)
+            _quasi_static.apply(built, scene)               # set_quasi_static_mass_scale: refusals, masses x s
             weld_stiff.apply(built)                         # build(welds="stiff"): default MJCF weld rows
             if mat.pours:
                 from alloy.api.names import NameIndex  # noqa: PLC0415
 
-                _pour.make_spares(built, NameIndex.from_built(built), list(mat.pours))
+                _pour.make_spares(built, NameIndex.from_built(built), mat.pours)
             name, native = profile
-            extra = {"native_contacts": native} if native else {}
+            extra = {"native_contacts": native} if native else {"contacts_auto": True}  # may pick Newton's contacts
             auto_rows = capacity.contacts if capacity is not None and capacity.rows is None else None
             with rows_from_contacts(auto_rows):             # contact_capacity alone: njmax from the model at put_data
-                engine = build_engine(built, name, seed=seed, plugins=plugins + [p for p in (heat, yielding) if p],
+                engine = build_engine(built, name, seed=seed, plugins=plugins + [p for p in (heat, yielding, qs) if p],
                                       **extra)
             engine._alloy_heated = tuple(scene.thermal["objects"])
+            _quasi_static.register(engine)                  # its shares to the health monitor (QUASI_STATIC)
             engine._alloy_anchors = _anchor.anchors(mat.scene)   # objects placed by an anchor: .pos reads it
+            _contact_relax.install(engine, built, scene)       # scene.relax_contact_depth: health marks
             if mat.pours:
                 _pour.start(engine, mat.pours)
             return engine

@@ -12,6 +12,7 @@ string may also be ``"package.module:Class"`` or a path to a ``.py`` file (``loa
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import importlib
 import importlib.util
@@ -19,6 +20,7 @@ import inspect
 import logging
 import re
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
@@ -197,6 +199,23 @@ def _as_classes(obj: Any) -> list[type[Plugin]]:
     raise PluginError(f"entry point object {obj!r} is not a Plugin subclass or a module of them")
 
 
+VENDORED = {"newton": "alloy._vendor.newton", "mujoco_warp": "alloy._vendor.mujoco_warp"}
+
+
+@contextlib.contextmanager
+def _vendored_import_hint(where: object) -> Iterator[None]:
+    """Turn a plug-in's failed ``import newton`` (Alloy ships Newton inside itself; a pip install has no top-level
+    ``newton``) into a PluginError that names the import to write."""
+    try:
+        yield
+    except ModuleNotFoundError as err:
+        if err.name not in VENDORED:
+            raise
+        raise PluginError(f"{where} imports {err.name}, which Alloy ships inside itself as {VENDORED[err.name]} "
+                          f"(no top-level {err.name} is installed with Alloy)",
+                          fix=f"write `from alloy._vendor import {err.name}` instead of `import {err.name}`") from err
+
+
 TARGET_FORMS = ("a registered name (python -m alloy.plugins list), 'module:Class', a plugin.py file, a package "
                 "folder, or the project folder `python -m alloy.plugins new` made")
 
@@ -218,12 +237,14 @@ def load_target(target: str) -> list[type[Plugin]]:
             raise
     if ":" in target:
         mod, _, attr = target.partition(":")
-        return _as_classes(getattr(importlib.import_module(mod), attr))
+        with _vendored_import_hint(mod):
+            return _as_classes(getattr(importlib.import_module(mod), attr))
     _ensure_loaded()
     if target in _REGISTRY:
         return [_REGISTRY[target][0]]
     try:
-        return _plugin_classes(importlib.import_module(target))
+        with _vendored_import_hint(target):
+            return _plugin_classes(importlib.import_module(target))
     except ImportError:
         raise PluginError(f"{target!r} is not a registered plug-in, an importable module, a .py file or a folder "
                           f"in {Path.cwd()}; available: {sorted(_REGISTRY)}",
@@ -272,14 +293,16 @@ def _from_package(pkg: Path) -> list[type[Plugin]]:
         module = importlib.util.module_from_spec(spec)
         sys.modules[name] = module
         try:
-            spec.loader.exec_module(module)
+            with _vendored_import_hint(pkg):
+                spec.loader.exec_module(module)
         except BaseException:
             sys.modules.pop(name, None)
             _PATH_PACKAGES.pop(name, None)
             raise
     classes = _plugin_classes(module)
     if not classes and (pkg / "plugin.py").is_file():          # a package whose __init__ does not import its plug-in
-        classes = _plugin_classes(importlib.import_module(f"{name}.plugin"))
+        with _vendored_import_hint(pkg / "plugin.py"):
+            classes = _plugin_classes(importlib.import_module(f"{name}.plugin"))
     if not classes:
         raise PluginError(f"{pkg} defines no Plugin subclass with a name",
                           fix="define class X(ForcePlugin) with name = 'x' in its plugin.py")
@@ -295,7 +318,8 @@ def _from_path(path: Path) -> list[type[Plugin]]:
         raise PluginError(f"cannot import {path}", fix="check that the file is readable Python")
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
-    spec.loader.exec_module(module)
+    with _vendored_import_hint(path):
+        spec.loader.exec_module(module)
     classes = _plugin_classes(module)
     if not classes:
         raise PluginError(f"{path} defines no Plugin subclass with a name",

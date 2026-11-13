@@ -21,9 +21,11 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from alloy.compose import words as W
+from alloy.create.request import CreateError
 
 log = logging.getLogger("alloy.create")
 
@@ -142,18 +144,26 @@ def _from_table(key: str) -> Category | None:
 
 
 def choose_material(lib, wanted: str | None, cat: Category | None, text: str | None) -> tuple[str, Value]:
-    """A library material name for the base surface and density, with how it was chosen."""
-    if wanted and lib.has_material(wanted):
-        return wanted, Value("material", 0.0, "", "USER", f"library material {wanted} (you chose it)")
-    hint = wanted or next((w for w in W.tokens(text or "") if w in W.MATERIAL_WORDS), None)
-    if hint in W.MATERIAL_WORDS:
-        names = [PREFERRED[hint]] if PREFERRED.get(hint) and lib.has_material(PREFERRED[hint]) else []
-        names += [n for sub in W.MATERIAL_WORDS[hint] for n in lib.names("materials") if sub in n]
-        for name in names:
-            if _rigid_ok(lib, name):
-                return name, Value("material", 0.0, "", "ESTIMATE", f"library material {name} for '{hint}'",
-                                   verify=f"check that {name} matches the real material")
-    soft = f"'{hint}' only matches soft materials and create makes rigid objects; " if hint else ""
+    """A library material name for the base surface and density, with how it was chosen. ``wanted`` (your
+    ``material=``) is a library material name or words ("Steel", "stainless steel"); one that is neither, or that
+    names a liquid or a granular material, raises ``CreateError``. Without it, a material word in ``text`` is used."""
+    if wanted:
+        name = _named(lib, wanted)
+        if name is not None:
+            return name, Value("material", 0.0, "", "USER", f"library material {name} (you chose it)")
+    words = W.tokens(wanted or text or "")
+    hint = next((w for w in words if w in W.MATERIAL_WORDS), None)
+    if wanted and hint is None:
+        raise CreateError(f"material {wanted!r} is neither a library material nor a material word",
+                          f"pass a library material name (alloy list materials) or one of {sorted(W.MATERIAL_WORDS)}",
+                          field="material")
+    soft = ""
+    if hint is not None:
+        name = _for_word(lib, hint, [w for w in words if w != hint] if wanted else [])
+        if name is not None:
+            return name, Value("material", 0.0, "", "ESTIMATE", f"library material {name} for '{wanted or hint}'",
+                               verify=f"check that {name} matches the real material")
+        soft = f"'{hint}' only matches soft materials and create makes rigid objects; "
     if cat is not None and cat.material and lib.has_material(cat.material) and _rigid_ok(lib, cat.material):
         return cat.material, Value("material", 0.0, "", "ESTIMATE", f"{soft}library material {cat.material}, "
                                    f"typical for a {cat.name}", verify=f"check that a {cat.name} of {cat.material} "
@@ -163,13 +173,49 @@ def choose_material(lib, wanted: str | None, cat: Category | None, text: str | N
                                    verify="pass material= (e.g. 'wood', 'steel', 'plastic')")
 
 
+def _named(lib, wanted: str) -> str | None:
+    """The library material ``wanted`` names (as written, or lower-case with ``_`` for spaces and dashes), or None.
+    A liquid or a granular material raises: create makes a solid object and would drop what makes it flow."""
+    for name in dict.fromkeys((wanted, "_".join(wanted.lower().replace("-", " ").split()))):
+        if not lib.has_material(name):
+            continue
+        m = lib.material(name)
+        flows = "a liquid" if m.fluid is not None else \
+            "a granular material" if getattr(m.plastic, "friction_angle", None) is not None else None
+        if flows:
+            raise CreateError(f"material {name!r} is {flows}; create makes rigid objects and would keep only its "
+                              "density", "pass a solid material (e.g. 'plastic', 'glass', 'steel'); for a container "
+                              "of it, create the container and fill it in the scene (Scene.add_liquid, alloy.compose)",
+                              field="material")
+        return name
+    return None
+
+
+def _for_word(lib, hint: str, others: list[str]) -> str | None:
+    """The first rigid library material for the material word ``hint``: the preferred one, then names holding one
+    of the word's substrings, Alloy's own library before imported ones; names that also hold one of ``others`` (the
+    rest of your words: "stainless" in "stainless steel") come first."""
+    from alloy.cards.library import default_root  # noqa: PLC0415
+
+    home = default_root().resolve()
+    found = [n for sub in W.MATERIAL_WORDS[hint] for n in lib.names("materials") if sub in n]
+    found.sort(key=lambda n: home not in Path(lib.path_of("materials", n)).resolve().parents)
+    first = PREFERRED.get(hint)
+    names = list(dict.fromkeys([*([first] if first and lib.has_material(first) else []), *found]))
+    names.sort(key=lambda n: -sum(o in n for o in others))
+    return next((n for n in names if _rigid_ok(lib, n)), None)
+
+
 def _rigid_ok(lib, name: str) -> bool:
+    """``name`` can be the base of a rigid object: no liquid, stiff, and no flow law. A ``j2`` metal yields but
+    stays a solid, and a sheet material's crease law (paper, with a ``film`` block) does not make it flow: the
+    object keeps only its density, surface and stiffness."""
     try:
         m = lib.material(name)
     except Exception:  # noqa: BLE001 - an unreadable material is simply not chosen
         return False
     youngs = getattr(getattr(getattr(m, "elastic", None), "youngs", None), "value", None)
-    plastic_ok = m.plastic is None or m.plastic.model == "j2"   # a j2 metal is a solid that yields (SCR-WP7-15)
+    plastic_ok = m.plastic is None or m.plastic.model == "j2" or getattr(m, "film", None) is not None
     return m.fluid is None and plastic_ok and (youngs is None or youngs >= SOFT_YOUNGS_PA)
 
 

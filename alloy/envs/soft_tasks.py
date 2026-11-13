@@ -13,9 +13,10 @@
   after an INVALID (a towel vertex in the pinch thrown past 20 m/s) count as not folded. ``grasp="attach"`` is an
   opt-in shortcut, not a friction grasp (``alloy.envs.cloth_attach``; docs/guide/envs.md).
 
-A liquid scene resets one world at a time like any other (SPH's snapshot keeps each world's particles apart), so a
-world that pours well ends its episode on its own. Tilting a liquid-filled cup held by a robot does not work yet (the
-liquid locks the hinge), which is why the agent moves the bowl rather than the cup. Example::
+A liquid scene resets one world at a time like any other (SPH's snapshot keeps each world's particles apart);
+``pour_task`` ends each episode at max_steps (``end_on_success=False``), so success is read at the end. Tilting a
+liquid-filled cup held by a robot does not work yet (the liquid locks the hinge), which is why the agent moves the bowl
+rather than the cup. Example::
 
     from alloy.envs import make
     env = make("Pour-v0", num_envs=16)            # GPU strongly advised: about 1.4 steps/s for 8 worlds on an L4

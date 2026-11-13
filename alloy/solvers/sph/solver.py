@@ -59,8 +59,8 @@ class SolverDFSPH(PressureSolves, SPHCouplingMixin, SolverBase, CouplingInterfac
     plugin_name: ClassVar[str] = "sph"
     routes: ClassVar[frozenset[str]] = frozenset({"liquid_sph"})
     determinism: ClassVar[DetCapability] = DetCapability.NATIVE
-    # The coupled clock's safety on alloy_stable_dt: 1, since that is already the CFL step with cfl as its margin
-    # (honoured with ClockPolicy.own_cfl, alloy.coupling.clocks.entry_safety; S4)
+    # The coupled clock's safety on alloy_stable_dt: 1 (with ClockPolicy.own_cfl, clocks.entry_safety; S4), since that
+    # estimate carries its own margin: config.speed_margin x the CFL step while the liquid moves fast (COUPLE-9)
     alloy_clock_safety: ClassVar[float] = 1.0
     # ... but not beside MPM (sand, paste): a slab floating on SPH water sat 2 points deeper at the CFL step itself
     # (tests/integration/test_sph_mpm_laws.py L1: draft 1.108 vs 1.088 of rho_s/rho_f H, bound 10 %; WP12 11-09)

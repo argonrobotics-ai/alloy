@@ -41,7 +41,7 @@ NONFINITE_BADNESS = 1.0e3  # a non-finite world outranks every finite monitor ra
 _ADDED_FLAG_ROWS: Mapping[str, BullySeverity | None] = {"RUNG_PINNED": None, "STRAIN_RANGE": S2, "START_PEN": None,
                                                         "SPIN": None, "CLOTH_STRETCH": S2,
                                                         "SELF_CONTACT_OVERFLOW": S2, "FAST_CONTACT": S2,
-                                                        "TUNNEL": S1}
+                                                        "TUNNEL": S1, "QUASI_STATIC": S2}
 
 # HealthFlags bit -> bully severity (None: flag-only, no bully finding) — §4.3, one row per flag
 FLAG_ROWS: Mapping[HealthFlags, BullySeverity | None] = {

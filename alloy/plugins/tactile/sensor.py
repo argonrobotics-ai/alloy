@@ -10,10 +10,13 @@ of width ``spread``, in the style of MuJoCo's touch_grid. Channels per taxel, in
 
 The noise layer (``noise.py``) then applies. Readings (``read()["<label>"]``):
 - ``taxels`` [W, P, T, 3];
-- ``pad_force`` [W, P, 3], the noise-free total over every captured contact, the reference for the force-sum law.
+- ``pad_force`` [W, P, 3], the noise-free total over every captured contact, the reference for the force-sum law;
+- with ``opentac`` set (an OpenTac board, ``opentac/``): ``board_load`` and ``counts`` [W, P, T], what the board's
+  model and ADC read, and ``bump_wrench`` [W, P, B, 5]. See ``docs/notes/opentac.md``.
 
-Needs contact forces (``needs_contacts``): the MuJoCo route on MuJoCo Warp, where the plug-in host exports the
-solver's contacts and CONTACT_F forces (about +1-3 % per step).
+Needs contact forces (``needs_contacts``): the plug-in host exports the contacts and CONTACT_F forces of the MuJoCo
+solver that steps the robots (MuJoCo Warp, or Alloy's CPU route), also in a coupled scene beside liquid, cloth, a soft
+body or sand (about +1-3 % per step; law ``coupled_force``).
 
 Example::
 
@@ -37,6 +40,7 @@ from alloy.plugins.errors import PluginError
 from alloy.plugins.tactile import kernels as K
 from alloy.plugins.tactile import noise as N
 from alloy.plugins.tactile.layout import Layout, build_layout
+from alloy.plugins.tactile.opentac.reading import BoardReading
 
 
 class Tactile(SensorPlugin):
@@ -69,6 +73,14 @@ class Tactile(SensorPlugin):
         saturation: float = 0.0                  # N, clip per channel; 0 = none
         lsb: float = 0.0                         # N, ADC step; 0 = none
         seed: int = 0
+        # OpenTac board reading (opentac/): adds board_load, counts, bump_wrench; taxels, pad_force unchanged
+        opentac: str = ""                        # a board preset (opentac/presets.py) or a manifest.json path
+        opentac_bumps: bool = True               # False: no bump sheet (plain skin: their foam spread)
+        opentac_readout: str = "v3"              # readout profile: "v2" (LINQSTAT) or "v3" (Yunjia Textiles)
+        opentac_gain: float = 1.0                # board gain; their gain_range spans presses + hysteresis
+        opentac_read_noise: bool = False         # add the profile's measured read noise (counts std at rest)
+        opentac_foam_cells: str = "opentac"      # plain skin: "opentac" (their squares) or "pitch" (sums to F)
+        opentac_tip: bool = False                # add off-centre load's bump tip moment (see opentac/model.py)
 
         def __post_init__(self) -> None:
             if not self.bodies:
@@ -87,6 +99,7 @@ class Tactile(SensorPlugin):
     def setup(self, ctx: Any) -> None:
         c, W = self.config, ctx.world_count
         self.layout: Layout = build_layout(c)
+        self._board = BoardReading(self.layout.board, c) if self.layout.board is not None else None
         if self.layout.neighbours is None and c.crosstalk > 0.0:
             raise PluginError("tactile: crosstalk needs a grid layout (points have no 4-neighbours)")
         self.P, self.T = len(c.bodies), len(self.layout.xy)
@@ -106,6 +119,8 @@ class Tactile(SensorPlugin):
         self._neighbours = ctx.array(nb, wp.int32)
         self._flat = {k: a.reshape((-1,)) for k, a in (("taxels", self.taxels), ("pad_force", self.pad_force),
                                                         ("hyst", self.hyst), ("bias", self.bias))}
+        if self._board is not None:
+            self._board.setup(self, ctx, self.P)
 
     def _resolve_pads(self, ctx: Any) -> None:
         c, model = self.config, ctx.model
@@ -145,6 +160,8 @@ class Tactile(SensorPlugin):
                           wp.vec4(c.crosstalk, self.layout.saturation, c.lsb, 0.0), int(c.seed), float(dt),
                           self._flat["hyst"], self._flat["bias"]],
                   outputs=[self._flat["taxels"]])
+        if self._board is not None:
+            self._board.measure(self, state_in)
         wp.launch(N.advance_tick, dim=ctx.world_count, device=dev, inputs=[self.tick])
 
     def test_scene(self):
@@ -154,5 +171,6 @@ class Tactile(SensorPlugin):
 
     def laws(self):
         from alloy.plugins.tactile.laws import tactile_laws  # noqa: PLC0415
+        from alloy.plugins.tactile.opentac.laws import opentac_laws  # noqa: PLC0415
 
-        return tactile_laws()
+        return tactile_laws() + opentac_laws()

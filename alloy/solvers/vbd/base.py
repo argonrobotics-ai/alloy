@@ -235,6 +235,13 @@ class SolverVBDAlloy(newton.solvers.SolverVBD):
         graph key when steps are captured)."""
         self._accel.set_rho(rho)
 
+    alloy_pair_mu = None      # pair_mu.PairMu: per-world friction of particle-shape contacts (None: the stock scalar)
+
+    def _refresh_body_particle_contact_state(self, contacts, refresh: bool) -> None:
+        super()._refresh_body_particle_contact_state(contacts, refresh)
+        if self.alloy_pair_mu is not None and self.model.particle_count > 0:
+            self.alloy_pair_mu.write(self, contacts)
+
     def reset(self, state, world_mask=None, flags=None):
         super().reset(state, world_mask, flags)
         self._accel.clear(self.model, world_mask)

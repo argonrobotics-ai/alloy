@@ -9,9 +9,9 @@
   within 0.05 on four of five meshes and misses on the fifth.
 - `cloth_accuracy="super"` does not fix it. The DC is converged in iterations, so the gap is in the model, not the
   solve: membrane locking, the card mapping and the 2 mm contact thickness (Why, below).
-- The opt-in orthotropic membrane (Workaround) brings the twill and the wool within 0.035 on a warp / weft grid mesh.
-  The heavy plain weave still hangs 0.16 too low, and on a mesh that does not follow warp and weft every fabric drapes
-  far too stiff.
+- The orthotropic membrane (Workaround) brings the twill and the wool within 0.035 on a warp / weft grid mesh, where
+  an `add_cloth` sheet gets it by default, and within 0.05 on a mesh that does not follow warp and weft (each triangle
+  carries one yarn; a mesh sheet still needs the route override). The heavy plain weave still hangs 0.16 too low.
 
 ## Number
 D03M (`bench/scenarios/fabric_drape*.py`, pack `bench/scenarios/packs/fabric_drape_petrak2021.json`; its L4
@@ -36,13 +36,14 @@ changes (2-5x the world spread of seed 0).
 The opt-in orthotropic membrane (KES EM warp / weft stretch, KES G shear, KES B per hinge direction; super, 8 worlds,
 2026-11-08):
 
-| fabric | warp / weft grid disc, 8 mm, 60 it | same, 160 it | same, contact thickness T0 | R6 mesh (jittered hex), seed 7, T0 |
+| fabric | warp / weft grid disc, 8 mm, 60 it | same, 160 it | same, contact thickness T0 | R6 mesh (jittered hex), seed 7, T0, before the yarn split |
 |---|---|---|---|---|
 | F1 | 0.254 (+0.032) | 0.257 (+0.035) | 0.252 (+0.030) | 0.500 (+0.278) |
 | F4 | 0.314 (-0.005) | 0.313 (-0.006) | 0.294 (-0.025) | 0.395 (+0.076) |
 | F9 | 0.487 (-0.160) | 0.494 (-0.153) | 0.487 (-0.160) | 0.499 (-0.148) |
 
-The same isotropic card convention on that grid disc: 0.315 / 0.367 / 0.406.
+The same isotropic card convention on that grid disc: 0.315 / 0.367 / 0.406. With one yarn per triangle (2026-11-10)
+the jittered-hex disc drapes F1 0.24-0.26 and F4 0.27-0.30 (two mesh seeds, 16 worlds each; Workaround).
 DC is converged in iterations there. Measured at the end of the drape (8 worlds), the yarns stretch little: the
 largest yarn strain |w| - 1 is 0.6 % at 60 iterations (99th percentile 0.08 %) and 0.03 % at 160. The largest edge
 strain, 8 % at 60 iterations and 4.3 % at 160, is the grid's cell diagonals as the sheet shears. On F1, the lightest,
@@ -92,23 +93,35 @@ in-plane stiffness through locking, more than by the bending.
 - For a heavy fabric whose hang matters, use the tensile stiffness (E = F / (EM h) from KES-FB1). It was within 0.06 on
   F9.
 - Check one Cusick drape against a measured DC for your fabric before trusting a drape shape.
-- For a woven fabric with KES data, use the opt-in orthotropic membrane on a warp / weft grid:
+- For a woven fabric with KES data, use the orthotropic membrane:
   - give the material card `elastic.cloth` (stretch_warp and stretch_weft = KES load / EM strain in N/m, shear = KES G
     in N/m per radian, bend_warp and bend_weft = KES B in N m);
-  - give the object card the route override `route: {route: cloth_vbd, reason: ...}`;
-  - use a sheet whose mesh runs along warp (x) and weft (y): `add_cloth`'s grid does. The build warns when fewer than
-    90 % of the triangles have a warp and a weft edge; the stiff yarns lock on such a mesh.
-  Without the override the card routes to CLOTH_STYLE3D when nothing else moves, and is refused at build beside other
-  moving things (the error names the override). Youngs randomization of such a card is refused.
-- An anisotropic card (`elastic.cloth`) routes to CLOTH_STYLE3D by default, but it is no alternative for these fabrics
-  today. In one world, clamped or not, the Style3D sheet stays nearly flat (DC 0.98-0.99): its solve locks when the
-  KES stretch stiffness outweighs the inertia per step (`cloth-style3d-stretch-lock.md`).
+  - an `add_cloth` sheet (a warp / weft grid, warp along x) then routes to `cloth_vbd` with the membrane by default,
+    alone or beside other moving things; `sim.routes()` says so;
+  - a sheet from a mesh needs the object card's route override `route: {route: cloth_vbd, reason: ...}`. Without it
+    the card routes to CLOTH_STYLE3D when nothing else moves and is refused at build beside other moving things (the
+    error names the override). On a mesh without warp / weft edges each triangle carries one yarn, so it does not
+    lock: on the R6 jittered-hex disc F1 drapes 0.24-0.26 and F4 0.27-0.30 (measured 0.222 and 0.319; two mesh
+    seeds, 16 worlds each), as on the grid (0.26, 0.31). Before that split the same disc gave 0.49 and 0.43. The
+    split keeps 1 % of each triangle's other yarn (none at all leaves free modes and the sheet blows up), and the
+    drape depends on that number: F1 0.334 / 0.289 / 0.263 / 0.251 / 0.245 at 10 / 3 / 1 / 0.5 / 0.2 % kept.
+  Youngs randomization of such a card is refused. `add_cloth`'s default card `cotton_woven` is isotropic (youngs and
+  poisson, no `elastic.cloth`) and is not changed by any of this; `cotton_woven_aniso` is the woven one. The
+  membrane route costs 1.9-2.5x the Style3D route it replaced on grid sheets (a 0.4 m sheet of 625 vertices on a
+  box, 64 worlds, L4: 2,160 against 4,151 world-steps per second; a sheet alone, 1 s on the CPU: 121 s against
+  49 s), and the sheet drapes differently: on that sheet alone vertices end up to 0.13 m (mean 0.04 m) from where
+  Style3D put them, with a peak edge strain of 8.3 % against 5.0 % (a benchmark audit, 2026-11-10).
+- CLOTH_STYLE3D is no alternative for these fabrics today. In one world, clamped or not, the Style3D sheet stays
+  nearly flat (DC 0.98-0.99): its solve locks when the KES stretch stiffness outweighs the inertia per step
+  (`cloth-style3d-stretch-lock.md`).
 
 ## Planned fix
 The law is R6 / D03M: each fabric's DC within 0.05 of its measured value at
 convergence. Next:
 - F9: its bending at drape curvatures (FAST fits F9 but not F1 / F4; a KES 2HB for it would test the hysteretic
-  hinge, `elastic.bending_hysteresis`).
-- Irregular meshes: map a woven sheet onto a warp / weft grid at build, or a membrane element that does not lock.
-- R6 at the fabrics' real thickness (the 2 mm floor), then the default route for woven cards (Style3D -> the
-  orthotropic membrane) once the law passes, and a public `add_cloth` switch for it.
+  hinge, `elastic.bending_hysteresis`). A free strip also bends about 35 % too soft on the cloth route (0.64 D;
+  the cantilever law). With the cards' bending times 1 / 0.6 on the grid, F9 drapes 0.579
+  (-0.068), F1 0.285 (+0.063) and F4 0.360 (+0.041). So that softness is part of F9's miss, and F1 passes with
+  today's bending but would leave the 0.05 bar once the hinge map is fixed: the two get re-scored together then.
+- Mesh sheets by default: woven cards on a mesh still need the route override (done for grid sheets).
+- R6 at the fabrics' real thickness (the 2 mm floor).

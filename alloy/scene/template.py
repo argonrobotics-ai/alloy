@@ -115,10 +115,25 @@ def emit_robot(b: newton.ModelBuilder, robot: RobotRef, make_sub: Callable[[], n
                 "urdf": sub.add_urdf, "usd": sub.add_usd}.get(robot.kind)
     if importer is None:
         raise AssemblyError(f"robot {robot.name}: unknown kind {robot.kind!r}")
-    importer(asset(robot.path))
+    from alloy.io.robot_file import robot_source  # noqa: PLC0415 - alloy.io imports alloy.scene
+
+    # the file as the importer needs it (alloy.io.robot_file): an unexpanded xacro URDF is refused with the command,
+    # a URDF floating joint on an empty root link is a free base, a USD stage in other length units is read in metres
+    source, options = robot_source(robot.kind, asset(robot.path))
+    importer(source, **options)
     before = counts(b)
     b.add_builder(sub, xform=pose_transform(robot.base_pose))
     return ranges_between(before, counts(b))
+
+
+def require_moving(b: newton.ModelBuilder, objects: Sequence[TemplateObject], asset: Callable[[str], str], tree):
+    """Refuse a scene whose robot files hold only static geometry while nothing in it has a joint, with the fix
+    (the MuJoCo converter raised a bare ValueError). Fires only with robot files and no joint at all; a scene
+    without robot files is never refused here. Returns ``tree`` (the emission result) unchanged."""
+    from alloy.io.robot_file import require_joint  # noqa: PLC0415 - alloy.io imports alloy.scene
+
+    require_joint(b.joint_count, [asset(t.placement.path) for t in objects if t.obj is None])
+    return tree
 
 
 def emit_object(b: newton.ModelBuilder, t: TemplateObject, cap: SolverCapability | None,

@@ -29,5 +29,9 @@ for f in report.findings:
 - `report.to_json()` is the same report as JSON; `alloy.check(..., run=False)` does the load checks only (cards and
   overlap; seconds, no kernels to compile).
 - Command line: `python -m alloy.check scene.yaml --json` (exit 0 ok, 1 errors, 2 bad input).
+- `alloy check --contacts newton` (MCP: `"contacts": "newton"`) runs the check with that contact pipeline, as
+  `alloy build --contacts` does; without it, the check keeps the profile's own pipeline. A check of an open
+  simulation (`sim=<id>`) checks it as it is now and refuses check-run arguments (scene, seconds, worlds, moving,
+  quick, budget).
 - `alloy.check.apply_fixes(card, report)` applies the suggested start poses to a scene card; see
   `examples/check/check_and_fix.py`.

@@ -101,7 +101,10 @@ def _post(url: str, body: dict[str, Any], token: str) -> dict[str, Any]:
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        data = json.loads(resp.read().decode("utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"expected a JSON object, got {type(data).__name__}")
+    return data
 
 
 def _http_error(base: str, exc: urllib.error.HTTPError, have_token: bool) -> CreateError:

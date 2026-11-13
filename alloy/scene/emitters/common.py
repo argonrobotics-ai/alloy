@@ -113,8 +113,14 @@ def load_mesh(src: MeshSource, root: Path | None = None) -> TriMesh:
     if suffix == ".npz":
         data = np.load(path)
         verts, tris = np.asarray(data["vertices"], np.float64), np.asarray(data["indices"], np.int32)
-    elif suffix == ".obj":
-        verts, tris = _read_obj(path)
+    elif suffix == ".obj":                     # the card layer's reader: relative (negative) indices, range check
+        from alloy.cards.geometry import read_obj
+
+        try:
+            obj = read_obj(path)
+        except ValueError as e:
+            raise AssemblyError(f"mesh {path}: {e}") from None
+        verts, tris = obj.vertices, obj.faces.astype(np.int32)
     elif suffix == ".stl":                     # binary or ASCII; coincident corners merged (the card layer's reader)
         from alloy.cards.geometry import read_stl
 
@@ -123,20 +129,6 @@ def load_mesh(src: MeshSource, root: Path | None = None) -> TriMesh:
     else:
         raise AssemblyError(f"mesh {path}: unsupported format {path.suffix} (use .obj, .stl or .npz)")
     return TriMesh(verts * np.asarray(src.scale, np.float64), tris.reshape(-1, 3))
-
-
-def _read_obj(path: Path) -> tuple[np.ndarray, np.ndarray]:
-    verts, faces = [], []
-    for line in path.read_text().splitlines():
-        parts = line.split()
-        if not parts:
-            continue
-        if parts[0] == "v":
-            verts.append([float(x) for x in parts[1:4]])
-        elif parts[0] == "f":
-            idx = [int(p.split("/")[0]) - 1 for p in parts[1:]]
-            faces.extend([idx[0], idx[i], idx[i + 1]] for i in range(1, len(idx) - 1))  # fan-triangulate
-    return np.asarray(verts, np.float64), np.asarray(faces, np.int32)
 
 
 HULLS_SUFFIX = ".hulls.obj"   # SCR-OSS-10: precomputed convex hulls next to a `collision: decompose` card mesh

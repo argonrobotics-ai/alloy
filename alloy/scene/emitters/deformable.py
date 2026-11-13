@@ -74,9 +74,9 @@ def emit_cloth(b: newton.ModelBuilder, obj: ResolvedObject, d: RouteDecision) ->
     mesh, rot = cloth_mesh(obj)
     aniso = obj.material.elastic.cloth
     ortho = d.route == Route.CLOTH_VBD and aniso is not None      # woven: the orthotropic membrane (ortho_membrane)
-    if ortho and obj.card.route is None:                           # opt-in only: a card route override to cloth_vbd
-        raise AssemblyError(f"{obj.card.name}: an anisotropic cloth (ClothAniso) on CLOTH_VBD needs the opt-in "
-                            "orthotropic membrane: give the card route {route: cloth_vbd, reason: ...} "
+    if ortho and obj.card.route is None and not isinstance(obj.card.shape, Primitive):   # a mesh sheet: opt-in only
+        raise AssemblyError(f"{obj.card.name}: an anisotropic cloth (ClothAniso) from a mesh on CLOTH_VBD needs the "
+                            "opt-in orthotropic membrane: give the card route {route: cloth_vbd, reason: ...} "
                             "(alloy.scene.ortho_membrane), or keep it alone in its scene for CLOTH_STYLE3D")
     if ortho:
         tri_ke = tri_ka = 0.0                                      # Newton's isotropic membrane off on these triangles

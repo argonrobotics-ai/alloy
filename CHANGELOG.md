@@ -6,6 +6,233 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [Unreleased]
+
+## [0.1.3] - 2026-11-13
+
+### Added
+- `alloy.isaaclab` (optional; needs Isaac Lab 3.0 in the same environment): Alloy as a physics solver for Isaac
+  Lab's Newton backend. `physics=alloy` on Isaac Lab's `isaaclab` command (tasks that offer `physics=newton_mjwarp`)
+  or `AlloySolverCfg` / `alloy_physics(...)` in Python runs the task unchanged on Alloy's rigid route at the task's
+  own physics step, with per-world health checks; `rigid_step="alloy"` opts into 1/600 s steps and
+  `noslip_iterations` into MuJoCo's noslip for grasps. Trained on one L4 GPU: Isaac-Cartpole-Direct,
+  Isaac-Velocity-Flat-AnymalD, Isaac-Velocity-Flat-H1, Isaac-Reach-Franka; 18 rigid tasks step and reset. Isaac Lab `main`: four tasks
+  step on the CPU. `docs/guide/isaaclab.md`.
+- `alloy.envs.jitter_joint(..., carry=[...])` also carries particle objects: a liquid or a cloth named there moves
+  with the jittered slide at each reset, as a carried free object does. Before, only free objects moved, so a cup on a
+  jittered slide started beside its own water (with a 3 cm jitter, 20-41 % of the water was outside the cup after 10
+  steps; carried, none). `docs/guide/envs.md`.
+- `alloy.build(scene, clock_worlds=n)` (opt-in; 0, the default, is off): in a scene with several solvers, the up to n
+  worlds that need the smallest exchange step move into a second simulation and step there at their own step, and the
+  rest share a larger one. 64 worlds of a robot beside a towel with randomized pad masses on one L4 ran 1.12-1.24x
+  faster with `clock_worlds=4` (three runs); a 4-world CPU rig ran 0.88x (slower). Not with `rerun_worlds` or
+  `processes=` (`BuildError`); with liquid, MPM, the contact gate, the CPU's default MuJoCo route or user plug-ins the
+  build warns and steps as before. `docs/guide/worlds.md`, Build options for speed.
+- `scene.relax_contact_depth(name, depth=None)`: health judges the contacts of a robot, one of its bodies or an object
+  by their depth past the contact's own MJCF `solimp` width (where that is wider than MuJoCo's 1 mm) or past `depth`,
+  for contacts a file makes soft on purpose: Menagerie ANYmal C's feet rest 17 mm deep and now read OK standing.
+  Reported depths stay true; `scene.save()` warns that its cards do not keep the setting (Scene JSON does).
+
+- `alloy.il`: `EvalResult.invalid` marks and `GenerateResult.invalid` counts the episodes whose world went INVALID
+  (the engine froze it) at any step. They are read from `info["invalid"]` at each step, because the env's reset
+  clears the health record; such an episode is never a success and `keep="success"` does not save it.
+  `docs/guide/imitation.md`.
+
+- `alloy.il`: `HDF5Writer(resume=True)` adds to an earlier file and `next_obs_images=False` leaves the camera frames
+  out of `next_obs`; `copy_hdf5(path, writer)` writes a file's episodes to another writer (a LeRobot dataset from
+  a long HDF5 recording); `LeRobotWriter(resume=True)` appends to a closed dataset and `env_state=[...]` moves
+  named state columns to `observation.environment_state`; `Recorder(manual=True)` leaves saving to
+  `finish` (teleoperation). `docs/guide/imitation.md`.
+
+### Changed
+- `alloy.envs.placement.rest_on_floor` rests the object in every world by that world's own shift and returns the
+  shifts per object as an array of shape (W,) (before: one float). It measured world 0 only and moved every world by
+  that amount, so an object started at another height in another world began buried in the floor or floating above
+  it. Worlds with identical starts get the same shift as before.
+- `alloy.envs` delta and hand-motion actions: `ActionSpec(mode="delta")` and `EEActionSpec` start each step from the
+  last target pulled back toward the joint's measured position (within `window`: 5 x `delta` for joint deltas; 0.03
+  rad for an arm under `EEActionSpec`, set for the shipped Franka Panda's gains, the arm's lead shrinking as one
+  vector so the hand keeps its direction), so a joint held by a table, a part or a stop no longer runs its target on:
+  after a 3 s press on the table, an up command lifts the Panda's hand 1 cm in 4 steps (12-23 before). Costs: the
+  servos now set the top speed, so an open-loop 10 cm hand command over 5 steps moves 4.1 cm and a slow servo moves
+  slower (the custom-task example's pusher: 91 steps, 47 before). Trajectories change even where outcomes do not:
+  the window binds in 86 of the GripperLift demonstrator's 100 steps, and its outcome is unchanged. With the
+  shipped arms' firm contacts it does not change whether a world freezes. `window=float("inf")` restores the old
+  behaviour.
+  `docs/guide/envs.md`, `docs/guide/rl.md`.
+- A cloth sheet from `add_cloth` whose material card has `elastic.cloth` (a woven card such as `cotton_woven_aniso`)
+  now routes to `cloth_vbd` with the orthotropic membrane by default, alone or beside other moving things. Before, it
+  went to `cloth_style3d` when alone, which barely drapes a KES-stiff fabric, and was refused beside other moving
+  things. The membrane costs 1.9-2.5x the Style3D route on grid sheets, and the sheet drapes differently (vertices up
+  to 0.13 m from where Style3D put them). `add_cloth`'s default `cotton_woven` is isotropic and unchanged: isotropic
+  sheets, and woven mesh sheets without a route override, step bit for bit as before. A woven mesh sheet still needs
+  the object card's override `route: {route: cloth_vbd, ...}`; on a mesh without warp / weft edges each triangle now
+  carries one yarn, so the membrane no longer locks there. `docs/known_gaps/cloth-woven-drape-isotropic.md`,
+  Workaround.
+- A free-base robot's per-world `pos` array, and a robot's `x`, `y` or `z` drawn by `scene.randomize`, move the whole
+  robot file as a `pos` tuple does: the root body ends at the row plus where the file places it. Before, they put the
+  root body itself at the row, so a root body the file places above its origin (a quadruped's base) started in the
+  ground (START_PEN, PEN_FAIL), and the same rows as a tuple started higher.
+- `add_pour` now pours its `volume` within half a particle (0.03 ml at the default liquid accuracy, 0.004 ml at
+  `"super"`), and `sim.liquid_volume` reads it. Before, the liquid waited at the nozzle as a whole block of particles,
+  up to 11 % off the asked volume under 50 ml (20 ml poured 18.8 ml), and `"super"` rounded it twice. Every pour's
+  particle count changes (`Pour-v0`'s 100 ml: 1,584 particles before, 1,562 now), so pour scenes do not repeat 0.1.0's
+  results bit for bit.
+- The shipped LEAP hand (`emb_e9_leap`) has MuJoCo Playground's joint and servo values (v0.2.0, Apache-2.0, cited in
+  its `source.json`): joint damping 0.2 N m s/rad (was 0.03), armature 0.00149376 kg m² (was 0), frictionloss
+  0.02 N m (was 0.001), and each servo's torque capped at ±0.2196 N m (was unlimited). As shipped, random finger
+  targets flung a 7 cm cube off the palm: on 256 worlds every cube dropped and 59 % ended 0.5 m away (peak speed
+  2.2 m/s median). Now, with every world starting alike, none drops, the fastest moves 0.18 m/s (0.20 m/s on 1,024
+  L4 worlds) and no world goes INVALID. Under a rotation env's randomized reset (cube turned up to 180°) 15-19 % still
+  drop, against 93-100 % before: the turned cube can start inside the fingers. The hand moves more slowly and presses
+  more softly, so policies trained on 0.1.0's hand do not carry over. Over 4 s of noisy hold targets on 2,048 GPU
+  worlds, about 0.7 % of worlds list a passing UNCONVERGED (0.3 % with 0.1.0's values; `sim.check()` stays ok): in
+  one substep the solver's line search reaches the file's `ls_iterations` (50) while the solve itself converges;
+  with `ls_iterations="100"` in the file's `<option>`, 1 world in 4,096 does.
+- The shipped arms (`emb_e1_fr3`, `emb_e2_panda`, `emb_e3_ur10e_2f85`) have firm contacts: every robot geom's solref
+  is 0.0025 s, 2x the 1.25 ms robot step (MuJoCo's default 0.02 s before; the 2F-85's pads 0.004 s), with solmix 1000,
+  so the robot's contact governs a pair with a table or an object (on a user's own MJCF table at MuJoCo's default the
+  hand presses 0.2 mm deep, not 2.1), and solimp 0.95 0.99 0.001 (was 0.9 0.95); the files' own table, floor,
+  box and cylinder take the same solref and solimp. An arm pressing its hand on its table (a scripted
+  press) froze 9 of 256 worlds INVALID with contacts 19 mm deep (FR3: 37 worlds, 23 mm); now none does, the
+  press holds 0.85 mm deep once the hand has landed (FR3 0.86 mm, UR10e 0.48 mm) and random actions stay under
+  1.2 mm, on the CPU and on a GPU. The hand still overshoots 1-5 mm for a step when it lands at 1.3 m/s. A 10 g part
+  picked up with the Panda lifts as before, and a box on the table rests 0.001 mm deep (was 0.034) and slides with
+  Coulomb friction. The `_route` and `_stiff` variants keep the source's contacts.
+
+### Fixed
+- `sim.drive` turns a kinematic fixture placed per world (`pos=(worlds, 3)`) about each world's own centre. Before,
+  every world turned about world 0's, so the fixtures of the other worlds swung far off their places (1.5 m for the
+  fourth of four worlds 0.35 m apart) with health ok. `velocity`, `angular_velocity` and `pivot` each take one
+  (x, y, z) for every world or a (worlds, 3) array; another shape, a NaN or a negative `duration` raises
+  `SimulationError` naming the argument (a (worlds, 3) velocity raised a bare `TypeError`). The same in
+  `processes=N`.
+- Liquid in a kinematic container moved by `sim.drive` stays simulated wherever the drive takes it. Before, liquid
+  carried past the region the build set around the scene was retired and frozen in mid-air (`retired_particles`),
+  with health ok: a closed box driven 0.75 m at 5 m/s left all its water behind.
+- `sim.set_pose` on a kinematic body in a cloth, soft-body or cable (`rod_vbd`) scene starts it at rest. Before, the
+  solver read the teleport as a move in one step: a 0.25 m teleport froze the world (`SPEED_FAIL`), and a 19 mm one
+  gave the body 15 m/s and dragged the cloth under it, with health ok.
+- Joint targets and raw controls that are not finite, not numbers or the wrong length raise `SimulationError`
+  naming the joint (also from the command line). Before, a NaN passed the range check, was reported as held at the
+  limit and reached the actuator, with health ok; a wrong-length list raised `UnknownNameError`. `sim.run` checks its
+  targets before it steps, also when `seconds` is under half a control period (it steps whole periods, so none).
+- On MuJoCo Warp (any GPU), one articulation with more than 6 joints in a chain (a 7-joint arm, the Franka Panda, a
+  cable on the chain route) beside many free objects no longer makes the whole scene solve its contacts the slow
+  way. 64 worlds with 200 boxes on one L4, env-steps per second before and after: the shipped Panda 44.7 and 1,669, a
+  7-joint arm 108 and 2,021, a 1-joint arm with a 6-link cable 48.6 and 1,177 (25.8 and 740 with a free cable). A
+  1-joint arm alone with the boxes runs about 2,100. Results match the old path within float32 rounding.
+  `ALLOY_MJW_BLOCK_CHUNK=0` keeps the old path.
+- `alloy.envs`: a rod's centre line `"<rod>.points"` is in the task state, for observations
+  (`Task(obs=["cable.points"])`) and checks (`checks.fraction_inside("cable", ...)`), as `sim.state()` reads it.
+  Before, both raised `EnvError`, whose fix named `"<rod>.pos"` (the first segment only).
+- A body with several MJCF joints (a two-axis wrist, a planar base) loads as one joint of one coordinate per MJCF
+  joint (`"<robot>/wx_wy"`, named in the file's order). Each of its actuators now drives its own coordinate, and
+  `sim.set_targets` takes one value per coordinate (`[0.3, -0.4]`, or `(worlds, n)`), each to its own servo; a single
+  number raises `SimulationError` naming the count. Before, every actuator of such a body drove its first
+  coordinate (told to tilt about y, the wrist tilted about x), and only one `<general>` servo of the body was
+  reachable. A fixed joint has no coordinate: a target on it raises `SimulationError`. Before, it moved the next
+  joint. A `set_targets` call that raises now writes none of its targets.
+- Robot part names keep the name in the robot's file whole, also when it holds "/" (MuJoCo Menagerie's two-arm
+  files name parts "left/waist", "right/waist"): `"<robot>/left/waist"`. Before, the name was cut at its last "/",
+  so both arms' parts shared one name and one arm could not be reached. A tendon or site actuator now belongs to its
+  robot (`"<robot>/<actuator>"`), and an actuator name that two robots share works only with its robot's prefix
+  (the bare name raises `UnknownNameError` naming both); before, the bare name drove the first robot alone.
+- Joint targets and raw controls follow MuJoCo's meaning for every servo: an `<intvelocity>` takes
+  `kind="velocity"` (a position target read as a velocity ran it to its stop); a target of the kind a joint's servo
+  does not take raises `SimulationError` naming the kind to use (it did nothing); `sim.set_controls` on a geared
+  actuator is MuJoCo's ctrl (the joint moves ctrl / gear, not ctrl), while `sim.set_targets` stays a joint value.
+- A mesh with NaN or inf vertices (`add_mesh` or an object card), and a moving mesh whose faces are wound both ways
+  (so it encloses no volume and the body would have no mass), raise an API error with a fix. Before, they raised a
+  bare `LinAlgError` or `ZeroDivisionError`. Static and kinematic meshes and cloth sheets build as before.
+- `.usdz` robot files load like `.usd` ones (`add_robot`, `alloy.load`). `alloy.load` and `Scene.load` of a mesh file,
+  or of a file they cannot read, raise `SceneError` naming what to use instead (`scene.add_mesh`, `alloy.create`, or
+  the formats they read). Before, they raised a bare `UnicodeDecodeError`.
+- `sim.check()` names a robot's parts in a start overlap by the name given to `add_robot`
+  (`counter_arm/floor and floor_dog/RL_calf`). Before, it used the robot file's model name, which two robots from one
+  file share.
+- `scene.add_object` takes the shared keywords of the `add_*` calls: `static`, `kinematic`, `rigid`, `material`,
+  `mass`, `density`, `friction` and `restitution` (a card made of several materials refuses the value keywords with
+  a fix). Before, they raised a bare `TypeError`, although a build error's fix said to pass `rigid=True`.
+  `scene.set_friction` and a low `friction` range in `scene.randomize` work on library objects and on the objects
+  of a scene from `Scene.load`, as on primitives. Before, they raised or failed the build.
+- `alloy.objects()` lists the objects on disk, like `alloy.materials()` and `alloy.scenes()`. Before, it raised
+  `AttributeError` in a fresh process.
+- `scene.save()` copies what its cards take from the scene's own card roots (`Scene(roots=[...])`, `alloy.create`
+  and imported cards: object and material cards, pair cards, looks and mesh files) into the saved folder, so it
+  loads on its own. Before, it failed to load ("no material ...", "file not found"). `save()` also warns for what
+  cards cannot keep, each with `scene.to_json()` as the way to keep it: heat (temperatures, heaters, `set_heat`),
+  `cloth_accuracy`, `liquid_accuracy`, `rigid_step`, `set_joint_yield`, robot randomization, `add_push` and object
+  anchors. Before, these were dropped silently. `export_scene` of an `alloy.Scene` lists them in `unmapped`.
+- An object with its own `mass=`, `density=`, `friction=` or `restitution=` keeps its material's look (in
+  `alloy.vary`, the full-quality camera and saved cards). Before, it lost it.
+- `scene.save()`: an `mjcf=` robot's file is referenced relative to the saved folder, so the folder still loads
+  after it is moved or copied (it held an absolute path), and a missing file's error names the file instead of a
+  material card. `save()` now warns for what its cards cannot keep: per-world starts (`pos=` rows, randomized robot
+  bases, cloth and liquid starts), a kinematic fixture as one body, and a precise fit's control period, each with
+  `scene.to_json()` as the way to keep them. Before, a loaded scene silently started every world at world 0's start.
+- `scene.randomize("<fixture>", "x" | "y" | "z", lo, hi)` on a kinematic fixture moves the whole fixture (its `z` is
+  the bottom face, as in `pos`). Before, it raised with a fix naming a wall part, which then failed the build.
+- `sim.reset()` after `sim.settle()` in a scene with `add_pour` goes on from the settled pour. Before, the reset
+  started the pour's emitter over while the settled liquid stayed poured: its first layer pulled settled particles
+  back to the nozzle, the pour stalled and the poured mass was counted twice. A pour never settled still starts over.
+- `sim.reset()` puts joint targets and controls back to the start (as before the first command, or as at
+  `sim.settle`). Before, they stayed, and a robot snapped back toward its last targets after the reset.
+- Contact-force plug-ins (`Tactile`, `GelSensor`, `ModalSound`, `Thermal`) work in a scene that also holds liquid,
+  cloth, a soft body or sand, and read the same forces there as in a rigid-only scene. Before,
+  `alloy.build(scene, plugins=[...])` raised a `BuildError` that named "method" and gave an unrelated fix. A scene
+  whose MuJoCo solver steps on Newton's contacts (SDF or mesh collision shapes) now raises a `BuildError` that says
+  so, where its readings were 0; and a plug-in's own fix reaches `BuildError.fix`.
+- `examples/export/rerun_live.py` runs with `--worlds 1` and logs the last frame of each picked world. Before,
+  `--worlds 1` raised `SceneError`, and on a GPU the last captured frame never reached Rerun.
+- `alloy.il` with observation groups (`Task(obs={...})`): `LeRobotWriter` and `replay` raised `KeyError: 'state'`.
+  Every group is now recorded with its own column labels (`DatasetSpec.obs_key_names`), the first group is LeRobot's
+  `observation.state`, and `replay` compares every group.
+- `teleop_loop` saved attempts nobody approved: with `keep="all"`, an episode that ran into the task's `max_steps`
+  was written without Enter. While the loop runs, an episode the env ends is now kept only when it passed the
+  success check; `finish(save=True)` honours a `keep` function; `saved` and `discarded` count episodes per world.
+- `alloy.il.generate` on an env with `autoreset="disabled"` kept stepping ended worlds and counted them at every
+  step; it now resets them. `evaluate(Recorder)` saved the extra episodes of quick worlds; it now saves the counted
+  ones only. Absolute-mode actions are recorded as the env clipped them. A camera-only task and a `/` in a camera
+  name no longer crash `LeRobotWriter`. `Recorder`, `evaluate`, `generate` and `replay` raise `EnvError` with a
+  fix for an env that is not a `VectorEnv` (before: `AttributeError`). `replay` refuses an env it cannot restore
+  (a rod on the rod solver, an actuator model) instead of reporting a wrong zero error, and restarts observation
+  layers, so `ObsHistory` replays exactly on the CPU. An episode's `obs` and `next_obs` share one array.
+- `alloy.il.replay` with `Scene.randomize`: episodes were replayed in world 0, 1, ... whatever world recorded them,
+  so with per-world draws they ran with another world's values and did not match (2 of 6 matched in one case).
+  Each episode
+  now replays in the world that recorded it, its `start` keeps the robot and gravity draws, and `replay` raises
+  `EnvError` when the world holds other values (always for values drawn at every reset). `ReplayResult` gains
+  `invalid` and `recorded_invalid`; a world whose episode is over is no longer driven by that episode's last
+  action. `SpaceMouseTeleop` takes `link=` and `keys=` (discard and quit from the terminal's keys).
+- `VectorEnv` in `"absolute"` action mode: `obs["action"]` and `env.state["action"]` now show the action as the env
+  clipped it to the `ActionSpec`'s `low` / `high` (they showed the raw one while the joints got the clipped one). A
+  policy that reads its own last action sees the change. `alloy.envs.realism.obs_names(env)` works on an env
+  without observation groups (it raised `EnvError`).
+- A pour beside cloth, in a scene with no free rigid body, no longer splashes a fifth of itself over a container's
+  rim with health OK (20 % of a 6 ml and 24 % of a 20 ml pour from 12 cm, all over the rim). Liquid beside other
+  solvers now takes a quarter of its stability step while it moves fast, and its largest step at rest. A pour
+  beside cloth costs 1.4x as much on an L4, and a cloth sheet landing on water up to 2.7x while it stirs the water;
+  a cup of water at rest beside cloth takes the same liquid steps.
+  `docs/known_gaps/liquid-pour-over-the-rim.md`.
+- `sim.drive` moves its object for exactly its time: the first physics step after the call already moves at the
+  drive's velocity, and a drive with a `duration` ends at rest on its last step. Before, the velocity came one step
+  late and stayed one step past the end, so a press that ended by its duration pushed the material one step longer
+  (3.2 % more holding force in one measured press on a paste).
+- `alloy.envs`: a world the engine froze (INVALID) earns nothing: on its last step its reward (except
+  `invalid_penalty`), reward terms, success and last observation read 0, and the rsl_rl, SB3 and skrl wrappers
+  never bootstrap its value; `info["episode"]["invalid"]` and `env.invalid_episodes` count frozen episodes, the
+  latter since the env was built. `docs/guide/envs.md`, Ready-made environments.
+- The rsl_rl wrapper no longer resets every env with seed 0; the env's own seed stands.
+- `ObsNoise` works on a flat observation list (it raised `EnvError`). `docs/guide/rl.md`.
+- With `scene.randomize` on an object (friction, density, start `x` / `y` / `z`, ...), resetting some worlds (one
+  world's episode ending in a `VectorEnv`) now resets only those worlds. Before, every world's objects went back to
+  their start while their episodes went on, with no error or warning. Such a reset also no longer writes the drawn
+  values again, so it costs about what a reset without the rows does and a GPU run keeps its captured step graphs:
+  on one L4, 1,024 worlds, a reset of 32 of them and the step after it took 1.0 ms + 7.7 ms, against 27-37 ms + 26 ms
+  before (on an AMD EPYC 7B13 CPU a density row's reset took 2.2 s before; now 13 ms, as without the row). Rows
+  drawn at every reset (`when="reset"`) still cost more: `docs/guide/randomize_robots.md`.
+
 ## [0.1.2] - 2026-11-12
 
 ### Added
@@ -70,19 +297,6 @@ Package metadata only: the PyPI page links the GitHub repository and its issues.
 ## [0.1.0] - 2026-11-11
 
 ### Fixed
-- With `scene.randomize` on an object (friction, density, start `x` / `y` / `z`, ...), resetting some worlds (one
-  world's episode ending in a `VectorEnv`) now resets only those worlds. Before, every world's objects went back
-  to their start while their episodes went on, with no error or warning. Such a reset also no longer writes the drawn
-  values again, so it costs about what a reset without the rows does and a GPU run keeps its captured step graphs:
-  on one L4, 1,024 worlds, a reset of 32 of them and the step after it took 1.0 ms + 7.7 ms, against 27-37 ms + 26 ms
-  before (on an AMD EPYC 7B13 CPU a density row's reset took 2.2 s before; now 13 ms, as without the row). Rows
-  drawn at every reset (`when="reset"`) still cost more: `docs/guide/randomize_robots.md`.
-- `alloy.envs`: a world the engine froze (INVALID) earns nothing: on its last step its reward (except
-  `invalid_penalty`), reward terms, success and last observation read 0, and the rsl_rl, SB3 and skrl wrappers
-  never bootstrap its value; `info["episode"]["invalid"]` and `env.invalid_episodes` count frozen episodes, the
-  latter since the env was built. `docs/guide/envs.md`, Ready-made environments.
-- The rsl_rl wrapper no longer resets every env with seed 0; the env's own seed stands.
-- `ObsNoise` works on a flat observation list (it raised `EnvError`). `docs/guide/rl.md`.
 - Gym camera observations (`camera=True`, `Task(cameras=...)`) show the scene as `sim.render()` and `alloy.Camera`
   draw it: library looks, scanned objects' photo textures and a grey ground. Before, they drew the engine's palette
   colours (the ground and the first object the same blue) and left out every look, so `alloy.vary` textures never
@@ -99,23 +313,8 @@ Package metadata only: the PyPI page links the GitHub repository and its issues.
   Warp's packed sparse-grid cell lookup lost float32 precision as a world's offset grew, so higher-numbered worlds
   behaved worse (a blade let sand through in 57 of 64 worlds); Alloy now picks the cell in integers. Validated up to 64
   worlds on one L4; one world is unchanged bit for bit.
-- Since 0.1.0rc2: `alloy.envs` delta and hand-motion actions (`ActionSpec(mode="delta")`, `EEActionSpec`) start each
-  step from the last target pulled back toward the joint's measured position (within `window`: 5 x `delta` for joint
-  deltas; 0.03 rad for an arm under `EEActionSpec`, set for the shipped Franka Panda's gains, the arm's lead
-  shrinking as one vector so the hand keeps its direction), so a joint held by a table, a part or a stop no longer
-  runs its target on: after a 3 s press on the table, an up command lifts the Panda's hand 1 cm in 4 steps (12-23
-  before). Costs: the servos now set the top speed, so an open-loop 10 cm hand command over 5 steps moves 4.1 cm and
-  a slow servo moves slower (the custom-task example's pusher: 91 steps, 47 before). Trajectories change even where
-  outcomes do not: the window binds in 86 of the GripperLift demonstrator's 100 steps, and its outcome is
-  unchanged. With the shipped arms' firm contacts it does not change whether a world freezes. `window=float("inf")`
-  restores the old behaviour.
-  `docs/guide/envs.md`, `docs/guide/rl.md`.
 
 ### Added
-- `alloy.envs`: `PickCube-v0`, a Franka Panda that picks a 4 cm cube and carries it to a point in the air, with its
-  own rsl_rl settings (`train_rsl_rl.RECIPES`): a starting point, and results vary between runs on a GPU, so watch
-  the success rate the trainer prints; tuning continues.
-  `docs/guide/rl.md`, Arm pick.
 - Scanned library objects (YCB, Google Scanned Objects, Objaverse and the other fetched scans) render with their own
   photo texture in both cameras: the quick look (`sim.render()`, `alloy.Camera`) and `quality="full"` / looks. The
   camera reads each scan's `visual.glb` (mesh, UVs, base-colour image); a look that names the object still wins.
@@ -542,10 +741,6 @@ Package metadata only: the PyPI page links the GitHub repository and its issues.
 - `alloy.il.generate(env, policy, writers, episodes)` saves scripted demonstrations from every world of a
   `VectorEnv`; `PhaseScript` writes a demonstrator as phases, `demonstrator(env)` gives the shipped one (GripperLift,
   GripperLiftCamera, PickPlace). No trajectory augmentation or motion planning. `docs/guide/imitation.md`.
-- `alloy.il`: `EvalResult.invalid` marks and `GenerateResult.invalid` counts the episodes whose world went INVALID
-  (the engine froze it) at any step. They are read from `info["invalid"]` at each step, because the env's reset
-  clears the health record; such an episode is never a success and `keep="success"` does not save it.
-  `docs/guide/imitation.md`.
 - `alloy.sysid` (opt-in, outside `alloy.api`): `python -m alloy.sysid fit --robot <name or file> --data <recording>
   --out my_robot.sysid.json` fits a robot's servo stiffness, kd + damping, dry friction and action delay per joint to
   a recording (CSV, HDF5, LeRobot dataset) by replaying it in parallel worlds; `excite`, `report`, `demo`;

@@ -42,6 +42,12 @@ HOLD_PLAN = 18.0   # N: a staged run's predicted need may reach this, 2 N under 
 S_MAX = 3          # stage slots per line: ridges to 4.8 mm (3.32 mm the deepest the v2 row read)
 SPEED = 0.2        # m/s along a strip (the steel trowel's)
 ON_BASE = 5.0e-5   # m: a blade bears on paste this close under its sole (stores_fill.ON_BASE, GA's on_base)
+SET_DOWN_CLEAR = 2.0e-5   # m: a run ``touch`` sets down at its level (nothing predicted over it) is set down this far
+#                    over it instead, and slides down to its level over the ramp (pad_finish_margin.RAMP). WP15 ruling 7
+#                    (2026-11-11, notes/wp4-trowel/v4_ruling.md): WP5's 16-world line af3297 (main 014a99cfc) lost 6
+#                    worlds to set-downs at the level pressing 9.6e-15 to 2.9e-11 m3; the largest, over one 2 mm cell
+#                    (4e-6 m2), puts the paste at most 7.3 um over the planned sole. Twice that is 15 um, under the
+#                    ruling's 20 um floor. The watch keeps ``pressed <= 0.0``.
 END = 2            # cells of travel: the rows a run meets last meet a rising blade (its lift starts at its end; v6).
 #                    The blade moves SPEED x EXCHANGE_DT = 0.5 mm per exchange, a quarter of a 2 mm cell, so only the
 #                    row entering at the lift can stand uncut; END covers it and the next (WP15 ruling 5)
@@ -142,8 +148,8 @@ def chain(d: SetDown, stages: list[tuple[float, ...]], h: np.ndarray, f: dict[st
     """Each stage's two runs' needs [N] (``pad_ride.run_need`` at ``tau``) and set-downs [m] for ``stages`` (level,
     first run's set-down), top down: the first run on ``h``, each later run on what the runs before it leave
     (``knife_fill``: cut and laid), each lower stage clipped at the level above. ``read_touch`` (v5): every run set
-    down by ``touch`` on the surface before it (the first on ``h``), else the first as given and the second at its
-    level."""
+    down by ``touch`` on the surface before it (the first on ``h``), at least ``SET_DOWN_CLEAR`` over its level
+    (ruling 7), else the first as given and the second at its level."""
     paste, cell = np.asarray(f["paste_mask"]) > 0.5, float(f["cell"])
     out, ups, cur = [], [], np.array(h, dtype=float)
     for k, st in enumerate(stages):
@@ -152,7 +158,7 @@ def chain(d: SetDown, stages: list[tuple[float, ...]], h: np.ndarray, f: dict[st
             cur = np.where(paste, np.minimum(cur, stages[k - 1][0]), cur)
         needs, downs = [], []
         for i, sr in enumerate(d.slots[-1]):
-            up = MG.touch(sr.run, level, cur, f) if read_touch else (st[1] if i == 0 else 0.0)
+            up = max(MG.touch(sr.run, level, cur, f), SET_DOWN_CLEAR) if read_touch else (st[1] if i == 0 else 0.0)
             sole = dataclasses.replace(sr.sole, level=level, touch=up)
             needs.append(RD.run_need(sole, cur, f["x"], f["y"], f["paste_mask"], tau, cell).need_n)
             knife_fill(sole, cur, f)

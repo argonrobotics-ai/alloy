@@ -80,14 +80,13 @@ UNSUPPORTED: tuple[Unsupported, ...] = (
                 f"{_RIGID}; or {_CHAIN}, which steps beside sand and paste with the rigid bodies",
                 "audit COUPLE-2: wire+sand, wire+dough"),
     Unsupported(frozenset({Route.SOFT_VBD}), frozenset({Route.CLOTH_FILM}), _NO_STEP,
-                "rigid=True on the soft body; or a paper material that is not a film sheet (such as paper_a4), "
-                "which steps in the soft body's solver (untested beside a soft body, and slow: 0.2 s took 31 s on "
-                "the CPU)",
+                "rigid=True on the soft body; or the sheet as cloth: a woven material such as cotton_woven instead "
+                "of the paper, which steps in the soft body's solver but does not keep a fold as paper does",
                 "F1: paper+soft"),
     Unsupported(frozenset({Route.CLOTH_VBD}), frozenset({Route.CLOTH_FILM}),
                 "the two kinds of sheet do not touch each other, so the cloth would fall through the film sheet",
-                "a paper material that is not a film sheet (such as paper_a4), which steps with the cloth (untested, "
-                "and slow: 0.2 s took 31 s on the CPU)",
+                "the sheet as cloth: a woven material such as cotton_woven instead of the paper, which steps and "
+                "touches with the cloth but does not keep a fold as paper does; or the two sheets in separate scenes",
                 "F4: paper+cloth"),
     Unsupported(frozenset({Route.LIQUID_SPH}), frozenset({Route.LIQUID_MPM}),
                 "the second liquid would be a solid wall to the first, so the two would never mix",
@@ -99,7 +98,8 @@ UNSUPPORTED: tuple[Unsupported, ...] = (
 # raised; a pair the strong (ADMM) coupler takes steps (``_check_rod_beside_film``).
 ROD_BESIDE_FILM = Unsupported(
     frozenset({Route.ROD_VBD}), frozenset({Route.CLOTH_FILM}), _NO_STEP,
-    f"{_CHAIN}; or a paper material that is not a film sheet (such as paper_a4), which steps in the rod's solver",
+    f"{_CHAIN}; or the sheet as cloth: a woven material such as cotton_woven instead of the paper, which steps in "
+    "the rod's solver but does not keep a fold as paper does",
     "audit COUPLE-2: wire+paper, wire+metal sheet")
 
 

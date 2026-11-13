@@ -116,6 +116,7 @@ def test_the_dataset_card_says_what_each_library_is_and_claims_no_more():
     assert "7 object cards" in text and "5 of the 7 masses are estimates" in text and "flagged 1 of the cards" in text
     assert "- `robocasa` (3): kitchen objects and fixtures made by Lightwheel, from NVIDIA's" in text
     assert "no Gym-Anything task, robot or score is here" in text and "28 simulations" not in text
+    assert "(https://github.com/argonrobotics-ai/alloy)" in text and "(https://alloy.argonrobotics.ai/docs/)" in text
     assert "denoiser/ " in text
     assert "as packaged by RoboCasa" in text and "RoboCasa's kitchens and tasks are not here" in text
     assert "- `gymanything` (3): object parts" in text and "recorded as declared" in text

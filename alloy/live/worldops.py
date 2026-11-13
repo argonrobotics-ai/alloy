@@ -21,6 +21,8 @@ from typing import Any
 import numpy as np
 import warp as wp
 
+from alloy.coupling.world_clock_writes import refuse_world_clock
+
 
 class WorldOpError(ValueError):
     """A world index out of range, a missing snapshot, or a scene whose state has no per-world copy."""
@@ -32,6 +34,7 @@ class WorldOps:
     def __init__(self, env: Any) -> None:
         self.env = env
         self.engine = env.sim.engine
+        refuse_world_clock(self.engine, "WorldOps")       # slot rows written directly (world_clock_writes)
         self.worlds = int(env.num_envs)
         with wp.ScopedDevice(env.device):
             self._snap = self.engine._snapshot()        # scratch: one world in, one world out

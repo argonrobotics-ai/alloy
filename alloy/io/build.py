@@ -100,6 +100,16 @@ def scene_limits(scene: ct.SceneCard, built: BuiltScene, io: IOModel) -> None:
     for a in scene.attachments:
         if a.break_force is not None or a.break_strain is not None:
             io.note("all", f"attachment {a.a}-{a.b}", "breakable attachment exported as unbreakable")
+    if scene.pairs:
+        for fmt in ("usd", "urdf"):
+            io.note(fmt, "pair friction", f"{len(scene.pairs)} pair rows (Scene.set_friction, pair cards) are not "
+                                          "carried: the file has each material's own friction; the MJCF export "
+                                          "keeps the pairs")
+    for b in io.bodies:
+        if b.motion == "kinematic":
+            io.note("all", b.group or b.name, "kinematic object: a mocap body in MJCF, kinematicEnabled in USD, "
+                    "fixed in URDF. A file loaded with alloy.load is one robot, whose bodies sim.drive does not "
+                    "move: alloy.io.import_file(file, folder) makes a kinematic card that can be driven")
     if scene.emitters:
         io.note("all", "emitters", f"{len(scene.emitters)} liquid emitters/sinks are Alloy-only")
     labels = list(built.model.shape_label)
@@ -108,9 +118,34 @@ def scene_limits(scene: ct.SceneCard, built: BuiltScene, io: IOModel) -> None:
                 "SDF/hydroelastic precision contact is Alloy-only; files keep the plain collision shapes")
 
 
+def without_rods(scene: ct.SceneCard, built: BuiltScene) -> tuple[ct.SceneCard, list[str]]:
+    """The scene without its elastic rods (route ROD_VBD: cable joints no format here has) and their names."""
+    rods = [n for n, d in built.report.decisions.items() if "ROD" in getattr(d.route, "name", str(d.route))]
+    if not rods:
+        return scene, []
+    gone = lambda ref: str(ref).split(":")[0] in rods  # noqa: E731
+    keep = tuple(p for p, n in zip(scene.objects, placement_names(scene)) if n not in rods)
+    return replace(scene, objects=keep, attachments=tuple(a for a in scene.attachments
+                                                          if not gone(a.a) and not gone(a.b))), rods
+
+
+def placement_names(scene: ct.SceneCard) -> list[str]:
+    """Scene names of the placements: the card name, then ``name#1``, ``name#2`` for further copies."""
+    seen: dict[str, int] = {}
+    out = []
+    for p in scene.objects:
+        k = seen.get(p.object, 0)
+        seen[p.object] = k + 1
+        out.append(p.object if k == 0 else f"{p.object}#{k}")
+    return out
+
+
 def scene_model(scene: ct.SceneCard, lib: CardLibrary, name: str) -> tuple[IOModel, BuiltScene]:
-    """``IOModel`` and the one-world ``BuiltScene`` of a scene card."""
+    """``IOModel`` and the one-world ``BuiltScene`` of a scene card. Elastic rods are left out and listed."""
     built = assemble_one_world(scene, lib)
+    scene, rods = without_rods(scene, built)
+    if rods:
+        built = assemble_one_world(scene, lib)
     names = scene_names(built, lib, {r.name for r in scene.robots})
     io = read_model(built.model, name, names)
     io.timestep = _timestep(built)
@@ -118,4 +153,7 @@ def scene_model(scene: ct.SceneCard, lib: CardLibrary, name: str) -> tuple[IOMod
         if not b.group:
             log.debug("body %s has no object group", b.name)
     scene_limits(scene, built, io)
+    for rod in rods:
+        io.note("all", rod, "elastic rod (route ROD_VBD): not exported, as cloth and liquid are not; the rest of the "
+                            "scene is. A rod without a clamp exports as a chain of bodies")
     return io, built

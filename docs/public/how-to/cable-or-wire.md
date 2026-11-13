@@ -58,3 +58,5 @@ simulated second on the chain route and 2.5 s on the elastic-rod solver.
 - Grip a cable with a robot: [Robots](../guides/robots.md).
 - The short cable guide: [Cables](../guides/cables.md).
 - Read the health checks: [World health](../guides/health.md).
+- Related: [deformable object manipulation](../answers/deformable-object-manipulation.md),
+  [squeeze a soft object](squeeze-soft-object.md).

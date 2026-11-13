@@ -1,0 +1,11 @@
+[{"op": "build", "id": "belt", "scene": {"dt": 0.01, "objects": [
+    {"add": "ground"},
+    {"add": "box", "name": "belt", "size": [0.6, 0.2, 0.04], "pos": [0, 0, 0.02], "kinematic": true},
+    {"add": "box", "name": "tote", "size": [0.1, 0.1, 0.06], "pos": [0, 0, 0.07], "mass": 0.3}]}},
+ {"op": "settle", "sim": "belt", "seconds": 0.2},
+ {"op": "drive", "sim": "belt", "name": "belt", "velocity": [0.2, 0, 0], "duration": 0.5},
+ {"op": "step", "sim": "belt", "steps": 50, "names": ["belt", "tote"]},
+ {"op": "drive", "sim": "belt", "stop": true},
+ {"op": "pose", "sim": "belt", "name": "tote", "pos": [0, 0, 0.2]},
+ {"op": "run", "sim": "belt", "seconds": 0.5, "names": ["tote"], "samples": 2},
+ {"op": "close", "sim": "belt"}]

@@ -23,7 +23,7 @@ import warp as wp
 from ..scene import IDENTITY_XF, Lighting, MeshGeom, SceneData
 from ..settings import RenderSettings
 from ..tracer.gpu_scene import GpuScene
-from ..tracer.renderer import make_params
+from ..tracer.renderer import image_worlds, make_params
 from ..tracer.tables import SOBOL_BURLEY_TABLE, filter_table
 from .dispatch import generate
 from .integrator import BumpTab, CamsV2, ParamsV2, make_kernel
@@ -186,7 +186,7 @@ class PbrRenderer:
         self.ps, self.sc, self.w, self.h = ps, ps.sc, int(width), int(height)
         self.st = settings or ps.settings
         self.block_dim = int(block_dim)
-        self.worlds = np.arange(ps.num_worlds, dtype=np.int32) if worlds is None else np.asarray(worlds, np.int32)
+        self.worlds = image_worlds(worlds, ps.num_worlds)
         self.n_img = len(self.worlds)
         key = ps.disp.__name__
         if key not in _KERNELS:

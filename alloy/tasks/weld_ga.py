@@ -23,13 +23,11 @@ axis.
   each tack's start (5-13 and 124-132 mm), which washes in the tacks' cold laps (GA l.2366). A pass with another push
   turns the torch about its tip.
 
-- Pool: the wire lands where the arc was 0.5 s before. With ``config={"arc_pressure": ARC_PRESSURE}`` the liquid also
-  flows along the weld to one pressure under GA's arc force (0.0214 N over σ 1.79 mm at 241.3 A, ``grid_flow``):
-  every task scores higher with it (heat-v3-design.md §Slice 9); the tasks switch to it on physics-coord's ruling.
+- Pool: the liquid flows along the weld to one pressure under GA's arc force (0.0214 N over σ 1.79 mm at 241.3 A,
+  ``grid_flow``), and the wire lands where the arc was 0.5 s before.
 
 Out of scope (heat v3's limits, docs/notes/heat-v3-design.md): the robots (a kinematic torch), the arc circuit (a
-fixed operating point), shielding gas and porosity, the pool's gravity, undercut, spatter and fume (and, by default,
-the pool's flow along the weld).
+fixed operating point), shielding gas and porosity, the pool's gravity, undercut, spatter and fume.
 """
 
 from __future__ import annotations
@@ -96,7 +94,7 @@ def grid_config(fine: float = 2.5e-4, along: float = 5.0e-4, coarse: float = 3.0
                 z=graded(PLATE[2], BRACKET[5], fine, band=(-0.010, 0.016), coarse=coarse),
                 boxes=(PLATE, BRACKET), parts=(0, 1), weld_part=WELD_CODE - 1, sink=("z-",), torch=TORCH,
                 arc_sigma=SIGMA, bead_model="cap", joint_root=(0.0, 0.0), joint_rays=((1.0, 0.0), (0.0, 1.0)),
-                deposit_reach=0.012, max_fill=512, deposit_lag=LAG)
+                deposit_reach=0.012, max_fill=512, deposit_lag=LAG, arc_pressure=ARC_PRESSURE)
 
 
 def _scene(proc: Pass) -> TestScene:

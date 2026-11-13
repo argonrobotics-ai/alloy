@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from alloy.api.errors import SceneError
 from alloy.cards import types as ct
 from alloy.core.errors import CardError
 
@@ -29,8 +30,9 @@ SceneLike = Any   # str | Path | SceneCard (str: a path, a library scene name, o
 IMPORTS_DIR = "imports"   # <alloy-assets>/imports/<source>/ holds each imported library (alloy.importers)
 
 
-class SceneInputError(ValueError):
-    """The scene argument could not be read; the message says what to pass instead.
+class SceneInputError(SceneError):
+    """The scene argument could not be read: ``message`` says what was passed, ``fix`` what to pass instead. An
+    ``alloy.SceneError`` (so also an ``alloy.AlloyAPIError`` and a ``ValueError``).
 
     Example::
 
@@ -76,8 +78,9 @@ def load_source(scene: SceneLike, library: Any = None) -> Source:
         return Source(loads_card(scene, ct.SceneCard, "scene"), _library(library, None), "scene")
     if isinstance(scene, (str, Path)):
         return _from_path_or_name(str(scene), library)
-    raise SceneInputError(f"check(scene=...) got a {type(scene).__name__}; pass a scene YAML path, a library scene "
-                          f"name, YAML text or an alloy.cards.types.SceneCard")
+    raise SceneInputError(f"check(scene=...) got a {type(scene).__name__}",
+                          "pass a scene YAML path, a library scene name, YAML text or an alloy.cards.types.SceneCard",
+                          field="scene")
 
 
 def _from_path_or_name(text: str, library: Any) -> Source:
@@ -89,12 +92,13 @@ def _from_path_or_name(text: str, library: Any) -> Source:
         return Source(load_scene(path), lib, path.stem, path.resolve())
     lib = _library(library, None)
     if path.suffix in (".yaml", ".yml") or "/" in text:
-        raise SceneInputError(f"scene file {text!r} does not exist; pass an existing .yaml path or a library scene "
-                              f"name such as {_some_names(lib)}")
+        raise SceneInputError(f"scene file {text!r} does not exist",
+                              f"pass an existing .yaml path or a library scene name such as {_some_names(lib)}",
+                              field="scene")
     if text not in lib.names("scenes"):
         close = difflib.get_close_matches(text, lib.names("scenes"), n=3)
         hint = f"did you mean {close}?" if close else f"library scenes include {_some_names(lib)}"
-        raise SceneInputError(f"no scene file or library scene named {text!r}; {hint}")
+        raise SceneInputError(f"no scene file or library scene named {text!r}", hint, field="scene")
     return Source(lib.peek_scene(text), lib, text, lib.path_of("scenes", text))
 
 

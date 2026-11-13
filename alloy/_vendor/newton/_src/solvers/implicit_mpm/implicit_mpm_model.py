@@ -94,6 +94,14 @@ def _get_shape_mesh(model: newton.Model, shape_id: int, geo_type: newton.GeoType
         vertices = src_mesh.vertices * np.array(geo_scale)
         indices = src_mesh.indices
         return newton.Mesh(vertices, indices, compute_inertia=False)
+    if geo_type == newton.GeoType.CONVEX_MESH:
+        # Alloy (mpm-convex-mesh-collider): a convex-mesh shape collides as the convex hull of its source vertices,
+        # so the collider is that hull (the source can be the whole concave mesh). Upstream raised NotImplementedError.
+        from ...geometry.utils import remesh_convex_hull  # noqa: PLC0415
+
+        src_mesh = model.shape_source[shape_id]
+        hull_vertices, hull_faces = remesh_convex_hull(np.asarray(src_mesh.vertices) * np.array(geo_scale))
+        return newton.Mesh(hull_vertices, np.asarray(hull_faces).reshape(-1), compute_inertia=False)
     if geo_type == newton.GeoType.PLANE:
         # Handle "infinite" planes encoded with non-positive scales
         width = geo_scale[0] if len(geo_scale) > 0 and geo_scale[0] > 0.0 else 1000.0

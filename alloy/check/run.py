@@ -44,6 +44,8 @@ class RunOptions:
     """``seconds`` of simulated time; ``profile`` an integration profile ("standard", "fast", "precision");
     ``budget_s`` the wall time the run may take (None: no limit): the run stops after the period that uses it up (at
     least ``MIN_PERIODS``, unless ``HARD_CAP`` x the budget is gone first), and ``RunResult.truncated`` says so.
+    ``contacts``: the contact pipeline as ``alloy.build(contacts=)`` takes it ("auto", "mujoco", "newton"); None
+    keeps the profile's own.
 
     Example::
 
@@ -55,6 +57,13 @@ class RunOptions:
     profile: str = "standard"
     seed: int = 0
     budget_s: float | None = 25.0
+    contacts: str | None = None
+
+    def overrides(self) -> dict[str, Any]:
+        """Profile fields for ``contacts``, as ``alloy.build`` sets them. Example: ``RunOptions(contacts="newton")``."""
+        if self.contacts is None:
+            return {}
+        return {"contacts_auto": True} if self.contacts == "auto" else {"native_contacts": self.contacts}
 
 
 @dataclass
@@ -142,7 +151,7 @@ def _run(built: Any, index: ObjectIndex, opts: RunOptions, probe: ContactProbe |
 
     res = RunResult(control_dt=float(built.control_dt), seconds_asked=float(opts.seconds))
     try:
-        sim = build_simulation(built, opts.profile, seed=opts.seed, **overrides)
+        sim = build_simulation(built, opts.profile, seed=opts.seed, **opts.overrides(), **overrides)
     except Exception as exc:  # noqa: BLE001 - a simulation that cannot be built (out of memory) is a finding
         _stopped(res, exc, 0)
         return res

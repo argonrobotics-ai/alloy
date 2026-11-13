@@ -13,8 +13,9 @@ neither, it uses the simulation built last. Example::
 
 from __future__ import annotations
 
+import contextlib
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 from alloy.cli.errors import SessionError
@@ -51,8 +52,8 @@ class Session:
         from alloy.cli.scenes import to_scene  # noqa: PLC0415
 
         if sim_id is not None and sim_id in self.sims:
-            raise SessionError(f"a simulation called {sim_id!r} is already open", f"close it first ({{\"op\": "
-                               f"\"close\", \"sim\": \"{sim_id}\"}}) or pick another id", field="id")
+            raise SessionError(f"a simulation called {_short(sim_id)} is already open", "close it first "
+                               '({"op": "close", "sim": "<that id>"}) or pick another id', field="id")
         if len(self.sims) >= self.max_sims:
             raise SessionError(f"{len(self.sims)} simulations are open (the limit is {self.max_sims})",
                                f"close one first: open ones are {sorted(self.sims)}", field="sim")
@@ -71,7 +72,7 @@ class Session:
         sid = args.get("sim")
         if sid is not None:
             if sid not in self.sims:
-                raise SessionError(f"no open simulation {sid!r}", self._open_hint(), field="sim")
+                raise SessionError(f"no open simulation {_short(sid)}", self._open_hint(), field="sim")
             return sid, self.sims[sid]
         if args.get("scene") is not None:
             return self.open(args)
@@ -80,11 +81,25 @@ class Session:
         raise SessionError("no simulation to run on", 'pass scene="..." (it is built first) or build one with '
                            '{"op": "build", "scene": "..."} and pass its id as sim', field="sim")
 
+    @contextlib.contextmanager
+    def undo_on_error(self) -> Iterator[None]:
+        """A call that raises leaves the session as it was: simulations it opened are closed again and ``last`` (the
+        default simulation) goes back. Example: ``with session.undo_on_error(): op.handler(session, args)``."""
+        before, last, count = set(self.sims), self.last, self._count
+        try:
+            yield
+        except BaseException:
+            for sid in [s for s in self.sims if s not in before]:
+                log.info("closing %s: the call that opened it failed", sid)
+                _close(self.sims.pop(sid))
+            self.last, self._count = last, count
+            raise
+
     def close(self, sid: str | None) -> str:
         """Close one simulation (``sid`` None: the last one). Example: ``session.close("sim1")``."""
         sid = sid if sid is not None else self.last
         if sid is None or sid not in self.sims:
-            raise SessionError(f"no open simulation {sid!r}", self._open_hint(), field="sim")
+            raise SessionError(f"no open simulation {_short(sid)}", self._open_hint(), field="sim")
         sim = self.sims.pop(sid)
         _close(sim)
         if self.last == sid:
@@ -101,6 +116,14 @@ class Session:
         if self.sims:
             return f"use one of the open ids {sorted(self.sims)}"
         return 'build one first with {"op": "build", "scene": "..."}, or pass scene="..." to this call'
+
+
+def _short(value: Any, limit: int = 80) -> str:
+    """``repr(value)`` cut to ``limit`` characters: an error echoes an unknown id without echoing a huge one.
+
+    Example: ``_short("s" * 1000)[-4:] == "...'"``."""
+    text = repr(value)
+    return text if len(text) <= limit else f"{text[:limit - 4]}...'"
 
 
 def _close(sim: Any) -> None:

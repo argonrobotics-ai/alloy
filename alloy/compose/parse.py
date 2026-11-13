@@ -33,7 +33,7 @@ _SUPPORT_TAIL = re.compile(rf"\b(?:on|onto|across|over|atop)\s+(?:a|an|the)?\s*(
 _SUPPORT_HEAD = re.compile(rf"^\s*(?:a|an|the)?\s*((?:[a-z]+\s+){{0,2}}?)({_SUPPORT_WORDS})\b(?=\s+(?:with|and|,))")
 _JITTER = re.compile(r"\b(?:randomi[sz]ed|jittered|jitter|shuffled)\b")
 _ROW = re.compile(r"\b(?:in\s+a\s+(row|line|grid)|lined\s+up|in\s+rows)\b")
-_PLURAL_DEFAULT = 3                      # "cubes" with no number
+_PLURAL_DEFAULT = W.PLURAL_COUNT          # "cubes" with no number
 _PRONOUNS = frozenset({"it", "them", "this", "that"})
 
 

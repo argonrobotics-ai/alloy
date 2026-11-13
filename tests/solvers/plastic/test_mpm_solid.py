@@ -110,7 +110,7 @@ def test_sim_routes_names_the_tolerance_the_entry_runs(tmp_path):
 
 def test_the_sparse_grid_note_names_its_drift_and_early_contact():
     class FakeSolver:
-        tolerance, max_iterations = 1e-4, 250
+        tolerance, max_iterations, delassus_regularization = 1e-4, 250, 1e-12
 
     class FakeView:
         class mpm:
@@ -124,6 +124,7 @@ def test_the_sparse_grid_note_names_its_drift_and_early_contact():
     note = solver.alloy_route_notes()["mpm_j2_solid"]
     assert "sparse grid" in note and "a block resting on the ground drifts" in note, note
     assert "from 2 mm above its surface" in note and "Floors thinner" not in note
+    assert "at most 250 iterations, Delassus regularization 1e-12, sparse grid" in note, note
 
 
 def test_a_j2_solid_on_the_cpu_asks_for_the_dense_grid_unless_the_user_chose(tmp_path, monkeypatch):
@@ -263,7 +264,7 @@ def test_a_metal_card_on_the_route_warns_that_it_is_too_stiff(routes, monkeypatc
         d = Router().route(T.box("blk", metal, 0.006, 0.006, 0.006, route=OVERRIDE), T.context(routes))
     assert d.route == Route.PASTE_MPM
     assert any("too stiff for implicit MPM" in r and "about 1,600,000 by a rule" in r for r in d.reasons), d.reasons
-    assert len(said) == 1 and "metals are not supported on this route yet" in said[0], said
+    assert len(said) == 1 and "Metals are supported on this route only with quasi-static mass scaling" in said[0]
     soft = Router().route(T.box("soft", _j2(), 0.006, 0.006, 0.006, route=OVERRIDE), T.context(routes))
     assert not any("too stiff" in r for r in soft.reasons)
 
@@ -286,16 +287,19 @@ def test_on_a_gpu_a_j2_scene_runs_without_graphs_on_the_dense_grid(tmp_path):
 
 PUNCH_CARD = CARD.replace("j2_soft_solid", "j2_punch_solid").replace("yield_stress: {value: 1.0e4",
                                                                    "yield_stress: {value: 5.0e4")
-PUNCH_CONVERGED_N = 0.2251   # the twin below at 1e-5 / 4,000 sweeps (WP7 slice 2, notes/wp7-dent/slice2/twin)
+PUNCH_ROUTE_N = 0.2251       # the twin below at 1e-5 with a 4,000 cap (the stop test fires first; slice 2, twin/)
 
 
 @pytest.mark.law
 @pytest.mark.timeout(600)
-def test_law_a_punch_reads_its_converged_force_at_the_route_settings(tmp_path, monkeypatch):
+def test_law_a_punch_twin_reads_its_force_at_the_route_settings(tmp_path, monkeypatch):
     """Fast twin of slice 2's punch rows (AUDIT-BENCH's ask): a 3 mm kinematic ball pressed at 2 mm/s into a
     15 x 15 x 9 mm block (E 3 MPa, yield 50 kPa, voxel pinned at 3 mm as the rig does, 600 particles, CPU dense)
-    pushes back with its converged force at 0.5 mm: 0.2250 N at the route's 1e-5 / 1,000 against 0.2251 N at 4,000
-    sweeps. At slice 1's 1e-4 / 250 it read 0.0909 N (0.40)."""
+    pushes back at 0.5 mm with 0.2250 N at the route's 1e-5 / 1,000 (0.2254 N with patch 0015's regularization
+    1e-12), 0.2251 N with the cap at 4,000; at slice 1's 1e-4 / 250 it read 0.0909 N (0.40). It pins the route's
+    settings, not convergence: on this rig (a 3 mm ball on 3 mm voxels) the stop test fires at about 260 sweeps
+    whatever the cap, and at tolerance 1e-7 the reading is 0.33 N (slice 2b). The converged rows are the
+    4,000-particle rig's (test_mpm_solid_reg_laws.py, docs/known_gaps/plasticity-mpm-solid-punch-force.md)."""
     import alloy.route.checks as ck
 
     monkeypatch.setattr(ck, "mpm_voxel", lambda d, vmax: 0.003)    # the rig's voxel (the router picks 2.25 mm)
@@ -329,4 +333,4 @@ def test_law_a_punch_reads_its_converged_force_at_the_route_settings(tmp_path, m
     imp, cid, cbi = imp.numpy(), cid.numpy(), solver.collider_body_index.numpy()
     force = float(imp[np.where(cid >= 0, cbi[np.maximum(cid, 0)], -2) == body][:, 2].sum()) / step_dt
     assert sim.check()["ok"]
-    assert force == pytest.approx(PUNCH_CONVERGED_N, rel=0.02), force
+    assert force == pytest.approx(PUNCH_ROUTE_N, rel=0.02), force

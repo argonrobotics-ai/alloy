@@ -286,7 +286,8 @@ class ActuatorWriter:
         lo, hi = self._limits()
         self.low, self.high, self.low_np, self.high_np = xp.asarray(lo), xp.asarray(hi), lo, hi
         self.delta = xp.asarray(np.broadcast_to(np.asarray(spec.delta, np.float32), (self.size,)).copy())
-        self._start = xp.copy(xp.view(engine.state.joint_q)[xp.asarray(rows, "int64")])           # (W, n)
+        self._rows = xp.asarray(rows, "int64")
+        self._start = xp.copy(xp.view(engine.state.joint_q)[self._rows])                           # (W, n)
         self.command = xp.copy(self._start)
         self._lo_delay, self._hi_delay = spec.delay_range
         self._hist = xp.stack([self._start] * (self._hi_delay + 1), axis=0)                        # newest first
@@ -371,6 +372,15 @@ class ActuatorWriter:
         fresh = self._draw_delays()
         self._delays = xp.where(mask, fresh, self._delays)
         self._write(xp.where(m, self._start, self._hist[self._delays, self._worlds]))
+
+    def hold(self, mask: Any) -> None:
+        """After a reset's jitters: command each masked world's joints where they now are (a jittered start), so the
+        model holds that pose instead of pulling back to the build pose. Example: internal (VectorEnv.reset_worlds)."""
+        xp, m = self.xp, mask[:, None]
+        q = xp.copy(xp.view(self.engine.state.joint_q)[self._rows])
+        self.command = xp.where(m, q, self.command)
+        self._hist = xp.where(mask[None, :, None], q[None], self._hist)
+        self._write(self._hist[self._delays, self._worlds])
 
 
 # --- helpers ---------------------------------------------------------------------------------------------------------

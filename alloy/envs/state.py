@@ -10,6 +10,7 @@ axis and is a backend array (a torch tensor on the GPU, or NumPy)::
     s["cube.vel"]            # (W, 3) m/s               s["cube.angvel"]                          (W, 3) rad/s
     s["gripper/lift.q"]      # (W,) for a 1-dof joint   s["gripper/lift.qd"]                      (W,)
     s["water.points"]        # (W, n, 3) particles      s["water.center"]                         (W, 3)
+    s["cable.points"]        # (W, N + 1, 3) a rod's centre line (Scene.add_rod, as sim.state() reads it)
     s["steps"], s["t"]       # (W,) steps and seconds since each world's episode started
     s["action"]              # (W, A) the last action
     s.start["cube.pos"]      # the same keys, at each world's last reset
@@ -17,26 +18,34 @@ axis and is a backend array (a torch tensor on the GPU, or NumPy)::
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
+
+import numpy as np
 
 from alloy.envs.layout import Layout
 
 #: engine State arrays an observation can read
 ENGINE_ARRAYS = ("body_q", "body_qd", "joint_q", "joint_qd", "particle_q")
-BODY_FIELDS = ("pos", "com", "quat_xyzw", "quat_wxyz", "vel", "angvel")
+BODY_FIELDS = ("pos", "body_pos", "com", "quat_xyzw", "quat_wxyz", "vel", "angvel")
 #: model arrays a state can read (constant per body)
 MODEL_ARRAYS = ("body_com",)
 JOINT_FIELDS = ("q", "qd")
-PARTICLE_FIELDS = ("points", "center")
+PARTICLE_FIELDS = ("points", "center", "active")
+ROD_FIELDS = ("points",)
 
 
 class Rows:
     """Backend index arrays for the layout's rows, made once and reused every step."""
 
-    def __init__(self, layout: Layout, xp: Any) -> None:
+    def __init__(self, layout: Layout, xp: Any, anchors: Mapping[str, Any] | None = None,
+                 pours: Sequence[str] = ()) -> None:
         self.layout, self.xp = layout, xp
+        self.pours = frozenset(pours)                          # add_pour streams: drops wait at the nozzle
         self._cache: dict[tuple[str, str], Any] = {}
+        # objects placed by their anchor (Scene.add_object): "<name>.pos" is that body-frame point, as in sim.state()
+        self.anchors = {n: xp.asarray(np.asarray(c, np.float32)) for n, c in (anchors or {}).items()
+                        if n in layout.bodies}
 
     def get(self, kind: str, name: str) -> Any:
         """Rows of ``name``: kind "body", "q", "qd", "target_q" or "particle". Example: ``rows.get("body", "cube")``."""
@@ -50,6 +59,17 @@ class Rows:
             else:
                 raw = getattr(lay.joint(name), kind)
             self._cache[key] = self.xp.asarray(raw, "int64")
+        return self._cache[key]
+
+    def rod(self, name: str) -> tuple[Any, Any, Any]:
+        """A rod's segment rows (N, W) and segment starts and ends in the body frame, each (N * W, 3), for
+        ``"<rod>.points"``. Example: ``rows.rod("cable")``."""
+        key = ("rod", name)
+        if key not in self._cache:
+            r = self.layout.rods[name]
+            n, w = r.rows.shape
+            tile = [self.xp.asarray(np.repeat(e[:, None, :], w, axis=1).reshape(n * w, 3)) for e in (r.start, r.end)]
+            self._cache[key] = (self.xp.asarray(r.rows, "int64"), *tile)
         return self._cache[key]
 
 
@@ -87,6 +107,7 @@ class BatchState(Mapping[str, Any]):
         out = [f"{b}.{f}" for b in lay.bodies for f in BODY_FIELDS]
         out += [f"{j}.{f}" for j in lay.joints for f in JOINT_FIELDS]
         out += [f"{p}.{f}" for p in lay.particles for f in PARTICLE_FIELDS]
+        out += [f"{r}.{f}" for r in lay.rods for f in ROD_FIELDS]
         return out + list(self._extra)
 
     def __contains__(self, key: object) -> bool:
@@ -107,9 +128,12 @@ class BatchState(Mapping[str, Any]):
 
     def _body(self, name: str, fld: str, key: str) -> Any:
         rows = self.rows.get("body", name)
-        if fld in ("pos", "quat_xyzw", "quat_wxyz"):
+        if fld in ("pos", "body_pos", "quat_xyzw", "quat_wxyz"):
             q = self._arrays("body_q")[rows]
-            if fld == "pos":
+            c = self.rows.anchors.get(name)
+            if fld == "pos" and c is not None:                # the anchor point, turning with the object
+                return q[:, 0:3] + rotate(self.xp, q[:, 3:7], c[None, :] + 0.0 * q[:, 0:3])
+            if fld in ("pos", "body_pos"):                     # body_pos: the body frame's origin
                 return q[:, 0:3]
             return q[:, 3:7] if fld == "quat_xyzw" else q[:, [6, 3, 4, 5]]
         if fld in ("vel", "angvel"):
@@ -118,7 +142,21 @@ class BatchState(Mapping[str, Any]):
         if fld == "com":                                    # centre of mass in the world (a mesh's origin may not be)
             q = self._arrays("body_q")[rows]
             return q[:, 0:3] + rotate(self.xp, q[:, 3:7], self._arrays("body_com")[rows])
+        if name in self.rows.layout.rods:
+            if fld in ROD_FIELDS:
+                return self._rod_points(name)
+            raise _bad_field(key, BODY_FIELDS + ROD_FIELDS)
         raise _bad_field(key, BODY_FIELDS)
+
+    def _rod_points(self, name: str) -> Any:
+        """(W, N + 1, 3): every segment's start, then the last segment's end (``alloy.api._rods.points``)."""
+        rows, start, end = self.rows.rod(name)
+        n, w = rows.shape
+        q = self._arrays("body_q")[rows].reshape(n * w, 7)
+        pos, quat = q[:, 0:3], q[:, 3:7]
+        starts = (pos + rotate(self.xp, quat, start)).reshape(n, w, 3)
+        last = pos[-w:] + rotate(self.xp, quat[-w:], end[-w:])
+        return self.xp.stack([starts[k] for k in range(n)] + [last], 1)
 
     def _joint(self, name: str, fld: str, key: str) -> Any:
         if fld not in JOINT_FIELDS:
@@ -130,8 +168,23 @@ class BatchState(Mapping[str, Any]):
     def _particles(self, name: str, fld: str, key: str) -> Any:
         if fld not in PARTICLE_FIELDS:
             raise _bad_field(key, PARTICLE_FIELDS)
-        pts = self._arrays("particle_q")[self.rows.get("particle", name)]
-        return pts if fld == "points" else pts.mean(1)
+        rows = self.rows.get("particle", name)
+        if fld == "active":
+            return self._active(rows)
+        pts = self._arrays("particle_q")[rows]
+        if fld == "points" or name not in self.rows.pours:
+            return pts if fld == "points" else pts.mean(1)
+        xp = self.xp
+        a = xp.float(self._active(rows))[..., None]           # a pour: the centre of what has been poured
+        n = a.sum(1)
+        return xp.where(n > 0, (pts * a).sum(1) / xp.clip(n, 1.0, float("inf")), pts.mean(1))
+
+    def _active(self, rows: Any) -> Any:
+        """(W, n) bool: the particles taking part (a pour's drops poured so far; none at a reset)."""
+        try:
+            return self._arrays("particle_active")[rows]
+        except KeyError:                                        # the reset state: nothing poured yet
+            return self.xp.zeros(tuple(rows.shape), "bool")
 
 
 def rotate(xp: Any, q_xyzw: Any, v: Any) -> Any:
@@ -153,5 +206,5 @@ def _bad_field(key: str, fields: tuple[str, ...]) -> Exception:
     return EnvError(f"no state key {key!r}", f"use one of {', '.join(f'{name}.{f}' for f in fields)}", field=key)
 
 
-__all__ = ["BODY_FIELDS", "BatchState", "ENGINE_ARRAYS", "JOINT_FIELDS", "MODEL_ARRAYS", "PARTICLE_FIELDS", "Rows",
-           "rotate"]
+__all__ = ["BODY_FIELDS", "BatchState", "ENGINE_ARRAYS", "JOINT_FIELDS", "MODEL_ARRAYS", "PARTICLE_FIELDS",
+           "ROD_FIELDS", "Rows", "rotate"]

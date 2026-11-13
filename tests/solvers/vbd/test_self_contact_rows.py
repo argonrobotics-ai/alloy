@@ -13,6 +13,8 @@ dropped pairs.
   brute-force cross-layer count of N coincident flat grids (the least a row must hold; in-layer pairs inside the reach
   are the one-ring neighbours the filter drops) exceeds 32 / 64, and one scene-rows step sizes the rows above it.
 - R3 same physics: a scene that never passes 75 % fill steps bit for bit as with "fixed" rows; no array replaced.
+- R5 speed (L4; 0.1.1 item 1, XB4-10's rc1 drape paid 5.7 %): a calm sheet on scene rows makes no period-end read
+  that waits for the device, and runs within 3 % of fixed rows over 64 worlds (best of two, alternating).
 - R4 memory: ``RowState.bytes()`` is 8 x the sum of the buffer sizes and the nbytes of the two data arrays; a tiny
   ``alloy_self_contact_row_bytes`` exhausts the state, logs one warning, and pairs drop as before (health flag source).
 """
@@ -20,6 +22,7 @@ dropped pairs.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 import numpy as np
@@ -64,10 +67,10 @@ def probe(sim: Any, steps: int) -> dict[str, Any]:
             "regrows": getattr(sim.engine, "row_regrows", 0)}
 
 
-def build_with_mode(scene: alloy.Scene, mode: str, monkeypatch: pytest.MonkeyPatch) -> Any:
+def build_with_mode(scene: alloy.Scene, mode: str, monkeypatch: pytest.MonkeyPatch, device: str = "cpu") -> Any:
     monkeypatch.delenv(rows.ROWS_ENV, raising=False)       # the environment wins over the default (AUDIT-STACK)
     monkeypatch.setattr(rows, "ROWS_DEFAULT", mode)
-    return alloy.build(scene, device="cpu")
+    return alloy.build(scene, device=device)
 
 
 def stacked_sheets(layers: int, resolution: int, gap: float = 0.004) -> alloy.Scene:
@@ -252,3 +255,42 @@ def test_r4_a_tiny_byte_cap_exhausts_warns_once_and_pairs_still_drop(caplog) -> 
     warns = [r for r in caplog.records if "self-contact rows" in r.getMessage() and r.levelno == logging.WARNING]
     assert len(warns) == 1 and rows.BYTES_KEY in warns[0].getMessage()
     assert watch is not None and _over(s)[2] and int(watch.dropped.numpy().max()) > 0
+
+
+# ---------------------------------------------------------------- R5
+R5_WORLDS, R5_WARM, R5_PERIODS = 64, 10, 60
+
+
+def _flat_sheet(worlds: int) -> alloy.Scene:
+    scene = alloy.Scene(worlds=worlds, dt=0.01)
+    scene.add_ground()
+    scene.add_cloth("sheet", size=(0.4, 0.4), pos=(0, 0, 0.004), resolution=24, mass=0.05)
+    return scene
+
+
+def _timed_periods(mode: str, monkeypatch: pytest.MonkeyPatch) -> tuple[float, int]:
+    sim = build_with_mode(_flat_sheet(R5_WORLDS), mode, monkeypatch, device="cuda:0")
+    sim.step(R5_WARM)                                  # compile and graph capture are not timed
+    sim.state(["sheet"])
+    state = getattr(_vbd(sim), "alloy_rows", None)
+    reader = state.reader if state is not None else None
+    before = reader.blocking if reader is not None else 0
+    t0 = time.perf_counter()
+    sim.step(R5_PERIODS)
+    sim.state(["sheet"])                               # waits for the device: queued work is counted
+    wall = time.perf_counter() - t0
+    return wall, (reader.blocking - before if reader is not None else 0)
+
+
+@pytest.mark.gpu
+@LONG
+def test_r5_a_calm_sheet_on_scene_rows_waits_for_no_period_and_costs_no_time(monkeypatch) -> None:
+    if not wp.is_cuda_available():
+        pytest.skip("needs a CUDA device")
+    walls: dict[str, list[float]] = {"fixed": [], "scene": []}
+    for mode in ("fixed", "scene", "scene", "fixed"):
+        wall, waits = _timed_periods(mode, monkeypatch)
+        walls[mode].append(wall)
+        if mode == "scene":
+            assert waits == 0                          # no period-end read waited for the device
+    assert min(walls["scene"]) <= 1.03 * min(walls["fixed"]), walls

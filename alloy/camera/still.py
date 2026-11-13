@@ -55,6 +55,9 @@ def render(sim, camera=None, world: int = 0, width: int = 640, height: int = 480
     Example: ``img = alloy.camera.render(sim, width=320, height=240)``.
     """
     from .item_looks import items_look
+    from .tracer.renderer import image_worlds
+    if camera is None and isinstance(getattr(sim, "worlds", None), int):
+        image_worlds([world], sim.worlds)  # before any per-world read (liquid meshes), as sim.state(world=) checks
     items = kw.pop("items", "auto")
     items = items_look(sim) if items == "auto" else items  # scene variants: each item's own look (swap, tint)
     engine = getattr(sim, "engine", None)

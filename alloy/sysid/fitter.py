@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +24,7 @@ from alloy.sysid import identify, units
 from alloy.sysid.errors import SysidError
 from alloy.sysid.params import MAX_DELAY, Box, to_fields, variables
 from alloy.sysid.recording import Recording
+from alloy.sysid.robot import actuator_joints
 from alloy.sysid.replay import Bench, Track, control_dt, resample, squared_error
 from alloy.sysid.result import SysidResult
 
@@ -35,7 +36,9 @@ MIN_WORLDS = 16
 @dataclass
 class FitConfig:
     """Options of ``fit``. ``parameters``: names from ``alloy.sysid.PARAMETERS`` (None: gains, damping, friction,
-    delay); ``joints``: a subset of the recording's (None: all); ``worlds``: candidates per generation."""
+    delay); ``joints``: a subset of the recording's (None: all); ``worlds``: candidates per generation;
+    ``column_names`` / ``state_columns``: for a LeRobot dataset folder, the joint of each action column and the
+    ``observation.state`` column of each joint (None: from the dataset's own names)."""
 
     parameters: tuple[str, ...] | None = None
     joints: tuple[str, ...] | None = None
@@ -46,6 +49,8 @@ class FitConfig:
     angle_unit: str = "rad"
     time_unit: str = "s"
     device: str | None = None
+    column_names: tuple[str, ...] | None = None
+    state_columns: tuple[int, ...] | None = None
 
 
 @dataclass
@@ -68,6 +73,10 @@ def fit(robot: Any, data: Any, config: FitConfig | None = None, **options: Any) 
     ``data``: a recording file (CSV, HDF5, LeRobot dataset folder) or a ``Recording``; options as ``FitConfig``.
 
     Example: ``alloy.sysid.fit("panda", "take.csv", worlds=64).save("my_panda.sysid.json")``."""
+    unknown = sorted(set(options) - {f.name for f in fields(FitConfig)})
+    if unknown:
+        raise SysidError(f"fit has no option {unknown[0]!r}", f"its options are {[f.name for f in fields(FitConfig)]}",
+                         field=unknown[0])
     cfg = config or FitConfig(**options)
     if cfg.worlds < MIN_WORLDS or cfg.generations < 1:
         raise SysidError(f"fit needs worlds >= {MIN_WORLDS} and generations >= 1", "the defaults are worlds=64, "
@@ -87,7 +96,12 @@ def fit(robot: Any, data: Any, config: FitConfig | None = None, **options: Any) 
 def _prepare(robot: Any, data: Any, cfg: FitConfig) -> tuple[_Problem, Recording]:
     from alloy.sysid.readers import load_recording  # noqa: PLC0415
 
-    rec = data if isinstance(data, Recording) else load_recording(data)
+    alias = actuator_joints(robot)                   # a recording labelled by actuator is read by joint
+    rec = data if isinstance(data, Recording) else load_recording(
+        data, None if cfg.column_names is None else list(cfg.column_names),
+        None if cfg.state_columns is None else [int(c) for c in cfg.state_columns], alias)
+    if any(j in alias for j in rec.joints):          # a Recording read without the robot at hand
+        rec = Recording([alias.get(j, j) for j in rec.joints], rec.episodes, rec.source, rec.notes)
     if cfg.joints:
         rec = rec.select(list(cfg.joints))
     names = variables(cfg.parameters)

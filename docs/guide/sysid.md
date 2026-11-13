@@ -59,8 +59,10 @@ Input formats (joint names are the robot file's, without the robot's name):
 | HDF5 (`.h5`) | datasets `t`, `command`, `position`, attribute `joints` | `pip install h5py` |
 | LeRobot folder | `action` = absolute joint targets, `observation.state` = joint positions | `pip install pyarrow` |
 
-- HDF5: the datasets sit at the top of the file or one group per episode. LeRobot: `--column-names` names the action
-  columns and `--state-columns` picks the joint positions out of a longer state.
+- HDF5: the datasets sit at the top of the file or one group per episode. LeRobot: action columns named by joint, or by
+  an MJCF actuator of the robot, are matched to the state columns named after the joints (`<joint>.q` or
+  `<joint>.pos`), as in an `alloy.il` recording. Otherwise `--column-names` (`column_names=`) names the joint of each
+  action column and `--state-columns` (`state_columns=`) gives the state column of each joint's position.
 - Units are radians (metres for a slide) and seconds. A file in degrees or milliseconds is refused with a message that
   names `--angle-unit deg` or `--time-unit ms`. Limit: degrees that happen to fit inside the joint's range read as
   radians (very small motions) cannot be detected.

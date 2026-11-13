@@ -27,7 +27,7 @@ import h5py  # noqa: F401  (pip install h5py)
 import alloy.envs
 from alloy.api.errors import AlloyAPIError
 from alloy.il import HDF5Writer, Recorder, SpaceMouseTeleop
-from alloy.il.teleop import KeyboardTeleop, ScriptKeys, teleop_loop
+from alloy.il.teleop import KeyboardTeleop, ScriptKeys, TerminalKeys, teleop_loop
 
 DEMO_SCRIPT = "a*25 " + "a w " * 40 + "enter"      # a alternates with w so the squeeze is held while lifting
 LINK = {"gripper/close_left": ["gripper/close_right"]}       # one key closes both fingers
@@ -35,8 +35,9 @@ LINK = {"gripper/close_left": ["gripper/close_right"]}       # one key closes bo
 
 def make_device(args: argparse.Namespace, env: Any) -> Any:
     """The keyboard (reading the terminal, or the --script keys), or the SpaceMouse with --spacemouse."""
-    if args.spacemouse:
-        return SpaceMouseTeleop(env.action_names(), axes={"z": ("gripper/lift", 1.0)},
+    if args.spacemouse:                                # the terminal's keys add discard and quit (two buttons only)
+        keys = TerminalKeys() if sys.stdin.isatty() else None
+        return SpaceMouseTeleop(env.action_names(), axes={"z": ("gripper/lift", 1.0)}, link=LINK, keys=keys,
                                 buttons={"left": ("gripper/close_left", 1.0), "right": ("gripper/close_left", -1.0)})
     keys = ScriptKeys.parse(DEMO_SCRIPT if args.script == "demo" else args.script) if args.script else None
     return KeyboardTeleop(env.action_names(), link=LINK, dt=env.sim.dt, keys=keys)
@@ -75,11 +76,13 @@ def main(args: argparse.Namespace) -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     path = out / "teleop.hdf5"
-    env = alloy.envs.make("GripperLift-v0", num_envs=1, device=args.device)
+    # 30 s per attempt: an attempt that runs into max_steps without enter is dropped, not saved
+    env = alloy.envs.make("GripperLift-v0", num_envs=1, device=args.device, max_steps=3000)
     rec = Recorder(env, [HDF5Writer(path, overwrite=True)], task="lift the cube and hold it", keep="all")
     device = make_device(args, env)
     print(device.help())
-    print("fixed keys: enter keep episode, backspace discard, esc quit, space zero all")
+    if not args.spacemouse:
+        print("fixed keys: enter keep episode, backspace discard, esc quit, space zero all")
     rec.reset(seed=0)
     stats = teleop_loop(rec, device, realtime=not args.script, on_step=status_printer(env, args))
     unfinished = int(env.xp.to_numpy(env.state["steps"])[0])

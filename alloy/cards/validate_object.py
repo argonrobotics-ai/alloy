@@ -10,6 +10,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from alloy.cards import geometry as geo
 from alloy.cards import types as ct
 from alloy.cards.defaults import default_leaf_paths, is_routing_leaf
@@ -58,10 +60,15 @@ def _mesh(lib: CardLibrary, iss: Issues, path_field: str, rel: str, scale: ct.Ve
     if p is None:
         return None
     try:
-        return lib.mesh(rel).scaled(scale)
+        mesh = lib.mesh(rel).scaled(scale)
     except (ValueError, OSError) as exc:
         iss.error(path_field, f"cannot read mesh {rel!r}: {exc}")
         return None
+    bad = int((~np.isfinite(mesh.vertices)).sum())
+    if bad:                                      # NaN breaks every mesh fact below (eigh, volume, welding)
+        iss.error(path_field, f"mesh {rel!r} has {bad} non-finite vertex coordinate(s) (NaN or inf)")
+        return None
+    return mesh
 
 
 def _check_primitive(iss: Issues, p: ct.Primitive) -> None:
