@@ -4,6 +4,8 @@ Open source under Apache-2.0: https://github.com/argonrobotics-ai/alloy
 
 ![A cloth sheet draped over a stand, simulated in Alloy](https://alloy.argonrobotics.ai/docs/img/cloth.png)
 
+[![arXiv](https://img.shields.io/badge/arXiv-2611.16312-b31b1b.svg)](https://arxiv.org/abs/2611.16312)
+
 **Install:** `pip install alloy-engine`, inside a Python 3.11 or 3.12 virtual environment (Linux x86_64, or macOS
 on Apple silicon), then the quick start below. On an older Python (a stock Ubuntu 22.04 has 3.10) pip answers "from
 versions: none": `uv venv -p 3.12 --seed && source .venv/bin/activate` makes a 3.12 environment with pip in it.
@@ -174,6 +176,10 @@ Installing Alloy does not install or replace a `newton` or `mujoco-warp` package
 `mujoco==3.17.0` and `warp-lang==1.18.0` (from PyPI) and replaces other versions of those two in the
 environment. A `newton` or `mujoco-warp` of your own can share the environment only if it accepts exactly those
 versions; otherwise keep it in its own virtual environment.
+
+## Citation
+
+The paper on Alloy is on arXiv: https://arxiv.org/abs/2611.16312. To cite Alloy, cite from the arXiv page.
 
 ## Licence
 

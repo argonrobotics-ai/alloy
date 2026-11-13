@@ -24,3 +24,10 @@ keywords:
   - Newton
   - Warp
   - sim-to-real
+preferred-citation:
+  type: article
+  title: "Alloy: A Multi-Material Physics Engine for Robot Learning"
+  authors:
+    - name: "Argon Robotics"
+  url: "https://arxiv.org/abs/2611.16312"
+  year: 2026
