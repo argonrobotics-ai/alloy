@@ -28,6 +28,23 @@ solver for
 each (MuJoCo Warp for rigid bodies, VBD for cloth and soft bodies, DFSPH for liquids, ...), and one `Simulation`
 loop steps them together.
 
+What it is for:
+
+- A robot arm pouring liquid: build the cup into the robot's hand in its MJCF and the robot pours from it into a
+  second container (`docs/guide/robots.md`, Grasping). For liquid pouring reinforcement learning, the ready-made
+  `Pour-v0` env streams water from a spout; the agent moves a bowl under the stream and is rewarded for catching it.
+- Cloth and towel folding for imitation learning: `ClothFold-v0` (experimental) is a task that folds a towel along its
+  diagonal with a gripper; a scripted fold ships as `examples/envs/09_cloth_fold.py` (expect partial folds), and
+  `alloy.il` records the env's episodes as demonstrations (HDF5, robomimic layout). The recording holds observations
+  and actions, not the towel's vertices, and a recording with cloth cannot be replayed.
+- An MJCF robot with sand and water: one scene holds a robot from an MJCF file, sand (MPM) and water (DFSPH), stepped
+  together. The sand is a solid wall to the water, which does not soak in (`docs/known_gaps/sph-mpm-mixing.md`). It is
+  slow on a CPU.
+- Cable and wire manipulation: `scene.add_rod` makes a cable or wire that bends, twists and stretches as its material
+  says, and a robot can grip and twist it; a copper wire keeps a bend past yield (`docs/guide/rods.md`).
+- An MCP server physics simulator for robotics: `alloy mcp` gives an AI agent the engine as MCP tools (build a
+  scene, step it, read its state and health, render it); see MCP server below.
+
 > Status: early public release (0.x). APIs may change between minor versions.
 
 ## Install
