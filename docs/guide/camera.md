@@ -24,6 +24,7 @@ print(img.shape, batch.shape)
   you keep and render every step. `sim.render(cam)` returns numpy; `cam.render_torch(sim)` returns a torch tensor on
   the GPU for training (`cam.render(sim)` gives the Warp array, overwritten by the next render: copy what you keep).
 - `attach_to="<body name>"` mounts the camera on a body (a wrist camera); its `pose` is then in the body's frame.
+  Poses, `look_at` and one pose per world: Camera poses, below.
 - `spp` (samples per pixel) trades noise for time: 4-16 for training images, 64+ for a clean still;
   `denoise="auto"` makes a few samples look like many.
 - Denoising needs a CUDA GPU. `denoise="auto"` uses the learned denoiser when PyTorch is installed
@@ -46,7 +47,8 @@ print(img.shape, batch.shape)
   `output="depth"`, `"segmentation"`, `"body_id"` and `"world_id"` give depth and id images instead of colour, and
   a tuple such as `("rgb", "depth")` gives several at once (next section).
 - The first render compiles the renderer's kernels; later renders are fast. Images are lit by a studio sun and sky
-  by default; `quality="full"` and `look=` (a look file) give Blender-style materials and lights, without Blender.
+  by default, which `camera_scene(sim, lighting=...)` changes (The sun and sky, below); `quality="full"` and `look=`
+  (a look file) give Blender-style materials and lights, without Blender.
 - Scanned library objects (YCB, Google Scanned Objects, Objaverse and the other scans `alloy fetch` downloads) are
   drawn with their own photo texture, in the quick look and with `quality="full"` alike. The camera reads the scan's
   `visual.glb` (its mesh, UVs and base-colour image) beside the card's mesh, for a scene built from an `alloy.Scene`.
@@ -77,6 +79,79 @@ print(img.shape, batch.shape)
   not on disk is drawn by both tracers in a flat colour of its family (wood brown, plastic grey, ...; a material with
   no family keeps its preset colour), with one warning naming `python -m alloy.looks --fetch-textures`.
 - More (materials, lights, mounting a camera on a robot link, scene packs): the docstrings in `alloy/camera/`.
+
+## Camera poses
+
+```python
+import numpy as np
+import alloy
+from alloy.camera.pose import look_at
+
+scene = alloy.Scene(worlds=4, dt=0.01)
+scene.add_ground()
+scene.add_box("block", size=(0.1, 0.1, 0.1), pos=(0, 0, 0.05), mass=0.2)
+sim = alloy.build(scene)
+one = look_at((0.6, 0.0, 0.3), (0.0, 0.0, 0.05))               # eye, target -> (px, py, pz, qx, qy, qz, qw)
+print(one.shape, one[:3].round(2))
+angles = np.linspace(0.0, 1.5 * np.pi, sim.worlds)             # each world's camera at another angle round the block
+poses = np.stack([look_at((0.6 * np.cos(a), 0.6 * np.sin(a), 0.3), (0.0, 0.0, 0.05)) for a in angles])
+cam = alloy.Camera("orbit", pose=poses, width=64, height=64)   # pose: (7,) for every world, or (worlds, 7)
+images = sim.render(cam)
+print(poses.shape, images.shape, bool((images[0] != images[1]).any()))
+cam.set_pose(pose=one)                                         # one pose again: the same view in every world
+```
+```text
+(7,) [0.6 0.  0.3]
+(4, 7) (4, 64, 64, 3) True
+```
+
+- A pose is 7 numbers, `(px, py, pz, qx, qy, qz, qw)`: the camera's position and its orientation as a quaternion,
+  in the world frame (in the body's frame with `attach_to=`). The camera looks along its local -z, with +x to the
+  image's right and +y up.
+- `alloy.camera.pose.look_at(eye, target, up=(0, 0, 1))` returns that pose for a camera at `eye` looking at
+  `target`. `alloy.Camera(look_at=(eye, target))` calls it for you, and takes `up` as a third item:
+  `look_at=(eye, target, up)`.
+- `pose=` takes one pose `(7,)` for every world, or an array `(worlds, 7)` with one row per world, so each world
+  can be seen from its own place. `cam.set_pose(pose=...)` or `cam.set_pose(look_at=(eye, target))` moves a camera
+  between renders, in either form.
+- Each world's image has its own sampling noise, so identical worlds differ slightly; more `spp` or a denoiser
+  shrinks it.
+
+## The sun and sky
+
+```python
+import alloy
+from alloy.camera import Lighting, Sun, camera_scene
+
+scene = alloy.Scene(dt=0.01)
+scene.add_ground()
+scene.add_box("block", size=(0.1, 0.1, 0.1), pos=(0, 0, 0.05), mass=0.2)
+sim = alloy.build(scene)
+before = sim.render(width=160, height=120)                    # the default: Lighting.studio()
+sun = Sun.from_euler((1.0, 0.0, 2.4), 3.0)                    # Euler XYZ angles (rad), energy (W/m^2)
+camera_scene(sim, lighting=Lighting([sun], world_color=(0.3, 0.31, 0.33)))   # a darker sky, the sun moved
+after = sim.render(width=160, height=120)                     # every later render of this sim uses it
+cam = alloy.Camera("front", look_at=((0.5, -0.5, 0.35), (0, 0, 0.05)), width=128, height=128)
+images = sim.render(cam)                                      # cameras too: (worlds, 128, 128, 3) uint8
+print(bool(after.mean() < before.mean()), images.shape)       # darker after
+camera_scene(sim, lighting=Lighting.studio())                 # back to the default
+```
+```text
+True (1, 128, 128, 3)
+```
+
+- `camera_scene(sim, lighting=...)`, given once, lights every later render of that sim: every `alloy.Camera` (also
+  one that rendered before), `sim.render()` snapshots, the fast and the full-quality tracer, and varied scenes
+  (`alloy.vary`). To go back: `camera_scene(sim, lighting=Lighting.studio())`.
+- `Lighting(suns=[...], world_color=(r, g, b), world_strength=1.0)`: the suns plus a constant sky colour seen by
+  every ray that leaves the scene. `Lighting([], ...)` is a sky with no sun.
+- The default, `Lighting.studio()`: one sun `Sun.from_euler((0.6, 0.3, 0.8), 3.0)` and a pale blue-grey sky
+  `(0.6, 0.65, 0.7)`.
+- `Sun.from_euler(euler_xyz, energy, color=(1, 1, 1), angle=None)`: a Blender-style sun object that shines along its
+  local -Z, rotated by Euler XYZ angles in radians. `energy` is its irradiance in W/m², times `color`; `angle` is its
+  apparent size in radians, about 0.5° when omitted.
+- Limits: a look file (`look=`, or `quality="full"` with a look) brings its own lights and world instead. A sim built
+  with `processes=` raises `CameraError` naming `processes=None`; its workers render with the default light.
 
 ## Depth and segmentation
 

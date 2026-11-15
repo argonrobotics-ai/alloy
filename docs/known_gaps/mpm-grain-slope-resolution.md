@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Granular MPM: slopes rest at the card's friction angle; a collapsed heap's flank reads lower, a free end slumps
 
 Status: the slope part is closed (2026-11-09). Sand rests at its card's friction angle within 1-2 deg; the

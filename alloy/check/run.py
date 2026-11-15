@@ -156,6 +156,8 @@ def _run(built: Any, index: ObjectIndex, opts: RunOptions, probe: ContactProbe |
         _stopped(res, exc, 0)
         return res
     res.native = str(getattr(sim, "native", ""))
+    if probe is not None:
+        probe.use_native(res.native or None)             # collide the shapes as this simulation's contacts do
     mon = _monitors(sim, index)
     n = max(1, math.ceil(opts.seconds / built.control_dt - 1e-9))
     cps, taken = checkpoints(n, built.control_dt), {0: _sample(sim, 0.0)}
@@ -307,7 +309,7 @@ def _track(sim: Any, res: RunResult, index: ObjectIndex, t: float, probe: Contac
     res.pair_pen_max = np.maximum(res.pair_pen_max, np.nan_to_num(np.asarray(h.max_pair_pen_m, np.float64)))
     now = float(np.nanmax(pen)) if np.isfinite(pen).any() else 0.0
     if now > PEN_LIMIT_M and now > GROW * before and len(res.attributions) < MAX_ATTRIBUTIONS:
-        probe = probe if probe is not None else ContactProbe(sim.built)
+        probe = probe if probe is not None else ContactProbe(sim.built, native=res.native or None)
         rows = probe.depths(sim.state, index)
         if rows:
             res.attributions.append((t, rows[0]))

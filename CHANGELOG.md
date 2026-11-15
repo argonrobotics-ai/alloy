@@ -6,7 +6,71 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
-## [Unreleased]
+## [0.1.5] - 2026-11-15
+
+### Fixed
+- Liquid coupled with rigid bodies or robots steps at its own stable step again, as in 0.1.2. Since 0.1.3 the extra
+  margin meant for liquid beside cloth (a pour splashed over a container's rim without it) applied to every coupled
+  liquid, so a robot scene with 16,575 liquid particles ran its liquid at about twice the substeps, 1.9x slower in
+  all (to 3 simulated seconds on one L4: 234 s in 0.1.2, 445 s in 0.1.3, 238 s now). Liquid beside cloth or a soft
+  body keeps the margin.
+- `add_robot(name, mjcf=<text>)` reads the files the text names as MuJoCo reads an XML string: from the working
+  directory when `add_robot` runs (meshes, height fields and skins under the compiler's `meshdir`, textures under its
+  `texturedir`, `<include>` files), and keeps them as absolute paths, so `scene.save()` and `to_json()` load from
+  any folder. Before, a mesh named relative to your folder was looked for in the build's own card folder and failed
+  with trimesh's bare "string is not a file". A file that is not there now raises `SceneError` naming the robot, the
+  element and the path it resolved to. Without the `import` extra, a robot whose file or text names OBJ or STL meshes
+  now raises `FeatureUnavailableError` with `pip install "alloy-engine[import]"`, not a `BuildError` without the
+  install command; the shipped robots need no trimesh.
+- A mesh object of a soft material (YCB toy fruit and balls are `vinyl_soft`, the kitchen sponge is foam) still
+  becomes a soft body by default, and without the `mesh` extra its build raises `FeatureUnavailableError` as before.
+  Its fix now names `rigid=True` on the `add_object` / `add_mesh` call first, which keeps the object rigid with its
+  material and builds on a base install, and `pip install "alloy-engine[mesh]"` second, for a soft body. Before,
+  the fix named only the install line, though an object for a robot to pick is rigid in most scenes.
+- The first `alloy.build()` of a process is freed after `del sim`, like every later build. Before, the bundled
+  Newton kept the import error of its optional USD schema package with its traceback, which led back to the frame
+  that first imported Newton (the first build's) and kept that sim and its device arrays for the life of the
+  process. The error is now kept without the traceback (vendored patch 0018); USD reading is unchanged.
+- `camera_scene(sim, lighting=Lighting(...))` now lights every later render of that sim: a varied scene's looks,
+  `quality="full"`, a camera on another device, and a scene rebuilt after a cut or tear. Before, those went back to
+  the studio light without a word, and each new lighting kept one more copy of the scene on the device. A sim built
+  with `processes=` now raises `CameraError` naming `processes=None`, not an error about `sim.index`.
+- The learned denoiser no longer leaves PyTorch holding GPU memory after a render (10 GB at 1,024 images on an L4),
+  so the next `sim.step` can use it.
+- `sim.check()` no longer runs out of device memory where the run itself fits. Its contact probe starts at least at
+  the simulation's own contacts per world and grows from there when it loses contacts; before, it was rebuilt at
+  Newton's automatic size (about 12 GiB for a 1,024-world kitchen of 134 shapes beside an arm, which then ran an L4
+  out of memory). When its buffers do not fit the free device memory, it collides the worlds in chunks.
+- `sim.check()` collides MJCF meshes as their convex hulls, as MuJoCo does, so the depths it reports match the
+  simulation's own contacts. Before, it collided them as triangle meshes, and a RoboCasa kitchen pool at 1,024
+  worlds overflowed its probe (contacts dropped, then a rebuild); now neither happens (11.4 GB peak on an L4).
+- A part thinner than 1.25 mm from `alloy.Scene` (a 0.2 mm tab, a 0.61 mm wire, a 0.3 mm film) still fails the
+  build, and the error's fix now names the form that keeps it: `rigid=True, card_extra={"features": {"min_wall":
+  {...}}}` on its `add_box`, `add_cylinder`, `add_capsule` or `add_mesh` call, with the measured value filled in.
+  Such a part builds and rests; landing or hit faster than its thickness over two rigid steps (0.08 m/s for 0.2 mm),
+  it can go more than half its thickness deep, and `sim.check()` then fails that world. `add_sphere`, `add_rod` and
+  the fixtures take no `card_extra`, and the fix says so. Before, the fix named only a thicker part, a mesh's error
+  pointed to a file that does not ship, and `card_extra` without `rigid=True` made such a part a cloth sheet or a
+  chain.
+- A look's texture that the local cache holds at no size now raises `CameraError` naming the public fetch command,
+  `python -m alloy.looks --fetch-textures --family <family>`, not an internal class. A look that names its texture
+  with no size renders from a cache that holds only the 1k images, with one notice.
+- The render backends `"wavefront-warp"` and `"optix"` now raise `CameraError` before rendering when the render
+  device is not a CUDA GPU, naming the default `backend="warp"`, instead of a bare `RuntimeError`.
+
+### Documentation
+- The camera guides show how to set the sun and sky (`camera_scene(sim, lighting=Lighting(...))`), how to place a
+  camera with `alloy.camera.pose.look_at` (an up vector as an optional third item) and how to give each world its
+  own camera pose.
+- The scenes guide shows how to build a rigid part thinner than 1.25 mm, and how fast it can be hit.
+
+### Repository
+- Pull requests on GitHub run the quick CPU tests, about 89 % of the CPU suite, in under 90 minutes. The long and
+  wall-clock tests they leave out are listed in `.github/ci-quick-deselect.txt`; the whole CPU and GPU suites run
+  before each release (`CONTRIBUTING.md`).
+- The quick CPU tests pass on a clone of the public repository: the known-limit pages keep their `owner:` line,
+  tests that read files the repository does not hold skip there, and the importer tests no longer leave a MuJoCo
+  rendering backend set for the tests after them.
 
 ## [0.1.4] - 2026-11-14
 

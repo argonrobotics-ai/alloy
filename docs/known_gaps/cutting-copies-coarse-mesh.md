@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # Known gap: `cut_model: copies` on a coarse mesh (pieces with one node layer, no kerf, what `.points` holds)
 
 ## What

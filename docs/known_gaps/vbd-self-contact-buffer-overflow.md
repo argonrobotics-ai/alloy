@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # VBD self contact drops pairs over its fixed buffers
 
 ## What is wrong

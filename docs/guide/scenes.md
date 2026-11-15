@@ -42,6 +42,32 @@ wrong field raises `SceneError` listing these. Calling `randomize` again on the 
 earlier range (a warning names both); a recipe's `randomize` row overrides its base card's range. More in
 `worlds.md`.
 
+### Parts thinner than 1.25 mm
+
+A rigid part thinner than 1.25 mm builds when its card states its thinnest member:
+
+```python
+import alloy
+
+scene = alloy.Scene(dt=0.01)
+scene.add_ground()
+wall = {"features": {"min_wall": {"value": 0.0002, "source": "model", "note": "thinnest member"}}}
+scene.add_box("tab", size=(0.02, 0.02, 0.0002), pos=(0, 0, 0.0002), mass=0.001, rigid=True, card_extra=wall)
+sim = alloy.build(scene)
+sim.run(0.5)
+print(sim.routes()["tab"]["route"], sim.check()["ok"])
+```
+```text
+rigid True
+```
+
+- `add_box`, `add_cylinder`, `add_capsule` and `add_mesh` take `card_extra`; `add_sphere`, `add_rod` and fixtures do
+  not.
+- `rigid=True` is needed: without it a thin box or mesh routes to cloth, a capsule to a chain, and a cylinder is
+  refused.
+- Such a part rests fine. Landing, or being hit, faster than its thickness / (2 x 1.25 ms), which is 0.08 m/s at
+  0.2 mm, takes it past half its thickness, and `sim.check()` fails the world (measured on the CPU).
+
 ## Containers and fixtures
 
 Static containers and holed parts are built from boxes, so every face collides exactly:

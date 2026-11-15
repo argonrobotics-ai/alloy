@@ -41,7 +41,8 @@ def contact_gap(value: Any) -> float | None:
 def source(name: str, path: Any, mjcf: str | None) -> tuple[str, str | None, str | None]:
     """``(kind, MJCF text, absolute file path)`` of ``Scene.add_robot``'s ``path`` / ``mjcf`` (exactly one), with an
     XML source checked to parse: a malformed file reached the build as a bare ``xml`` ParseError from the importer,
-    without the robot's name (AUDIT-STACK ERR-5). Example: ``source("arm", None, "<mujoco/>")[0]`` -> ``"mjcf"``."""
+    without the robot's name (AUDIT-STACK ERR-5). An MJCF string's asset and include paths come back absolute, read
+    from the working directory now (``alloy.api._mjcf_assets``). Example: ``source("arm", None, "<mujoco/>")[0]``."""
     from pathlib import Path  # noqa: PLC0415
     from xml.etree import ElementTree  # noqa: PLC0415
 
@@ -62,6 +63,10 @@ def source(name: str, path: Any, mjcf: str | None) -> tuple[str, str | None, str
         raise SceneError(f"robot {name!r}: its {kind.upper()} is not well-formed XML ({exc.msg} at line {line}, "
                          f"column {column})", "close or fix the tag at that place (every <body>, <geom>, ... needs "
                          "its end tag or a closing '/>')", field="mjcf" if src is None else "path") from exc
+    if src is None:                     # MuJoCo's rule for XML text: asset paths from the working directory, now
+        from alloy.api._mjcf_assets import absolute_assets  # noqa: PLC0415
+
+        mjcf = absolute_assets(name, mjcf, Path.cwd())
     return kind, mjcf, src
 
 

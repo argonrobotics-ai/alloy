@@ -54,8 +54,10 @@ def _tower(levels: int, device: str) -> tuple[alloy.Simulation, list[str]]:
 
 @pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.gpu)])
 def test_a_crossed_stack_beside_a_kinematic_body_rests(device: str) -> None:
-    """After a 0.5 s settle a 10-level tower is still: vertical speed under 0.01 mm/s RMS, no block drifts 0.01 mm
-    in 0.5 s (at the old floor: 1.65 mm/s RMS and 0.36 mm over 1.7 s; 6 levels rested even then)."""
+    """After a 0.5 s settle a 10-level tower is still: on the CPU vertical speed under 0.01 mm/s RMS and no block
+    drifting 0.01 mm in 0.5 s (at the old floor: 1.65 mm/s RMS and 0.36 mm over 1.7 s; 6 levels rested even then).
+    On CUDA contact does not repeat from run to run, so its limits are 1.0 mm/s and 0.1 mm: on an L4 at the 1.0 floor
+    the same stack read 0.0004-0.164 mm/s in seven runs and 0.565 mm/s once, at 0.7 1.69-1.80 mm/s and 0.13-0.14 mm."""
     sim, names = _tower(LEVELS, _device(device))
     sim.settle(0.5)
     p0 = sim.state(names, world=0)
@@ -67,8 +69,9 @@ def test_a_crossed_stack_beside_a_kinematic_body_rests(device: str) -> None:
     drift = max(float(np.linalg.norm(np.asarray(st[n + ".pos"]) - np.asarray(p0[n + ".pos"]))) for n in names)
     check = sim.check()
     assert check["ok"], check["problems"][:3]
-    assert math.sqrt(np.mean(vz2)) < 1e-5, f"the stack jitters: {math.sqrt(np.mean(vz2)) * 1e3:.3f} mm/s RMS"
-    assert drift < 1e-5, f"a block drifted {drift * 1e3:.3f} mm"
+    vz_max, drift_max = (1e-5, 1e-5) if device == "cpu" else (1e-3, 1e-4)
+    assert math.sqrt(np.mean(vz2)) < vz_max, f"the stack jitters: {math.sqrt(np.mean(vz2)) * 1e3:.3f} mm/s RMS"
+    assert drift < drift_max, f"a block drifted {drift * 1e3:.3f} mm"
 
 
 def test_the_floor_follows_the_gains_mode() -> None:

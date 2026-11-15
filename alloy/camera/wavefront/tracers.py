@@ -69,9 +69,13 @@ class WarpTracer:
                   outputs=[occluded], device=self.sc.device)
 
 
+GPU_BACKENDS = ("optix", "wavefront-warp")
+
+
 def resolve_backend(backend: str, device: str = "cuda:0") -> str:
     """The concrete backend of a ``RenderSettings.backend`` value: "auto" -> "optix" when it is available, else
-    "warp"; anything unknown raises a CameraError.
+    "warp"; anything unknown raises a CameraError, and so does "optix" or "wavefront-warp" on a device that is not a
+    CUDA GPU (no fallback to "warp": that backend was asked for by name, e.g. through ``ALLOY_CAMERA_BACKEND``).
 
     Example::
 
@@ -79,10 +83,23 @@ def resolve_backend(backend: str, device: str = "cuda:0") -> str:
     """
     if backend not in BACKENDS:
         raise CameraError(f"unknown render backend {backend!r}", f"use one of {', '.join(BACKENDS)}")
+    if backend in GPU_BACKENDS and not _is_cuda(device):
+        where = (f"this render runs on {str(device)!r}" if wp.is_cuda_available()
+                 else "Warp finds no CUDA device on this machine (no NVIDIA GPU or driver)")
+        raise CameraError(f"render backend {backend!r} needs an NVIDIA GPU, and {where}",
+                          "unset ALLOY_CAMERA_BACKEND, or use backend='warp' (the default; it also renders on the CPU)")
     if backend != "auto":
         return backend
     from ..optix import available
     return "optix" if available(device)[0] else "warp"
+
+
+def _is_cuda(device) -> bool:
+    """True when ``device`` names a CUDA device Warp can use (False for "cpu" and on a machine without CUDA)."""
+    try:
+        return wp.get_device(device).is_cuda
+    except (RuntimeError, ValueError):
+        return False
 
 
 def make_tracer(scene, backend: str):

@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: the open-carton peel throws a light body in some worlds (1 in 40 with the task's caps)
 
 ## What

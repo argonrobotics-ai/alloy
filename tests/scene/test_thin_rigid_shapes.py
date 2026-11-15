@@ -3,9 +3,9 @@
 workaround (a rigid plate for a stiff sheet) runs on the page's own rig.
 
 The card check refuses a shape under 2 x contact speed x rigid step (1.25 mm, whatever ``Scene(dt=)``) and names
-``features.min_wall``, which ``add_box`` has no argument for. ``alloy.api._materialize`` raises a ``SceneError`` with
-the numbers first. The limit stays: with the wall declared, a 0.5 mm plate dropped 5 mm onto a 0.5 mm shelf fell
-through it (CPU). The same shapes fail and build as before; only the error changed."""
+``features.min_wall``. ``alloy.api._materialize`` raises a ``SceneError`` with the numbers first. The limit stays:
+with the wall declared, a 0.5 mm plate dropped 5 mm onto a 0.5 mm shelf fell through it (CPU). The same shapes
+fail and build as before; only the error changed."""
 
 from __future__ import annotations
 
@@ -31,7 +31,8 @@ def test_a_shape_under_the_thin_limit_says_what_builds(tmp_path, add, field, thi
     e = err.value
     assert e.field == field and f"is {thin} at its thinnest" in e.message and "at least 1.25 mm" in e.message
     assert "mass=" in e.fix and "add_cloth" in e.fix and "dt" in e.fix
-    assert "GOTCHAS" not in e.message + e.fix and "min_wall" not in e.message + e.fix
+    assert "GOTCHAS" not in e.message + e.fix
+    assert "rigid=True, card_extra={'features': {'min_wall'" in e.fix or "takes no card_extra" in e.fix
 
 
 def test_shapes_at_the_thin_limit_or_declaring_a_wall_still_validate(tmp_path):

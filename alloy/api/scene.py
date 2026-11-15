@@ -440,9 +440,9 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
 
     def save(self, directory: str | Path) -> Path:
         """Write the engine's YAML cards (materials/, objects/, scenes/scene.yaml) to ``directory``, with the cards
-        and meshes it takes from its own card roots; returns the scene file; it warns for what cards cannot keep
-        (per-world starts, heat, ...). Example: ``scene.save("my_scene")`` then
-        ``alloy.load("my_scene/scenes/scene.yaml")``."""
+        and meshes it takes from its own card roots; a robot's mesh files are not copied (its paths are absolute, an
+        ``mjcf=`` string's read when it was added); returns the scene file; warns for what cards cannot keep (per-world
+        starts, heat, ...). Example: ``scene.save("d")``, then ``alloy.load("d/scenes/scene.yaml")``."""
         from alloy.api import _save  # noqa: PLC0415 - imports the card layer
         return _save.save(self, directory)
 

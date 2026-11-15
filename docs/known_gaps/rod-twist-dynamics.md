@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A thin rod's twist vibration rings too slowly or not at all (CHAIN route)
 
 ## What is wrong

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Audit S1-006: Warp's bare ``RuntimeError: Failed to allocate ... bytes`` left the API from ``sim.check()`` (its
-contact probe collides every world at once: 512 worlds of 16 decomposed bowls on an L4) and from ``sim.step()`` (the
-first periods' MuJoCo Warp collision scratch: 2,048 worlds of the audit's scene). Both must raise ``SimulationError``
-(an ``AlloyAPIError``) with a fix; any other error keeps its type (CPU, the failures planted with Warp's message)."""
+contact probe, collided at once then: 512 worlds of 16 decomposed bowls on an L4; it now collides the worlds in
+chunks, down to one world, when they do not fit) and from ``sim.step()`` (the first periods' MuJoCo Warp collision
+scratch: 2,048 worlds of the audit's scene). Both must raise ``SimulationError`` (an ``AlloyAPIError``) with a fix;
+any other error keeps its type (CPU, the failures planted with Warp's message)."""
 
 from __future__ import annotations
 

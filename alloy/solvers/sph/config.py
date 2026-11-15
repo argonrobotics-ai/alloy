@@ -63,7 +63,7 @@ class DFSPHConfig:
     min_iterations: int = 2
     max_iterations: int = 50
     cfl: float = 0.2  # dt <= cfl·2r/|v|max, snapped down to the D4 grid at period boundaries
-    speed_margin: float = 0.25  # coupled clock's estimate: this x the CFL step (a pour beside cloth splashed at 1)
+    speed_margin: float = 0.25  # coupled clock's estimate beside cloth / soft bodies: this x the CFL step (splash at 1)
     dt_min: float = 1.953125e-5
     dt_max: float = 1.25e-3
     viscosity: Literal["auto", "none", "xsph", "weiler2018"] = "auto"  # auto: weiler2018 if mu > 1e-2 Pa·s

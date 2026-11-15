@@ -2,11 +2,13 @@
 """Warp's device-memory failures after the build as API errors.
 
 Two places allocate past the build and could leave the API with a bare ``RuntimeError: Failed to allocate ... bytes``
-from Warp: ``sim.check()``, whose contact probe collides every world at once beside the simulation's own buffers (512
-worlds of 16 decomposed bowls on an L4), and ``sim.step()``, whose first periods run eagerly and allocate MuJoCo
-Warp's collision scratch (2,048 worlds of 4 decomposed bowls, 6 boxes and a clamped hose: 4.09 GB of EPA scratch
-on an L4 already holding 13.7 GB). A failed CUDA graph is not one of them: stepping already falls back to smaller
-graphs, then to none.
+from Warp. ``sim.check()``: its contact probe sits beside the simulation's own buffers, sized at least to the
+simulation's contacts per world and grown from that budget when it loses contacts; when its buffers do not fit the
+free device memory it collides the worlds in chunks, halved down to one world at a time (``alloy.check.probe_chunks``;
+collided at once, 512 worlds of 16 decomposed bowls ran an L4 out). ``sim.step()``: its first periods run eagerly
+and allocate MuJoCo Warp's collision scratch (2,048 worlds of 4 decomposed bowls, 6 boxes and a clamped hose:
+4.09 GB of EPA scratch on an L4 already holding 13.7 GB). A failed CUDA graph is not one of them: stepping already
+falls back to smaller graphs, then to none.
 """
 
 from __future__ import annotations
@@ -41,9 +43,10 @@ def probe_memory(sim: Any) -> Iterator[None]:
     try:
         yield
     except RuntimeError as exc:
-        err = oom_error(sim, exc, "sim.check() (its contact probe collides every world at once, beside the "
-                        "simulation)", f"sim.health() gives every world's health flags without the probe; or build "
-                        f"fewer worlds ({ESTIMATE})")
+        err = oom_error(sim, exc, "sim.check() (its contact probe, beside the simulation; it collides the worlds "
+                        "in chunks, down to one world at a time, when they do not fit at once)",
+                        f"sim.health() gives every world's health flags without the probe; or build fewer worlds "
+                        f"({ESTIMATE})")
         if err is None:
             raise
         raise err from exc

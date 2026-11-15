@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # The shipped Franka arms do not collide link 5 with link 7 (Panda: link 5 with the hand)
 
 **What is wrong.** The FR3 packs (`emb_e1_fr3`, `emb_e4_fr3_bimanual`, `emb_e5_fr3_duo` and their `_route` /

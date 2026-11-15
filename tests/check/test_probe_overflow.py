@@ -43,8 +43,9 @@ def test_overflow_at_newton_size_is_rebuilt_from_the_count(monkeypatch):
     clean, _ = _check()
     budgets = _short_newton_size(monkeypatch)
     report, said = _check()
-    assert budgets[:2] == [None, None] and 3 <= len(budgets) <= 2 + cc.COUNTED_REBUILDS
-    assert budgets[-1].rigid_contacts > budgets[2].rigid_contacts > 1 or len(budgets) == 3
+    # built once at Newton's size (2 worlds), then only grown from the counts: never rebuilt at Newton's size again
+    assert budgets[0] is None and 2 <= len(budgets) <= 1 + cc.COUNTED_REBUILDS and None not in budgets[1:]
+    assert budgets[-1].rigid_contacts > budgets[1].rigid_contacts > 1 or len(budgets) == 2
     assert not any("still overflows" in s for s in said)
     assert report.ok and not report.warnings(), report.summary()
     assert report.checks == clean.checks
@@ -64,6 +65,7 @@ def test_overflow_that_stays_is_a_warning_not_a_silent_pass(monkeypatch):
 
 def test_grown_sizes():
     assert cc._grown(2000, 800, False) == 2500 and cc._grown(700, 800, False) == 800
+    assert cc._grown(800, 800, False) == 1600 and cc._grown(0, 0, False) == 0    # full: Newton stops counting there
     assert cc._grown(700, 800, True) == 1600 and cc._grown(900, 800, True) == 1600
 
 

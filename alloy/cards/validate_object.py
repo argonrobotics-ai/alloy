@@ -254,7 +254,8 @@ def _check_thin_member(iss: Issues, card: ct.ObjectCard, mesh: geo.MeshData | No
         return
     if card.features.min_wall is None:
         iss.error("features.min_wall", f"thinnest member {fmt(t_min)} m < 2·contact_speed·rigid_dt = {fmt(limit)} m "
-                  "(tunnels in one step, GOTCHAS:413); declare features.min_wall so CCD/margins are sized")
+                  "(it can pass through another thin part in one step); declare features.min_wall (that value, "
+                  "with its source) to keep it this thin: nothing is resized for it")
     elif card.features.min_wall.value > 1.5 * t_min:
         iss.warn("features.min_wall", f"declared {fmt(card.features.min_wall.value)} m but the geometry has "
                  f"{fmt(t_min)} m")
@@ -294,7 +295,7 @@ def _check_rolling(iss: Issues, card: ct.ObjectCard, mats: list[tuple[str, ct.Ma
     for prefix, m in mats:
         if m.surface.rolling_lever is not None and m.surface.rolling_lever.value > 0 and not rolls:
             iss.warn(f"{prefix}.surface.rolling_lever", f"material {m.name!r} sets a rolling lever but "
-                     f"{card.name!r} is not a round shape (GOTCHAS:471)")
+                     f"{card.name!r} is not a round shape")
 
 
 def _feature_with_clearance(card: ct.ObjectCard, feature: str | None) -> ct.PrecisionFeature | None:

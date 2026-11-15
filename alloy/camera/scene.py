@@ -16,6 +16,7 @@ Example::
 from __future__ import annotations
 
 import math
+import weakref
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -83,6 +84,26 @@ class Lighting:
     def studio() -> Lighting:
         """The default: one sun (energy 3, Euler XYZ 0.6, 0.3, 0.8 rad) and a pale blue-grey sky."""
         return Lighting([Sun.from_euler((0.6, 0.3, 0.8), 3.0)], (0.6, 0.65, 0.7), 1.0)
+
+    def key(self) -> tuple:
+        """Its values as a hashable tuple: equal lightings build the same scene."""
+        suns = tuple((tuple(np.asarray(s.direction_to_sun, float).round(9)), tuple(map(float, s.strength)),
+                      float(s.angle)) for s in self.suns)
+        return suns, tuple(map(float, self.world_color)), float(self.world_strength)
+
+
+_LIGHTS: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()  # source -> the Lighting camera_scene last got
+
+
+def source_lighting(source, lighting: Lighting | None) -> Lighting | None:
+    """``lighting``, kept as ``source``'s light when given; else the one kept for ``source`` (None: the default)."""
+    try:
+        if lighting is None:
+            return _LIGHTS.get(source)
+        _LIGHTS[source] = lighting
+    except TypeError:  # a source that takes no weak reference keeps nothing
+        pass
+    return lighting
 
 
 @dataclass(eq=False)

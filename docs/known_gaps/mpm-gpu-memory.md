@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # MPM on the GPU: CUDA graphs cost ~10x the memory of an eager step; too big for graphs runs eager, too big for both is refused
 
 Status: guarded, not fixed. A scene whose MPM step does not fit as CUDA graphs runs without them (the MPM graph

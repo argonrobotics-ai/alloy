@@ -508,6 +508,10 @@ raises `AttributeError`.
   dict (the default fast camera only; not `quality="full"`). Also `"instance_id"` (one id per shape), `"semantic"`
   (your classes, after `alloy.camera.aov.set_semantics`) and `"flow"` (pixels moved since the camera's last flow
   render; NaN on cloth and liquid).
+  Light: `from alloy.camera import Lighting, Sun, camera_scene`, then
+  `camera_scene(sim, lighting=Lighting([Sun.from_euler((1.0, 0.0, 2.4), 3.0)], world_color=(0.3, 0.31, 0.33)))` sets
+  the sun (Euler angles in rad, energy in W/m²) and sky colour of every later render of that sim
+  (`Lighting.studio()` is the default).
   Look at a new scene once before a long run. `docs/guide/camera.md`.
 - Frame export, for a viewer you write (Alloy's own viewer, next bullet, pauses and steps a run;
   `examples/export/rerun_live.py` logs frames to Rerun): `from alloy.export import FrameExporter`; `exp =

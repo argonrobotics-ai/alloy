@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # MPM: at many GPU worlds, sand and paste sank into bodies they touched (fixed for 64 worlds and below)
 
 Status: fixed for 64 worlds and below (0.1.0). Alloy now picks a particle's grid cell in integers

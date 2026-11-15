@@ -78,7 +78,7 @@ print(ids.shape, ids.dtype, [names[i] for i in np.unique(ids)])
 `"instance_id"` gives every shape an id of its own, static ones too. In `"segmentation"` the ground and the table
 share id 1.
 
-## 5. Fast camera and full camera
+## 5. Fast camera, full camera and light
 
 Everything above used the fast camera: a studio sun and sky, made for many worlds. In an outside test on one
 NVIDIA L4 it rendered about 1,000 colour images per second at 128 px over 256 to 1,024 worlds.
@@ -94,13 +94,20 @@ print(photo.shape, photo.dtype)
 
 `quality="full"` is the full camera: materials, lights and soft shadows, for pictures that should look real. It is
 far slower: 21 to 24 images per second in the same test (128 px, 64 or 256 worlds, 32 samples per pixel), and it
-gives colour only, not depth or ids.
-
-Lights and colours are one look for the whole render call: every world gets the same look. Each new look compiles
+gives colour only, not depth or ids. Every world of a render call gets the same look, and each new look compiles
 again, about 100 s the first time, so keep one look for a run.
+
+```python
+from alloy.camera import Lighting, Sun, camera_scene
+camera_scene(sim, lighting=Lighting([Sun.from_euler((1.0, 0.0, 2.4), 3.0)], world_color=(0.3, 0.31, 0.33)))
+```
+
+This sets the sun (Euler XYZ angles in radians, energy in W/m²) and the sky colour of every later render of that
+sim, snapshots and cameras alike. `Lighting.studio()` is the default, and `Lighting([], ...)` is a sky with no sun.
 
 ## Keep in mind
 
+- A look file (`look=`) brings its own lights instead, and a sim built with `processes=` cannot take a lighting.
 - There is no sensor model: no noise, and no range limit other than the camera's clip distances.
 - A glass object renders as an opaque surface ([glass is opaque](../../known_gaps/camera-glass-opaque.md)).
 - The camera images of the ready-made training environments are small, bright and grainy

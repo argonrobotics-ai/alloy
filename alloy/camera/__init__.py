@@ -20,7 +20,11 @@ Blender-quality scenes (materials, area lights, HDRI world, lens) come from scen
     img = Camera("pack", width=128, height=128, spp=16).render(scene)   # the pack's own camera
 
 ``attach_to="hand"`` mounts the camera on a body (its pose is then in the body frame). Lights default to a studio
-sun and sky (``Lighting.studio()``); ``camera_scene(model, lighting=...)`` changes them.
+sun and sky (``Lighting.studio()``); ``camera_scene(sim, lighting=...)`` changes them for every later render of
+that sim::
+
+    from alloy.camera import Lighting, Sun, camera_scene
+    camera_scene(sim, lighting=Lighting([Sun.from_euler((1.0, 0.0, 2.4), 3.0)], world_color=(0.3, 0.31, 0.33)))
 """
 from __future__ import annotations
 

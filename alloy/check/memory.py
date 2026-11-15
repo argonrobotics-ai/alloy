@@ -105,7 +105,9 @@ class WorldFit:
 
 
 def free_bytes(device: str) -> float | None:
-    """Free memory of a CUDA device in bytes; None for the CPU.
+    """Free memory of a CUDA device in bytes, once Warp's mempool has handed back what it holds unused (a process that
+    ran a large scene reads near 0 free without the trim: ``alloy.integration.mpm_memory.free_bytes``); None for the
+    CPU.
 
     Example::
 
@@ -114,8 +116,10 @@ def free_bytes(device: str) -> float | None:
     """
     import warp as wp  # noqa: PLC0415
 
+    from alloy.integration.mpm_memory import free_bytes as trimmed  # noqa: PLC0415
+
     dev = wp.get_device(device)
-    return float(dev.free_memory) if dev.is_cuda else None
+    return float(trimmed(dev)) if dev.is_cuda else None
 
 
 def per_world(built: Any) -> tuple[dict[str, int], dict[str, int]]:

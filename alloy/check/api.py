@@ -87,7 +87,7 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
     if built is None:
         return _skip_rest(report, "the scene does not assemble", t0)
     index = ObjectIndex.build(built, src.card, src.lib)
-    probe = ContactProbe(built)
+    probe = ContactProbe(built, native="newton" if contacts == "newton" else "mujoco")   # the run corrects it
     _stage(report, "overlap", lambda: _overlap(report, built, index, probe))
     if run:
         opts = RunOptions(seconds, profile, seed, budget_s, contacts)

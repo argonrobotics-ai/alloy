@@ -30,6 +30,7 @@ from alloy.api.fixtures import PRECISE_K, PRECISE_MIN_E, precise_substeps
 
 SCENE_NAME = "scene"
 THIN_FIELDS = {"box": "size", "sphere": "radius", "cylinder": "radius", "capsule": "radius"}   # add_* primitives
+FIXTURE_CALLS = "add_open_box / add_open_cylinder / add_block_with_hole"     # build a fixture's parts
 
 
 @dataclass
@@ -271,7 +272,7 @@ def _object_card(name: str, item: dict[str, Any], material: str, root: Path) -> 
     if item["static"]:
         card["motion"] = "static"
     card.update(copy.deepcopy(item["card_extra"]))
-    _refuse_thin(name, item["kind"], card)
+    _refuse_thin(name, item["kind"], card, bool(item.get("fixture")))
     return card
 
 
@@ -285,11 +286,12 @@ def _thin_limit() -> tuple[float, float, float]:
     return 2.0 * speed * RIGID_DT, speed, RIGID_DT
 
 
-def _refuse_thin(name: str, kind: str, card: dict[str, Any]) -> None:
-    """A SceneError with the numbers for a primitive thinner than the thin-member rule allows (audit GAPS-7): the
-    card check's own error names ``features.min_wall``, which ``add_box`` has no argument for, and a smaller dt does
-    not lower the limit. Measured (CPU): a 0.5 mm plate dropped 5 mm onto a 0.5 mm shelf fell through it, so the
-    rule stays. A card declaring ``features.min_wall`` itself (``add_cloth``) passes as before."""
+def _refuse_thin(name: str, kind: str, card: dict[str, Any], fixture: bool = False) -> None:
+    """A SceneError with the numbers for a primitive thinner than the thin-member rule allows: a smaller dt does
+    not lower the limit, and its fix names the ``card_extra=`` that keeps the part that thin (``_thin.keep_thin``;
+    a fixture's parts have none). Measured (CPU): a 0.5 mm plate dropped 5 mm onto a 0.5 mm shelf fell through it,
+    so the rule stays. A card declaring ``features.min_wall`` itself (``add_cloth``, that card_extra) passes."""
+    from alloy.api._thin import keep_thin  # noqa: PLC0415
     from alloy.cards import geometry as geo  # noqa: PLC0415
     from alloy.cards import types as ct  # noqa: PLC0415
 
@@ -305,7 +307,8 @@ def _refuse_thin(name: str, kind: str, card: dict[str, Any]) -> None:
                      "a thinner one can pass through another thin part in a step",
                      f"make it at least {_mm(limit)} thick and keep a moving part's real weight with mass=; a sheet "
                      "meant to bend is add_cloth(..., thickness=...); a smaller Scene(dt=...) does not lower the "
-                     "limit", field=_thin_field(kind, prim))
+                     f"limit; {keep_thin(thin, FIXTURE_CALLS if fixture else f'add_{kind}')}",
+                     field=_thin_field(kind, prim))
 
 
 def _mm(x: float) -> str:

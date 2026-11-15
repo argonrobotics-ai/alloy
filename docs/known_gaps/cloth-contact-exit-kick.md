@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A cloth particle that starts a step inside a rigid contact is thrown out at its depth / dt
 
 ## What is wrong

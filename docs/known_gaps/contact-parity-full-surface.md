@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: full-surface mesh contacts can take a wrong inside/outside sign from Warp's ray parity
 
 ## What is wrong

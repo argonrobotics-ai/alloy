@@ -78,6 +78,8 @@ def _rodboxes() -> alloy.Scene:
 
 def _rows(device: str, pattern: str, key: str = "measured_step_s") -> list[dict]:
     """The rows file's measured rows on ``device`` whose scene name matches ``pattern`` whole."""
+    if not ROWS.is_file():
+        pytest.skip("the calibration rows (bench/results/estimate_calib) are not shipped in the public tree")
     rows = json.loads(ROWS.read_text())["rows"]
     return [r for r in rows if r["device"] == device and re.fullmatch(pattern, r["scene"]) and key in r]
 

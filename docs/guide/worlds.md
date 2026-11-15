@@ -152,7 +152,7 @@ the estimate does not include:
   14x low there).
 
 `memory_bytes` on a GPU is the device memory the run needs to capture its CUDA graphs: what `nvidia-smi` shows for the
-process once it steps. It is fitted to 20 rows on one L4 (`bench/results/estimate_calib/memory_rows.json`: a one-hinge
+process once it steps. It is fitted to 20 rows on one L4 (a one-hinge
 arm, a ball, the bin, the Panda scene, cloth, a pour and a robot carrying water, at 1 to 16,384 worlds) and is within
 1.2x of each, and of 18 rows an audit measured on another L4 (section 7's sheet over a stand to 4,096 worlds, the
 sheet flat, water in a tub, a two-hinge arm). 16,384 worlds of that sheet and 4,096 of the tub did not fit the L4's 23

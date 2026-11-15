@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: a body dropped on a soft solid bounces back far more than the materials' restitution says
 
 ## What is wrong

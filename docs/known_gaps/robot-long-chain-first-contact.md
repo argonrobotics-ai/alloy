@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A long chain of light bodies in a robot file goes non-finite at its first contact on MuJoCo Warp's Newton solver
 
 ## What is wrong

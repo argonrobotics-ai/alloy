@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A yielding solid on MPM: a punch's force converges for soft solids, and for metals only with mass scaling
 
 Status: open. The route is opt-in (a `plastic.model: j2` solid whose object card overrides its route to `paste_mpm`).

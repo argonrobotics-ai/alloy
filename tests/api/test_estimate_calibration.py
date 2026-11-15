@@ -224,6 +224,8 @@ MEMORY_SCENES = {"arm1": _arm1, "ball": _ball, "arm2": _arm2, "cloth_stand": _cl
 def _memory_ratios(templates) -> list[tuple]:
     """(factor off, measured / predicted, row, worlds, source) of every row of ``memory_rows.json``."""
     tpl = {**templates, **{name: E._template_counts(make(), "cpu") for name, make in MEMORY_SCENES.items()}}
+    if not MEMORY_ROWS.is_file():
+        pytest.skip("the calibration rows (bench/results/estimate_calib) are not shipped in the public tree")
     out = []
     for row in json.loads(MEMORY_ROWS.read_text())["rows"]:
         ratio = row["measured_bytes"] / E._gpu_memory(tpl[row["row"]], int(row["worlds"]))

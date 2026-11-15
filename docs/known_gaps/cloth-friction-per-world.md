@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # Known gap: per-world and per-pair friction on cloth and soft bodies covers contacts with shapes only
 
 ## What

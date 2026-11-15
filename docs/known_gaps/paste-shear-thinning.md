@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Shear-thinning pastes thin a little too little (MPM paste route)
 
 **What is wrong.** A material with Herschel-Bulkley `fluid.consistency` K and `fluid.flow_index` n (yogurt, batters,

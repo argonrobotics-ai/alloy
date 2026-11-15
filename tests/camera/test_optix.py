@@ -7,6 +7,7 @@ import dataclasses
 
 import numpy as np
 import pytest
+import warp as wp
 
 from alloy.camera import Camera, RenderSettings
 from alloy.camera.errors import CameraError
@@ -134,7 +135,9 @@ def test_gpu_scene_without_build_says_what_to_run(cache):
 
 
 def test_backend_names(cache):
-    assert resolve_backend("warp") == "warp" and resolve_backend("wavefront-warp") == "wavefront-warp"
+    assert resolve_backend("warp") == "warp" and resolve_backend("warp", "cpu") == "warp"
+    if wp.is_cuda_available():
+        assert resolve_backend("wavefront-warp", "cuda:0") == "wavefront-warp"
     assert resolve_backend("auto", "cpu") == "warp"
     with pytest.raises(CameraError, match="unknown render backend"):
         resolve_backend("vulkan")

@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # MPM: on the dense grid, a world that outgrows the grid's box couples the worlds by one rounding step
 
 Status: open, narrow. Upstream fix proposed (Newton: integer cell origin, cell size exactly the voxel).

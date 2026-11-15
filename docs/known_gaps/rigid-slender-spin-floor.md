@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: light slender rigid parts spin and roll slower about their thin axis (the inertia floor)
 
 ## What is wrong

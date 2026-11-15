@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A rigid body smaller than a cloth cell can pass through the sheet
 
 ## What is wrong

@@ -52,7 +52,12 @@ EXPECT = {
 }
 
 
-@pytest.fixture(scope="module", params=sorted(EXPECT))
+# ledger_anchor's CPU setup (6 worlds, warp route) took 159-180 s on release VMs, at compile_heavy's 180 s: 2x headroom
+LEDGER_TIMEOUT_S = 420
+
+
+@pytest.fixture(scope="module", params=[pytest.param(n, marks=pytest.mark.timeout(LEDGER_TIMEOUT_S))
+                                        if n == "ledger_anchor" else n for n in sorted(EXPECT)])
 def scored(request):
     module, kw, expect = EXPECT[request.param]
     task_cls = next(v for k, v in vars(module).items() if isinstance(v, type) and k[0].isupper() and

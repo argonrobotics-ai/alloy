@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: folded T-shirt sleeves do not stay folded at the default mesh and contact stiffness
 
 ## What

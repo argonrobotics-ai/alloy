@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Coupled SPH takes its substeps from its own CFL step (``ClockPolicy.own_cfl``, default on; S4 2026-11-09), CPU.
 
-COUPLE-9 (2026-11-11): SPH's stable-step estimate now takes ``DFSPHConfig.speed_margin`` (0.25) of its CFL term, so
-fast liquid gets 4x the margin while liquid at rest keeps dt_max. At its bare CFL step, a pour beside cloth splashed a
-fifth of itself over a static box's rim (tests/solvers/sph/test_pour_stays_in_box.py). At rest SPH still runs 2
-substeps per exchange, as under S4; the tilt below now runs up to 4 (2 under S4).
+``DFSPHConfig.speed_margin`` (COUPLE-9, 0.25 of the CFL step while fast) applies only to liquid with cloth or soft-body
+walls (tests/solvers/sph/test_pour_stays_in_box.py); the tilt below sits beside a free body, so it keeps the bare CFL
+step (the margin there doubled fish_float's SPH substeps on an L4, 2026-11-14).
 
 The coupled clock picks an entry's rung n so that dt_x / n <= ClockPolicy.safety (0.5) x the entry's stable step. SPH's
 stable step is already its CFL step, cfl (0.2) x spacing / v_max, so the margin counted twice: coupled SPH ran at least
@@ -117,13 +116,60 @@ def test_the_default_clock_runs_coupled_sph_at_half_the_old_substeps():
 
 @pytest.mark.law
 @pytest.mark.timeout(900)
-def test_a_coupled_tilt_at_sphs_own_cfl_keeps_its_water_with_the_speed_margin():
+def test_a_coupled_tilt_at_sphs_own_cfl_runs_half_the_substeps_and_keeps_its_water():
     loc, sim, subs = _tilt(free=True)
     print(f"own_cfl: SPH substeps per period {dict(sorted(subs.items()))}")
-    assert max(subs) == 4, subs                         # S4 (no speed margin) ran 2
+    assert max(subs) == 2, subs                         # own_cfl off runs 4 here; 4 with the margin beside a rigid body
     inside = (np.abs(loc[:, 0]) < IN / 2 + 1e-3) & (np.abs(loc[:, 1]) < IN / 2 + 1e-3)
     assert inside.all(), int((~inside).sum())
     assert float(loc[:, 2].min()) > WALL / 2 - 1.5e-3, float(loc[:, 2].min())
     assert sim.check()["ok"], sim.check()["problems"]
     ref, _, _ = _tilt(free=False)
     assert float(np.median(loc[:, 2])) == pytest.approx(float(np.median(ref[:, 2])), abs=1.0e-3, rel=0)
+
+
+PADDLE = """<mujoco><compiler angle="radian"/><worldbody><body name="hub" pos="0 0 0.16">
+  <joint name="spin" type="hinge" axis="0 0 1" damping="0.5"/>
+  <geom type="capsule" fromto="0 0 0 0.015 0 -0.12" size="0.004" mass="0.05"/>
+  </body></worldbody><actuator><position joint="spin" kp="20" kv="1"/></actuator></mujoco>"""
+
+
+def _splash(kind: str) -> tuple[alloy.Sim, Counter, np.ndarray]:
+    """Water in a static open box (inner 6 x 6 x 6 cm) with a ball dropped from 4 cm over it, or a robot paddle turning
+    in it at 2 turns a second; the SPH substeps of every period and the water points after 0.4 s."""
+    sc = alloy.Scene(dt=0.01)
+    sc.add_ground()
+    sc.add_open_box("box", inner=(0.06, 0.06, 0.06), wall=0.004, pos=(0.0, 0.0, 0.0), static=True)
+    sc.add_liquid("water", size=(0.056, 0.056, 0.02), pos=(0.0, 0.0, 0.0145))
+    if kind == "ball":
+        sc.add_sphere("ball", 0.012, pos=(0.0, 0.0, 0.065), density=600.0)
+    else:
+        sc.add_robot("stirrer", mjcf=PADDLE)
+    sim = alloy.build(sc, device="cpu")
+    subs: Counter = Counter()
+    for k in range(40):
+        if kind == "paddle":
+            sim.set_targets({"spin": 4.0 * math.pi * (k + 1) * sim.dt})
+        sim.step(1)
+        now = getattr(sim.engine.stepper, "_substeps_now", {})
+        subs[next((int(v) for n, v in now.items() if "sph" in n), 1)] += 1
+    return sim, subs, sim.state(["water"], world=0)["water.points"]
+
+
+@pytest.mark.law
+@pytest.mark.timeout(900)
+@pytest.mark.parametrize("kind", ["ball", "paddle"])
+def test_a_splash_beside_rigid_bodies_keeps_the_bare_cfl_step(kind):
+    """fish_float (2026-11-14): the speed margin, meant for liquid beside cloth, also quartered SPH's step beside rigid
+    bodies, and its SPH ran 2.1x the substeps (L4: 234 -> 445 s to t = 3 s). Beside a ball dropped into water, or a
+    robot paddle stirring it, SPH has no soft walls and keeps the bare CFL step; the run stays check ok and every
+    particle stays in the box."""
+    sim, subs, pts = _splash(kind)
+    from alloy.api._liquid import liquid_solvers  # noqa: PLC0415
+
+    print(f"{kind}: SPH substeps per period {dict(sorted(subs.items()))}")
+    assert [s.soft.count for s in liquid_solvers(sim.engine)] == [0], "no cloth or soft walls: no speed margin"
+    assert sim.check()["ok"], sim.check()["problems"]
+    inside = (np.abs(pts[:, 0]) < 0.031) & (np.abs(pts[:, 1]) < 0.031) & (pts[:, 2] > 0.0025)
+    assert inside.all(), int((~inside).sum())
+    sim.close()

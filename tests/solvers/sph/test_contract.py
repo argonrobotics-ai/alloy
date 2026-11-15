@@ -92,9 +92,13 @@ def test_stable_dt_energy_and_choose_dt(two_world_scene):
     s.alloy_stable_dt(st, None, out)
     cfg = s.config
     assert out.numpy()[0] == pytest.approx(cfg.dt_max)
+    assert out.numpy()[1] == pytest.approx(stable_dt(cfg, 2.0), rel=1e-6)   # no cloth / soft walls: the CFL step
+    s.soft.count = 1                    # as with cloth or soft-body walls: speed_margin of it while fast (COUPLE-9)
+    s.alloy_stable_dt(st, None, out)
     fast = dataclasses.replace(cfg, cfl=cfg.speed_margin * cfg.cfl)
-    assert out.numpy()[1] == pytest.approx(stable_dt(fast, 2.0), rel=1e-6), \
-        "speed_margin 0.25 of the CFL step while the liquid moves fast: 0.25 x cfl x 2r / v (COUPLE-9)"
+    assert out.numpy()[0] == pytest.approx(cfg.dt_max)
+    assert out.numpy()[1] == pytest.approx(stable_dt(fast, 2.0), rel=1e-6)
+    s.soft.count = 0
     z_ref = wp.array([0.0, 0.01], dtype=wp.float64)
     e = wp.zeros(2, dtype=wp.float64)
     s.alloy_energy(st, z_ref, e)

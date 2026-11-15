@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # Known gap (model limit): a flat tool pressed into soft FEM compresses it without limit
 
 ## What

@@ -19,6 +19,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
+from alloy.api import _thin
 from alloy.core.errors import AlloyError, PrecisionError
 
 
@@ -107,8 +108,17 @@ _REMEDIES: tuple[tuple[str, str, str], ...] = (
 )
 
 
-#: an engine message that names a missing optional extra ("needs the optional [mesh] extra"): AUDIT-STACK INSTALL-2
+#: an engine message that names a missing optional extra ("needs the optional [mesh] extra")
 _EXTRA = re.compile(r"needs the optional \[(\w+)\] extra")
+#: the fix for an extra when there is more to say than its install line. The [mesh] extra is missing when a mesh of a
+#: soft material (vinyl_soft: YCB toy fruit and balls; foam) would become a soft body, and an object for a robot to
+#: pick is rigid in most scenes, so keeping it rigid comes first
+_EXTRA_FIX = {"mesh": ('keep it a rigid body with its material: pass rigid=True to its add_object / add_mesh call '
+                       '(a toy fruit or ball for a robot to pick; far faster than a soft body); or, to make it a soft '
+                       'body, install the mesh extra: pip install "alloy-engine[mesh]"')}
+#: optional packages an engine import may miss on a base install: the extra that brings each, and what needs it
+_MODULE_EXTRA = {"trimesh": ("import", "trimesh reads OBJ / STL meshes, such as those a robot file or MJCF string "
+                                       "names; Alloy's shipped robots need none")}
 
 
 def remedy_for(exc: BaseException) -> str:
@@ -128,16 +138,26 @@ def wrap(exc: BaseException, stage: str, cls: type[AlloyAPIError] = BuildError) 
     """An API error for an engine exception raised during ``stage`` (keeps the engine message, adds the fix: the
     exception's own ``fix`` when it carries one, such as an unsupported route pair's nearest alternative, else the
     remedy for its kind). A message that names a missing optional extra becomes a ``FeatureUnavailableError`` with
-    the install command. Example: ``raise wrap(e, "build") from e``."""
+    the install command (a missing mesh extra: ``rigid=True`` first, a soft body's install line second). Example:
+    ``raise wrap(e, "build") from e``."""
     if isinstance(exc, AlloyAPIError):
         return exc
     extra = _EXTRA.search(str(exc))
     if extra:                                    # a feature of an extra that is not installed: name the command
         e = extra.group(1)
-        return FeatureUnavailableError(f"{stage} failed: {type(exc).__name__}: {exc}", f'pip install "alloy-engine[{e}]"')
+        return FeatureUnavailableError(f"{stage} failed: {type(exc).__name__}: {exc}",
+                                       _EXTRA_FIX.get(e, f'pip install "alloy-engine[{e}]"'))
+    module = (getattr(exc, "name", None) or "").split(".")[0] if isinstance(exc, ImportError) else ""
+    if module in _MODULE_EXTRA:                  # a package of an extra the engine imported on a base install
+        e, why = _MODULE_EXTRA[module]
+        return FeatureUnavailableError(f"{stage} failed: {type(exc).__name__}: {exc}",
+                                       f'pip install "alloy-engine[{e}]" ({why})')
     field = getattr(exc, "field", None)
     card = getattr(exc, "card", None)
     where = f"{card}.{field}" if card and field else None
+    thin = _thin.card_error_fix(exc)            # a part under the thin-member rule: the alloy.Scene form too
+    if thin is not None:
+        return cls(f"{stage} failed: {type(exc).__name__}: {exc}", thin, field=where)
     own = getattr(exc, "fix", None)
     fix = own.strip() if isinstance(own, str) and own.strip() else remedy_for(exc)
     return cls(f"{stage} failed: {type(exc).__name__}: {exc}", fix, field=where)
@@ -158,7 +178,7 @@ def wrapped(stage: str, cls: type[AlloyAPIError] = BuildError) -> Iterator[None]
         raise wrap(exc, stage, cls) from exc
 
 
-# --- the world-count limit: Warp's raw failures become a BuildError (audit WORLDS-10) --------------------------
+# --- the world-count limit: Warp's raw failures become a BuildError -------------------------------------------
 
 _LIMIT_FIX = ("build fewer worlds (worlds=...) or a smaller scene, or split the batch over several builds; "
               'alloy.estimate(scene, worlds, seconds)["memory_bytes"] gives the memory before you build')

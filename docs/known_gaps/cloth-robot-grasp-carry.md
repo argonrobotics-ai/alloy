@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A robot's friction pinch on cloth creeps, and lets go below its friction limit
 
 **What is wrong.** Cloth held between two gripper fingers by friction alone slides slowly out of the pinch under any

@@ -16,10 +16,13 @@ permissions:
   contents: read
 
 jobs:
+  # The quick CPU tests: the CPU suite without the tests that took over 5 s in the full run before the release and
+  # without the wall-clock tests (.github/ci-quick-deselect.txt, refreshed at each release). A 4-vCPU runner cannot
+  # finish the whole suite in one run; the whole CPU and GPU suites run before each release (CONTRIBUTING.md).
   cpu-tests:
     if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 90
     env:
       PYTHONUNBUFFERED: "1"
       OMP_NUM_THREADS: "2"
@@ -30,27 +33,52 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache Warp kernels and rod self-test results
-        uses: actions/cache@v4
+      - name: Restore Warp kernels and rod self-test results
+        id: cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cache/warp
             ~/.cache/alloy
           key: warp-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'alloy/_vendor/VENDORED.md') }}
+          # a new key (every release changes pyproject.toml) starts from the newest older cache: kernels and rod
+          # self-test results are stored by what they depend on, so only what changed is rebuilt (a cold start took
+          # 53 min of warming on this runner, a warm one 2 min)
+          restore-keys: |
+            warp-${{ runner.os }}-
 
       - name: Install
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/python -m pip install -e ".[dev]" pytest-xdist
+          .venv/bin/python -m pip install -e ".[dev,import,mesh]" pytest-xdist   # mesh and Hub tests need both extras
           .venv/bin/python -c "import alloy, warp; print('alloy', alloy.__version__, 'warp', warp.config.version)"
 
-      - name: CPU test suite
+      - name: Warm the Warp kernel cache
+        run: ALLOY_CPU_ROUTE=warp PYTHONPATH="$PWD" .venv/bin/python -m alloy.core.warm --device cpu
+
+      - name: Save Warp kernels and rod self-test results
+        if: steps.cache.outputs.cache-hit != 'true'   # right after warming, so a run that fails or dies later leaves them
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cache/warp
+            ~/.cache/alloy
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+
+      - name: Quick CPU tests
         run: |
-          # cold caches on a 4-core runner: a test that triggers a big first compile (MuJoCo Warp scene kernels) or a
-          # rod route's cantilever self-test took > 900 s in a fresh container, though seconds warm; the caches above
-          # make later runs warm
-          PYTHON=.venv/bin/python ALLOY_CI_WORKERS=4 scripts/ci_cpu.sh -p no:cacheprovider --timeout 1800
+          # two back-to-back halves, each with fresh workers: four workers over the whole suite grew to 3-4.6 GB each
+          # and left the 16 GB runner swapping; -vv (net -v after ci_cpu.sh's -q) names each test as it finishes
+          A=$(ls -d tests/[a-o]*/ | tr '\n' ' '); B="$(ls -d tests/[p-z]*/ | tr '\n' ' ') tests/test_smoke.py"
+          rc=0
+          ALLOY_CI_PATHS="$A" ALLOY_CI_SKIP_WARM=1 PYTHON=.venv/bin/python ALLOY_CI_WORKERS=4 scripts/ci_cpu.sh \
+            -p no:cacheprovider --timeout 1800 -vv --durations=20 --junitxml="$RUNNER_TEMP/junit-a.xml" \
+            @.github/ci-quick-deselect.txt || rc=1
+          ALLOY_CI_PATHS="$B" ALLOY_CI_SKIP_WARM=1 ALLOY_CI_SKIP_ANALYTIC=1 PYTHON=.venv/bin/python ALLOY_CI_WORKERS=4 \
+            scripts/ci_cpu.sh -p no:cacheprovider --timeout 1800 -vv --durations=20 --junitxml="$RUNNER_TEMP/junit-b.xml" \
+            @.github/ci-quick-deselect.txt || rc=1
+          exit $rc
 
       - name: README quick start
         run: |
@@ -60,6 +88,12 @@ jobs:
           code = re.search(r"## Quick start.*?```python\n(.*?)```", text, re.S).group(1)
           exec(compile(code, "README.md quick start", "exec"), {"__name__": "__main__"})
           EOF
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-cpu-tests
+          path: ${{ runner.temp }}/junit-*.xml
 
   # Release wheels (SCR-WP8-6: a small C extension for the CPU route, built against the pinned MuJoCo). Built for
   # the supported platforms only: Linux x86_64 and aarch64 and macOS arm64 (no Windows, no 32-bit), kept as workflow

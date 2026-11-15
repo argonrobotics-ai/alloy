@@ -410,15 +410,14 @@ class EmitterManager:
 
 
 def stable_dt_per_world(solver: SolverDFSPH, p: Particles, out: wp.array) -> None:
-    """out[w] = clamp(speed_margin·cfl·2r/|v|max, dt_min, dt_max): margin while fast, dt_max at rest (D6; COUPLE-9)."""
-    cfg = solver.config
-    W = solver.layout.world_count
-    tmp = solver._tmp_w
+    """out[w] = clamp(m·cfl·2r/|v|max, dt_min, dt_max), dt_max at rest (D6). m = speed_margin when the liquid has
+    cloth or soft-body walls (a pour beside cloth splashed over rims at m = 1), else 1 (m < 1 doubled SPH's cost)."""
+    cfg, W, tmp = solver.config, solver.layout.world_count, solver._tmp_w
+    margin = cfg.speed_margin if solver.soft.count else 1.0
     tmp.zero_()
     if solver.layout.n:
         wp.launch(_speed_only_kernel, dim=solver.layout.n, inputs=[p, tmp], device=solver.device)
-    wp.launch(_stable_dt_kernel, dim=W, inputs=[tmp, cfg.speed_margin * cfg.cfl, cfg.spacing, cfg.dt_min,
-                                               cfg.dt_max, out],
+    wp.launch(_stable_dt_kernel, dim=W, inputs=[tmp, margin * cfg.cfl, cfg.spacing, cfg.dt_min, cfg.dt_max, out],
               device=solver.device)
 
 

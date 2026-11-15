@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # Steel in the bundled Newton 1.8 lets a robot arm's contacts through 54 times more often than the copy before it
 
 ## What is wrong

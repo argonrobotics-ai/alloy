@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A robot file with one visual-only geom draws only its visual geoms
 
 ## What is wrong

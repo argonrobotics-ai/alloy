@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A thin elastic rod can fall through a soft body between its vertices
 
 ## What is wrong

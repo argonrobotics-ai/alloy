@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Free-body stacks step 2.4x slower by default than stock Newton MuJoCo; the opt-in fast mode softens contacts
 
 Status: open. Since 2026-11-09 (RIGID-DEFAULT) the default steps free-body clutter on implicitfast with a capped

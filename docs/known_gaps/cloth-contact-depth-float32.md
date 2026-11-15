@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Cloth resting under its own weight away from the world origin grips harder than its friction says
 
 ## What is wrong

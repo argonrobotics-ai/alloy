@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A soft body that yields can yield spuriously at rest when its yield strain is small (under about 10 %)
 
 Status: open, accepted for launch (2026-11-09). The build warns. A punch dent in a metal-like

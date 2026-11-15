@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Plasticity: J2 covers soft volumes, joint springs, metal sheets, wires and coil springs; bulk metal parts stay rigid
 
 Status: open, being closed in phases by the J2 metal-sheet change. Build estimate below.

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-"""D1-memory laws: the check probe is sized from MuJoCo's capacities (and fails closed), the graph out-of-memory
-fallback is said once and recorded."""
+"""D1-memory laws: the check probe is sized from MuJoCo's capacities (and grows from them when it loses contacts), the
+graph out-of-memory fallback is said once and recorded."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def test_g1_probe_bytes_per_world_bounded():
     probe, nbytes = _bytes_allocated(lambda: ContactProbe(sim.engine.built))
     assert nbytes / worlds / 2**20 < G1_MIB_PER_WORLD_LIMIT     # was 21.7 MiB per world at Newton's size
     probe.collide(sim.engine.state)
-    assert not probe.fell_back
+    assert not probe.lost and probe.dropped is None
 
 
 def test_small_scene_keeps_newton_size():
@@ -61,25 +61,30 @@ def test_small_scene_keeps_newton_size():
     assert cc.probe_budget(sim.engine.built.model) is None
 
 
-def test_probe_overflow_falls_back_and_says_so(monkeypatch):
-    sim = _boxes(cc.BUDGET_MIN_WORLDS)
+def test_probe_overflow_grows_from_its_budget(monkeypatch):
+    """A sized probe that loses contacts grows from its budget (never rebuilt at Newton's automatic size: 12 GiB at
+    1,024 worlds of 134 shapes on an L4, where the run itself fit), ends with every contact an unsized probe finds,
+    says nothing when nothing is lost, and leaves nothing on the shared model."""
     from alloy.scene.steppers import ContactBudget
 
-    monkeypatch.setattr(cc, "probe_budget", lambda model: ContactBudget(triangle_pairs=1, rigid_contacts=1))
-    probe = ContactProbe(sim.engine.built)
-    with pytest.warns(RuntimeWarning, match="overflowed"):
-        c = probe.collide(sim.engine.state)
-    assert probe.fell_back
-    monkeypatch.undo()
+    sim = _boxes(cc.BUDGET_MIN_WORLDS)
     built = sim.engine.built
     saved = {k: getattr(built.model, k, None) for k in cc.MODEL_CAPACITY}
     monkeypatch.setattr(cc, "probe_budget", lambda model: None)
-    ref = ContactProbe(built)                                    # an unsized probe, as on main
+    ref = ContactProbe(built)                                    # Newton's automatic size: the reference count
     n_ref = int(ref.collide(sim.engine.state).rigid_contact_count.numpy()[0])
-    # OSS-7: the rebuild is really at Newton's size (not the sized value the first pipeline published on the model)
-    assert int(c.rigid_contact_max) == int(ref.contacts.rigid_contact_max) > cc.BUDGET_MIN_WORLDS
+    monkeypatch.setattr(cc, "probe_budget", lambda model: ContactBudget(triangle_pairs=1, rigid_contacts=1))
+    monkeypatch.setattr(cc, "sim_contacts", lambda built: 0)    # no floor from the simulation's own capacity
+    made, real = [], cc.ContactProbe._make_layer
+    monkeypatch.setattr(cc.ContactProbe, "_make_layer", lambda self, b: made.append(b) or real(self, b))
+    probe = ContactProbe(built)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")                           # every contact found after growing: no warning
+        c = probe.collide(sim.engine.state)
+    assert None not in made and made[-1].rigid_contacts > made[0].rigid_contacts == 1
     assert int(c.rigid_contact_count.numpy()[0]) == n_ref >= cc.BUDGET_MIN_WORLDS
-    assert int(probe.layer.overflow.numpy()[0]) == 0 and not probe.overflowed
+    assert int(c.rigid_contact_max) < int(ref.contacts.rigid_contact_max)    # still under Newton's size
+    assert not probe.lost and not probe.overflowed and not probe.fell_back
     assert {k: getattr(built.model, k, None) for k in cc.MODEL_CAPACITY} == saved   # nothing left on the model
 
 

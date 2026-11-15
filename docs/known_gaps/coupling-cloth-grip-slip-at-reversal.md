@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Cloth gripped by friction on a moving rigid body can slip on it right after the body reverses
 
 ## What is wrong

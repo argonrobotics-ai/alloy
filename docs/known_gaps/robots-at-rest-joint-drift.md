@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Shipped robots left with no targets move away from their start angles
 
 **What is wrong.** A shipped robot added with `scene.add_robot(...)` and stepped with no targets does not keep the

@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: a paper or film sheet much thicker than its card is launched when folded
 
 ## What

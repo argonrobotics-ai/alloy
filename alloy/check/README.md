@@ -41,10 +41,19 @@ the host inside a step) runs again without graphs: an info finding and `metrics[
 log's traceback names the part.
 
 Pair depths (overlap, and which pair a penetration is) come from the check's own contact probe, a collision pass
-beside the simulation. When its buffers overflow (many worlds of scanned meshes: 64 worlds of a mug and three ice
-cubes needed 3.3 million triangle pairs for 2.7 million slots), it is rebuilt with room for what the overflow
-counted, up to three times; the collision library prints its own overflow line each time. If contacts are still
-lost, a warning finding says the pair depths are incomplete. The simulation's contacts are not affected either way.
+beside the simulation. It collides the shapes as the simulation's contacts do: on MuJoCo's own contacts (the default)
+every mesh as its convex hull, also the MJCF meshes (robot links, RoboCasa objects) that the collision library holds
+as triangle meshes (`alloy.check.probe_view`); on Newton's contacts, and in scenes with particles, meshes stay
+triangle meshes. From 16 worlds of rigid bodies its buffers are sized per world from MuJoCo's contact capacity,
+and at least the simulation's own (`contact_capacity=` when the build passed one). When they lose contacts (many
+worlds of scanned meshes: 64 worlds of a mug and three ice cubes needed 3.3 million triangle pairs for 2.7 million
+slots; a full rigid buffer counts as a loss, since the collision library stops counting there), the probe is rebuilt
+larger from the counts it reports, up to three times; the collision library prints its own overflow line each time.
+It is never rebuilt at the collision library's automatic size, which at 1,024 worlds of 134 shapes asked 12 GiB of an
+L4 where the run itself fit. When the buffers do not fit 80 % of the free device memory, or allocating them fails,
+the worlds are collided in chunks, one chunk's buffers on the device at a time, with the same pair depths
+(`alloy.check.probe_chunks`). If contacts are still lost, a warning finding says the pair depths are incomplete. The
+simulation's contacts are not affected either way.
 
 On a GPU the run uses at most the worlds that fit in free device memory (`alloy.check.memory`): a per-world estimate
 from the assembled scene (rigid terms plus each solver's particles, MPM about 40 kB per particle, measured on an L4)

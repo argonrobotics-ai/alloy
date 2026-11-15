@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import numpy as np
 import pytest
@@ -24,6 +25,17 @@ from alloy.importers.robocasa.pipeline import import_asset  # noqa: E402
 from alloy.testing.imp_robocasa import BOX_HALF, write_fixture_asset, write_object_asset, write_pack_zip  # noqa: E402
 
 FAST = HullParams(threshold=0.2, max_hulls=4)
+
+
+@pytest.fixture(autouse=True)
+def _gl_backend_stays_in_its_test(monkeypatch):
+    """The importer picks MuJoCo's GL backend for its process (cli.py and thumbs.py set MUJOCO_GL). Undone after
+    each test: a later subprocess in the same xdist worker inherited it, and `import mujoco` failed there on the
+    public CI runner (2026-11-15)."""
+    before = os.environ.get("MUJOCO_GL")
+    monkeypatch.setenv("MUJOCO_GL", before or "")       # records the variable's state; restored after the test
+    if before is None:
+        monkeypatch.delenv("MUJOCO_GL")
 
 
 def test_object_mass_hulls_and_model_agree(tmp_path):

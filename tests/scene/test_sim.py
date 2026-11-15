@@ -62,10 +62,11 @@ THROWN = ("the stock-proxy stepper throws the box when the cloth lands on it (WP
           "box and cloth built by the public API step on Alloy's Scheduler and stay put (box 0.0500 m, 0.000 m/s, 10 "
           "periods past the landing, both CPU routes; with the cable too, measured through the landing). Until "
           "2026-11-10 this test asserted only finite values and a cloth above the table, which a cloth carried up "
-          "with the box passes.")
+          "with the box passes. Not strict: GitHub's 4-vCPU CI runner does not throw the box (it passed there, "
+          "2026-11-15).")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=THROWN)
+@pytest.mark.xfail(strict=False, raises=AssertionError, reason=THROWN)
 def test_two_entry_stock_proxy_box_cloth_cable():
     _, card, lib = next(s for s in S.mixed_scenes() if s[0] == "box_cloth_cable")
     built = build(card, lib)

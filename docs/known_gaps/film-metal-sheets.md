@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # Metal sheets on the film: VBD sags a stiff sheet at real density, and the hinge network bends unlike a plate
 
 Status: open. J2 metal sheets (P3) are on main; their laws run mass-scaled, which hides both limits. A J2

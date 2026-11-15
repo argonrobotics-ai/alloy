@@ -6,7 +6,9 @@ try:
     # register the newton schema plugin before any other USD code is executed
     import newton_usd_schemas  # noqa: F401
 except ImportError as exc:
-    _newton_usd_schemas_import_error = exc
+    # Alloy (usd-import-error-no-traceback): kept without its traceback, whose frames led back to the frame that
+    # imported Newton first and kept its locals alive (a first alloy.build's sim)
+    _newton_usd_schemas_import_error = exc.with_traceback(None)
 else:
     _newton_usd_schemas_import_error = None
 

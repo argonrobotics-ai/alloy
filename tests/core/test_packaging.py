@@ -146,6 +146,8 @@ def test_alloy_docs_finds_the_checkouts_folders_here_and_the_packaged_copy_in_an
         docs._root("examples", site / "alloy")
 
 
+@pytest.mark.skipif(not (ROOT / "tools" / "release" / "stage_release.py").is_file(),
+                    reason="the release tooling (tools/release) is not shipped in the public tree")
 def test_every_build_and_check_uses_the_same_docs_allow_list() -> None:
     """setup.py (pip install ., the sdist), tools/deps/stage.py (the release wheel) and the release content check
     name the same public docs and the same alloy/_data files: AGENTS.md and the allow-listed docs, never docs/ whole."""

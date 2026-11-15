@@ -72,6 +72,15 @@ class ContactProbe:
     """A Newton collision pipeline (``alloy.scene.steppers.NewtonContacts``) sized once for ``built`` and reused for
     every probe; contact-free (SPH) particles get no soft candidates, as in the wiring's fallback buffer.
 
+    A many-world rigid scene's probe is sized from MuJoCo's capacities (``probe_budget``), at least the simulation's
+    own contacts per world (``sim_contacts``). A probe that loses contacts grows from its budget by the counts it
+    reports, never to Newton's automatic size (12 GiB at 1,024 worlds of 134 shapes, where the run itself fit); a
+    budget whose buffers do not fit the free device memory collides the worlds in chunks (``alloy.check.probe_chunks``).
+
+    ``native``: the simulation's rigid contacts, "mujoco" (MuJoCo's own, the default: the probe then collides every
+    mesh MuJoCo collides as its convex hull, ``alloy.check.probe_view``) or "newton" (Newton's pipeline: triangle
+    meshes stay triangle meshes). ``use_native`` changes it once the simulation is built.
+
     Example::
 
         >>> probe = ContactProbe(built)  # doctest: +SKIP
@@ -79,16 +88,24 @@ class ContactProbe:
         'table'
     """
 
-    def __init__(self, built: Any) -> None:
+    def __init__(self, built: Any, native: str | None = "mujoco") -> None:
+        from alloy.check.probe_view import collider_view  # noqa: PLC0415
+
         self.model = built.model
         self.built = built
-        self.fell_back = False          # True once a sized probe overflowed and was rebuilt at Newton's own size
-        self.overflowed = False         # True once the last rebuild overflowed as well (warned once)
-        self.counted = 0                # rebuilds sized from the counts an overflow reported (COUNTED_REBUILDS)
-        self.dropped: dict[str, int] | None = None   # ``need()`` at the last overflow nothing fixed: depths incomplete
+        self.native = native
+        self.view = collider_view(built, native)    # what the pipelines collide: the model, or a view with hulls
+        self.fell_back = False          # never True: a probe no longer falls back to Newton's automatic size
+        self.overflowed = False         # True once a collide lost contacts nothing fixed (warned once)
+        self.counted = 0                # rebuilds sized from the counts a loss reported (COUNTED_REBUILDS)
+        self.dropped: dict[str, int] | None = None   # ``need()`` at the last loss nothing fixed: depths incomplete
         self.reported = False           # the check's finding for ``dropped`` was made (alloy.check.overlap)
-        self.layer = self._make_layer(probe_budget(self.model))
-        self.contacts = self.layer.contacts()
+        self.lost = False               # the last collide lost contacts
+        self.layer: Any = None
+        self.contacts: Any = None
+        self.chunks: list[tuple[int, int]] | None = None   # world ranges collided in turn (``probe_chunks``)
+        self._need: dict[str, int] = {}
+        self._size(_floored(probe_budget(self.model), sim_contacts(built)))
 
     def _make_layer(self, budget: Any) -> Any:
         from alloy.integration.stepper import dynamic_entries  # noqa: PLC0415
@@ -98,15 +115,50 @@ class ContactProbe:
         free = contact_free_particles(dynamic_entries(self.built))
         n = int(self.model.particle_count or 0)
         particles = None if free.size == 0 else np.setdiff1d(np.arange(n), free)
-        keep = {k: getattr(self.model, k, None) for k in MODEL_CAPACITY}
-        try:    # the pipeline publishes its capacity on the shared model: a later (re)build would size itself from it
-            return NewtonContacts(self.model, particles=particles, budget=budget)
+        keep = {k: getattr(self.view, k, None) for k in MODEL_CAPACITY}
+        try:    # the pipeline publishes its capacity on the model it gets: a later (re)build would size itself from it
+            return NewtonContacts(self.view, particles=particles, budget=budget)
         finally:
             for k, v in keep.items():
-                setattr(self.model, k, v)
+                setattr(self.view, k, v)
+
+    def use_native(self, native: str | None) -> None:
+        """Collide as a simulation on ``native`` contacts does (``sim.native`` once it is built); rebuilds the
+        buffers, at the same budget, only when that changes what the probe collides."""
+        from alloy.check.probe_view import collider_view  # noqa: PLC0415
+
+        if native == self.native:
+            return
+        view = collider_view(self.built, native)
+        self.native = native
+        if view is self.view:
+            return
+        self.view = view
+        self._size(self.budget)
+
+    def _size(self, budget: Any) -> None:
+        """Buffers for ``budget``: one pipeline for every world, or world chunks when that does not fit the free
+        device memory (estimated, or a failed allocation). The old buffers are freed first."""
+        from alloy.check.probe_chunks import plan_chunks, probe_bytes  # noqa: PLC0415
+
+        self.budget, self.layer, self.contacts = budget, None, None
+        self.chunks = plan_chunks(self.view, budget)
+        if self.chunks is not None:
+            return
+        try:
+            self.layer = self._make_layer(budget)
+        except Exception as exc:  # noqa: BLE001 - device memory: chunks instead (each well under the failed size)
+            if budget is None or not _out_of_memory(exc):
+                raise
+            worlds = max(int(self.model.world_count or 0), 1)
+            log.warning("check probe: %s for %d worlds; colliding them in chunks", _last_line(exc), worlds)
+            self.chunks = plan_chunks(self.view, budget, free=probe_bytes(budget, worlds) / 2)
+            return
+        self.contacts = self.layer.contacts()
 
     def collide(self, state: Any) -> Any:
-        """Run the collision pipeline once at ``state`` and return its contacts buffer.
+        """Run the collision pipeline once at ``state`` and return its contacts buffer (in world chunks: their
+        contacts merged on the host, ``probe_chunks.HostContacts``, read the same way).
 
         Example::
 
@@ -114,35 +166,53 @@ class ContactProbe:
             >>> contacts.rigid_contact_count.numpy().shape
             (1,)
         """
-        self.layer.reset_overflow()                         # the counter is sticky: read this collide's losses only
-        self.layer.collide(state, self.contacts, dt=1e-3)
-        if self._lost():
-            self._grow(state)
+        self._pass(state)
+        while self.lost and self.counted < COUNTED_REBUILDS and self._regrow():
+            self._pass(state)
+        if self.lost:
+            self._say_dropped()
         return self.contacts
 
-    def _lost(self) -> bool:
-        return int(self.layer.overflow.numpy()[0]) > 0
-
-    def _grow(self, state: Any) -> None:
-        """Contacts were lost: Newton's own size, then sizes from the counts it reports; else say so (``dropped``)."""
-        if not self.fell_back:
-            self._rebuild_unsized(state)
-        while self._lost() and self.counted < COUNTED_REBUILDS and self._rebuild_counted(state):
-            pass
-        if not self._lost():
+    def _pass(self, state: Any) -> None:
+        if self.chunks is not None:
+            self._pass_chunks(state)
             return
+        self.layer.reset_overflow()                         # the counter is sticky: read this collide's losses only
+        self.layer.collide(state, self.contacts, dt=1e-3)
+        from alloy.check.probe_chunks import full  # noqa: PLC0415
+
+        self.lost = int(self.layer.overflow.numpy()[0]) > 0 or full(self.need())
+
+    def _pass_chunks(self, state: Any) -> None:
+        """One collide in world chunks; a chunk that does not fit after all halves every chunk (down to one world)."""
+        from alloy.check.probe_chunks import collide_chunks, halved  # noqa: PLC0415
+
+        while True:
+            try:
+                self.contacts, self._need, self.lost = collide_chunks(self.view, self.budget, self.chunks, state,
+                                                                      layer_need)
+                return
+            except Exception as exc:  # noqa: BLE001 - device memory: smaller chunks
+                smaller = halved(self.chunks)
+                if smaller is None or not _out_of_memory(exc):
+                    raise
+                log.warning("check probe: %s; %d chunks instead of %d", _last_line(exc), len(smaller),
+                            len(self.chunks))
+                self.chunks = smaller
+
+    def _say_dropped(self) -> None:
         self.dropped = self.need()
-        if not self.overflowed:                             # say it once; the check adds a finding (overlap.py)
-            self.overflowed = True
-            msg = (f"the contact probe of sim.check() still overflows ({_need_text(self.dropped)}): some pair depths "
-                   "are missing from this check (the simulation's own contacts are not affected); check fewer worlds")
-            log.warning(msg)
-            warnings.warn(msg, RuntimeWarning, stacklevel=3)
+        if self.overflowed:                                 # say it once; the check adds a finding (overlap.py)
+            return
+        self.overflowed = True
+        msg = (f"the contact probe of sim.check() still overflows ({_need_text(self.dropped)}): some pair depths "
+               "are missing from this check (the simulation's own contacts are not affected); check fewer worlds")
+        log.warning(msg)
+        warnings.warn(msg, RuntimeWarning, stacklevel=3)
 
     def need(self) -> dict[str, int]:
-        """What the last collide asked of the probe's buffers and what they hold: ``triangle_pairs`` /
-        ``triangle_slots``, ``rigid_contacts`` / ``rigid_slots`` (all worlds together), and ``reducer`` (1: the
-        contact reducer dropped candidates).
+        """What the last collide asked of the probe's buffers and what they hold (``layer_need``; summed over the
+        chunks when collided in chunks).
 
         Example::
 
@@ -150,19 +220,12 @@ class ContactProbe:
             >>> n["rigid_contacts"] <= n["rigid_slots"]
             True
         """
-        from alloy.coupling.proxy_contacts import _triangle_capacity  # noqa: PLC0415
+        return dict(self._need) if self.layer is None else layer_need(self.layer.pipeline, self.contacts)
 
-        pipeline, c = self.layer.pipeline, self.contacts
-        tri = getattr(getattr(pipeline, "narrow_phase", None), "triangle_pairs_count", None)
-        counters = getattr(c, "contact_counters", None)
-        return {"triangle_pairs": 0 if tri is None else int(tri.numpy()[0]),
-                "triangle_slots": _triangle_capacity(pipeline),
-                "rigid_contacts": int(c.rigid_contact_count.numpy()[0]), "rigid_slots": int(c.rigid_contact_max),
-                "reducer": 0 if counters is None else int(counters.numpy()[2] > 0)}
-
-    def _rebuild_counted(self, state: Any) -> bool:
-        """Rebuild with slots for the counts the overflowing collide reported (rigid-only scenes: a budget would
-        change a soft scene's candidates). False when there is nothing to size from or the build fails."""
+    def _regrow(self) -> bool:
+        """A budget grown from the counts the lossy collide reported (rigid-only scenes: a budget would change a soft
+        scene's candidates). False when there is nothing to size from or the buffers cannot be made (the probe then
+        keeps the budget it had and reports the loss)."""
         from alloy.scene.steppers import ContactBudget  # noqa: PLC0415
 
         n, worlds = self.need(), max(int(self.model.world_count or 0), 1)
@@ -171,31 +234,16 @@ class ContactProbe:
         if int(self.model.particle_count or 0) or (tri == n["triangle_slots"] and rigid == n["rigid_slots"]):
             return False
         budget = ContactBudget(triangle_pairs=-(-tri // worlds) if tri else None, rigid_contacts=-(-rigid // worlds))
-        self.counted += 1
+        self.counted, old = self.counted + 1, self.budget
         try:
-            layer = self._make_layer(budget)
-        except Exception as exc:  # noqa: BLE001 - device memory: keep the probe that exists and report its loss
-            log.warning("check probe: no rebuild for %s (%s: %s)", _need_text(n), type(exc).__name__,
-                        str(exc).strip().splitlines()[-1][:160] if str(exc).strip() else "")
+            self._size(budget)
+        except Exception as exc:  # noqa: BLE001 - device memory: back to the probe that fit, and report its loss
+            log.warning("check probe: no rebuild for %s (%s: %s)", _need_text(n), type(exc).__name__, _last_line(exc))
             self.counted = COUNTED_REBUILDS
+            self._size(old)
             return False
         log.info("check probe: rebuilt for %s", _need_text(n))
-        self.layer, self.contacts = layer, layer.contacts()
-        self.layer.collide(state, self.contacts, dt=1e-3)
         return True
-
-    def _rebuild_unsized(self, state: Any) -> None:
-        """The sized buffers overflowed (contacts or triangle pairs lost): fail closed, redo at Newton's own size."""
-        msg = ("the contact probe of sim.check() overflowed its buffers (sized from MuJoCo's contact capacity) and "
-               "was rebuilt at Newton's automatic size, which needs much more device memory with many worlds; "
-               "nothing to change in the scene; if the device runs out of memory, check fewer worlds")
-        log.warning(msg)
-        warnings.warn(msg, RuntimeWarning, stacklevel=3)
-        self.fell_back = True
-        self.layer = self._make_layer(None)
-        self.contacts = self.layer.contacts()
-        self.layer.reset_overflow()
-        self.layer.collide(state, self.contacts, dt=1e-3)
 
     def depths(self, state: Any, index: ObjectIndex, limits: tuple[float, ...] = ()) -> list[PairDepth]:
         """Deepest overlap per owner pair at ``state``; see ``depths``.
@@ -209,20 +257,67 @@ class ContactProbe:
         return depths(self.model, state, index, limits, self.collide(state))
 
 
+def layer_need(pipeline: Any, c: Any) -> dict[str, int]:
+    """What one collide of ``pipeline`` into contacts ``c`` asked of its buffers and what they hold:
+    ``triangle_pairs`` / ``triangle_slots``, ``rigid_contacts`` / ``rigid_slots`` (all its worlds together), and
+    ``reducer`` (1: the contact reducer dropped candidates)."""
+    from alloy.coupling.proxy_contacts import _triangle_capacity  # noqa: PLC0415
+
+    tri = getattr(getattr(pipeline, "narrow_phase", None), "triangle_pairs_count", None)
+    counters = getattr(c, "contact_counters", None)
+    return {"triangle_pairs": 0 if tri is None else int(tri.numpy()[0]), "triangle_slots": _triangle_capacity(pipeline),
+            "rigid_contacts": int(c.rigid_contact_count.numpy()[0]), "rigid_slots": int(c.rigid_contact_max),
+            "reducer": 0 if counters is None else int(counters.numpy()[2] > 0)}
+
+
+def sim_contacts(built: Any) -> int:
+    """The simulation's own contacts per world: its MuJoCo entries' largest ``nconmax`` (``alloy.build(...,
+    contact_capacity=n)`` when the build passed one); 0 without a MuJoCo entry.
+
+    Example::
+
+        >>> sim_contacts(alloy.build(scene, contact_capacity=640).engine.built)  # doctest: +SKIP
+        640
+    """
+    caps = [int((getattr(e, "solver_kwargs", None) or {}).get("nconmax") or 0)
+            for e in getattr(built, "entries", ()) if getattr(e, "capability", None) == "mujoco"]
+    return max(caps, default=0)
+
+
+def _floored(budget: Any, contacts: int) -> Any:
+    """``budget`` with at least ``contacts`` rigid contacts per world (and the triangle pairs for them)."""
+    if budget is None or contacts <= int(budget.rigid_contacts or 0):
+        return budget
+    import dataclasses  # noqa: PLC0415
+
+    tri = max(int(budget.triangle_pairs or 0), TRIANGLE_PAIRS_PER_CONTACT * contacts)
+    return dataclasses.replace(budget, rigid_contacts=int(contacts), triangle_pairs=tri)
+
+
+def _out_of_memory(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return "out of memory" in text or "failed to allocate" in text
+
+
+def _last_line(exc: BaseException) -> str:
+    text = str(exc).strip()
+    return text.splitlines()[-1][:160] if text else ""
+
+
 def _grown(count: int, slots: int, reducer: bool) -> int:
-    """Slots for a buffer that held ``slots`` and was asked for ``count``: when it was over, the count plus
-    COUNT_MARGIN and at least twice the slots; twice the slots when only the reducer (sized from the triangle pairs)
-    dropped; else unchanged."""
-    if count > slots:
+    """Slots for a buffer that held ``slots`` and was asked for ``count``: when it was over or full (Newton stops
+    counting rigid contacts at the size), the count plus COUNT_MARGIN and at least twice the slots; twice the slots
+    when only the reducer (sized from the triangle pairs) dropped; else unchanged."""
+    if count >= slots > 0:
         return max(int(np.ceil(count * COUNT_MARGIN)), 2 * slots)
     return 2 * slots if reducer else slots
 
 
 def _need_text(n: dict[str, int]) -> str:
-    """``need()`` in words, the buffers over their size only (or the reducer)."""
+    """``need()`` in words, the buffers at or over their size only (or the reducer)."""
     parts = [f"{n[k + suffix]:,} {label} for {n[k + '_slots']:,} slots"
              for k, suffix, label in (("triangle", "_pairs", "triangle pairs"), ("rigid", "_contacts", "contacts"))
-             if n[k + suffix] > n[k + "_slots"]]
+             if n[k + suffix] >= n[k + "_slots"] > 0]
     if n["reducer"] and not parts:
         parts.append("the contact reducer dropped candidates")
     return ", ".join(parts) or "contacts lost"

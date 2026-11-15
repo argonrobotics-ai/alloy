@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Glass objects render opaque unless a look file makes them glass
 
 ## What is wrong

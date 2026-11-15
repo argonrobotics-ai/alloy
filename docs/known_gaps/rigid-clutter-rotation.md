@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Rigid clutter: first-order spin in free flight on MuJoCo Warp, rk4's cost on the CPU's MuJoCo C route
 
 ## What is wrong

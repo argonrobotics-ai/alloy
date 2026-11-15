@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Stock SolverVBD rigid bodies: an applied torque wraps and a spin slows down
 
 ## What is wrong

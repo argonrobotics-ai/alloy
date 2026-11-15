@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Film: the strain projection carries no force
 
 Status: open; being fixed now (2026-11-08). The projection's reaction on pinned vertices is read

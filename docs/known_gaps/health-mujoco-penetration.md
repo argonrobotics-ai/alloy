@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Rigid and robot overlap flags: what PEN_WARN and PEN_FAIL do not catch yet
 
 ## What is wrong

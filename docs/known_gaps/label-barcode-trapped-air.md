@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: trapped air under a label is scored at 20 mm², not the task's 3 mm² inside a barcode
 
 ## What is wrong

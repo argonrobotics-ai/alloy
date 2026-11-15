@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # A fast small body passes through a thin static part
 
 ## What is wrong

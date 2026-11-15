@@ -69,6 +69,7 @@ def check_sim_report(sim: Any) -> CheckReport:
     report = CheckReport(scene=_label(built), settings={"worlds": int(built.world_count), "t": t, "live": True})
     report.skip("cards", "checked when the scene was built")
     probe = ContactProbe(built)
+    probe.use_native(getattr(engine, "native", "mujoco"))     # collide as this simulation's contacts do
     if int(engine.periods) == 0:
         found, metrics = overlap_findings(built, index, engine.state, probe, when="at start")
         report.metrics["overlap"] = metrics

@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Cloth, liquid and a light free rigid body do not build in one scene
 
 ## What is wrong

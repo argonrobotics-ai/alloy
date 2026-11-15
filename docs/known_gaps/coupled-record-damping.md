@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: contact between a soft or cloth particle and a MuJoCo body takes its gains from the exchange clock
 
 ## What is wrong

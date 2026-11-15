@@ -92,14 +92,32 @@ def local_texture_files(ref: str, res: str, root: str | Path | None = None) -> d
     """Role -> image path of texture ``ref`` from the local asset cache (``alloy.render.blender.assets.default_cache``:
     ``$ALLOY_RENDER_ASSETS``, else ``$ALLOY_CACHE/render``, else ~/.cache/alloy-render).
 
-    Raises CameraError, naming the download call, when the set is not cached.
+    A set cached only at other sizes is served at the nearest one (``LocalAssets``). Raises CameraError, naming the
+    public fetch command, when no size of the set is cached.
     """
     files = LocalAssets(root or default_cache()).texture(ref, res)
     if not files:
-        raise CameraError(f"texture {ref!r} ({res}) is not in the local asset cache",
-                          "fetch the texture images once with python -m alloy.looks --fetch-textures (or "
-                          "alloy.render.blender.assets.AssetCache().texture(ref, res)), or render with quality='fast'")
+        raise CameraError(f"texture {ref!r} ({res}) is not in the local asset cache at any size",
+                          fetch_fix(ref))
     return files
+
+
+def fetch_fix(ref: str) -> str:
+    """The fix for texture ``ref`` with no size cached: ``--family <f>`` for a texture-pool set, the full fetch for a
+    set that presets or library looks name (the full fetch takes those too), else what that fetch can bring."""
+    cmd = "python -m alloy.looks --fetch-textures"
+    try:
+        from alloy.looks import pool  # noqa: PLC0415 - only on the error path
+        family = next((e.family for e in pool.entries() if e.texture == ref), None)
+        named = family is None and ref in pool.look_textures()
+    except Exception:  # noqa: BLE001 - an unreadable library must not hide the missing-texture error
+        family, named = None, True
+    if family:
+        return f"fetch it with {cmd} --family {family}, or render with quality='fast'"
+    if named:
+        return f"fetch it with {cmd}, or render with quality='fast'"
+    return (f"{cmd} takes only the texture pool's sets and those presets and library looks name: use one of those "
+            "(python -m alloy.looks --pool lists the pool), or render with quality='fast'")
 
 
 def colorspace_of(role: str, path: Path) -> str:

@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A weld or connect in a robot's MJCF is a stiff spring, not a rigid joint: limits of the stiff rule
 
 **What is wrong.** A `<weld>` or `<connect>` equality in a robot's MJCF that sets no `solref` / `solimp` was

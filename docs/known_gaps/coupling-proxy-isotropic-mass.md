@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: a MuJoCo body's coupling proxy carries an isotropic mass, heavier than the body along its moving axis
 
 ## What

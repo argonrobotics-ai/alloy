@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Known gap: with the opt-in contact gate, cloth resting on fixed geometry while the robot is away settles at a coarser step
 
 ## What is wrong

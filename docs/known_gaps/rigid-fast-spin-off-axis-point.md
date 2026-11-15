@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # A body spinning fast on one off-axis contact point can gain energy
 
 ## What is wrong

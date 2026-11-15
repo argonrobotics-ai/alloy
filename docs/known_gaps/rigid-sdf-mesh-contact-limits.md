@@ -1,3 +1,6 @@
+---
+owner: Alloy maintainers
+---
 # A body on `collision="sdf"` or `"mesh"` contacts never fully rests, and under 40 g or from 40 kg it fails
 
 ## What is wrong

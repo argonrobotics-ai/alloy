@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Liquid beside a paste or powder: the paste is a solid wall to the liquid (no wetting, no percolation)
 
 Status: open, by design for now. A liquid (SPH) and a paste or powder (MPM) in one scene step together since

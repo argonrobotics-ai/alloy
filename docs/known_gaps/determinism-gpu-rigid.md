@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # GPU: rigid bodies and robots in contact do not repeat bit for bit
 
 ## What is wrong

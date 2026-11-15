@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Cloth held by friction creeps out of a pinch below the Coulomb limit
 
 ## What is wrong

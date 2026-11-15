@@ -90,12 +90,16 @@ class LearnedDenoiser:
         return "default" if max(width, height) <= 256 else "default:640x480"
 
     def __call__(self, rgb: wp.array, albedo: wp.array, normal: wp.array, spp: int) -> wp.array:
+        """The denoised colour in a Warp array, chunk by chunk; PyTorch's working memory is handed back after."""
         n, h, w = rgb.shape
         per = max(1, chunk_pixels(rgb.device) // (h * w))
         t = [wp.to_torch(a) for a in (rgb, albedo, normal)]
-        parts = [self.model.denoise(*(x[i:i + per] for x in t), spp, tta=self.tta) for i in range(0, n, per)]
-        out = parts[0] if len(parts) == 1 else _cat(parts)
-        return wp.from_torch(out.contiguous().float(), dtype=wp.vec3)
+        out = wp.empty(rgb.shape, dtype=wp.vec3, device=rgb.device)
+        dst = wp.to_torch(out)
+        for i in range(0, n, per):
+            dst[i:i + per].copy_(self.model.denoise(*(x[i:i + per] for x in t), spp, tta=self.tta))
+        release_torch_cache(dst.device)
+        return out
 
 
 def chunk_pixels(device) -> int:
@@ -104,9 +108,18 @@ def chunk_pixels(device) -> int:
     return max(1 << 18, int(wp.get_device(device).total_memory) // 4096)
 
 
-def _cat(parts):
+def release_torch_cache(device) -> None:
+    """Give the GPU memory PyTorch keeps cached but unused back to the device. Warp allocates outside PyTorch's
+    cache, so without this the learned denoiser's working memory stays held after a render, out of the next
+    ``sim.step``'s reach: 10.2 GB of an L4's 22 GB after 1,024 images of 311 x 175 px. It frees every unused block
+    PyTorch holds, a training loop's too; that render took 2-3 % longer with it."""
+    if device.type != "cuda":
+        return
     import torch  # noqa: PLC0415  (the learned denoiser needs PyTorch anyway)
-    return torch.cat(parts, dim=0)
+    before = torch.cuda.memory_reserved(device)
+    torch.cuda.empty_cache()
+    log.debug("learned denoiser: released %.0f MiB of PyTorch's cache", (before - torch.cuda.memory_reserved(device))
+              / 2 ** 20)
 
 
 class OidnAdapter:

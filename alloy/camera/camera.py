@@ -24,7 +24,8 @@ from .errors import CameraError
 from .item_fast import with_item_looks
 from .pose import as_poses, image_extent, look_at
 from .scan_textures import with_scan_textures
-from .scene import Lighting, SceneData
+from .device_scene import fast_scene, full_scene
+from .scene import Lighting, SceneData, source_lighting
 from .settings import RenderSettings
 from .tracer.gpu_scene import GpuScene
 from .tracer.renderer import Renderer
@@ -77,18 +78,23 @@ def default_device() -> str:
 
 def camera_scene(source, lighting: Lighting | None = None, device: str | None = None, look=None,
                  quality: str = "auto", items="auto"):
-    """The device scene for a source, built once per (source, device, look) and shared by cameras.
+    """The device scene for a source, built once per (source, device, look, lighting) and shared by cameras.
 
-    Sources: a newton.Model, an ``alloy.camera.SceneData``, a scene pack directory (see :func:`load_pack`) or an
-    already built scene. A model renders with the fast diffuse tracer (shape colours, ``lighting``) unless a
+    Sources: a newton.Model, an ``alloy.Sim``, an ``alloy.camera.SceneData``, a scene pack directory (see
+    :func:`load_pack`) or an already built scene. ``lighting`` (a :class:`Lighting`: suns and sky) given once lights
+    every later render of that source without a look file, by any camera or ``sim.render``, fast or full quality;
+    ``Lighting.studio()`` is the default. A model renders with the fast diffuse tracer (shape colours) unless a
     ``look`` (look-file dict or path: materials, lights, HDRI world) is given or ``quality="full"``; then it renders
     with Blender's materials and lights (full-material tracer; the first render compiles for about a minute).
     A Sim's scene item looks (scene variants) render on the full-material tracer, or as colours and tiled colour maps
     with ``quality="fast"`` (``item_fast``): ``items`` is that layer (``items_look``; "auto": the source's; None: none).
-    Example: ``camera_scene(model, look="my.look.json")`` before creating cameras.
+    Example: ``camera_scene(sim, lighting=Lighting([Sun.from_euler((1.0, 0.0, 2.4), 3.0)], (0.3, 0.31, 0.33)))``.
     """
     if isinstance(source, GpuScene) or _is_pbr(source):
         return source
+    if type(source).__name__ == "SplitSim":  # its models live in the worker processes
+        raise CameraError("camera_scene of a sim built with processes=", "build it with processes=None to set its "
+                          "camera's lighting or look; sim.render(camera) renders it in the workers with the default")
     if items == "auto":
         from .item_looks import items_look
         items = items_look(source)
@@ -102,19 +108,22 @@ def camera_scene(source, lighting: Lighting | None = None, device: str | None = 
     dev = str(device or default_device())
     if isinstance(source, (str, Path)):
         return load_pack(source, device=dev)
+    lighting = source_lighting(source, lighting)
+    lit = lighting.key() if lighting is not None else None  # a scene built under another lighting is rebuilt
     per = _SCENES.setdefault(source, {}) if _weakrefable(source) else {}
     if (look is not None or quality == "full" or (items and quality != "fast")) and not isinstance(source, SceneData):
-        key = (dev, "full", _look_key(look), _look_key(items), id(lighting), dyn)
-        if key not in per:
-            per[key] = _model_pbr(source, look, lighting, dev, items, _layouts(sim, dyn), sim)
-        return per[key]
-    key = (dev, dyn, sim is not source, _look_key(items) if items else None)  # a Sim: scan textures (and item looks)
-    if key not in per or lighting is not None:
-        sd = source if isinstance(source, SceneData) else with_item_looks(
-            with_scan_textures(_scene_from(source, lighting), sim), items)
-        if lighting is not None and isinstance(source, SceneData):
-            sd.lighting = lighting
-        per[key] = _fast_scene(sd, dev, _layouts(sim, dyn), source)
+        key = (dev, "full", _look_key(look), _look_key(items), dyn)
+        if key not in per or getattr(per[key], "lit", None) != lit:
+            per[key] = full_scene(source, look, lighting, dev, items, _layouts(sim, dyn), sim)
+    else:
+        key = (dev, dyn, sim is not source, _look_key(items) if items else None)  # a Sim: scan textures, item looks
+        if key not in per or getattr(per[key], "lit", None) != lit:
+            sd = source if isinstance(source, SceneData) else with_item_looks(
+                with_scan_textures(_scene_from(source, lighting), sim), items)
+            if lighting is not None and isinstance(source, SceneData):
+                sd.lighting = lighting
+            per[key] = fast_scene(sd, dev, _layouts(sim, dyn), source)
+    per[key].lit = lit
     return per[key]
 
 
@@ -132,28 +141,6 @@ def _forget(sc) -> None:
     for per in _SCENES.values():
         for k in [k for k, v in per.items() if v is sc]:
             del per[k]
-
-
-def _fast_scene(sd: SceneData, device: str, layouts: tuple, model) -> GpuScene:
-    """The diffuse tracer's device scene, with the deformables', liquids' and films' per-world meshes (``_layouts``)."""
-    layout, liquid, engine, films = layouts
-    if layout is None and liquid is None and films is None:
-        return GpuScene(sd, device=device)
-    from .deform_gpu import DeformSet
-    from .films import Dynamic, FilmSet
-    from .liquid_scene import LiquidSet
-    ds = DeformSet(layout, len(sd.meshes), device, model) if layout is not None else None
-    sd = ds.scene_data(sd) if ds is not None else sd
-    ls = LiquidSet(liquid, len(sd.meshes), device, engine) if liquid is not None else None
-    sd = ls.scene_data(sd) if ls is not None else sd
-    fs = FilmSet(films, len(sd.meshes), device) if films is not None else None
-    sd = fs.scene_data(sd) if fs is not None else sd
-    pts = Dynamic(ds, fs).points() if ds is not None or fs is not None else None
-    gs = GpuScene(sd, device=device, points=pts, liquid=ls.buffers() if ls else None)
-    for dyn in (ds, ls, fs):
-        if dyn is not None:
-            dyn.attach(gs)
-    return gs
 
 
 def scene_view(sc) -> View:
@@ -176,28 +163,6 @@ def _warn_if_clipped(disp: wp.array, name: str, stops: float, view: View) -> Non
 def _look_key(look) -> str:
     import json
     return look if isinstance(look, (str, Path)) else json.dumps(look, sort_keys=True, default=str)
-
-
-def _model_pbr(model, look, lighting, device: str, items: dict | None = None, layouts=(None,) * 4, sim=None):
-    """A newton.Model as a full-material scene (look materials and lights, item looks; see model_pack), with the
-    deformables, liquids and films of ``layouts`` (``_layouts``) as per-world meshes refreshed every render."""
-    from .pbr import PbrScene
-    from .scan_pack import pack_with_scans
-    layout, liquid, engine, films = layouts
-    pk, frame, binding = pack_with_scans(model, look, lighting, items, layout, liquid, sim)
-    n_liq = 0 if liquid is None else liquid.worlds * len(liquid.objects)
-    ds = ls = None
-    if layout is not None:
-        from .deform_gpu import DeformSet
-        ds = DeformSet(layout, len(frame.meshes) - n_liq - layout.worlds * len(layout.objects), device, model)
-    if liquid is not None:
-        from .liquid_scene import LiquidSet
-        ls = LiquidSet(liquid, len(frame.meshes) - n_liq, device, engine)
-    if films is not None:  # after the deformables and liquids: their first meshes are counted without the films
-        from .films import Dynamic, add_to_pack
-        binding, fs = add_to_pack(pk, frame, binding, films, device)
-        ds = Dynamic(ds, fs)
-    return PbrScene(pk, frame, binding[0].shape[1], device, binding=binding, deform=ds, liquid=ls)
 
 
 def load_pack(path, frame: int | None = None, num_worlds: int = 1, device: str | None = None, static=None,

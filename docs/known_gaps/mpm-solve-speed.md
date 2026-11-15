@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # MPM at many worlds: the rheology solve sets the speed (256 dough worlds ~7.6 s per 10 ms period on an L4)
 
 Status: open. The solve tolerance is 3e-4 by default since 2026-11-08 (22 % faster for dough), after a law

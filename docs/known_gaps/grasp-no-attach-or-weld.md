@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # No call attaches or welds an object to a gripper: friction is the only grasp
 
 **What is wrong.** A robot holds an object by contact and friction only. There is no call that attaches or welds an

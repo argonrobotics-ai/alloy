@@ -227,3 +227,42 @@ def test_a_full_fetch_also_takes_the_textures_that_presets_and_library_looks_nam
     assert report["downloaded"] == 2 and {"polyhaven:b", "polyhaven:extra", "polyhaven:oak_veneer_01"} <= set(
         report["missing"])
     assert pool.fetch("wood", lib=small_root, root=tmp_path / "c2")["missing"] == ["polyhaven:b"]   # a family: pool only
+
+
+def test_a_1k_only_cache_renders_a_full_quality_look_with_no_res(tmp_path, monkeypatch, caplog):
+    """sim.render(quality="full", look=...) with a look naming polyhaven:plywood and no res (so 2k) on a cache that has
+    the 1k set, as the public fetch leaves it: the frame renders from the 1k maps with one notice naming 1k. With no
+    size cached the error's fix names the public command (with the set's family for a pool set), never an internal
+    module, and for a set no fetch brings, what the fetch takes."""
+    import numpy as np
+
+    import alloy
+    from alloy.camera.errors import CameraError
+    from alloy.camera.looks import textures
+    from tests.camera.helpers import fake_texture
+    monkeypatch.setenv("ALLOY_RENDER_ASSETS", str(tmp_path))
+    monkeypatch.setattr(textures, "_NOTICED", set())
+    fake_texture(tmp_path, "polyhaven:plywood", "1k", rgb=(200, 150, 90))
+    s = alloy.Scene(dt=0.01)
+    s.add_ground()
+    s.add_box("board", size=(0.3, 0.3, 0.02), pos=(0, 0, 0.01), static=True)
+    s.add_box("cube", size=(0.04, 0.04, 0.04), pos=(0, 0, 0.04), mass=0.1)
+    sim = alloy.build(s, device="cpu")
+    look = {"materials": {"ply": {"preset": "wood_plywood", "texture": "polyhaven:plywood"}},
+            "assign": [{"match": "board", "material": "ply"}]}
+    with caplog.at_level("WARNING", logger=textures.__name__):
+        img = sim.render(width=32, height=24, quality="full", look=look, spp=1)
+    assert img.shape == (24, 32, 3) and np.isfinite(img.astype(float)).all()
+    assert [r.getMessage() for r in caplog.records if r.name == textures.__name__] == [
+        "texture polyhaven:plywood: no 2k maps in the local asset cache; using the 1k maps there"]
+    with pytest.raises(CameraError) as err:
+        textures.local_texture_files("polyhaven:oak_veneer_01", "2k")
+    assert "python -m alloy.looks --fetch-textures --family wood" in err.value.fix and "AssetCache" not in err.value.fix
+    with pytest.raises(CameraError) as err:                 # a preset's set outside the pool: the full fetch has it
+        textures.local_texture_files("polyhaven:american_walnut_veneer", "2k")
+    assert err.value.fix.startswith("fetch it with python -m alloy.looks --fetch-textures, or")
+    with pytest.raises(CameraError) as err:                 # no fetch brings it: say what the fetch takes
+        textures.local_texture_files("polyhaven:not_in_the_pool", "2k")
+    assert err.value.fix == ("python -m alloy.looks --fetch-textures takes only the texture pool's sets and those "
+                             "presets and library looks name: use one of those (python -m alloy.looks --pool lists "
+                             "the pool), or render with quality='fast'")

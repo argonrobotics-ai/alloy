@@ -1,3 +1,7 @@
+---
+owner: Alloy maintainers
+---
+
 # Cloth and soft solids with self contact move at most about 3 m/s
 
 ## What is wrong
