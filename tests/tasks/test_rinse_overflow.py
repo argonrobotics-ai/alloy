@@ -52,12 +52,16 @@ def test_the_watch_attaches_to_a_solver_or_a_steppers_solver():
 
 
 def test_a_starved_scene_flags_the_overflow_through_the_real_step():
-    """Eight boxes on the ground with room for 2 contacts per world (MuJoCo Warp raises it to 32, still short): the
-    watch, attached to the built sim's solver by its plug-in host at install, flags both worlds; with room (256
-    contacts) nothing is flagged."""
+    """Eight boxes on the ground with room for 2 contacts per world: the watch, attached to the built sim's solver by
+    its plug-in host at install, flags both worlds; with room (256 contacts) nothing is flagged. On MuJoCo Warp the
+    room stays short (Newton raises nconmax to the start's 32, its collider makes 64 per world and drops half). On the
+    CPU route MuJoCo C solves every contact and the route's copy holds all 32, so nothing is dropped; there the copy is
+    starved after the build (one contact per world), and contacts beyond the copy flag every world (WP2, as
+    tests/route/test_mjc_core_capacity.py checks)."""
     from alloy._vendor import newton
 
     from alloy.plugins.harness.scene import TestScene, build_simulation
+    from alloy.route.mjc_core import MjcCoreSolver
     from alloy.tasks.rinse_hand import mjw_solver
 
     def build(b: newton.ModelBuilder) -> None:
@@ -66,14 +70,17 @@ def test_a_starved_scene_flags_the_overflow_through_the_real_step():
             body = b.add_body(xform=wp.transform((0.06 * k, 0.0, 0.0105), wp.quat_identity()))
             b.add_shape_box(body, hx=0.02, hy=0.02, hz=0.01)
 
-    def flagged(kwargs: dict) -> list[bool]:
+    def flagged(kwargs: dict, starve: bool) -> list[bool]:
         scene = TestScene(build=build, worlds=2, ground=True, control_dt=0.02, solver_kwargs=kwargs)
         watch = OverflowWatch()
         sim = build_simulation(scene, [watch], "cpu")
         assert watch.bits is not None                          # attached by the plug-in host at install
-        assert overflow_watch(sim) is watch and watch.bits is mjw_solver(sim).mjw_data.overflow
+        solver = mjw_solver(sim)
+        assert overflow_watch(sim) is watch and watch.bits is solver.mjw_data.overflow
+        if starve and isinstance(solver, MjcCoreSolver):
+            solver.mjw_data.naconmax = scene.worlds            # the CPU route's copy: one contact per world
         sim.step_period()
-        return period_overflow(watch, mjw_solver(sim)).tolist()
+        return period_overflow(watch, solver).tolist()
 
-    assert flagged({"nconmax": 2, "njmax": 24}) == [True, True]
-    assert flagged({"nconmax": 256, "njmax": 1024}) == [False, False]
+    assert flagged({"nconmax": 2, "njmax": 24}, starve=True) == [True, True]
+    assert flagged({"nconmax": 256, "njmax": 1024}, starve=False) == [False, False]

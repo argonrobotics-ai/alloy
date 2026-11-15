@@ -28,7 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m alloy.looks", description=__doc__.splitlines()[0])
     ap.add_argument("--show", metavar="OBJECT", help="print the look one object resolves to")
     ap.add_argument("--pool", action="store_true", help="print the texture pool (alloy.looks.pool) per family")
-    ap.add_argument("--fetch-textures", action="store_true", help="put the pool's texture sets in the render cache")
+    ap.add_argument("--fetch-textures", action="store_true", help="put the pool's texture sets (without --family also those presets and library "
+                    "looks name) in the render cache")
     ap.add_argument("--family", choices=FAMILIES, help="only this texture family (with --pool / --fetch-textures)")
     ap.add_argument("--source", choices=("hub", "origin"), default="hub",
                     help="--fetch-textures from the library dataset (hub) or Poly Haven / ambientCG (origin)")

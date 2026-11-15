@@ -22,8 +22,8 @@ def _parser() -> argparse.ArgumentParser:
     top = argparse.ArgumentParser(prog="python -m alloy.sysid", description="Fit a simulated robot's joint "
                                   "parameters to a recording of the real one (docs/guide/sysid.md).")
     sub = top.add_subparsers(dest="command", required=True)
-    robot = {"required": True, "help": "a shipped robot's name (panda, go2, fr3, ...) or a robot file (MJCF, URDF, "
-             "USD)"}
+    robot = {"required": True, "help": "a shipped robot's name (panda, go2, fr3, ...) or a robot file with position "
+             "servos (MJCF or USD; a URDF file has none)"}
     joints = {"help": "comma-separated joint names (default: every position-servoed joint)"}
     device = {"default": None, "help": "cpu or cuda:0 (default: a GPU when there is one)"}
 

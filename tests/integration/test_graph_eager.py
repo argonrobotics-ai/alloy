@@ -20,6 +20,9 @@ from alloy.core.registry import isolated_registry
 from alloy.testing import integration as I
 from alloy.testing import scene as S
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("CPU graph capture, which the C route does not do (eager equals captured)")
+
 pytestmark = [pytest.mark.compile_heavy, pytest.mark.integration, pytest.mark.timeout(900)]
 
 PERIODS = 3
@@ -55,6 +58,7 @@ def _run(card, lib, graph: str):
     return sim, I.digests(sim)
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("name", _params())
 def test_cpu_eager_equals_graph(name):
     card, lib = _scenes()[name]

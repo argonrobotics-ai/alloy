@@ -13,6 +13,9 @@ from alloy.parallel.ladder_run import CapacityCounts, fit_row, sweep
 from alloy.parallel.probe import TimingOptions
 from alloy.parallel.rungs import LADDER, RAW_SCENES, RawRung
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("the CPU graph ladder: CPU graph capture, which the C route does not do")
+
 QUICK = TimingOptions(window_s=0.0, min_window_sim_s=0.1, windows=2, chunks=2, warmup_steps=1)
 SETTLE = TimingOptions(window_s=0.0, min_window_sim_s=0.25, windows=2, chunks=2, warmup_steps=1)  # cable settles ~0.3 s
 FULL = TimingOptions(window_s=0.0, min_window_sim_s=0.2, windows=2, chunks=2, warmup_steps=2)
@@ -82,6 +85,7 @@ def check_task_rows(rows, worlds):
     assert [r["nworld"] for r in rows[:-1]] == sorted(worlds)
 
 
+@WARP_ROUTE
 def test_ladder_l3_t12_cpu():
     """L3 T12: assembled WP13 scene, Alloy entry stepper, trace replayed on the device; gate = every world within
     1 mm of the recording over 0.2 s (CPU 2026-11-01: 0.100 mm, as WP13 measured)."""
@@ -91,6 +95,7 @@ def test_ladder_l3_t12_cpu():
     assert all(r["quality_gate"]["replay_point_err_max_m"] < 1e-3 for r in rows[:-1])
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.timeout(900)
 def test_ladder_l3_t09_cpu():
@@ -113,6 +118,7 @@ def test_ladder_l3_t09_cpu():
     assert rows[0]["substeps"] == k == 64 and rows[0]["periods_per_call"] == 1, (rows[0]["substeps"], k)
 
 
+@WARP_ROUTE
 def test_ladder_l3_t12_wp8_capacities_cpu():
     """WP8-sized capacities (1.5x the probed p99: 96 contacts, 402 rows per world) instead of the router's 2,056 /
     12,336; the replay gate and the overflow check still pass."""

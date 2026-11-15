@@ -108,7 +108,6 @@ class LocoEnv(VectorEnv):
         base = self._base_extra()
         if self._sensed != self._tick:                    # once per control step, after the physics step
             self.sensors.advance(self._state(base))
-            self.commands.tick(self.stats.steps)
             self._sensed = self._tick
         return self._state({**base, **self.sensors.extra(), "action": self._action,
                             "action.prev": self._prev_action, "command": self.commands.value,
@@ -124,12 +123,21 @@ class LocoEnv(VectorEnv):
         xp, cfg = self.xp, self.config
         a = xp.clip(self.writer._check(actions), -cfg.action_limit, cfg.action_limit)
         self._prev_action, self._action = self._action, a
-        self._targets = xp.clip(cfg.action_scale * a, self.writer.low, self.writer.high)
+        targets = xp.clip(cfg.action_scale * a, self.writer.low, self.writer.high)
         self.pusher.before_step(self._tick)
         self._tick += 1
-        obs, reward, terminated, truncated, info = super().step(self._targets)
+        obs, reward, terminated, truncated, info = super().step(targets)     # _applied keeps what was written
         info["command"] = self.commands.value
         return obs, reward, terminated, truncated, info
+
+    def _applied(self, targets: Any) -> None:
+        self._targets = targets                           # what reached the servos: after a delay layer, if any
+
+    def _after_reward(self, done: Any) -> bool:
+        """A new command for the running worlds whose resample time came, after the reward scored the old one;
+        worlds about to restart draw theirs at the reset (and the curriculum reads the episode's command)."""
+        self.commands.tick(self.xp.where(done, 0, self.stats.steps))
+        return True
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
         """As ``VectorEnv.reset``. A seeded reset (``seed=``) also restarts the push timer and lifts a push being

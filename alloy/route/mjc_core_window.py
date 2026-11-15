@@ -18,6 +18,13 @@ state as handed in. ``restore`` runs on a
 restart. It puts the float64 state back into every world whose handed-in state equals the saved one bit for bit, and
 marks those worlds as the route's last output, so the step does not push float32 over them. A world that the window
 start already pushed from float32 (its state differed from the last output when saved) is pushed again, the same way.
+
+The route keeps a second one for the start a reset returns to (``MjcCoreSolver.save_start``, from ``alloy.Sim.settle``).
+A reset puts the engine's float32 start back without telling the route, so the next step restores it into each world
+whose handed-in state is the saved start bit for bit (``MjcCoreSolver.reset`` does the same), and the run after a reset
+repeats the run after the settle bit for bit. Before, a reset pushed the settled start from float32, and a two-joint
+arm drifted by 3e-8 rad within 20 steps. A start moved without a settle differs from the saved one and is pushed from
+float32, as a build's start is.
 """
 
 from __future__ import annotations
@@ -50,6 +57,16 @@ def _same(now: np.ndarray, then: np.ndarray) -> np.ndarray:
     return (now == then) | (np.isnan(now) & np.isnan(then))
 
 
+def keyed(n: int, only: np.ndarray | None, pairs: Any) -> np.ndarray:
+    """``(n,)`` bool: the worlds (of ``only``, when given) whose handed-in coordinates equal a saved key bit for bit,
+    NaN matching NaN; ``pairs`` holds ``(now, key, item_world)`` per coordinate array (``item_world`` None: none)."""
+    keep = np.ones(n, dtype=bool) if only is None else np.isin(np.arange(n), np.asarray(only, dtype=np.int64))
+    for now, key, world in pairs:
+        if world is not None and key.size:
+            keep[np.unique(world[~_same(now, key)])] = False
+    return keep
+
+
 class WindowStart:
     """Each world's float64 MuJoCo state at the last window start (module docstring)."""
 
@@ -65,19 +82,17 @@ class WindowStart:
         fresh = set(self.views.changed_worlds(state).tolist())
         self.rows = [None if w in fresh else _get(m, d) for w, (m, d) in enumerate(zip(models, datas))]
 
-    def restore(self, models: list[Any], datas: list[Any], state: Any) -> np.ndarray:
-        """At a restart: the saved float64 state back into each world whose handed-in state is the saved one; returns
-        those worlds."""
+    def restore(self, models: list[Any], datas: list[Any], state: Any, only: np.ndarray | None = None) -> np.ndarray:
+        """At a restart: the saved float64 state back into each world whose handed-in state is the saved one (of the
+        worlds ``only`` names, when given: a masked reset's); returns those worlds."""
         if self.q is None or self.views.last_q is None or self.views.coord_world is None:
             return np.empty(0, dtype=np.int64)
         now_q, now_qd = _host(state.joint_q), _host(state.joint_qd)
         if now_q.shape != self.q.shape or now_qd.shape != self.qd.shape:
             return np.empty(0, dtype=np.int64)
-        moved = np.zeros(len(datas), dtype=bool)
-        moved[np.unique(self.views.coord_world[~_same(now_q, self.q)])] = True
-        if self.views.dof_world is not None:
-            moved[np.unique(self.views.dof_world[~_same(now_qd, self.qd)])] = True
-        worlds = np.array([w for w, row in enumerate(self.rows) if row is not None and not moved[w]], dtype=np.int64)
+        pairs = ((now_q, self.q, self.views.coord_world), (now_qd, self.qd, self.views.dof_world))
+        keep = keyed(len(datas), only, pairs)
+        worlds = np.array([w for w, row in enumerate(self.rows) if row is not None and keep[w]], dtype=np.int64)
         for w in worlds.tolist():
             mujoco.mj_setState(models[w], datas[w], self.rows[w], SPEC)
         sel_q = np.isin(self.views.coord_world, worlds)
@@ -93,4 +108,4 @@ class WindowStart:
         self.rows = []
 
 
-__all__ = ["SPEC", "STATE_BITS", "WindowStart"]
+__all__ = ["SPEC", "STATE_BITS", "WindowStart", "keyed"]

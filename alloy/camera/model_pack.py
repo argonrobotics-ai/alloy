@@ -114,7 +114,8 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
             names.append(name)
             continue
         if fb is None:  # the scene's look does not cover this shape: its card's library look, if any
-            fb = fallback_rules([labels[i] for i in shapes] + list(blabels))
+            from .item_looks import textures_on_disk  # a texture not on disk: its family's flat tone
+            fb = textures_on_disk(fallback_rules([labels[i] for i in shapes] + list(blabels)))
         name = assigned(fb, [labels[s], bl]) if fb else None
         if name is not None:
             specs.setdefault(name, fb["materials"][name])

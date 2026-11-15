@@ -14,6 +14,9 @@ import warp as wp
 import alloy
 from alloy.integration import profiles as P
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("CPU graph capture, which the C route does not do")
+
 ARM = """<mujoco><compiler angle="radian"/><worldbody><body name="link1" pos="0 0 0.1">
   <joint name="shoulder" type="hinge" axis="0 1 0" range="-2 2" damping="2"/>
   <geom type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="1"/>
@@ -56,6 +59,7 @@ def cubes(worlds: int = 2) -> alloy.Scene:
     return s
 
 
+@WARP_ROUTE
 def test_fast_profile_checks_every_tenth_step(graph) -> None:
     """profile="fast" (cheap checks every 10 steps): the checks run at every tenth step, with graphs as without (before
     the fix, a graph captured at step 2 never checked); at one step per period (main's rigid fast mode) from two
@@ -69,6 +73,7 @@ def test_fast_profile_checks_every_tenth_step(graph) -> None:
         assert sim.engine.graph_stats()["graphs"] == 2, sim.engine.graph_stats()
 
 
+@WARP_ROUTE
 def test_standard_full_checks_every_tenth_step_at_eight_steps_per_period(graph) -> None:
     """The default profile on a robot scene (8 steps of 1.25 ms per period; full checks every 10 steps): the joint
     and weld checks run at steps 0, 10, ..., 40 over 6 periods, with graphs as without."""
@@ -82,6 +87,7 @@ def test_standard_full_checks_every_tenth_step_at_eight_steps_per_period(graph) 
     assert seen() == [0, 10, 20, 30, 40]
 
 
+@WARP_ROUTE
 def test_a_kicked_world_latches_invalid(graph) -> None:
     """The repro: world 1 kicked to over 20 m/s after step 12 latches INVALID at the check at step 20 and stays frozen
     there (finite, unmoved); world 0 goes on. Before the fix, under graphs, it flew to z = 8 km with sim.check() ok."""
@@ -97,6 +103,7 @@ def test_a_kicked_world_latches_invalid(graph) -> None:
     assert abs(float(sim.state(world=0)["c.pos"][2]) - 0.5) < 2e-3
 
 
+@WARP_ROUTE
 def test_graphs_match_eager_bitwise(monkeypatch) -> None:
     """CPU graphs replay the eager periods bit for bit, checks included: 30 periods of the fast profile."""
     out = {}
@@ -135,6 +142,7 @@ def _kinds_seen(sim, steps: int) -> list[int]:
     return [2 if s in f else 1 if s in c else 0 for s in range(sim.physics_steps)]
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("every", [(1, 10), (10, 10), (4, 6), (3, 5)])
 def test_pattern_follows_update_eagerly(every, graph) -> None:
     """WP5's drift guard: what HealthMonitor.update really runs, step by step over 48 steps (eager and replayed),
@@ -151,6 +159,7 @@ def test_pattern_follows_update_eagerly(every, graph) -> None:
     assert seen == list(pattern(h, 0, len(seen))), (seen, pattern(h, 0, len(seen)))
 
 
+@WARP_ROUTE
 def test_a_pattern_over_the_node_budget_runs_eagerly(monkeypatch) -> None:
     """WP0's must-fix: a fresh pattern graph is counted before its first launch; one over the node budget runs that
     chunk eagerly (results still equal the all-eager run's) and the key's per-exchange count is raised (a one-exchange
@@ -186,6 +195,7 @@ def test_a_pattern_over_the_node_budget_runs_eagerly(monkeypatch) -> None:
     assert max(eng.exchange_nodes.values()) == 1100 and list(eng.eager_keys.values()) == [1100]
 
 
+@WARP_ROUTE
 def test_out_of_memory_after_the_first_chunk_runs_the_rest_eagerly(monkeypatch) -> None:
     """WP0's should-fix: a launch that runs out of device memory at chunk i > 0 runs the period's remaining exchanges
     eagerly (none twice, none lost) instead of raising."""
@@ -219,6 +229,7 @@ def test_out_of_memory_after_the_first_chunk_runs_the_rest_eagerly(monkeypatch) 
     assert sim.physics_steps == steps + 8 and sim.check()["ok"]
 
 
+@WARP_ROUTE
 def test_lever_three_times_a_key_once_its_check_patterns_repeat() -> None:
     """WP5's rc3 red (GPU only, so no gate saw it): box_on_table steps 16 exchanges per period with checks every step
     and full ones every 10, so each period start mod 10 captures its own graph (5 patterns). Lever #3 times a key only

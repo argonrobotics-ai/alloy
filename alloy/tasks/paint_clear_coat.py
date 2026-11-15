@@ -53,8 +53,8 @@ import numpy as np
 
 from alloy.tasks import paint_metrics as pm
 from alloy.tasks.paint_clear_coat_checks import (CELL, COAT_FRAC, DENSITY, EVEN, FLASH, MAX_DEPTH, PHI0, DustBooks,
-                                                 can_books, coat_checks, dust_books, escape_share, evaluate,
-                                                 mist_dust, mist_escape, spray_progress)
+                                                 books_at, can_books, coat_checks, dust_at, dust_books, escape_share,
+                                                 evaluate, mist_dust, mist_escape, spray_progress)
 from alloy.tasks.paint_materials import film_material
 from alloy.tasks.paint_process import lay_solids
 from alloy.tasks.paint_spray_stencil import Can
@@ -260,71 +260,117 @@ def run(lay: BoxLayout | None = None, ps: Passes | None = None, can: AerosolCan 
         graph: bool = False) -> dict:  # noqa: ANN001
     """The scripted clear coat: the can follows :func:`schedule` at ``standoffs`` [W] m above the print (default
     ``ps.standoff`` in every world), the valve shuts, the can parks over a corner of the box, the film settles for
-    ``settle`` s, then each world's verdict (:func:`evaluate`)."""
+    ``settle`` s, then each world's verdict (:func:`evaluate`). The books follow the can and valve as each period ran
+    (:class:`SprayBooks`): the script's, or a policy's in an env."""
     from alloy.plugins.harness.scene import build_simulation  # noqa: PLC0415 - simulation stack only when run
     from alloy.plugins.surface_flow import PlaneChart, SurfaceFlow  # noqa: PLC0415
     from alloy.plugins.surface_flow.process_specs import Drying  # noqa: PLC0415
 
     lay, ps, can = lay or BoxLayout(), ps or Passes(), can or AerosolCan()
     off = np.full(worlds, ps.standoff) if standoffs is None else np.asarray(standoffs, dtype=np.float64)
-    z = lay.print_z + off
     flow = SurfaceFlow(charts=(PlaneChart("bed", cells=lay.cells),), material=lacquer(), inertia=False,
                        max_depth=MAX_DEPTH, nozzles=(can.nozzle(),), network=can.network(), species=("solids",),
                        process={"drying": Drying(**DRYING)})  # fmt: skip
-    shut, rays, mask, (xe, ye) = np.zeros(worlds, np.float32), can.ray_table(), lay.print_mask(), lay.edges()
+    shut, mask = np.zeros(worlds, np.float32), lay.print_mask()
 
     def init(sim) -> None:  # noqa: ANN001
         flow.set_input(EDGE, shut)
         flow.set_regions(mask.astype(np.int32), chart=0)          # the print's edge: no film crosses it
 
     sim = build_simulation(build_scene(lay, init, worlds), [flow], device, graph=graph)
-    idx, outside, dust, valve = bodies(sim.model, CAN), np.zeros(worlds), DustBooks(), False
-    window, last, mist0 = [], [], flow.supply.read()["mist"].copy()
-    areas = flow.tables.area_np[: mask.size].reshape(mask.shape)
-
-    def lay_dust() -> None:
-        """The mist sent since the last call (DC5's mist ledger, exact) falls as dust in equal shares from where the
-        nozzle was (mist booked after the valve shut: from where it last was): the share that stays in the box
-        (:func:`mist_escape`) lands, and every share is booked."""
-        nonlocal mist0
-        mist = flow.supply.read()["mist"].copy()
-        aims = np.asarray(window or last).reshape(-1, 2)
-        if len(aims) and (mist > mist0).any():
-            solids = np.outer((mist - mist0) * PHI0, np.full(len(aims), 1.0 / len(aims)))      # [W, P] m³
-            keep = 1.0 - np.array([[mist_escape(lay, (a[0], a[1], zw)) for a in aims] for zw in z])
-            d = mist_dust(xe, ye, areas, aims, off, solids * keep)
-            lay_solids(flow, d)
-            dust_books(lay, aims, z, off, solids, (d * areas).sum(axis=(1, 2)), dust)   # the film's cell areas
-        mist0 = mist
-        window.clear()
-
+    books, valve, z = SprayBooks(sim, flow, lay, can, off), False, lay.print_z + off
     for k, (x, y, on) in enumerate(schedule(lay, ps)):
-        _place(sim, idx, x, y, z)
+        _place(sim, books.idx, x, y, z)
         if on != valve:
             flow.set_input(EDGE, np.full(worlds, float(on), np.float32))
             valve = on
-        share = np.array([escape_share(lay, can.efficiency, rays, (x, y, zw)) for zw in z]) if on else np.zeros(worlds)
-        before = flow.read()["supply_sent"].copy() if share.any() else None
-        sim.step_period()
-        if before is not None:
-            outside += (flow.read()["supply_sent"] - before) * share
-        if on:
-            window.append((x, y))
-            last[:] = [(x, y)]
-        if (k + 1) % DUST_EVERY == 0:
-            lay_dust()
+        books.step(x, y, k)
     flow.set_input(EDGE, shut)
-    sim.step_period()                                       # the last open period's lacquer lands
-    lay_dust()
+    books.step(x, y)                                        # the last open period's lacquer lands
+    books.lay_dust()
     declared = flow.depth(0).copy()
-    _place(sim, idx, 0.5 * lay.box[0] - 0.05, 0.5 * lay.box[1] - 0.05, z)
-    for _ in range(int(round(settle / CONTROL_DT))):
-        sim.step_period()
+    park = (0.5 * lay.box[0] - 0.05, 0.5 * lay.box[1] - 0.05)
+    _place(sim, books.idx, *park, z)
+    for k in range(int(round(settle / CONTROL_DT))):
+        books.step(*park, k)
+    books.lay_dust()
     read = flow.read()
-    rows = [evaluate(declared[w], read, float(outside[w]), dust, mask, lay.cell_area, w)
+    rows = [evaluate(declared[w], read, float(books.outside[w]), books.dust, mask, lay.cell_area, w)
             for w in range(worlds)]
     return {"worlds": rows, "succeeded": all(r["succeeded"] for r in rows), "standoffs": off.tolist(),
             "passes": dataclasses.asdict(ps)}
+
+
+class SprayBooks:
+    """What the can sends, booked each period from where its nozzle was and whether its valve was open as the period
+    ran: the script's place and valve, or what a policy set in their stead (an env's port writes the can's pose and
+    the valve between the script's command and the step). ``outside`` [W] m³ of lacquer left the box: each period's
+    lacquer, also what was still in flight when the valve shut, times :func:`escape_share` from where the nozzle was;
+    the mist falls as dust every ``DUST_EVERY`` periods (:meth:`lay_dust`), from where the nozzle was with its valve
+    open, into ``dust``."""
+
+    def __init__(self, sim, flow, lay: BoxLayout, can: AerosolCan, off: np.ndarray) -> None:  # noqa: ANN001
+        self.sim, self.flow, self.lay, self.can, self.off = sim, flow, lay, can, off
+        self.z, self.idx, self.rays = lay.print_z + off, bodies(sim.model, CAN), can.ray_table()
+        self.outside, self.dust = np.zeros(len(off)), DustBooks()
+        self.window: list[np.ndarray] = []          # since the last dust: spots [W, 4] per period, NaN where shut
+        self.last = np.full((len(off), 4), np.nan)  # each world's last spot with its valve open
+        sup = flow.supply.read()
+        self.sent0, self.mist0 = sup["sent"].copy(), sup["mist"].copy()
+        mask = lay.print_mask()
+        self.areas, (self.xe, self.ye) = flow.tables.area_np[: mask.size].reshape(mask.shape), lay.edges()
+
+    def step(self, x: float, y: float, k: int | None = None) -> None:
+        """Step one period with the script's nozzle at (x, y, ``z``) and book it; the dust falls after period ``k``
+        when ``k + 1`` is a multiple of ``DUST_EVERY``."""
+        self.sim.step_period()
+        spots, turns = self._spots(x, y)
+        open_ = np.asarray(self.flow.inputs()[EDGE].numpy()).reshape(len(self.off), -1)[:, 0] > 0.0
+        sent = self.flow.supply.read()["sent"].copy()
+        share = np.array([escape_share(self.lay, self.can.efficiency, self.rays, tuple(s[:3]), t) if m else 0.0
+                          for s, t, m in zip(spots, turns, sent > self.sent0)])   # also lacquer in flight at a shut
+        self.outside += (sent - self.sent0) * share
+        self.sent0 = sent
+        if open_.any():
+            self.window.append(np.where(open_[:, None], spots, np.nan))
+            self.last = np.where(open_[:, None], spots, self.last)
+        if k is not None and (k + 1) % DUST_EVERY == 0:
+            self.lay_dust()
+
+    def _spots(self, x: float, y: float) -> tuple[np.ndarray, list]:
+        """Per world the nozzle's spot [W, 4] (x, y, z in the box frame, and its fall to the print) and the can's turn
+        (xyzw; None upright): the script's where the can is where it put it, else the can body's pose."""
+        q = self.sim.state.body_q.numpy()[self.idx].astype(np.float64)
+        placed = np.column_stack([np.full_like(self.z, x), np.full_like(self.z, y), self.z, self.off])
+        upright = np.all(q[:, 3:] == (0.0, 0.0, 0.0, 1.0), axis=1)
+        here = upright & np.all(q[:, :3] == placed[:, :3].astype(np.float32), axis=1)
+        spots = np.where(here[:, None], placed, np.column_stack([q[:, :3], q[:, 2] - self.lay.print_z]))
+        return spots, [None if u else t for u, t in zip(upright, q[:, 3:])]
+
+    def lay_dust(self) -> None:
+        """The mist sent since the last call (DC5's mist ledger, exact) falls as dust in equal shares from where each
+        world's nozzle was with its valve open (mist booked after it shut: from where it last was): the share that
+        stays in the box (:func:`mist_escape`) lands, and every share is booked."""
+        mist = self.flow.supply.read()["mist"].copy()
+        aims = [self._aims(w) for w in range(len(mist))]
+        if any(len(a) for a in aims) and (mist > self.mist0).any():
+            dust, rows = np.zeros((len(mist), *self.areas.shape)), np.zeros((len(mist), 3))
+            for w, spots in enumerate(aims):
+                if len(spots):
+                    solids = (mist[w] - self.mist0[w]) * PHI0 * np.full(len(spots), 1.0 / len(spots))   # m³
+                    keep = 1.0 - np.array([mist_escape(self.lay, tuple(s[:3])) for s in spots])
+                    dust[w] = dust_at(self.xe, self.ye, self.areas, spots, solids * keep)
+                    rows[w] = books_at(self.lay, spots, solids)
+            lay_solids(self.flow, dust)
+            self.dust.add(rows[:, 0], (dust * self.areas).sum(axis=(1, 2)), rows[:, 1], rows[:, 2])   # cell areas
+        self.mist0 = mist
+        self.window.clear()
+
+    def _aims(self, w: int) -> np.ndarray:
+        rows = [s[w] for s in self.window if not np.isnan(s[w, 0])]
+        if rows:
+            return np.array(rows)
+        return self.last[w:w + 1] if not np.isnan(self.last[w, 0]) else np.zeros((0, 4))
 
 
 #: a print crop for CPU tests: 40 x 30 mm in a 15 mm bed, 4,200 cells (its print reads max/min 1.03 at 0.30 m). The
@@ -365,5 +411,6 @@ if __name__ == "__main__":
 
 
 __all__ = ["AerosolCan", "BoxLayout", "CELL", "COAT_FRAC", "DENSITY", "DustBooks", "EVEN", "FLASH", "MAX_DEPTH", "PHI0",
-           "Passes", "SMALL", "build_scene", "can_books", "coat_checks", "dust_books", "escape_share", "evaluate",
-           "lacquer", "main", "mist_dust", "mist_escape", "run", "schedule", "spray_progress"]
+           "Passes", "SMALL", "SprayBooks", "books_at", "build_scene", "can_books", "coat_checks", "dust_at",
+           "dust_books", "escape_share", "evaluate", "lacquer", "main", "mist_dust", "mist_escape", "run", "schedule",
+           "spray_progress"]

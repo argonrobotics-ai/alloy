@@ -93,7 +93,9 @@ class Sb3VecEnv(_VecEnv):  # type: ignore[misc, valid-type]
         obs, rew, term, trunc, info = self.env.step(self._actions)
         obs, rew = self._obs(obs), self._np(rew)
         term, trunc = self._np(term), self._np(trunc)
-        frozen = self._np(info["invalid"])            # an INVALID world ends for good: no time-limit bootstrap
+        # an INVALID world's episode ends for good when it ends (no time-limit bootstrap); one whose scene resets
+        # all worlds together sits frozen, at reward 0, until that common end
+        frozen = self._np(info["invalid"]) & (term | trunc)
         term, trunc = term | frozen, trunc & ~frozen
         self._returns += rew
         self._lengths += 1

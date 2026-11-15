@@ -62,6 +62,7 @@ class RslRlVecEnv(_Base):  # type: ignore[misc, valid-type]
         self._low = torch.as_tensor(space.low, dtype=torch.float32, device=self.device)
         self._high = torch.as_tensor(space.high, dtype=torch.float32, device=self.device)
         self._obs, _ = env.reset()                    # the env keeps the seed it was built with
+        self._kept_clock = False
 
     @property
     def unwrapped(self) -> Any:
@@ -75,7 +76,15 @@ class RslRlVecEnv(_Base):  # type: ignore[misc, valid-type]
 
     @episode_length_buf.setter
     def episode_length_buf(self, value: torch.Tensor) -> None:
-        # rsl_rl's init_at_random_ep_len writes this to stagger the episode ends
+        # rsl_rl's init_at_random_ep_len writes this to stagger the episode ends; a scene whose worlds reset together
+        # keeps its one episode clock (staggered ends would ask for resets of single worlds, which it cannot make)
+        if self.env.together:
+            if not self._kept_clock:
+                log.warning("rsl_rl: this scene resets all worlds together, so its episodes keep one clock; the "
+                            "staggered episode lengths written to episode_length_buf (init_at_random_ep_len) are "
+                            "ignored")
+                self._kept_clock = True
+            return
         self.env.stats.steps = value.to(device=self.env.stats.steps.device, dtype=self.env.stats.steps.dtype)
 
     def default_obs_groups(self) -> dict[str, list[str]]:

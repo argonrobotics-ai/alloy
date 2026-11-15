@@ -40,3 +40,25 @@ class FakeState:
     def __init__(self, body_q: np.ndarray, device: str = "cpu"):
         import warp as wp
         self.body_q = wp.array(np.asarray(body_q, np.float32), dtype=wp.transform, device=device)
+
+
+def fake_texture(root, ref: str, res: str, rgb=(72, 42, 22)) -> None:
+    """A colour map for texture ``ref`` in the render cache layout ``LocalAssets`` reads (a flat swatch)."""
+    import json
+
+    from PIL import Image
+
+    from alloy.render.blender.assets import split_ref
+    src, ident = split_ref(ref)
+    img = Image.fromarray(np.full((16, 16, 3), rgb, np.uint8))
+    if src == "ambientcg":
+        folder = root / "ambientcg" / f"{ident}_{res.upper()}"
+        folder.mkdir(parents=True, exist_ok=True)
+        img.save(folder / f"{ident}_{res.upper()}-JPG_Color.jpg")
+        (folder / ".done").write_text("ok")
+    else:
+        folder = root / "polyhaven" / ident
+        folder.mkdir(parents=True, exist_ok=True)
+        name = f"{ident}_diff_{res}.jpg"
+        img.save(folder / name)
+        (folder / "files.json").write_text(json.dumps({"Diffuse": {res: {"jpg": {"url": f"https://x/{name}"}}}}))

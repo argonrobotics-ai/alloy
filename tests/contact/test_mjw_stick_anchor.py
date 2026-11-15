@@ -30,6 +30,9 @@ from alloy.contact import chain_grip
 from alloy.contact import mjw_stick_anchor as SA
 from alloy.scene import integrator_route as IR
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("the stick anchor installed on MuJoCo Warp")
+
 MU, G, MASS = 0.5, 9.81, 27.0
 _spec = importlib.util.spec_from_file_location("grip", Path(__file__).parents[1] / "api" / "test_rods_grip.py")
 RIG = importlib.util.module_from_spec(_spec)
@@ -210,6 +213,7 @@ def _travel(sim, push: float, seconds: float) -> float:
     return float(sim.state(["blk"], world=0)["blk.pos"][0]) - x0
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(1200)

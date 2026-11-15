@@ -25,8 +25,9 @@ claude mcp add alloy -- alloy mcp
 ```
 
 Any other MCP client starts the same command, `alloy mcp`. The tools are `list`, `scene`, `build`, `step`, `run`,
-`state`, `targets`, `reset`, `close`, `check`, `render`, `estimate`, `import`, `export`, `vary`, `compose`,
-`create`, `audit` and `fetch`; each takes and returns JSON. The server's code is in
+`state`, `targets`, `reset`, `drive`, `pose`, `wrench`, `settle`, `heater`, `controls`, `close`, `check`,
+`render`, `estimate`, `import`, `export`, `vary`, `compose`, `create`, `audit` and `fetch`; each takes and returns
+JSON. The server's code is in
 [alloy/mcp](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp).
 
 ## What to ask your agent to do

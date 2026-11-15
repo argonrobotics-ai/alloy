@@ -16,6 +16,9 @@ from alloy.tasks.can_wash_table import Turntable
 from alloy.tasks.can_wash_tip import COARSE, rotate
 from alloy.tasks.can_wash_turn import OPEN, RELEASE_N
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("checks the walk runs on the MuJoCo Warp route")
+
 TASK = dataclasses.replace(COARSE, table=Turntable())
 
 
@@ -65,6 +68,7 @@ def test_the_walk_law_bounds_the_lip_on_both_routes_and_the_walk_by_route():
     assert not walk_law([rev(float("nan"), 0.0, [1.0])], m, "mujoco_c")["ok"]
 
 
+@WARP_ROUTE
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(1800)
 def test_a_cut_down_robot_run_turns_sprays_dumps_and_docks():

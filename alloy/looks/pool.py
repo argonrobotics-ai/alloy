@@ -134,23 +134,53 @@ def swap(spec: dict, rng, lib: CardLibrary | None = None) -> tuple[str, dict] | 
     return pick[k].name, dict(pick[k].spec)
 
 
+def look_textures(lib: CardLibrary | None = None) -> dict[str, str]:
+    """Texture set -> resolution of every CC0 set that a WP20 preset or a library look names and the pool does not
+    hold (e.g. ``polyhaven:american_walnut_veneer`` of the ``wood_walnut_oiled`` preset), so that a full ``fetch``
+    leaves every default look textured."""
+    from alloy.looks.resolve import KINDS
+    from alloy.render.blender.presets import DEFAULTS, PRESETS
+    lib = lib or CardLibrary()
+    found: dict[str, str] = {}
+
+    def add(spec: dict) -> None:
+        tex = spec.get("texture")
+        if isinstance(tex, str) and tex.startswith(("polyhaven:", "ambientcg:")):
+            found.setdefault(tex, spec.get("res") or PRESETS.get(spec.get("preset", ""), {}).get("res")
+                             or DEFAULTS["res"])
+        for v in spec.values():  # an object look's materials: {slot: spec}
+            for sub in (v.values() if isinstance(v, dict) else ()):
+                if isinstance(sub, dict):
+                    add(sub)
+    for spec in PRESETS.values():
+        add(spec)
+    for d in look_dirs(lib):
+        for kind in KINDS:
+            for p in sorted((d / kind).rglob("*.json")):
+                add(json.loads(p.read_text()))
+    held = {e.texture for e in entries(lib)}
+    return {t: r for t, r in sorted(found.items()) if t not in held}
+
+
 def fetch(family: str | None = None, source: str = "hub", lib: CardLibrary | None = None,
           root: str | Path | None = None, repo: str | None = None) -> dict:
     """Put the pool's texture sets (or one family's) into the render asset cache ``root`` (default: the renderers'
     cache, ``alloy.render.blender.assets.default_cache()``), so the path tracer, which never downloads, can render
-    them. ``source="hub"``: the library dataset on the
-    Hugging Face Hub (public; files checked against its sha256 listing); ``"origin"``: Poly Haven and ambientCG.
-    Returns counts and the sets that could not be had."""
+    them; without ``family`` also the sets that presets and library looks name (``look_textures``).
+    ``source="hub"``: the library dataset on the Hugging Face Hub (public; files checked against its sha256
+    listing); ``"origin"``: Poly Haven and ambientCG. Returns counts and the sets that could not be had."""
     from alloy.render.blender.assets import AssetCache, default_cache
-    sel = entries(lib, family)
+    want = {e.texture: e.spec["res"] for e in entries(lib, family)}
+    if family is None:
+        want.update(look_textures(lib))
     root = Path(root).expanduser() if root else default_cache()
     if source == "origin":
         cache = AssetCache(root)
-        missing = [e.name for e in sel if not cache.texture(e.texture, e.spec["res"])]
-        return {"source": "origin", "sets": len(sel) - len(missing), "missing": missing, "root": str(root)}
+        missing = sorted(t for t, res in want.items() if not cache.texture(t, res))
+        return {"source": "origin", "sets": len(want) - len(missing), "missing": missing, "root": str(root)}
     if source != "hub":
         raise ValueError(f"source {source!r}: use 'hub' (the library dataset) or 'origin' (Poly Haven, ambientCG)")
-    return _fetch_hub({e.texture for e in sel}, root, repo)
+    return _fetch_hub(set(want), root, repo)
 
 
 def _fetch_hub(want: set[str], root: Path, repo: str | None) -> dict:
@@ -182,4 +212,5 @@ def _fetch_hub(want: set[str], root: Path, repo: str | None) -> dict:
     return {"source": "hub", "downloaded": got, "kept": kept, "missing": missing, "root": str(root)}
 
 
-__all__ = ["FAMILIES", "PRESET_FAMILY", "PoolLook", "entries", "families", "family_of", "fetch", "swap"]
+__all__ = ["FAMILIES", "PRESET_FAMILY", "PoolLook", "entries", "families", "family_of", "fetch", "look_textures",
+           "swap"]

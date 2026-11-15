@@ -16,7 +16,9 @@ python -m alloy.sysid report my_panda.sysid.json                   # 3. read it 
 
 `demo` simulates the robot with hidden parameters (servo stiffness x 0.7, kd and joint damping x 1.4, dry friction of
 2 % of the joint's torque, a 12 ms action delay) and sensor noise, and writes that as a recording. The fit should find
-the hidden values again. `--robot` takes a shipped robot's name or a robot file (MJCF, URDF, USD).
+the hidden values again. `--robot` takes a shipped robot's name or a robot file whose joints have position servos:
+MJCF (a `<position>` or affine `<general>` actuator per joint) or USD (joint drives with a stiffness). A URDF file
+carries no servo gains, so the commands refuse it and say so: write that robot as MJCF with its actuators.
 
 ```bash
 python -m alloy.sysid demo --robot panda --out take.csv            # prints the hidden values the fit should find
@@ -89,7 +91,7 @@ print(alloy.sysid.report(result, folder="sysid_report"))      # text; plots too 
 | `--data` (`data`) | required | CSV, HDF5 or LeRobot dataset folder (or a `Recording`) |
 | `--out` | `robot.sysid.json` | the result file |
 | `--fit` (`parameters`) | `kp,kd,damping,friction,delay` | add `armature`, `torque_limit`; or `gains`, `all` |
-| `--joints` (`joints`) | every servoed joint | comma-separated joint names |
+| `--joints` (`joints`) | every servoed joint | comma-separated joint names; the recording's other joints still replay their motion, with the robot file's values |
 | `--worlds` (`worlds`) | 64 | candidates per generation, at least 16 |
 | `--generations` (`generations`) | 30 | search generations |
 | `--seed` (`seed`) | 0 | the same seed gives the same file on the CPU |
@@ -103,7 +105,8 @@ What is fitted, per joint:
 - Servo stiffness `kp`; `kd` and joint damping as one sum; dry friction (MJCF `frictionloss`); action delay. Both
   `kd` and damping are a torque against joint velocity on a position servo, so a recording determines only their sum.
   It is split in the robot file's ratio (all to damping when the file has neither).
-- With `--fit`: `armature` and `torque_limit`.
+- With `--fit`: `armature` and `torque_limit` (searched from a fifth of the robot file's limit to five times it;
+  the file's limit is the smaller of the joint's and its actuator's, MJCF `actuatorfrcrange` and `forcerange`).
 
 How: the recorded commands are replayed in `worlds` parallel worlds, each holding one candidate set of parameters per
 joint. Each joint has its own CMA-ES search, scored by its own tracking error, and all searches share the same
@@ -172,8 +175,10 @@ sim = alloy.build(scene)
 - The values are written into every world at build, before `scene.randomize` rows are drawn.
 - The delay holds each joint's commanded target back by the fitted time, whatever wrote the target:
   `sim.set_targets` and `sim.run(targets=...)` (both tested), and by construction anything else that writes the
-  control arrays before a step, such as a Gym env's actions (not tested there yet). It costs two host array copies
-  per control period for a robot with a delay; `sim.reset()` clears the delayed history.
+  control arrays before a step, such as a Gym env's actions. It costs two host array copies
+  per control period for a robot with a delay. The first command after the build or a reset is delayed too: until
+  it arrives each servo holds its joint where it is at that moment (checked with `sim.set_targets`, `sim.reset()`
+  and a Gym env's absolute and delta actions and masked resets, on the CPU).
 - `scene.to_json()` keeps the values, so no file is needed later. `scene.save()` (cards) does not keep them and
   warns: pass `sysid=` again on a scene loaded from cards. A file can be written by hand: it needs
   `"schema": "alloy.sysid/1"` and a `"joints"` block of `{joint: {kp, kd, damping, friction, armature, torque_limit,
@@ -219,6 +224,7 @@ see [Randomizing robots](randomize_robots.md).
 | `'mass' is not a parameter the fit knows` | the message lists the names (the `--fit` row above) |
 | `fit needs worlds >= 16 and generations >= 1` | use at least 16 worlds |
 | `robot 'x' is neither a file nor one shipped robot` | pass a robot file or a name the message lists |
+| `robot 'bot.urdf' has no position-servoed joint to identify` | give the robot as MJCF with a `<position>` actuator per joint (or USD with joint drives) |
 | `reading an HDF5 recording needs the h5py package, which is not installed` | `pip install h5py` |
 | `reading a LeRobot dataset needs the pyarrow package, which is not installed` | `pip install pyarrow` |
 | `overlay plots needs the matplotlib package, which is not installed` (a note) | `pip install matplotlib` |

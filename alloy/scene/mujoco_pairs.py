@@ -11,6 +11,7 @@ the dynamic geom's solref governs unlisted contacts (MuJoCo averages solref by s
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -22,7 +23,7 @@ import numpy as np
 from alloy._vendor import newton
 
 from alloy.scene import pairs as pt
-from alloy.scene.native_gains import DEFAULT_IMP, contact_zeta, native_gains, stable_ke
+from alloy.scene.native_gains import DEFAULT_IMP, impact_applies, impact_gains, stable_ke
 from alloy.scene.template import TemplateObject
 
 log = logging.getLogger("alloy.scene")
@@ -181,7 +182,8 @@ def _maybe_row(b, sa, sb, objs, index, table, stiffness, step=(None, "implicitfa
     if b0 == b1 or (m0 <= 0.0 and m1 <= 0.0) or _excluded(b, sa, sb, objs):
         return 0
     memo = {} if memo is None else memo                  # per-object values over one pair_rows call
-    (i, ccd0, drawn0, floor0), (j, ccd1, drawn1, floor1) = (_obj_facts(objs, index, o, memo) for o in (o0, o1))
+    facts = (_obj_facts(objs, index, o, memo, step[1]) for o in (o0, o1))
+    (i, ccd0, drawn0, floor0), (j, ccd1, drawn1, floor1) = facts
     mu = float(table[i, j, 1])
     mu_max = max(float(b.shape_material_mu[s0]), float(b.shape_material_mu[s1]))
     ccd = ccd0 or ccd1
@@ -195,7 +197,7 @@ def _maybe_row(b, sa, sb, objs, index, table, stiffness, step=(None, "implicitfa
     floors = [f for f, m in ((floor0, m0), (floor1, m1)) if m > 0.0]
     zeta_min = 1.0 if flat else max([ZETA_CCD if ccd else 0.0, *floors])
     K, e = float(stiffness[i, j]), float(table[i, j, 2])
-    ke, kd = native_gains(K, m_eff, e, imp, dt=step[0], zeta_min=zeta_min, integrator=step[1])
+    ke, kd, zeta = impact_gains(K, m_eff, e, imp, dt=step[0], zeta_min=zeta_min, integrator=step[1])
     rolling = max(float(b.shape_material_mu_rolling[s0]), float(b.shape_material_mu_rolling[s1]))
     solref = (2.0 / kd, 0.5 * kd * np.sqrt(1.0 / ke))
     values = {
@@ -208,20 +210,23 @@ def _maybe_row(b, sa, sb, objs, index, table, stiffness, step=(None, "implicitfa
         "mujoco:pair_gap": max(float(b.shape_gap[s0] or 0.0), float(b.shape_gap[s1] or 0.0)),
         "mujoco:pair_friction": (mu, mu, float(table[i, j, 3]), rolling, rolling),
     }
-    values.update(_row_fit_values(b, (b0, b1), fit or FitBodies(), m_eff, (K, contact_zeta(e, zeta_min), imp, step)))
+    # pair_fit resizes with K (1 - imp) w: under impact-matched gains record K / (1 - imp), so a refit row is too
+    k_fit = K / (1.0 - imp) if impact_applies(step[1], zeta_min) else K
+    values.update(_row_fit_values(b, (b0, b1), fit or FitBodies(), m_eff, (k_fit, zeta, imp, step)))
     b.add_custom_values(**values)
     return 1
 
 
-def _obj_facts(objs: Sequence[TemplateObject], index: dict[str, int], o: int,
-               memo: dict) -> tuple[int, bool, bool, float]:
-    """(material index, CCD-backed, draws a surface value, resting damping floor) of object ``o``, kept in ``memo``."""
+def _obj_facts(objs: Sequence[TemplateObject], index: dict[str, int], o: int, memo: dict,
+               gains: str = "implicitfast") -> tuple[int, bool, bool, float]:
+    """(material index, CCD-backed, draws a surface value, resting damping floor under the entry's ``gains`` mode) of
+    object ``o``, kept in ``memo``."""
     from alloy.scene.entries import ccd_backed
     from alloy.scene.native_gains import resting_floor
 
     if ("obj", o) not in memo:
         t = objs[o]
-        memo[("obj", o)] = (index[t.material_key], ccd_backed(t), _draws_surface(t), resting_floor(t))
+        memo[("obj", o)] = (index[t.material_key], ccd_backed(t), _draws_surface(t), resting_floor(t, gains))
     return memo[("obj", o)]
 
 
@@ -365,6 +370,9 @@ def add_native_pairs(b: newton.ModelBuilder, objs: Sequence[TemplateObject], ent
                      lookup, combine: str, dt: float | None = None, integrator: str = "implicitfast") -> int:
     """Build the host pair tables for the template materials and add rows + solmix (assembler hook); row gains are
     capped for stability at `dt` under the entry's `integrator` (native_gains)."""
+    from alloy.scene.native_gains import planning_rule, static_entry  # noqa: PLC0415
+
     built = pt.build_tables(entries, lookup, combine)
     static_solmix(b, objs)
-    return pair_rows(b, objs, [e.key for e in entries], built.table, built.stiffness, dt, integrator)
+    with planning_rule() if static_entry(objs) else contextlib.nullcontext():   # a free box keeps the entry static
+        return pair_rows(b, objs, [e.key for e in entries], built.table, built.stiffness, dt, integrator)

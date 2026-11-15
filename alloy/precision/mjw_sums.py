@@ -51,7 +51,7 @@ def grad_handler(args: tuple, launch: Launch) -> None:
     nworld, nv = int(launch.dim[0]), int(launch.dim[1])
     smooth, constraint, ma, _changed, done = launch.inputs
     wp.launch_tiled(_update_gradient_grad_tiled, dim=nworld, inputs=[nv, smooth, constraint, ma, done],
-                    outputs=launch.outputs, block_dim=GRAD_LANES)
+                    outputs=launch.outputs, block_dim=GRAD_LANES, device=launch.outputs[0].device)
 
 
 
@@ -100,7 +100,7 @@ def qfrc_handler(args: tuple, launch: Launch) -> None:
     s = solve_bounds(J)
     wp.launch_tiled(_qfrc_tile, dim=int(launch.dim[0]),
                     inputs=[int(qfrc.shape[1]), nefc, s["rowmax"], rownnz, rowadr, colind, J, force, changed, done],
-                    outputs=[s["qacc"], qfrc], block_dim=BOUND_LANES)
+                    outputs=[s["qacc"], qfrc], block_dim=BOUND_LANES, device=qfrc.device)
 
 
 @wp.kernel
@@ -211,7 +211,7 @@ def tree_handler(dtype: Any, skip_world_parent: bool):
         if body_tree.ptr != _DEEPEST.get(parentid.ptr):
             return  # this level is already in the range sums
         wp.launch_tiled(kernel, dim=int(value.shape[0]), inputs=[subtree, value_in, snap], outputs=[value],
-                        block_dim=TREE_LANES)
+                        block_dim=TREE_LANES, device=value.device)
 
     return handle
 

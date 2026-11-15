@@ -105,6 +105,7 @@ editable copy. A `Scene` round-trips through `scene.to_json()` / `alloy.Scene.fr
 - `sim.run(seconds, record=[...], every=1, targets=None)` returns an `alloy.Trajectory` (a dict of numpy arrays,
   `(frames, worlds, ...)`, plus `traj.meta` with `wall_s`, `physics_steps` and a health summary). `traj.world(w)`
   drops the world axis; `traj.save(path, **extra)` writes an `.npz`. Consecutive `run` calls continue the same sim.
+  `sim.run` steps whole control periods (`round(seconds / dt)`); its targets are checked even when that is none.
 - `sim.step(n)` advances `n` control periods without recording; `sim.reset()` returns every world to its start
   (`sim.t` keeps counting from the build; a running `sim.drive` continues through a masked reset, the per-world reset
   a `VectorEnv` makes, while `sim.reset()` removes it).
@@ -114,9 +115,11 @@ editable copy. A `Scene` round-trips through `scene.to_json()` / `alloy.Scene.fr
 - Rigid shapes: `add_box(name, size=(x, y, z))`, `add_sphere(name, radius)`, `add_cylinder(name, radius, height)`,
   `add_capsule(name, radius, height)`,
   `add_mesh(name, path | vertices=, faces=, collision="convex" | "decompose" | "sdf" | "mesh")` (faces wind
-  counter-clockwise seen from outside; `"convex"` collides as the hull; `"decompose"` splits a concave mesh into
-  convex parts at build, cached, and needs the `import` extra (section 1), else the build raises
-  `FeatureUnavailableError` naming the command; `"sdf"` and `"mesh"` collide as the true concave shape, on Newton's
+  counter-clockwise seen from outside; `"convex"` collides as the mesh's hull, kept within 0.1 mm of it (up to 2,048
+  hull vertices; dense meshes such as scans ran up to 39 % fewer steps per second on an L4, 24 % on the CPU:
+  `hull_vertices=64` keeps the earlier fast 64-vertex hull); `"decompose"` splits a concave mesh into convex parts at
+  build, cached, and needs the `import` extra (section 1), else the build raises `FeatureUnavailableError` naming the
+  command; `"sdf"` and `"mesh"` collide as the true concave shape, on Newton's
   contacts). A body that moves on `sdf` or `mesh` contacts settles within 0.25 mm of its rest height but keeps a
   vibration of up to 0.3 mm at 2-25 mm/s (it is never fully at rest), for bodies of about 40 g to 35 kg; lighter or
   heavier ones make the world INVALID (`sim.check()`), so use `convex` or `decompose` for parts that move unless you
@@ -133,9 +136,13 @@ editable copy. A `Scene` round-trips through `scene.to_json()` / `alloy.Scene.fr
   offsetting it, so give a range around it; for a robot it replaces a coordinate of the robot's `pos`, which moves
   the whole file: section 5), `density`, `friction`, `youngs` or the card path
   `material.surface.mu_dynamic`; `mass` and `restitution` are not: randomize `density`, set `restitution=` for all.
-  On MuJoCo contacts (rigid bodies and robots) a restitution of 0 still rebounds at about 0.1-0.15 of the impact
-  speed, and every restitution reads a little higher than set (0.5 gives about 0.55); a fix is planned for a later
-  release (`docs/guide/scenes.md`, Materials and friction).
+  A ball rebounds as set in a scene whose free bodies are all balls: within 0.05 of its restitution with up to 8 of
+  them (or any number on the CPU's default route), within about 0.08, varying with impact speed, with more than 8 on
+  MuJoCo Warp; a restitution of 0 stops it within 0.07 of the impact speed. Everything else keeps the earlier
+  contacts: boxes, capsules, cylinders and meshes (they rebound at most about 0.1-0.2 whatever the setting), a ball in
+  a scene with one of them, balls of about 0.1 kg and under, and every body in a scene with a robot, a kinematic
+  object or a gripped chain, where a restitution of 0 rebounds at about 0.1-0.15 of the impact speed and every
+  restitution reads a little higher than set (0.5 gives about 0.55) (`docs/guide/scenes.md`, Materials and friction).
 - Materials and friction: `scene.add_material("my_rubber", density=1100, friction=1.2)`;
   `scene.set_friction("a", "b", 0.9)` for one pair of objects. Contact uses one friction coefficient per pair of
   materials. There is no separate static friction: a body starts to slide at the same coefficient it slides with. For
@@ -213,8 +220,9 @@ print(sim.state(world=0)["arm/shoulder.q"])
   to the world unless the file gives it a joint. A free base (`<freejoint/>` on the root body, e.g. a carton with
   flaps) can start per world (`pos=(worlds, 3)`, `scene.randomize("carton", "x", lo, hi)`) and move with
   `sim.set_pose("carton", pos=...)`, links following. A robot's `pos` moves the whole file in every form (tuple,
-  per-world rows, drawn coordinates): the root body ends there plus where the file places it (a base at
-  `pos="0 0 0.3"` in its file starts 0.3 m above `pos`); `sim.set_pose` puts the root body itself at `pos`.
+  per-world rows, drawn coordinates), each world by its own row, the file's own floor and the parts it welds to the
+  world included (a Go2 scene file's floor and obstacle): the root body ends there plus where the file places it (a
+  base at `pos="0 0 0.3"` in its file starts 0.3 m above `pos`); `sim.set_pose` puts the root body itself at `pos`.
   Robot shapes make contacts from 5 mm apart (`contact_gap=`).
 - Shipped robots (MuJoCo Menagerie and makers' files, licences beside them): `from alloy.cards.library import
   default_root`, then `scene.add_robot("panda", default_root() / "robots" / "emb_e2_panda" / "scene.xml")`. Arms:
@@ -349,7 +357,7 @@ import alloy
 scene = alloy.Scene(dt=0.01)
 scene.add_ground()
 scene.add_box("stand", size=(0.2, 0.2, 0.3), pos=(0, 0, 0.15), static=True)
-scene.add_cloth("sheet", size=(0.5, 0.5), pos=(0, 0, 0.5), resolution=20, mass=0.1)   # flat, 20 x 20 vertices
+scene.add_cloth("sheet", size=(0.5, 0.5), pos=(0, 0, 0.5), resolution=20, mass=0.1)   # 20 x 20 cells (21 x 21 vertices)
 sim = alloy.build(scene)
 print({name: r["route"] for name, r in sim.routes().items()})      # which solver each object went to
 traj = sim.run(1.0, record=["sheet"], every=10).world(0)           # sheet.points: (frames, vertices, 3)
@@ -493,7 +501,7 @@ Classes: `alloy.SceneError` (bad argument or card), `alloy.BuildError` (could no
 raises `AttributeError`.
 
 - Images: `sim.render(width=320, height=240, path="look.png")` (world 0, auto-framed, uint8 `(H, W, 3)`; scanned
-  library objects show their photo textures, with Pillow from the `import` extra);
+  library objects show their photo textures);
   `sim.render(alloy.Camera("front", look_at=(eye, target), width=128, height=128))` renders every world;
   `cam.render_torch(sim)` gives a torch tensor on the GPU for training. Depth and ids: `sim.render(cam,
   output="depth")` (metres, `inf` = no hit) or `"segmentation"`, or a tuple `("rgb", "depth", "segmentation")` for a
@@ -553,8 +561,8 @@ raises `AttributeError`.
   (`alloy.envs.actuators`; no learned actuators). None is validated on a real robot or on a legged robot.
   `docs/guide/rl.md`. Legged robots: `from alloy.envs.loco import go2_velocity` (the Go2 following velocity commands
   on flat ground) and `go2_rough` (the same on a heightfield of rough, wavy and block tiles with a level curriculum:
-  the policy walks blind, with no height scan, and there are no stairs or gaps; one training run measured, at a mean
-  level of 1.56 of 4); train with `python -m alloy.envs.loco.train` (`--terrain rough`); no actuator model, not run on
+  the policy walks blind, with no height scan, and there are no stairs or gaps; one training run measured on 0.1.2, at a
+  mean level of 1.56 of 4); train with `python -m alloy.envs.loco.train` (`--terrain rough`); no actuator model, not run on
   a real robot: `docs/guide/locomotion.md`.
 - Imitation learning: `from alloy.il import Recorder, HDF5Writer`; `Recorder(env, [HDF5Writer("demos.hdf5")])`
   records a `VectorEnv`'s episodes as you step it (`rec.reset`, `rec.step`) into HDF5 in the robomimic layout

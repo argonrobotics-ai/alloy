@@ -22,6 +22,10 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   kg.](../known_gaps/rigid-sdf-mesh-contact-limits.md)
 - [Light slender parts such as pens and pencils spin and roll slower about their thin axis, because their inertia is
   raised at build.](../known_gaps/rigid-slender-spin-floor.md)
+- [Pushing one block out of a stack shakes the whole stack: the blocks resting on the pushed block are dragged along,
+  more than real friction allows.](../known_gaps/rigid-push-drags-stack.md)
+- [A body spinning fast on one sharp contact point off its axis can gain energy: a top at 250 rad/s gained 2 rad/s
+  in 4.5 s.](../known_gaps/rigid-fast-spin-off-axis-point.md)
 - [With more than 8 free bodies on a GPU, a body spinning in free flight turns only to first order; the CPU's default
   route keeps rk4 at 3-6x the cost per step.](../known_gaps/rigid-clutter-rotation.md)
 - [Stacks of free bodies step 2.4x slower by default than stock Newton MuJoCo, and the opt-in fast mode that closes
@@ -73,8 +77,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   it.](../known_gaps/cloth-falling-sheets-pass-through.md)
 - [A rigid ball with a radius under about 0.7 of the sheet's cell size can go through a cloth or film sheet without
   touching it.](../known_gaps/cloth-small-body-passes-through.md)
-- [A folded cloth keeps creeping under the default cloth accuracy instead of coming to rest within a fraction of a
-  second.](../known_gaps/cloth-fold-unsettled-default.md)
+- [A light folded cloth keeps creeping under the default cloth accuracy: a towel at a tenth of its weight, or a sheet
+  far lighter per vertex than the scene's other cloth.](../known_gaps/cloth-fold-unsettled-default.md)
 - [Folded T-shirt sleeves spring part-way back at the default mesh and contact stiffness and do not stay
   folded.](../known_gaps/cloth-sleeve-fold-springback.md)
 - [Cloth held between pads by friction alone creeps out below the Coulomb limit, at about 2.9 mm/s at half the limit

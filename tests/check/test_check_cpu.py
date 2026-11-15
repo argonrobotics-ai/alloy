@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -54,7 +55,31 @@ def test_resting_cube_runs_clean():
     assert report.metrics["rest_drift"]["cube_beech_30"]["drift_m"] < 5e-4
 
 
-def test_unknown_object_is_a_card_error_with_close_match():
+@pytest.fixture(params=["hub_off", "fresh_install"])
+def hub(request, monkeypatch):
+    """The Hub turned off, or a fresh install faked: no imported library, so an object no library holds goes to the
+    Hub, which (a stand-in, no network) has no such name. Yields the mode and the names the Hub was asked for."""
+    from alloy.assets.hub import lazy
+    from alloy.assets.hub.source import REPO_ENV, HubError
+
+    hub = SimpleNamespace(fresh=request.param == "fresh_install", asked=[])
+    if not hub.fresh:
+        monkeypatch.setenv(REPO_ENV, "")
+        yield hub
+        return
+
+    def unknown(lib, name, repo=None):
+        hub.asked.append(name)
+        raise HubError(f"not in the object library: {name}", "check the name (close: none); `alloy fetch --list` "
+                       "lists them", field="names")
+
+    monkeypatch.setattr(lazy, "hub_mode", lambda store=None: True)
+    monkeypatch.setattr(lazy, "ensure", unknown)
+    yield hub
+
+
+def test_unknown_object_is_a_card_error_with_close_match(hub):
+    # one error on a fresh install too: the card rules' close library name, not also the Hub's failed fetch
     bad = ct.SceneCard(robots=(), objects=(TABLE, ct.Placement("cube_beech_3", (0, 0, 0.015, 0, 0, 0, 1))))
     report = alloy.check(bad, device="cpu")
     (f,) = report.errors()
@@ -155,8 +180,6 @@ def test_check_object_rests_on_a_generated_floor():
     assert report.ok and report.scene == "drop test: cube_beech_30", report.summary()
     assert report.metrics["rest_drift"]["cube_beech_30"]["settle_m"] == pytest.approx(5e-4, abs=1e-4)   # the gap
     assert not any("alloy_check_floor" in f.objects for f in report.findings)
-    with pytest.raises(ValueError, match="library object name"):
-        alloy.check.check_object("no_such_object_xyz")
 
 
 def test_extra_run_checks_join_the_report():
@@ -181,7 +204,7 @@ def test_extra_run_checks_join_the_report():
         Finding("Soft Check", "warn", "m", "f")
 
 
-def test_check_object_wider_than_the_default_floor():
+def test_check_object_wider_than_the_default_floor(hub):
     import dataclasses
 
     import numpy as np
@@ -194,3 +217,14 @@ def test_check_object_wider_than_the_default_floor():
     report = alloy.check.check_object(plate, worlds=1, seconds=0.1, device="cpu")
     assert report.checks["cards"] != "fail" and report.checks["overlap"] == "pass", report.summary()
     assert report.metrics["scene"]["bodies"] == 1
+    assert hub.asked == []                       # a card of the caller's own is never looked up on the Hub
+
+
+def test_check_object_unknown_name(hub):
+    if not hub.fresh:
+        with pytest.raises(ValueError, match="library object name"):
+            alloy.check.check_object("no_such_object_xyz")
+        return
+    report = alloy.check.check_object("no_such_object_xyz", device="cpu")    # a fresh install asks the Hub
+    (f,) = report.errors()
+    assert hub.asked == ["no_such_object_xyz"] and "alloy fetch --list" in f.fix and not report.ok

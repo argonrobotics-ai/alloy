@@ -27,6 +27,7 @@ import numpy as np
 
 from alloy.envs.errors import EnvError
 from alloy.envs.layout import Layout
+from alloy.envs.state import rotate
 
 
 @dataclass(frozen=True)
@@ -101,7 +102,7 @@ class Randomizer:
                 "c": xp.asarray(ctrl[0], "int64") if ctrl else None,
                 "lo": float(rows.lower[0]), "hi": float(rows.upper[0]),
                 "carry": [self._carried(b) for b in j.carry],
-                "axis": self._slide_axis(j.name, int(rows.qd[0, 0])) if j.carry else None}
+                "axis": self._slide_frame(j.name, rows.qd[:, 0]) if j.carry else None}
 
     def _carried(self, name: str) -> dict[str, Any]:
         """A carried free body's plan, or a particle object's (W, n) rows into ``state.particle_q``."""
@@ -113,19 +114,27 @@ class Randomizer:
                            f"{sorted(lay.free) + sorted(lay.particles) or 'none'}", field="carry")
         return self._plan(Jitter(name, "body"))
 
-    def _slide_axis(self, name: str, dof: int) -> np.ndarray:
-        """World direction of a slide joint (world 0, at the build pose): what a carried object moves along."""
+    def _slide_frame(self, name: str, dofs: np.ndarray) -> dict[str, Any]:
+        """A slide joint's direction in its parent body's frame, (W, 3), and the parent's body row in each world (None
+        for a slide on the world): what a carried object moves along, turned by the parent's pose at each reset."""
         m = self.engine.model
-        j = int(np.searchsorted(m.joint_qd_start.numpy(), dof, side="right") - 1)
-        if int(m.joint_type.numpy()[j]) != 0:                         # newton.JointType.PRISMATIC
+        joints = np.searchsorted(m.joint_qd_start.numpy(), np.asarray(dofs), side="right") - 1
+        if np.any(m.joint_type.numpy()[joints] != 0):                  # newton.JointType.PRISMATIC
             raise EnvError(f"carry= needs a slide joint, {name!r} is not one", "jitter the slide joints that carry "
                            "the object (x, y, z) with carry=[...]", field="carry")
-        axis = m.joint_axis.numpy()[dof].astype(np.float64)
-        rot = _matrix(m.joint_X_p.numpy()[j, 3:7])
-        parent = int(m.joint_parent.numpy()[j])
-        if parent >= 0:
-            rot = _matrix(self.engine.state.body_q.numpy()[parent, 3:7]) @ rot
-        return rot @ axis
+        x_p, axes = m.joint_X_p.numpy(), m.joint_axis.numpy()
+        local = np.stack([_matrix(x_p[j, 3:7]) @ axes[d].astype(np.float64) for j, d in zip(joints, dofs)])
+        parent = m.joint_parent.numpy()[joints]
+        return {"local": self.xp.asarray(local), "parent": self.xp.asarray(parent, "int64") if parent.min() >= 0
+                else None}
+
+    def _carry_axis(self, frame: dict[str, Any], mask: Any) -> Any:
+        """(W, 3) the slide's world direction now, after the jitters before it (they may turn its parent)."""
+        if frame["parent"] is None:
+            return frame["local"]
+        self._forward_kinematics(mask)
+        q = self.xp.view(self.engine.state.body_q)[frame["parent"]]
+        return rotate(self.xp, q[:, 3:7], frame["local"])
 
     def apply(self, mask: Any) -> None:
         """Jitter the worlds in the bool (W,) ``mask`` (just reset). Example: ``randomizer.apply(done)``."""
@@ -149,11 +158,12 @@ class Randomizer:
         xp, state = self.xp, self.engine.state
         values, delta = self._joint_values(j, plan, mask)
         xp.update(state.joint_q, lambda q, p=plan, v=values: q.__setitem__(p["q"], v))
+        axis = self._carry_axis(plan["axis"], mask) if plan["carry"] else None
         for held in plan["carry"]:
             if "points" in held:
-                xp.update(state.particle_q, lambda x, h=held, p=plan, d=delta: self._shift_points(x, h, p, d))
+                xp.update(state.particle_q, lambda x, h=held, a=axis, d=delta: self._shift_points(x, h, a, d))
             else:
-                xp.update(state.joint_q, lambda q, h=held, p=plan, d=delta: self._shift(q, h, p, d))
+                xp.update(state.joint_q, lambda q, h=held, a=axis, d=delta: self._shift(q, h, a, d))
         return values
 
     def _body(self, q: Any, j: Jitter, plan: dict[str, Any], mask: Any) -> None:
@@ -177,18 +187,18 @@ class Randomizer:
         new = xp.where(mask, xp.clip(centre + noise, plan["lo"], plan["hi"]), current)
         return new, new - current
 
-    def _shift(self, q: Any, held: dict[str, Any], plan: dict[str, Any], delta: Any) -> None:
-        """Move a carried free body by ``delta`` (W,) along the slide joint's world axis."""
+    def _shift(self, q: Any, held: dict[str, Any], axis: Any, delta: Any) -> None:
+        """Move a carried free body by ``delta`` (W,) along the slide joint's world axis (W, 3)."""
         xp = self.xp
-        d_world = delta[:, None] * xp.asarray(plan["axis"])[None, :]
+        d_world = delta[:, None] * axis
         d_joint = (held["rot"][None, :, :] * d_world[:, None, :]).sum(-1)
         rows = held["q0"][:, None] + xp.asarray(np.arange(3), "int64")[None, :]
         q[rows] = q[rows] + d_joint
 
-    def _shift_points(self, x: Any, held: dict[str, Any], plan: dict[str, Any], delta: Any) -> None:
-        """Move a carried particle object's points by ``delta`` (W,) along the slide joint's world axis."""
+    def _shift_points(self, x: Any, held: dict[str, Any], axis: Any, delta: Any) -> None:
+        """Move a carried particle object's points by ``delta`` (W,) along the slide joint's world axis (W, 3)."""
         rows = held["points"]
-        x[rows] = x[rows] + delta[:, None, None] * self.xp.asarray(plan["axis"])[None, None, :]
+        x[rows] = x[rows] + delta[:, None, None] * axis[:, None, :]
 
     def _forward_kinematics(self, mask: Any) -> None:
         """Body poses of the masked worlds from their (jittered) joint coordinates; other worlds are untouched."""

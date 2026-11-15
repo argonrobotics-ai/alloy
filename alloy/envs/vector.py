@@ -32,7 +32,7 @@ from typing import Any
 import numpy as np
 
 from alloy.coupling.world_clock_writes import refuse_world_clock
-from alloy.envs import spaces
+from alloy.envs import reset_loads, spaces
 from alloy.envs.actions import ActionWriter
 from alloy.envs.backend import pick_backend
 from alloy.envs.episode import EpisodeStats, Goals, LiveArrays, StartState
@@ -40,7 +40,8 @@ from alloy.envs.errors import EnvError
 from alloy.envs.health import WorldHealth
 from alloy.envs.layout import Layout
 from alloy.envs.randomize import Randomizer
-from alloy.envs.state import BatchState, Rows
+from alloy.envs.sim_keys import SimKeys
+from alloy.envs.state import BatchState, Rows, state_keys
 from alloy.envs.task import POLICY_GROUP, Observer, Rewarder, Task
 
 log = logging.getLogger("alloy.envs")
@@ -99,9 +100,11 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         self.randomizer = Randomizer(self.task.randomize, self.layout, engine, self.xp)
         self.xp.seed(seed)
         self.start = StartState(engine, self.layout, self.xp)
+        self._sim_keys = SimKeys(self.sim, self.xp, state_keys(self.layout))   # temperature, plastic_strain, ...
         self.stats = EpisodeStats(self.num_envs, self.writer.size, self.xp)
         self._pending = self.xp.zeros(self.num_envs, "bool")
         self._ended = self.xp.zeros(self.num_envs, "bool")            # autoreset="disabled": ended, not yet reset
+        self._frozen = self.xp.zeros(self.num_envs, "bool")           # went INVALID in this episode
         self._ended_flags = (self._ended, self._ended)                # (terminated, truncated) when each ended
         self.invalid_episodes = self.xp.zeros(self.num_envs, "int32")   # per world, kept across resets
         self.together = not per_world_reset(engine)
@@ -135,8 +138,9 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         st = self.stats
         extra = {"steps": st.steps, "t": self.xp.float(st.steps) * float(self.sim.dt), "action": st.action,
                  **self.goals.extra()}
-        start = BatchState(self.start.view, self._rows, extra=extra)
-        return BatchState(LiveArrays(self.sim.engine, self.xp), self._rows, extra=extra, start=start)
+        start = BatchState(self.start.view, self._rows, extra=extra, derived=self._sim_keys.start)
+        return BatchState(LiveArrays(self.sim.engine, self.xp), self._rows, extra=extra, start=start,
+                          derived=self._sim_keys.live)
 
     def obs_names(self, group: str | None = None) -> list[str]:
         """A label per column of the state observation (of one group: ``env.obs_names("critic")``; default: the
@@ -200,20 +204,25 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         for layer in self.layers:
             actions = layer.on_action(actions)
         clipped = self.writer.apply(actions)
+        self._applied(clipped)
         self.sim.step(1)
         self.stats.act(self._policy_action(sent))
         s = self.state
         reward, terms = self.rewarder(s)
         terminated, truncated, success, invalid = self._ends(s)
+        froze = invalid & ~self._frozen                # counted and penalised once, on the step it froze
+        self._frozen = self._frozen | invalid
         frozen = self.xp.any(invalid)                  # a frozen world earns only its penalty and shows zeros
         if frozen:
             reward, terms = _void(reward, invalid), {k: _void(v, invalid) for k, v in terms.items()}
-            self.invalid_episodes = self.invalid_episodes + (invalid & ~self._pending & ~self._ended)   # once
-        reward = reward + self.task.invalid_penalty * self.xp.float(invalid)
+            self.invalid_episodes = self.invalid_episodes + (froze & ~self._pending & ~self._ended)
+        reward = reward + self.task.invalid_penalty * self.xp.float(froze)
         fresh = None
         if self.autoreset == "disabled":
             reward, terminated, truncated, fresh = self._hold_ended(reward, terminated, truncated)
         self.stats.add(reward)
+        if self._after_reward(terminated | truncated):
+            s = self.state                             # a subclass changed what the observation reads
         obs = self._observe(s)
         if frozen:
             obs = _void(obs, invalid)
@@ -234,6 +243,16 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
             self._pending = done
         return obs, reward, terminated, truncated, info
 
+    def _applied(self, targets: Any) -> None:
+        """Hook for subclasses: the (W, A) targets the writer wrote this step, after the layers (a delay). Default:
+        nothing. Example: internal."""
+
+    def _after_reward(self, done: Any) -> bool:
+        """Hook for subclasses, after the step's reward and ends and before its observation (``done``: the worlds
+        about to restart). Return True when it changed what the observation reads, so the state is read again.
+        Default: nothing. Example: internal."""
+        return False
+
     def _camera_source(self) -> Any:
         """What the cameras render: the fast tracer's scene of the sim, the one ``Camera.render(sim)`` uses, so a
         policy image shows what a video of the sim shows: library looks, scanned objects' photo textures, cloth, soft
@@ -252,8 +271,9 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         failure = _as_bool(xp, task.failure(s)) if task.failure is not None else none
         terminated = failure | (success & task.end_on_success)
         truncated = s["steps"] >= task.max_steps
-        if self.together:                      # one episode clock for every world (see ``together``)
-            return none, truncated, success, invalid
+        if self.together:                      # one episode clock for every world (see ``together``); a world
+            term = truncated & invalid if task.on_invalid == "terminate" else none   # frozen in it ends with it
+            return term, truncated & ~term, success, invalid
         if task.on_invalid == "terminate":
             terminated = terminated | invalid
         else:
@@ -269,8 +289,8 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         info["success"], info["invalid"] = info["success"] & ~p, info["invalid"] & ~p
         info["terms"] = {k: xp.where(p, 0.0, v) for k, v in info["terms"].items()}
         w = getattr(self.writer, "inner", self.writer)
-        if hasattr(w, "target") and hasattr(w, "rows"):
-            info["targets"] = xp.where(p[:, None], xp.view(w.target)[w.rows], info["targets"])
+        if hasattr(w, "current"):
+            info["targets"] = xp.where(p[:, None], w.current(), info["targets"])
         return self._observe(self.state, only=p), xp.where(p, 0.0, reward), terminated & ~p, truncated & ~p
 
     def _hold_ended(self, reward: Any, terminated: Any, truncated: Any) -> tuple[Any, Any, Any, Any]:
@@ -300,8 +320,10 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         import warp as wp  # noqa: PLC0415
 
         engine = self.sim.engine
+        reset_loads.before_reset(self.sim, every)       # drives and wrenches go as at sim.reset()
         with wp.ScopedDevice(self.device):
             engine.reset(None if every else wmask)
+        reset_loads.after_reset(self.sim, self.layout.world_of["body"], self.xp.to_numpy(mask), every)
         self.writer.reset(mask)
         if self.randomizer.jitters:
             self.randomizer.apply(mask)
@@ -311,6 +333,7 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
                 with wp.ScopedDevice(self.device):
                     engine.health.reset_reference(engine.state, wmask)
         self.start.capture(mask)
+        self._sim_keys.capture(mask)
         self.goals.resample(mask)
         for cam in self.cameras.values():             # per-world sensor state (tactile stick-slip) restarts with
             if "worlds" in _params(getattr(cam, "reset", None)):   # its world only
@@ -320,6 +343,7 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         self.stats.reset(mask)
         self._pending = self._pending & ~mask
         self._ended = self._ended & ~mask
+        self._frozen = self._frozen & ~mask
 
     def render(self) -> Any:
         """``render_mode="rgb_array"``: an (H, W, 3) uint8 image of world 0. Example: ``env.render()``."""

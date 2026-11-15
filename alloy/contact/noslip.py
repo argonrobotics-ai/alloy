@@ -224,7 +224,7 @@ class ScopedNoslip:
 
     def run(self, m: Any, d: Any) -> None:
         """Called by MuJoCo Warp's ``solve`` in place of its ``noslip`` (graph-capturable: one fixed launch)."""
-        wp.launch_tiled(self.kernel, dim=[d.nworld], block_dim=self.lanes, inputs=[
+        wp.launch_tiled(self.kernel, dim=[d.nworld], block_dim=self.lanes, device=d.solver_niter.device, inputs=[
             d.njmax, int(m.opt.noslip_iterations), int(m.nv), int(m.ntree), d.nefc, m.opt.noslip_tolerance,
             float(self.stall),
             _rows(m, d), self._contacts(m, d), self.trees, _mass(m, d), self.scratch, _dofs(d),

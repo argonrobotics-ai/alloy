@@ -128,6 +128,9 @@ class WorldOps:
             if hasattr(self.engine.stepper, "reset_contact_matching"):
                 self.engine.stepper.reset_contact_matching(mask)
         self.env.health.reset(mask)
+        frozen = getattr(self.env, "_frozen", None)      # the env's "went INVALID this episode" flag follows health
+        if frozen is not None:
+            frozen[world] = False
         _set_env_rows(self.env, rows["env"], world)
 
 
@@ -178,9 +181,8 @@ def _env_rows(env: Any, world: int) -> dict[str, Any]:
     for name, holder in _holders(env):
         for i, (container, key) in enumerate(_per_world_fields(holder, env.num_envs)):
             rows[f"{name}.{key}.{i}"] = _host(_get(container, key)[world])
-    idx, target = _target_rows(env, world)
-    if idx is not None:
-        rows["writer.target"] = _host(target[idx])
+    for key, idx, target in _target_rows(env, world):
+        rows[key] = _host(target[idx])
     return rows
 
 
@@ -191,22 +193,33 @@ def _set_env_rows(env: Any, rows: dict[str, Any], world: int) -> None:
             val = rows.get(f"{name}.{key}.{i}")
             if val is not None:
                 arr[world] = _like(arr, val)
-    idx, target = _target_rows(env, world)
-    if idx is not None and "writer.target" in rows:
-        target[idx] = _like(target, rows["writer.target"])
+    for key, idx, target in _target_rows(env, world):
+        if key in rows:
+            target[idx] = _like(target, rows[key])
 
 
-def _target_rows(env: Any, world: int) -> tuple[Any, Any]:
-    """Rows of the action writer's control array that belong to ``world`` (its joint targets), and the array as a
-    torch/NumPy view. (None, None) when the writer keeps no per-world map."""
-    w = env.writer
-    maps = getattr(w, "_world", None)
-    if not isinstance(maps, dict) or w.kind not in maps or w.target is None:
-        return None, None
-    rows, ids = (_host(x) for x in maps[w.kind])
-    target = wp.to_torch(w.target) if isinstance(w.target, wp.array) and "cuda" in str(w.target.device) else (
-        w.target.numpy() if isinstance(w.target, wp.array) else w.target)
-    return rows[ids == world], target
+def _target_rows(env: Any, world: int) -> list[tuple[str, Any, Any]]:
+    """Per control array the action writer writes (joint targets, MuJoCo controls, or both): its key in the rows, the
+    rows of it that belong to ``world``, and the array as a torch/NumPy view. Empty when the writer keeps no per-world
+    map. A hand-motion writer writes through its joint writer (``inner``)."""
+    w = getattr(env.writer, "inner", env.writer)
+    maps, groups = getattr(w, "_world", None), getattr(w, "groups", None)
+    if not isinstance(maps, dict) or not groups:
+        return []
+    out = []
+    for kind, target, _rows, _cols in groups:
+        if kind not in maps:
+            continue
+        rows, ids = (_host(x) for x in maps[kind])
+        key = "writer.target" if len(groups) == 1 else f"writer.target.{kind}"
+        out.append((key, rows[ids == world], _array_view(target)))
+    return out
+
+
+def _array_view(target: Any) -> Any:
+    if isinstance(target, wp.array):
+        return wp.to_torch(target) if "cuda" in str(target.device) else target.numpy()
+    return target
 
 
 def _host(x: Any) -> np.ndarray:

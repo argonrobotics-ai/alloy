@@ -51,9 +51,9 @@ print(img.shape, batch.shape)
   drawn with their own photo texture, in the quick look and with `quality="full"` alike. The camera reads the scan's
   `visual.glb` (its mesh, UVs and base-colour image) beside the card's mesh, for a scene built from an `alloy.Scene`.
   - A look that names the object (`look=`, an item look, or the card's own object look) still decides its colour.
-  - Decoding the image needs Pillow, which the `import` extra brings (fetching a scan needs that extra anyway).
-    Without it, or for a glb whose size does not match the object's mesh, the object keeps a flat colour and the
-    console says why, once.
+  - Decoding the image uses Pillow, which installs with Alloy, so textures render on the base install (fetching a
+    scan still needs the `import` extra). For a glb whose size does not match the object's mesh, the object keeps
+    a flat colour and the console says why, once.
   - Images over 2,048 texels on a side are reduced at load (`ALLOY_CAMERA_TEXTURE_MAX`).
   - The image is multiplied by the glb's base-colour factor, except a factor of exactly (0.4, 0.4, 0.4) beside an
     image, which counts as 1: that is the grey trimesh writes when the source gave no colour (in one count of 23

@@ -119,6 +119,7 @@ def _iteration(m: Any, d: Any, ctx: Any, nsolving: wp.array, compact: bool = Fal
 
 
 def _update_gradient(m: Any, d: Any, ctx: Any, compact: bool = False) -> None:
+    dev = d.nefc.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     original = _STATE["update_gradient"]
     s = _scratch_for(d) if _STATE["in_iteration"] and _applies(m) else None
     if s is None:
@@ -126,11 +127,12 @@ def _update_gradient(m: Any, d: Any, ctx: Any, compact: bool = False) -> None:
     skip, skipped = s
     det = bool(m.opt.deterministic & T.DeterminismType.ATOMICS)
     wp.launch(S._update_gradient_zero_grad_dot(False), dim=d.nworld, inputs=[d.nefc, ctx.alpha, ctx.done],
-              outputs=[ctx.grad_dot, ctx.newton_decrement, ctx.grad_scale, ctx.search_unchanged])
+              outputs=[ctx.grad_dot, ctx.newton_decrement, ctx.grad_scale, ctx.search_unchanged], device=dev)
     wp.launch(S._update_gradient_grad(False, det), dim=(d.nworld, m.nv),
-              inputs=[d.qfrc_smooth, d.qfrc_constraint, d.efc.Ma, d.nefc, ctx.done], outputs=[ctx.grad, ctx.grad_dot])
+              inputs=[d.qfrc_smooth, d.qfrc_constraint, d.efc.Ma, d.nefc, ctx.done], outputs=[ctx.grad, ctx.grad_dot],
+              device=dev)
     wp.launch(_cheap_done, dim=d.nworld, inputs=[m.opt.tolerance, ctx.inertia_scale, ctx.grad_dot, ctx.improvement,
-                                                 ctx.alpha, ctx.done, skip, skipped])
+                                                 ctx.alpha, ctx.done, skip, skipped], device=dev)
     return original(m, d, dataclasses.replace(ctx, done=skip), compact=compact)
 
 

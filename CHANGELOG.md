@@ -8,6 +8,72 @@ are engine internals with no stability promise.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-14
+
+### Changed
+- Pillow (10.1 or newer) is now a base dependency, so textured looks render on a plain `pip install alloy-engine`.
+  Before, it came only with the `import` extra, and on a base install the first `sim.render` frame of a textured
+  look raised `CameraError` ("Pillow is not installed").
+- Bundled engines: Newton v1.8.0 (`425db81f`, 2026-11-11) with the same 12 commits and 17 patches of ours, in place
+  of release-1.8 `db915e1c` (1.8.0rc1). Upstream's changes between the two touch only docstrings, warning classes
+  (`NewtonWarning` is now at the package root), ray casting and the camera sensor, none of which Alloy steps with:
+  every scene steps as before. `alloy/_vendor/VENDORED.md` lists each commit and patch.
+
+### Fixed
+- `add_cloth`'s `resolution` is documented as what it builds: cells along the longer side (20 on a square sheet: 20 x 20
+  cells, 21 x 21 = 441 vertices), not vertices; the API's own count said 400. The sheets built are unchanged. A grid
+  the build cannot keep now warns, naming the grid it makes: an `(nx, ny)` whose shape differs from the sheet's
+  (cells are as near square as whole counts allow: `(10, 6)` on a square sheet gives 8 x 8), a sheet too narrow for
+  its short side, or more than 1,600 cells (`resolution=60` on a square sheet gives 40 x 40).
+- `add_robot(..., pos=(worlds, 3))` (and per-world `scene.randomize` coordinates) now moves the whole robot file in
+  each world, as the docs say: its free base, its own floor and the parts it welds to the world. Before, only the base
+  moved, and the file's floor and welded parts stayed at the first world's row in every world: with a Go2 scene file
+  and rows 10 cm apart in height, the lower world started with its legs 100 mm inside its floor (a start overlap
+  that fails `sim.check()`) and the higher one dropped. On the CPU's default route a floor raised for one world also held no contacts (MuJoCo's
+  compile-time frame flag and bounding tree kept the first world's floor), now refreshed for each world that differs.
+  A file with a welded part (the Go2 scene's obstacle) no longer raises "no free base" for per-world starts or
+  `sim.set_pose`.
+- Objects resting beside a robot or a moving fixture no longer jitter. On the CPU, a scene with a kinematic object
+  steps on MuJoCo Warp, and there a stack of light boxes kept bobbing a few mm/s for good: an 18-level tower of alder
+  blocks stayed at 3.9 mm/s with its friction nearly used up, so pushing one block dragged the whole tower (32 mm at
+  the top). Boxes and capsules in scenes with a robot or a kinematic object now take a contact damping ratio of at
+  least 1.0 (0.7 before), and such a tower rests at 0.001 mm/s. On a GPU, such a tower bobbed at 3.3 mm/s too and now
+  rests at 0.03 mm/s. Cost: those boxes rebound a little less (a 5 cm aluminium box dropped 10 cm: e 0.22, was 0.26).
+  Scenes of only free bodies keep 0.7 and are unchanged.
+- A `collision="convex"` mesh now collides with a hull that stays within 0.1 mm (or 1 % of its smallest size) of the
+  mesh's own hull, using up to 2,048 hull vertices, instead of a fixed 64. With 64, a brass top's rounded tip became
+  one point off its axis, and the top gained spin and energy where tip friction should slow it; now it slows. A mesh
+  whose hull is already that close at 64 vertices keeps 64 (over 50,000 vertices: MuJoCo's hull at that cap, in
+  place of Newton's); every shipped object card, `collision="decompose"` parts and robot meshes are unchanged. A
+  mesh that cannot get that close warns once, naming the gap and the fix. Cost (64 worlds of 12 scanned objects as
+  convex meshes): on one L4, 15 % fewer steps per second for a typical set and 39 % for the most detailed; on the
+  CPU's default route, up to 24 % (8 worlds). To keep the earlier fast hull, pass
+  `scene.add_mesh(..., hull_vertices=64)` (or `shape.mesh.hull_vertices: 64` in the mesh's card; an int from 4 to
+  2,048, on a convex mesh only); 64 steps bit for bit as before.
+- A mesh with `collision="sdf"` or `"mesh"` beside liquid or sand no longer reserves soft-contact room for every
+  liquid and sand particle against every shape (their solvers read no contacts). Before, 16 worlds of water, a cloth
+  and one SDF bowl among 550 small static boxes asked for 129 M contact slots and ran out of memory on a 24 GB L4 in
+  their first steps; they now ask for 8.6 M and step in 7.1 GB. Cloth and soft-body contacts are unchanged.
+- On the CPU's default route, a body welded to the world at a different pose in each world now stands at its own
+  world's pose, also after its joint frame is changed or the worlds are reset. Before, it stood at world 0's pose in
+  every world, and the other bodies of a world met it there. This needed a model built at the engine layer (one
+  Newton builder per world); scenes built with `alloy.Scene` weld a body at one pose in every world, and scenes with
+  kinematic objects step on the other CPU route, so they were not affected.
+- On the CPU's default route (MuJoCo C), `sim.reset()` after `sim.settle()` now repeats the run that followed the
+  settle bit for bit. Before, the reset restarted each world from the settled state rounded to float32 rather than
+  the float64 state the settle ended in, and a two-joint arm drifted by 3e-8 rad within 20 steps.
+- On the CPU's default route, a run that goes back to a saved state now continues bit for bit as the unbroken run
+  did: a world re-run after a rollback, the worlds kept beside it, and a checkpoint resumed in a new simulation.
+  Before, the route went on from that state rounded to float32 rather than the float64 state MuJoCo held at that point,
+  and the run slowly left the unbroken one.
+- A ball's restitution now matches its setting in scenes of free rigid bodies only: within 0.05 of it with up to 8
+  free bodies (and at any count on the CPU's default route), within about 0.08, varying with impact speed, with more
+  than 8 on MuJoCo Warp. A restitution of 0 now stops it within 0.07 of the impact speed; before, it rebounded at
+  0.12-0.15, and 0.5 read about 0.55. A heavy ball hitting a wall there goes about half as deep (6.8 kg at 1.7 m/s:
+  7.7 mm at the automatic step, against 14.3 mm). Balls of about 0.1 kg and under keep the earlier rebound. Boxes,
+  capsules, cylinders and meshes, a ball on one of them, and every body in a scene with a robot, a kinematic object or
+  a gripped chain keep the earlier contacts.
+
 ## [0.1.3] - 2026-11-13
 
 ### Added

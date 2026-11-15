@@ -40,11 +40,18 @@ def snapshot(model, state=None, path: str | Path | None = None, look_at=None, po
     return img
 
 
-def render(sim, camera=None, world: int = 0, width: int = 640, height: int = 480, liquids=True, **kw) -> np.ndarray:
+CAMERA_KW = ("output", "exposure", "seed")  # what a Camera render takes besides items (Camera.render)
+
+
+def render(sim, camera=None, world: int | None = None, width: int | None = None, height: int | None = None,
+           liquids=True, **kw) -> np.ndarray:
     """Images of an ``alloy.Sim`` (or anything with ``.engine.model`` / ``.engine.state``, or a newton.Model).
 
-    ``camera=None``: a framed snapshot of ``world`` as an (H, W, 3) uint8 numpy array (``kw`` go to
-    :func:`snapshot`, e.g. ``spp=`` (64 by default, so ``spp=64`` repeats the default image), ``look_at=``, ``path=``). With a :class:`Camera`: its (worlds, H, W, 3) batch.
+    ``camera=None``: a framed snapshot of ``world`` (0) as an (H, W, 3) uint8 numpy array, 640 x 480 unless ``width``
+    / ``height`` say (``kw`` go to :func:`snapshot`, e.g. ``spp=`` (64 by default, so ``spp=64`` repeats the default
+    image), ``look_at=``, ``path=``). With a :class:`Camera`: its (worlds, H, W, 3) batch, with ``output=``,
+    ``exposure=``, ``seed=`` and ``items=`` as :meth:`Camera.render` takes them; any other keyword raises CameraError
+    (the image size and samples are the Camera's own).
     Scene items with their own look (``alloy.scene.variants.vary``'s texture swaps and tints) render with it, with the
     full-material tracer (``item_looks``; ``items=None`` leaves them out). Cloth, soft bodies and MPM materials are
     drawn from the sim's state (``alloy.camera.deform``), and so are the sim's SPH liquids (``alloy.camera.liquid_scene``:
@@ -55,9 +62,8 @@ def render(sim, camera=None, world: int = 0, width: int = 640, height: int = 480
     Example: ``img = alloy.camera.render(sim, width=320, height=240)``.
     """
     from .item_looks import items_look
-    from .tracer.renderer import image_worlds
-    if camera is None and isinstance(getattr(sim, "worlds", None), int):
-        image_worlds([world], sim.worlds)  # before any per-world read (liquid meshes), as sim.state(world=) checks
+    _check_args(sim, camera, kw, {"world": world, "width": width, "height": height,
+                                  "liquids": None if liquids is True else liquids})
     items = kw.pop("items", "auto")
     items = items_look(sim) if items == "auto" else items  # scene variants: each item's own look (swap, tint)
     engine = getattr(sim, "engine", None)
@@ -83,10 +89,27 @@ def render(sim, camera=None, world: int = 0, width: int = 640, height: int = 480
         elif _has_liquid(sim) and kw.get("quality", "auto") == "auto":
             kw["quality"] = "full"  # snapshots draw liquids as liquids (the fast tracer tints them)
         plain = model is raw and not _has_liquid(sim)  # the sim itself draws the same, plus its scans' textures
-        return snapshot(sim if live or plain else model, state, width=width, height=height, world=world,
-                        items=items, **kw)
+        return snapshot(sim if live or plain else model, state, width=width or 640, height=height or 480,
+                        world=world or 0, items=items, **kw)
     from .aov import as_host
-    return as_host(camera.render(sim, state, output=kw.get("output", "uint8")))
+    return as_host(camera.render(sim, state, items=items, **kw))
+
+
+def _check_args(sim, camera, kw: dict, snapshot_only: dict) -> None:
+    """Without a Camera: the world exists (SimulationError, as ``sim.state(world=)``), before any per-world read such
+    as liquid meshes. With one: CameraError for a keyword its render does not take (it was dropped without a word)."""
+    if camera is None:
+        if isinstance(getattr(sim, "worlds", None), int):
+            from .tracer.renderer import image_worlds
+            image_worlds([snapshot_only["world"] or 0], sim.worlds)
+        return
+    extra = sorted(set(kw) - set(CAMERA_KW) - {"items"}) + [k for k, v in snapshot_only.items() if v is not None]
+    if extra:
+        from .errors import CameraError
+        raise CameraError(f"render with a Camera does not take {', '.join(extra)}",
+                          "pass only output=, exposure=, seed= and items= with a Camera; its image size and samples "
+                          "are set on the Camera, and alloy.camera.view.write_png(path, imgs[w]) saves one world's "
+                          "image")
 
 
 def _has_deform(sim) -> bool:

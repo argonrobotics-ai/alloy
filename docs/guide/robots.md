@@ -95,8 +95,10 @@ says so): move the objects around it per world instead. Runnable: `examples/api/
 
 `pos` moves the whole robot file in every form (a tuple, a per-world array, or a coordinate `scene.randomize`
 draws): the root body ends at the row plus where the file places it, so a root body at `<body pos="0 0 0.3">` with
-`pos=(0, 0, 0.1)` starts 0.4 m up. `sim.set_pose` is the exception: it puts the root body itself at the `pos` you
-pass.
+`pos=(0, 0, 0.1)` starts 0.4 m up. Each world's row moves that world's copy of everything in the file: the free base
+with its links, the file's own floor, and the parts it welds to the world (a Go2 scene file's floor and obstacle), so
+rows of different heights each start on their own floor. `sim.set_pose` is the exception: it puts the root body
+itself at the `pos` you pass, and moves the robot's links only.
 
 ## Names
 
@@ -141,6 +143,16 @@ under reversed loads) as `"clip/arm.plastic_strain"`. `reset` puts the spring ba
   the finger-object pair. Robot geometry takes its friction from the robot file.
 - Fingers need enough actuator force to squeeze (MJCF `kp` times the target error); close the fingers onto the
   object, then ramp the lift.
+- Start an object clear of the palm and fingers: an overlap of a few mm throws it before the fingers close. A 2 cm,
+  50 g cube that started 2 mm inside the shipped Panda's palm moved 7.6 mm in the first 10 ms and 50 mm in 50 ms (4 mm
+  inside: 104 mm), where one that started clear only fell (12.6 mm in 50 ms; one CPU run on 0.1.3). `sim.check()`
+  stays `ok` for it: START_PEN stops a run only for overlaps above 1 cm, and smaller ones are a PEN_WARN note.
+- A heavy body that hits a robot can trip PEN_FAIL. Robot scenes keep soft impact contacts, so a robot-scale impact
+  goes deep: a 5 kg bob on a hinge, hitting the Go2's trunk at 2.9 m/s with the default contact softness, went 20.5 mm
+  deep in one 20 ms control step; health read PEN_FAIL, the world was INVALID, and the environment reset the episode
+  (one run on one NVIDIA L4, Alloy 0.1.0). Give the impacting body stiffer contacts in its MJCF: with
+  `solref="0.0025 1" solimp="0.95 0.99 0.001" solmix="100"` on the bob's geom, a strike at 2.5 m/s peaked at 1.8 mm
+  (a PEN_WARN note) and `sim.check()` stayed `ok`.
 - Judge a grasp by the object, not the fingers: record the object's `.pos` and check it follows the gripper and
   stays between the fingers while held.
 - Friction is the only grasp: there is no call that attaches or welds an object to a gripper

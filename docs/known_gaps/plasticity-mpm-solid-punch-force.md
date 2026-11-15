@@ -3,7 +3,8 @@
 Status: open. The route is opt-in (a `plastic.model: j2` solid whose object card overrides its route to `paste_mpm`).
 Uniform compression yields at the card's yield stress there. Since 2026-11-10 the route's entry solves each step to
 tolerance 1e-5 with up to 1,000 sweeps and runs on the dense grid on any device; a punch's force then converges on
-soft solids, but it is not verified against the indentation laws. **Metals are supported on this route only with
+soft solids, but it reads the mean pressure 9-16 % under the value the literature gives and does not resolve elastic
+(Hertz) indentation, so no punch law is claimed. **Metals are supported on this route only with
 quasi-static mass scaling** (`scene.set_quasi_static_mass_scale`, opt-in, for a block that rests under a tool): without
 it their stress solve does not converge, so a tool's force reads a few % of the truth, and the build warns.
 
@@ -18,10 +19,12 @@ it their stress solve does not converge, so a tool's force reads a few % of the 
   is about 390 sweeps for E 3 MPa at 1,076 kg/m3, 3,900 for 30 MPa, and an extrapolated 1.6 million for brass (97 GPa,
   8,500 kg/m3). A card over the entry's 1,000 gets a build warning naming the number. All three shipped j2 cards the
   route takes (`brass_c360`, `steel_tinplate`, `steel_zinc_plated`) are metals, so all three warn.
-- **No punch law is claimed.** On a resolved rig, converged at 1.5 mm voxels, the mean pressure by the measured
-  contact radius reads 2.4 of the yield stress (the usual 2.8-3.0 is for shallow dents; the value at this rig's
-  a / R is being cited), and the elastic force does not follow Hertz at 3 or 1.5 mm voxels. The force starts about
-  0.2 voxel before the surfaces meet.
+- **No punch law is claimed.** On a resolved rig the mean pressure by the measured contact radius converges with the
+  voxel (1.5 and 0.75 mm voxels agree within 5 %) at 2.26-2.45 of the yield stress: 0.84-0.91 of the 2.66-2.71 that
+  finite-deformation computations give at this rig's a / R (the usual 2.8-3.0 is for shallow dents). Elastic
+  indentation is not resolved at any voxel measured (3, 1.5 and 0.75 mm; up to about 19 voxels across the contact):
+  the force rises as about d^0.85, not Hertz's d^1.5, and falls about 40 % each time the voxel halves. The force
+  starts 0.1-0.2 voxel before the surfaces meet.
 - A tool that is moved (`kinematic=True`, `sim.drive`) leaves a dent that follows it and stays, on soft and stiff
   cards alike. A tool that presses with a given force, or lands on the solid, sinks too deep where the force reads low.
 
@@ -59,19 +62,32 @@ first row (50 kPa):
 Resolved rig: 25 mm ball, frictionless, block 72 x 72 x 36 mm on node planes, pressed at 2 mm/s; soft j2 card (E
 3 MPa, yield 10 kPa, E* a / (Y R) about 115-160 at a / R 0.35-0.49). Readings, not laws:
 
-| | 3 mm voxels (55,000 particles) | 1.5 mm voxels (442,368; 4,000 sweeps, converged) |
-|---|---|---|
-| mean pressure / yield at 1.5-2.5 mm, by the measured contact radius (grid nodes; top-layer particles) | 2.11-2.24 (particles unresolved) | 2.43-2.46; 2.36-2.44 |
-| the same by the nominal radius sqrt(2 R depth) | 2.85-3.39 | 2.75-2.89 |
-| from the slope (least-squares line of force on depth, 1.0-2.5 mm; p_m = slope / (2 pi R)) | 2.04 | 2.55 |
-| where the force starts, against the surfaces meeting | 0.66 mm early (0.22 voxel) | 0.28 mm early (0.19 voxel) |
-| elastic force against depth, 1-2.5 mm (Hertz: d^1.5) | about d^0.52 | about d^0.84 |
+| | 3 mm voxels (55,000 particles) | 1.5 mm voxels (442,368; 4,000 sweeps, converged) | 0.75 mm voxels (3,538,944; up to 16,000 sweeps; pressed to 2 mm) |
+|---|---|---|---|
+| mean pressure / yield at 1.5-2.5 mm, by the measured contact radius (grid nodes; top-layer particles) | 2.11-2.24 (particles unresolved) | 2.43-2.46; 2.36-2.44 | 2.41-2.45; 2.26-2.36 (1.5-2 mm) |
+| the same by the nominal radius sqrt(2 R depth) | 2.85-3.39 | 2.75-2.89 | 2.64-2.67 (1.5-2 mm) |
+| from the slope (least-squares line of force on depth, 1.0-2.0 mm; p_m = slope / (2 pi R)) | 1.98 | 2.53 | 2.74 |
+| where the force starts, against the surfaces meeting | 0.66 mm early (0.22 voxel) | 0.28 mm early (0.19 voxel) | 0.10 mm early (0.13 voxel) |
+| elastic force against depth, 1-2 mm (Hertz: d^1.5) | about d^0.52 | about d^0.79 | about d^0.85 |
+| elastic force at 2 mm / Hertz | 1.14 | 0.64 | 0.39 |
 
 At 1.5 mm voxels the two measured radii agree within 2 % and exceed sqrt(2 R depth) by 8-10 % (pile-up). Brass
-x16,000 reads 2.2-2.4 by the measured radius at 1.5 mm (1,000 sweeps), within 2-5 % of the soft card. The elastic
-force at 2 mm reads 0.57 of the 3 mm row's: it is not converged with the voxel, and an earlier "0.97 of Hertz" at
-3 mm was two curves crossing, not a match. A 0.75 mm row and the cited mean pressure at this a / R decide what is
-claimed.
+x16,000 reads 2.2-2.4 by the measured radius at 1.5 mm (1,000 sweeps), within 2-5 % of the soft card.
+
+Mean pressure: from 1.5 to 0.75 mm voxels the measured-radius readings move +0.5 / -1.3 % (grid nodes) and -4.9 /
+-0.1 % (particles) at 1.5 / 2 mm depth, so they are converged with the voxel at 2.26-2.45 (a Richardson extrapolation
+over the three voxels, where the readings fall monotonically, gives 2.45 at order 3.9). At 0.75 mm, a / R is 0.36-0.43
+and the pile-up a^2 / (2 R depth) is 1.08-1.17. For a rigid frictionless sphere on an elastic-perfectly plastic solid
+at that a / R, Mesarovic & Fleck (1999, Proc. R. Soc. A 455, 2707, Fig. 5b; read off the figure, +-0.03) give 2.71 at
+0.36 and 2.66 at 0.43, on one curve for any E / yield: the route reads 9-16 % under it, and a finer voxel does not
+close that. The slope reading assumes the nominal contact area: divided by the measured pile-up it reads 2.34-2.53 at
+0.75 mm, with the measured-radius readings. The 0.75 mm rows were not rerun with more sweeps (at 1.5 mm, 4x the
+sweeps raised the force 3-4 %).
+
+Elastic: the exponent heads to about 0.86 over the three voxels (Richardson, order 2.3), not 1.5, and the force at
+2 mm falls 40-44 % each time the voxel halves (0.57, then 0.60 of the coarser row's), with 4.7, 9.4 and 19 voxels
+across the nominal contact. Elastic indentation is not resolved on this route up to 0.75 mm voxels; the cause is not
+established. An earlier "0.97 of Hertz" at 3 mm was two curves crossing, not a match.
 
 ## Why
 
@@ -83,11 +99,11 @@ claimed.
   short: mass-scaled brass stalled at 0.35-0.48 of its force at 1,000 sweeps and 0.73-0.83 at 4,000. Since vendored
   patch 0015 the route's entry runs at 1e-12 (a soft card's punch force moves by 7e-5 on the small rig above); unscaled
   brass still reads 0.007, so this alone does not make metals work.
-- Not established (a hypothesis): the slope and the force disagree because the grid's contact surface is not the
-  material's. The force starts about 0.2 voxel before the surfaces meet at 3 and at 1.5 mm voxels, and halving the
-  voxel moves the slope reading from 2.04 to 2.55, toward the measured-radius reading. (An earlier reading at 3 mm,
-  "particles stand 0.9 mm off the ball", came from the coarse top-layer sampling; at 1.5 mm the particle radius
-  exceeds the nominal one.)
+- Not established: why the converged mean pressure reads 9-16 % under the cited value, and why the elastic force
+  falls as the voxel shrinks. The slope reading rises with the voxel (1.98, 2.53, 2.74) as the early start shrinks
+  (0.22, 0.19, 0.13 voxel), and at 0.75 mm the measured pile-up accounts for the rest of its gap to the
+  measured-radius reading. (An earlier reading at 3 mm, "particles stand 0.9 mm off the ball", came from the coarse
+  top-layer sampling; at 1.5 mm the particle radius exceeds the nominal one.)
 
 ## Workaround
 
@@ -142,7 +158,7 @@ repeat of the 10x row read +6.1 % at 2 mm.
 
 After 0.1.1 (dents slice 2b): the quasi-static mass scaling above is done (on the resolved rig, brass x16,000
 follows the soft solid of the same E / yield within 2.4 % at 0.5-2.5 mm; development
-notes, not shipped). Next (2026-11-11): a 0.75 mm row and a Richardson
-extrapolation of the mean pressure and the elastic exponent over 3, 1.5 and 0.75 mm, against the mean pressure the
-literature gives at this a / R (not 2.6-3.2 by default). If they agree, the default route for small yield strains
-follows with that law; if not, the gap stays as stated here.
+notes, not shipped). The 0.75 mm rows and the Richardson extrapolation over 3, 1.5 and 0.75 mm (2026-11-13) left
+the mean pressure 9-16 % under the cited value at this a / R and elastic indentation unresolved, so the route stays
+opt-in as shipped, no punch law is claimed, and the gap stays as stated here. Closing it needs a change to how the
+grid meets the tool or solves the stress; none is started.

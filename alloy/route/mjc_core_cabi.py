@@ -75,6 +75,16 @@ class CWorld:
     def counters(self) -> dict[str, float]:
         return self.out.counters()
 
+    def grow_contacts(self, n: int) -> None:
+        self.out.grow_contacts(n)
+
+    def set_ncon(self, n: int) -> None:
+        self.out.struct.ncon = int(n)
+
+    def uncount(self, contacts: int) -> None:
+        """Take ``contacts`` back out of the export overflow counter (``mjc_core_export.refit`` copied them)."""
+        self.out.struct.contact_overflow -= int(contacts)
+
     def zero(self) -> None:
         s = self.out.struct
         for name in ("steps", "nonfinite", "contact_overflow", "noslip_slots", "noslip_sweeps", "noslip_overflow",

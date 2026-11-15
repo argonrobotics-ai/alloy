@@ -16,6 +16,9 @@ from alloy.contact import mjw_friction_cap as FC
 from alloy.scene import entries as EN
 from alloy.scene import integrator_route as IR
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("the implicitfast friction cap of the MuJoCo Warp step")
+
 MU, G = 0.5, 9.81
 
 
@@ -83,6 +86,7 @@ def _cap_of(sim) -> float | None:
     return None
 
 
+@WARP_ROUTE
 def test_fast_mode_and_r1_entries_take_the_cap(monkeypatch):
     over = EN.mujoco_overrides({EN.RIGID_FAST_EFFECT}, False, None)
     assert over[FC.CAP_KEY][0] == FC.CAP_DEFAULT == 20.0 and "MuJoCo Warp" in over[FC.CAP_KEY][1]
@@ -124,6 +128,7 @@ def _pushed(monkeypatch, cap: bool, rk4: bool, push_s: float = 0.4, coast_s: flo
     return float(np.ptp(pitch[t >= 0.1])), coast
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(900)
@@ -136,6 +141,7 @@ def test_capped_implicitfast_rocks_no_more_than_todays_rk4(monkeypatch):
     assert capped <= 1.1 * rk4 + 0.2 < stock, (capped, rk4, stock)
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(900)

@@ -52,9 +52,8 @@ def check_object(obj: Any, worlds: int | None = None, seconds: float | None = No
     dev, worlds, seconds = resolve_settings(device, worlds, seconds)
     base = _library(library, None)
     card = _object_card(obj, base)
-    missing = _missing_files(card, base)
-    if missing:
-        return missing
+    if isinstance(card, CheckReport):
+        return card
     with tempfile.TemporaryDirectory(prefix="alloy-check-") as tmp:
         lib = _drop_library(Path(tmp), card, base)
         scene = _drop_scene(card, lib, dev)
@@ -69,31 +68,59 @@ def check_object(obj: Any, worlds: int | None = None, seconds: float | None = No
     return report
 
 
-def _missing_files(card: ct.ObjectCard, lib: Any) -> CheckReport | None:
-    """A failed report when ``card`` is an imported object whose files cannot be fetched (``alloy.check.fetch``)."""
+def _missing_files(name: str, lib: Any) -> CheckReport | None:
+    """A failed report when object ``name`` cannot be fetched: an imported object's files, or in Hub mode a name no
+    library holds (``alloy.check.fetch``)."""
     from alloy.check.fetch import fetch_imported  # noqa: PLC0415
 
-    found = fetch_imported(lib, [card.name])
+    found = fetch_imported(lib, [name])
     if not found:
         return None
-    report = CheckReport(scene=f"drop test: {card.name}")
+    report = CheckReport(scene=f"drop test: {name}")
     report.add(found, "cards")
-    for name in ("overlap", "rest_drift", "penetration", "health", "energy"):
-        report.skip(name, "the object's files are missing")
+    for check in ("overlap", "rest_drift", "penetration", "health", "energy"):
+        report.skip(check, "the object's files are missing")
     return report
 
 
-def _object_card(obj: Any, lib: Any) -> ct.ObjectCard:
+def _object_card(obj: Any, lib: Any) -> ct.ObjectCard | CheckReport:
+    """``obj`` as an object card, or a failed report when its files cannot be fetched. A name is fetched first (in
+    Hub mode that brings the object itself into ``lib``); a card or file of the caller's own is checked as given,
+    its files fetched only when ``lib`` holds an object of that name (an imported object's card)."""
+    if _is_name(obj):
+        failed = _missing_files(obj, lib)
+        if failed is not None:
+            return failed
+        if lib.has_object(obj):
+            return lib.peek_object(obj)
+        raise _not_an_object(obj)
+    card = _given_card(obj)
+    failed = _missing_files(card.name, lib) if lib.has_object(card.name) else None
+    return card if failed is None else failed
+
+
+def _is_name(obj: Any) -> bool:
+    """True for an object name: a str that is not a file on disk and does not look like a path."""
+    if not isinstance(obj, str):
+        return False
+    path = Path(obj).expanduser()
+    return not path.is_file() and path.suffix.lower() not in (".yaml", ".yml") and len(path.parts) == 1
+
+
+def _given_card(obj: Any) -> ct.ObjectCard:
+    """``obj`` when it is an ``ObjectCard``, else the object card in file ``obj``."""
     if isinstance(obj, ct.ObjectCard):
         return obj
     path = Path(str(obj)).expanduser()
-    if path.is_file():
-        from alloy.cards.loader import load_object  # noqa: PLC0415
+    if not path.is_file():
+        raise _not_an_object(obj)
+    from alloy.cards.loader import load_object  # noqa: PLC0415
 
-        return load_object(path)
-    if isinstance(obj, str) and lib.has_object(obj):
-        return lib.peek_object(obj)
-    raise ValueError(f"check_object({obj!r}): pass a library object name, an object YAML path or an ObjectCard")
+    return load_object(path)
+
+
+def _not_an_object(obj: Any) -> ValueError:
+    return ValueError(f"check_object({obj!r}): pass a library object name, an object YAML path or an ObjectCard")
 
 
 def _drop_library(root: Path, card: ct.ObjectCard, base: Any) -> Any:

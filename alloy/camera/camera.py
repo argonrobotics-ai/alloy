@@ -292,22 +292,22 @@ class Camera:
         self._dirty = True
 
     # ------------------------------------------------------------------ render
-    def render(self, source, state=None, output: str = "uint8", exposure: float = 0.0, seed: int | None = None):
+    def render(self, source, state=None, output: str = "uint8", exposure: float = 0.0, seed: int | None = None,
+               items="auto"):
         """Render every world of ``source`` at ``state``: an ``alloy.Sim`` (its current state), a newton.Model, a
-        SceneData, a scene pack folder or a ``camera_scene``. Example: ``batch = cam.render(sim)``.
-
-        Returns a wp.array: uint8 (worlds, H, W, 3) for ``output="uint8"``, float32 linear for ``"linear"``, or a
+        SceneData, a scene pack folder or a ``camera_scene``. Example: ``batch = cam.render(sim)``. Returns a
+        wp.array: uint8 (worlds, H, W, 3) for ``output="uint8"``, float32 linear for ``"linear"``, or a
         :class:`CameraOutput` with rgb, linear, albedo and normal for ``"all"``. The arrays are the camera's own
         buffers: the next render overwrites them, so copy what you keep. ``seed`` changes the noise of this render.
         ``output="depth"`` (metres), ``"segmentation"``, ``"body_id"`` or ``"world_id"`` gives that image, (worlds,
         H, W), from the pixel-centre ray with no colour traced; a tuple such as ``("rgb", "depth")`` a
-        :class:`CameraOutput` with those too (``alloy.camera.aov``; fast camera only).
+        :class:`CameraOutput` with those too (``alloy.camera.aov``; fast camera only). ``items``: as ``camera_scene``.
         """
         from .aov import keep_fields, parse_output, render_aovs
+        from .item_looks import items_look
         want = parse_output(output, OUTPUTS)  # None: a colour-only output, the unchanged path
         _not_capturing(source, self.name)
-        from .item_looks import items_look
-        items = items_look(source)
+        items = items_look(source) if items == "auto" else items
         sim = source
         source, state = unwrap_sim(source, state)
         sc, r = self._bind(sim, items)

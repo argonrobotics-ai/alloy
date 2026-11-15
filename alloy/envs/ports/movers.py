@@ -141,7 +141,8 @@ class KinematicBody:
 class PluginInput:
     """A plug-in's command input ``name`` (a valve, a faucet's regulator, a hand's targets), every value of it per
     world, each in ``[low, high]``. ``plugin`` names the plug-in (its label) when more than one has that input. An
-    input shared by every world takes world 0's action."""
+    input shared by every world takes world 0's action. The expert's action is the script's last write of the input,
+    kept apart from the policy's (a script that sets a hob once, or only when it turns it off, is not echoed back)."""
 
     def __init__(self, name: str, low: float = 0.0, high: float = 1.0, plugin: str | None = None) -> None:
         self.name, self.plugin, self._lo, self._hi, self.proprio_size = name, plugin, low, high, 0
@@ -157,6 +158,8 @@ class PluginInput:
                            "name the plug-in (plugin=...)", field="plugin")
         self.target, self.worlds = found[0], _worlds_of(sim)
         now = self._array().numpy()
+        self.script = now.copy()                     # what the script has written so far: the expert's command
+        self._set = self._watch()                    # the policy's writes go past the record
         self.shape, self.shared = now.shape, not (now.ndim and now.shape[0] == self.worlds)
         self.size = now.size if self.shared else now.size // self.worlds
         self.low = np.full(self.size, self._lo, np.float32)
@@ -165,8 +168,20 @@ class PluginInput:
     def _array(self) -> Any:
         return self.target.inputs()[self.name]
 
+    def _watch(self) -> Any:
+        """Wrap the plug-in's ``set_input`` so the script's writes of this input are kept in ``script``; returns the
+        unwrapped call, for the policy's writes."""
+        inner, name = self.target.set_input, self.name
+
+        def set_input(key: str, values: Any) -> None:
+            inner(key, values)
+            if key == name:
+                self.script = self._array().numpy().copy()
+        self.target.set_input = set_input
+        return inner
+
     def read(self, sim: Any) -> np.ndarray:  # noqa: ARG002
-        v = self._array().numpy().astype(np.float32)
+        v = self.script.astype(np.float32)
         return np.broadcast_to(v.reshape(1, -1), (self.worlds, v.size)).copy() if self.shared else \
             v.reshape(self.worlds, -1)
 
@@ -181,7 +196,7 @@ class PluginInput:
     def write(self, sim: Any, a: np.ndarray) -> None:  # noqa: ARG002
         new = self._new(a)
         if new is not None:
-            self.target.set_input(self.name, new)
+            self._set(self.name, new)
 
     def proprio(self, sim: Any) -> np.ndarray:  # noqa: ARG002
         return np.zeros((self.worlds, 0), np.float32)
@@ -197,10 +212,21 @@ class PluginArray(PluginInput):
     def _array(self) -> Any:
         return getattr(self.target, self.name)
 
+    def _watch(self) -> Any:
+        """Wrap the array's ``assign`` so the script's writes are kept in ``script``; returns the unwrapped call."""
+        arr = self._array()
+        inner = arr.assign
+
+        def assign(values: Any) -> None:
+            inner(values)
+            self.script = arr.numpy().copy()
+        arr.assign = assign
+        return lambda _name, values: inner(values)
+
     def write(self, sim: Any, a: np.ndarray) -> None:  # noqa: ARG002
         new = self._new(a)
         if new is not None:
-            self._array().assign(new)
+            self._set(self.name, new)
 
 
 class HandTargets:

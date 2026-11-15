@@ -155,11 +155,13 @@ def _operator(ep: Episode, site: ForkliftSite) -> list[Criterion]:
 
 def _time_limit(ep: Episode, limit: float) -> Criterion:
     """GA fails time_limit when the sim time passes the limit. The port's loop stops at the limit, so it judges from
-    whether the scripted plan finished first (cut by the limit = False); a synthetic episode cannot tell."""
+    whether the scripted plan finished first (cut by the limit = False); neither a synthetic episode nor a run a
+    policy drove (the env's, whose driving the scripted plan does not follow) can tell."""
     thr = f"<= {limit:.0f} s"
     if not ep.plan_known:
         return not_judged("time_limit", float(ep.t[-1]), "s", thr, "F/evaluator.py:255-256",
-                          "not judged: this episode does not say whether the scripted plan finished before the limit")
+                          "not judged: the port judges it by the scripted plan finishing before the limit, and this "
+                          "episode does not follow that plan (a policy-driven run, or a synthetic episode)")
     done = ep.plan_done_t
     ok = done is not None and done <= limit + 1e-9
     note = f"the scripted plan finished at {done:.2f} s" if ok else "the scripted plan was cut by the limit"

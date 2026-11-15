@@ -85,15 +85,16 @@ def _dense_permute(nefc: wp.array[int], njmax: int, perm: wp.array2d[int], lead:
 
 
 def rebuild_sparse(d: Any, s: Any, nj: int) -> None:
+    dev = d.nefc.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     e, nw = d.efc, int(d.nworld)
     if s.j_copy is None:  # only this path (the sort without the route) needs a second sparse J
         s.j_copy, s.c_copy = wp.empty_like(e.J), wp.empty_like(e.J_colind)
-    wp.launch(_live_nnz, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz], outputs=[s.nnz_flat])
+    wp.launch(_live_nnz, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz], outputs=[s.nnz_flat], device=dev)
     wp.utils.array_scan(s.nnz_flat, s.nnz_scan, inclusive=False)  # integer: exact in any order
-    wp.launch(_sparse_rowadr, dim=(nw, nj), inputs=[d.nefc, nj, s.nnz_scan], outputs=[e.J_rowadr])
+    wp.launch(_sparse_rowadr, dim=(nw, nj), inputs=[d.nefc, nj, s.nnz_scan], outputs=[e.J_rowadr], device=dev)
     old_adr = s.copies["J_rowadr"]  # each new row's old storage address
     wp.launch(_sparse_move, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz, old_adr, e.J_rowadr, e.J, e.J_colind],
-              outputs=[s.j_copy, s.c_copy])
+              outputs=[s.j_copy, s.c_copy], device=dev)
     # back into place: rows are contiguous in the new layout, so a move with identity addresses copies them back
     wp.launch(_sparse_move, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz, e.J_rowadr, e.J_rowadr, s.j_copy, s.c_copy],
-              outputs=[e.J, e.J_colind])
+              outputs=[e.J, e.J_colind], device=dev)

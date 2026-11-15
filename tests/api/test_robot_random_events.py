@@ -241,3 +241,52 @@ def test_build_refuses_what_it_cannot_do():
     with pytest.raises(alloy.BuildError, match="no free base") as err:
         alloy.build(welded, device="cpu")
     assert "freejoint" in err.value.fix
+
+
+CART = """<mujoco><worldbody><body name="base" pos="0 0 0.14"><freejoint/>
+ <geom type="box" size="0.15 0.12 0.06" mass="2.5" friction="0.4 0.005 0.0001"/></body></worldbody></mujoco>"""
+
+
+def _cart(push: bool) -> alloy.Sim:
+    scene = alloy.Scene(worlds=W, dt=DT)
+    scene.add_ground()
+    scene.add_robot("cart", mjcf=CART)
+    if push:
+        scene.add_push("cart/base", force=(80.0, 80.0, 0.0), every=(0.20, 0.50), duration=0.25)
+    return alloy.build(scene, device="cpu", seed=3)
+
+
+def test_settle_runs_no_pushes_so_every_reset_starts_at_rest(route):
+    """Gemini audit S1-022: sim.settle() ran the pushes and saved the pushed state as the start, so every
+    sim.reset() put the carts up to 1.6 m away moving at up to 7.8 m/s (health OK). A settle runs with no new
+    commands: its end, and every reset after it, is the state the same scene settles to without pushes, bit for bit,
+    and the pushes still come after the reset."""
+    ref, sim = _cart(False), _cart(True)
+    for s in (ref, sim):
+        s.settle(0.55)
+        s.step(20)
+        s.reset()
+    want, got = ref.state(), sim.state()
+    assert [k for k in want if k != "t" and not np.array_equal(want[k], got[k])] == []
+    assert float(np.abs(got["cart/base.vel"]).max()) < 1e-6
+    start = got["cart/base.pos"][:, :2].copy()
+    sim.step(100)                                    # 1 s: every world's wait (0.2-0.5 s) ends and it is pushed
+    moved = np.linalg.norm(sim.state()["cart/base.pos"][:, :2] - start, axis=1)
+    assert np.all(moved > 0.01), moved
+
+
+def test_a_push_held_when_the_settle_starts_is_dropped(route):
+    """A world pushed when sim.settle() is called stops being pushed at once: the carts come to rest during the
+    settle, and the reset after it starts them at rest with no push held."""
+    sim = _cart(True)
+    for _ in range(100):
+        sim.step(1)
+        if np.any(sim.pushes()["cart/base"]):
+            break
+    assert np.any(sim.pushes()["cart/base"]), "no world was pushed in the first second"
+    sim.settle(2.0)
+    assert not np.any(sim.pushes()["cart/base"])
+    assert float(np.abs(sim.state()["cart/base.vel"]).max()) < 1e-3
+    sim.reset()
+    assert float(np.abs(sim.state()["cart/base.vel"]).max()) < 1e-3
+    assert not np.any(sim.pushes()["cart/base"])

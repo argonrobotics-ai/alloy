@@ -27,6 +27,9 @@ import warp as wp
 from alloy.contact import mjw_boxbox_reduce as R
 from alloy.scene.entries import RIGID_FAST_EFFECT, mujoco_overrides
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("MuJoCo Warp's box-box contact reduction")
+
 LIMIT = 0.70   # area and worst-direction support of the 4 over the overlap's (a regular octagon's 4: cos 45 deg)
 ROWS = {2.0: 0.983, 5.0: 0.958, 10.0: 0.92, 20.0: 0.85, 30.0: 0.789, 45.0: 0.707}   # both ratios (CPU, this pick)
 TIP_TOL = 0.03   # tipping onset with 4 contacts against 8, in m g (rows: <= 0.02)
@@ -190,6 +193,7 @@ def _tip_onset(reduce4: bool, yaw_deg: float, push_deg: float) -> float:
         sim.close()
 
 
+@WARP_ROUTE
 def test_a_yawed_box_rests_on_4_contacts_where_it_had_8() -> None:
     n8, full = _rest(False)
     n4, reduced = _rest(True)

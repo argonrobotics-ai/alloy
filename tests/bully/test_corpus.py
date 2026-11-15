@@ -30,7 +30,7 @@ def test_round_trip(tmp_path):
     path = c.add(_finding(), trace, dt=0.02, seed=7, target="fake_seeded")
     assert path.name == "BUL-0001" and c.ids() == ["BUL-0001"]
     f, t, dt, seed = c.load("BUL-0001")
-    assert f.id == "BUL-0001" and f.repro.endswith("replay BUL-0001 --device cpu")
+    assert f.id == "BUL-0001" and f.repro.endswith(f"replay BUL-0001 --device cpu --corpus {tmp_path}")
     assert f.target == "fake_seeded"
     assert dataclasses.replace(f, id="NEW-0001", repro=_finding().repro, target="") == _finding()
     np.testing.assert_array_equal(t, trace)

@@ -3,7 +3,7 @@
 Alloy's object library is a dataset on the Hugging Face Hub: about 5,400 object cards, each with its meshes, textures
 and thumbnail. `alloy fetch` downloads the objects you name into a local cache, where scenes, compose and the API find
 them. Files already there with the right sha256 are not downloaded again. Alloy itself ships 118 objects.
-`alloy.api.catalog.objects()` lists the objects on disk (shipped and fetched), `alloy fetch --list` the library's.
+`alloy.objects()` lists the objects on disk (shipped and fetched), `alloy fetch --list` the library's.
 
 - What the cards are (5,423 in the dataset's index): 1,111 YCB and Google Scanned Objects scans; 1,989 Objaverse
   objects; 1,900 kitchen objects and fixtures made by Lightwheel (NVIDIA's

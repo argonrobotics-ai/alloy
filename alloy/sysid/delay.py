@@ -31,23 +31,32 @@ class DelayLine:
         self._fresh = np.zeros(self.steps.shape, bool)
 
     def reset(self, mask: np.ndarray | None = None) -> None:
-        """Forget the history (of the columns in ``mask``): the next push fills it with its own values."""
+        """Forget the history (of the columns in ``mask``): the next push starts it again."""
         if mask is None or self.history is None:
             self.history = None
         else:
             self._fresh |= np.asarray(mask, bool)
 
-    def push(self, values: np.ndarray) -> np.ndarray:
-        """Take this period's commanded values, return the delayed ones (same shape)."""
+    @property
+    def starting(self) -> bool:
+        """True when the next push starts a history (the first push, or the first after a reset)."""
+        return self.history is None or bool(self._fresh.any())
+
+    def push(self, values: np.ndarray, rest: np.ndarray | None = None) -> np.ndarray:
+        """Take this period's commanded values, return the delayed ones (same shape). A history that starts with
+        this push is filled with ``rest``, what was commanded before it (None: these same values, as if they had
+        been held all along)."""
         values = np.asarray(values, np.float64)
+        past = values if rest is None else np.asarray(rest, np.float64)
         if self.history is None:
-            self.history = np.broadcast_to(values, (self.depth, *values.shape)).copy()
+            self.history = np.broadcast_to(past, (self.depth, *values.shape)).copy()
+            self._fresh[...] = False
         else:
             self.history = np.roll(self.history, 1, axis=0)
-            self.history[0] = values
-        if self._fresh.any():
-            self.history[:, self._fresh] = values[self._fresh]
-            self._fresh[...] = False
+            if self._fresh.any():
+                self.history[:, self._fresh] = past[self._fresh]
+                self._fresh[...] = False
+        self.history[0] = values
         near = self.history[(self.whole, *self._at)]
         far = self.history[(self.whole + 1, *self._at)]
         return (1.0 - self.frac) * near + self.frac * far
@@ -58,10 +67,14 @@ class SimDelay:
 
     Before each control period ``before()`` reads what is commanded now (whoever wrote it: ``sim.set_targets``,
     ``sim.run(targets=)``, a Gym env's action writer), and puts the delayed values in its place for the step;
-    ``after()`` puts the commanded values back, so the arrays always read as what was last commanded."""
+    ``after()`` puts the commanded values back, so the arrays always read as what was last commanded.
 
-    def __init__(self, engine: Any, rows: dict[str, np.ndarray], seconds: dict[str, np.ndarray], dt: float) -> None:
-        self.engine, self.rows = engine, rows
+    The first command after the build or a reset is delayed too: until it arrives each servo holds the joint where
+    it is then (``rest[kind]()`` gives that hold target per row; without one the first command applies at once)."""
+
+    def __init__(self, engine: Any, rows: dict[str, np.ndarray], seconds: dict[str, np.ndarray], dt: float,
+                 rest: dict[str, Any] | None = None) -> None:
+        self.engine, self.rows, self.rest = engine, rows, rest or {}
         self.lines = {k: DelayLine(np.asarray(seconds[k], np.float64) / float(dt)) for k in rows}
         self._held: dict[str, np.ndarray] = {}
 
@@ -76,7 +89,9 @@ class SimDelay:
             host = arr.numpy()
             commanded = host[rows].astype(np.float64)
             self._held[kind] = commanded
-            host[rows] = self.lines[kind].push(commanded)
+            line = self.lines[kind]
+            rest = self.rest[kind]() if line.starting and kind in self.rest else None
+            host[rows] = line.push(commanded, rest)
             arr.assign(host)
 
     def after(self) -> None:
@@ -88,7 +103,7 @@ class SimDelay:
             arr.assign(host)
 
     def reset(self, world_mask: Any = None) -> None:
-        """Engine reset hook: the worlds that reset start with an empty history."""
+        """Engine reset hook: the worlds that reset start their history again."""
         for line in self.lines.values():
             if world_mask is None:
                 line.reset()

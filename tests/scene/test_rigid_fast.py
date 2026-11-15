@@ -18,6 +18,9 @@ from alloy.scene import integrator_route as IR
 from alloy.contact.mjw_boxbox_reduce import REDUCE_KEY
 from alloy.scene import rigid_step as RS
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("fast mode's implicitfast steps with the friction cap (the C route keeps rk4)")
+
 TODAY = 1.25e-3
 ARM = """<mujoco><compiler angle="radian"/><worldbody><body name="link1" pos="0 0 0.1">
   <joint name="shoulder" type="hinge" axis="0 1 0" range="-2 2" damping="2"/>
@@ -54,6 +57,7 @@ def build(scene: alloy.Scene, mode: str | None = "fast", profile: str = "standar
     return alloy.build(scene, device="cpu", profile=profile, **kw)
 
 
+@WARP_ROUTE
 def test_fast_mode_steps_the_box_stack_once_per_period() -> None:
     """XB4-9's 3-cube column: "auto" stops at 2.5 ms on rk4 (never softer than the fixed step); fast takes the 10 ms
     period on implicitfast with step 2c's own gains (the ruling: fast mode keeps implicitfast), the entry tagged and
@@ -151,6 +155,7 @@ def test_profile_standard_never_asks_for_fast() -> None:
     assert step_of(sim).dt == 2.5e-3 and RS.FAST_EFFECT not in effects_of(sim)
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("edge", [0.05, 0.3])
 def test_small_bodies_step_finer_by_their_sag(edge: float) -> None:
     """Bodies at the stability cap sag about the same at any size, so a smaller cube gets a finer step: the cap reads
@@ -246,6 +251,7 @@ def test_fast_box_slides_at_the_coulomb_rate() -> None:
     assert acc == pytest.approx(0.5 * MU * G, rel=0.01) and np.ptp(pitch) < 1.0 and sim.check()["ok"]
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.parametrize("route, reason, ceiling", [("warp", "fast mode: implicitfast", (3.0, 0.01)),
                                                     ("c", "fast mode keeps rk4", (15.0, 0.15))])
@@ -295,6 +301,7 @@ def test_fast_mode_keeps_rk4_on_the_mujoco_c_route(monkeypatch) -> None:
     assert max(err) <= RS.SAG_SHARE * 1.0 and max(speed) < 0.01 and sim.check()["ok"], (max(err), max(speed))
 
 
+@WARP_ROUTE
 @pytest.mark.law
 def test_a_resting_27_cube_stack_stands_in_fast_mode() -> None:
     """The ruling's resting-pile row on the CPU: XB4-9's 3 x 3 x 3 stack of 1 m cubes (27 bodies: R1's path, own gains

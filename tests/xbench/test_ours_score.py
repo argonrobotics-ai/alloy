@@ -24,6 +24,9 @@ import score_s1  # noqa: E402
 import sb7_watch  # noqa: E402
 import soft_pack  # noqa: E402
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("checks the ordered MuJoCo Warp route's refusal")
+
 
 @pytest.mark.parametrize("law_id", ["A1.freefall", "A6.restitution"])
 def test_law_scores_from_npz_equal_alloys_direct_verdicts(tmp_path, law_id):
@@ -46,6 +49,7 @@ def test_d1_meta_records_the_route_in_force_not_the_one_asked():
         "refused: dense Jacobian (only sparse proven)"
 
 
+@WARP_ROUTE
 def test_repeat_law_scene_records_the_route_in_force(monkeypatch):
     """The law scenes run a dense Jacobian (and, before F6 R2, RK4), outside WP5's proven coverage: ``--det on`` must
     say refused."""

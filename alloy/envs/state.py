@@ -11,6 +11,9 @@ axis and is a backend array (a torch tensor on the GPU, or NumPy)::
     s["gripper/lift.q"]      # (W,) for a 1-dof joint   s["gripper/lift.qd"]                      (W,)
     s["water.points"]        # (W, n, 3) particles      s["water.center"]                         (W, 3)
     s["cable.points"]        # (W, N + 1, 3) a rod's centre line (Scene.add_rod, as sim.state() reads it)
+    s["cable.twist"]         # (W, N - 1) each rod joint's twist, rad
+    s["water.temperature"]   # and the other keys sim.state() reads from a solver (a heated liquid's temperature, a
+                             # yielding sheet's, wire's or joint's plastic_strain, a yielding joint's rest), (W, ...)
     s["steps"], s["t"]       # (W,) steps and seconds since each world's episode started
     s["action"]              # (W, A) the last action
     s.start["cube.pos"]      # the same keys, at each world's last reset
@@ -32,7 +35,7 @@ BODY_FIELDS = ("pos", "body_pos", "com", "quat_xyzw", "quat_wxyz", "vel", "angve
 MODEL_ARRAYS = ("body_com",)
 JOINT_FIELDS = ("q", "qd")
 PARTICLE_FIELDS = ("points", "center", "active")
-ROD_FIELDS = ("points",)
+ROD_FIELDS = ("points", "twist")
 
 
 class Rows:
@@ -72,14 +75,24 @@ class Rows:
             self._cache[key] = (self.xp.asarray(r.rows, "int64"), *tile)
         return self._cache[key]
 
+    def rod_axis(self, name: str) -> Any:
+        """(N, 3) each segment's unit axis, start to end, in its body frame. Example: ``rows.rod_axis("cable")``."""
+        key = ("rod_axis", name)
+        if key not in self._cache:
+            r = self.layout.rods[name]
+            axis = np.asarray(r.end, np.float64) - np.asarray(r.start, np.float64)
+            self._cache[key] = self.xp.asarray(axis / np.linalg.norm(axis, axis=1, keepdims=True))
+        return self._cache[key]
+
 
 class BatchState(Mapping[str, Any]):
     """Named state of every world; values are computed on first access and cached for this moment."""
 
     def __init__(self, arrays: Callable[[str], Any], rows: Rows, *, extra: Mapping[str, Any] | None = None,
-                 start: BatchState | None = None) -> None:
+                 start: BatchState | None = None, derived: Mapping[str, Callable[[], Any]] | None = None) -> None:
         self._arrays, self.rows, self.xp = arrays, rows, rows.xp
         self._extra = dict(extra or {})
+        self._derived = dict(derived or {})        # keys read some other way (``alloy.envs.sim_keys``): key -> read
         self._cache: dict[str, Any] = {}
         self.start = start
 
@@ -103,17 +116,14 @@ class BatchState(Mapping[str, Any]):
 
     def keys(self) -> list[str]:  # type: ignore[override]
         """Every key this state can give. Example: ``"cube.pos" in s.keys()``."""
-        lay = self.rows.layout
-        out = [f"{b}.{f}" for b in lay.bodies for f in BODY_FIELDS]
-        out += [f"{j}.{f}" for j in lay.joints for f in JOINT_FIELDS]
-        out += [f"{p}.{f}" for p in lay.particles for f in PARTICLE_FIELDS]
-        out += [f"{r}.{f}" for r in lay.rods for f in ROD_FIELDS]
-        return out + list(self._extra)
+        return state_keys(self.rows.layout) + list(self._derived) + list(self._extra)
 
     def __contains__(self, key: object) -> bool:
-        return isinstance(key, str) and (key in self._extra or key in self.keys())
+        return isinstance(key, str) and (key in self._extra or key in self._derived or key in self.keys())
 
     def _compute(self, key: str) -> Any:
+        if key in self._derived:
+            return self._derived[key]()
         name, _, fld = key.rpartition(".")
         lay = self.rows.layout
         if not name:
@@ -144,7 +154,7 @@ class BatchState(Mapping[str, Any]):
             return q[:, 0:3] + rotate(self.xp, q[:, 3:7], self._arrays("body_com")[rows])
         if name in self.rows.layout.rods:
             if fld in ROD_FIELDS:
-                return self._rod_points(name)
+                return self._rod_points(name) if fld == "points" else self._rod_twist(name)
             raise _bad_field(key, BODY_FIELDS + ROD_FIELDS)
         raise _bad_field(key, BODY_FIELDS)
 
@@ -157,6 +167,23 @@ class BatchState(Mapping[str, Any]):
         starts = (pos + rotate(self.xp, quat, start)).reshape(n, w, 3)
         last = pos[-w:] + rotate(self.xp, quat[-w:], end[-w:])
         return self.xp.stack([starts[k] for k in range(n)] + [last], 1)
+
+    def _rod_twist(self, name: str) -> Any:
+        """(W, N - 1): joint k's twist, the turn of segment k + 1 relative to segment k about k's axis, in (-pi, pi]
+        (``alloy.api._rods.twist``)."""
+        rows, _start, _end = self.rows.rod(name)
+        n, w = rows.shape
+        xp = self.xp
+        if n < 2:
+            return xp.zeros((w, 0))
+        q = self._arrays("body_q")[rows][..., 3:7]                   # (N, W, 4) x, y, z, w
+        a, b = q[:-1], q[1:]
+        av, bv = a[..., 0:3], b[..., 0:3]
+        rel_v = a[..., 3:4] * bv - b[..., 3:4] * av - _cross(xp, av, bv)  # conj(a) * b: vector part, then scalar
+        rel_w = a[..., 3] * b[..., 3] + (av * bv).sum(-1)
+        tw = 2.0 * xp.atan2((rel_v * self.rows.rod_axis(name)[:-1, None, :]).sum(-1), rel_w)
+        tw = xp.where(tw > np.pi, tw - 2.0 * np.pi, xp.where(tw < -np.pi, tw + 2.0 * np.pi, tw))
+        return xp.stack([tw[k] for k in range(n - 1)], 1)
 
     def _joint(self, name: str, fld: str, key: str) -> Any:
         if fld not in JOINT_FIELDS:
@@ -187,6 +214,14 @@ class BatchState(Mapping[str, Any]):
             return self.xp.zeros(tuple(rows.shape), "bool")
 
 
+def state_keys(layout: Layout) -> list[str]:
+    """The keys a ``BatchState`` computes from the engine's arrays. Example: ``state_keys(env.layout)``."""
+    out = [f"{b}.{f}" for b in layout.bodies for f in BODY_FIELDS]
+    out += [f"{j}.{f}" for j in layout.joints for f in JOINT_FIELDS]
+    out += [f"{p}.{f}" for p in layout.particles for f in PARTICLE_FIELDS]
+    return out + [f"{r}.{f}" for r in layout.rods for f in ROD_FIELDS]
+
+
 def rotate(xp: Any, q_xyzw: Any, v: Any) -> Any:
     """Rotate (W, 3) vectors by (W, 4) unit quaternions (x, y, z, w). Example: ``rotate(xp, q, v)``."""
     u, w = q_xyzw[:, 0:3], q_xyzw[:, 3:4]
@@ -195,8 +230,8 @@ def rotate(xp: Any, q_xyzw: Any, v: Any) -> Any:
 
 
 def _cross(xp: Any, a: Any, b: Any) -> Any:
-    return xp.stack([a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1], a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2],
-                     a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]], -1)
+    return xp.stack([a[..., 1] * b[..., 2] - a[..., 2] * b[..., 1], a[..., 2] * b[..., 0] - a[..., 0] * b[..., 2],
+                     a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]], -1)
 
 
 def _bad_field(key: str, fields: tuple[str, ...]) -> Exception:
@@ -207,4 +242,4 @@ def _bad_field(key: str, fields: tuple[str, ...]) -> Exception:
 
 
 __all__ = ["BODY_FIELDS", "BatchState", "ENGINE_ARRAYS", "JOINT_FIELDS", "MODEL_ARRAYS", "PARTICLE_FIELDS",
-           "ROD_FIELDS", "Rows", "rotate"]
+           "ROD_FIELDS", "Rows", "rotate", "state_keys"]

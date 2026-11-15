@@ -16,6 +16,10 @@ from alloy.contact.noslip_hold import HOLD_ITERATIONS, HOLD_KEY, HOLD_TOLERANCE,
 from alloy.scene.builtin_plugins import _mujoco
 from alloy.testing import dcconn
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "a bare ModelBuilder fixture with bodies in the global world, which the C route refuses")
+
 MU, HALF, DT = 0.5, 0.025, 1.25e-3
 CREEP_MAX = 1e-6          # m/s
 ROUTE = {"solver": "newton", "cone": "elliptic", "impratio": 300.0, "integrator": "implicitfast"}
@@ -57,6 +61,7 @@ def _box_creep(kw: dict, t0: float = 0.5, t1: float = 1.5) -> float:
     return (x[t1] - x[t0]) / (t1 - t0)
 
 
+@WARP_ROUTE
 def test_box_rig_creeps_on_the_route_and_holds_with_the_opt_in():
     assert _box_creep(dict(ROUTE)) > CREEP_MAX                       # 2.07 um/s at impratio 300
     assert abs(_box_creep({**ROUTE, HOLD_KEY: True})) <= CREEP_MAX

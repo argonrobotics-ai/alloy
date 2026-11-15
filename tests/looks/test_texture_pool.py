@@ -157,3 +157,73 @@ def test_alloy_cache_moves_the_texture_cache_for_fetch_and_the_camera(small_root
     assert not (tmp_path / ".cache").exists()
     monkeypatch.setenv("ALLOY_RENDER_ASSETS", str(tmp_path / "ra"))
     assert default_cache() == tmp_path / "ra"
+
+
+def test_a_set_cached_at_another_resolution_serves_a_default_look_with_one_notice(tmp_path, monkeypatch, caplog):
+    """The public texture library holds 1k sets and looks ask for 2k by default: the camera's cache serves the nearest
+    resolution on disk, the larger on a tie (one notice per set, naming the maps it used), so a default textured look
+    renders; a set not there at all still raises."""
+    from alloy.camera.errors import CameraError
+    from alloy.camera.looks import material_tree, textures
+    monkeypatch.setenv("ALLOY_RENDER_ASSETS", str(tmp_path))
+    monkeypatch.setattr(textures, "_NOTICED", set())
+    ph = tmp_path / "polyhaven" / "a"
+    ph.mkdir(parents=True)
+    listing = {key: {r: {"jpg": {"url": f"https://x/{r}/a_{tag}_{r}.jpg"}} for r in ("1k", "2k", "4k")}
+               for key, tag in (("Diffuse", "diff"), ("Rough", "rough"))}
+    (ph / "files.json").write_text(json.dumps(listing))      # the API listing names every resolution
+    for tag in ("diff", "rough"):
+        (ph / f"a_{tag}_1k.jpg").write_bytes(b"jpg")        # only 1k is on disk, as a library fetch leaves it
+    for res in ("1K", "4K"):
+        (tmp_path / "ambientcg" / f"c_{res}").mkdir(parents=True)
+        (tmp_path / "ambientcg" / f"c_{res}" / "c_Color.jpg").write_bytes(b"jpg")
+    (tmp_path / "ambientcg" / "c_1K" / ".done").write_text("ok")
+    with caplog.at_level("WARNING", logger=textures.__name__):
+        assert textures.local_texture_files("polyhaven:a", "2k")["color"] == ph / "a_diff_1k.jpg"
+        assert textures.local_texture_files("polyhaven:a", "2k")["roughness"] == ph / "a_rough_1k.jpg"
+        tree = material_tree("board", {"preset": "wood_oak", "texture": "polyhaven:a"})   # res: the 2k default
+        assert "a_diff_1k.jpg" in tree["textures"]
+        notices = [r.getMessage() for r in caplog.records]
+        assert notices == ["texture polyhaven:a: no 2k maps in the local asset cache; using the 1k maps there"]
+        assert textures.local_texture_files("ambientcg:c", "1k")["color"].parent.name == "c_1K"   # exact: no notice
+        assert len(caplog.records) == 1
+        (tmp_path / "ambientcg" / "c_4K" / ".done").write_text("ok")
+        assert textures.local_texture_files("ambientcg:c", "2k")["color"].parent.name == "c_4K"   # 4k ties 1k: larger
+        assert "using the 4k maps" in caplog.records[-1].getMessage()
+        for res in ("1K", "8K"):                             # nearest, not largest: 1k serves a 2k ask before 8k
+            (tmp_path / "ambientcg" / f"e_{res}").mkdir(parents=True)
+            (tmp_path / "ambientcg" / f"e_{res}" / "c_Color.jpg").write_bytes(b"jpg")
+            (tmp_path / "ambientcg" / f"e_{res}" / ".done").write_text("ok")
+        assert textures.local_texture_files("ambientcg:e", "2k")["color"].parent.name == "e_1K"
+        d = tmp_path / "polyhaven" / "d"                     # listed up to 4k, only 4k on disk: the notice says 4k
+        d.mkdir()
+        (d / "files.json").write_text(json.dumps({"Diffuse": {r: {"jpg": {"url": f"https://x/d_diff_{r}.jpg"}}
+                                                              for r in ("1k", "2k", "4k")}}))
+        (d / "d_diff_4k.jpg").write_bytes(b"jpg")
+        assert textures.local_texture_files("polyhaven:d", "2k")["color"] == d / "d_diff_4k.jpg"
+        assert caplog.records[-1].getMessage() == ("texture polyhaven:d: no 2k maps in the local asset cache; using "
+                                                   "the 4k maps there")
+        f = tmp_path / "polyhaven" / "f"                     # listed up to 2k: a 4k ask (8k tried first) says 2k
+        f.mkdir()
+        (f / "files.json").write_text(json.dumps({"Diffuse": {r: {"jpg": {"url": f"https://x/f_diff_{r}.jpg"}}
+                                                              for r in ("1k", "2k")}}))
+        (f / "f_diff_2k.jpg").write_bytes(b"jpg")
+        assert textures.local_texture_files("polyhaven:f", "4k")["color"] == f / "f_diff_2k.jpg"
+        assert caplog.records[-1].getMessage().endswith("no 4k maps in the local asset cache; using the 2k maps there")
+    with pytest.raises(CameraError, match="not in the local asset cache"):
+        textures.local_texture_files("polyhaven:missing", "2k")
+
+
+def test_a_full_fetch_also_takes_the_textures_that_presets_and_library_looks_name(small_root, tmp_path, monkeypatch):
+    mats = small_root.search_roots[0] / "looks" / "materials"
+    mats.mkdir()
+    (mats / "board.json").write_text(json.dumps({"schema": "alloy.look/1", "material": "board", "preset": "wood_oak",
+                                                 "texture": "polyhaven:extra"}))
+    extra = pool.look_textures(small_root)
+    assert extra["polyhaven:extra"] == "2k" and extra["polyhaven:oak_veneer_01"] == "2k"   # a library look's, a preset's
+    assert not {"polyhaven:a", "polyhaven:b", "ambientcg:c"} & set(extra)                  # pool sets are not repeated
+    _fake_hub(monkeypatch)
+    report = pool.fetch(lib=small_root, root=tmp_path / "cache")
+    assert report["downloaded"] == 2 and {"polyhaven:b", "polyhaven:extra", "polyhaven:oak_veneer_01"} <= set(
+        report["missing"])
+    assert pool.fetch("wood", lib=small_root, root=tmp_path / "c2")["missing"] == ["polyhaven:b"]   # a family: pool only

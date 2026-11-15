@@ -14,7 +14,8 @@ every model-level plug-in the ``mujoco`` factory installs) stepped by the route 
   log handler, names why and the fix: a missing C compiler is the usual one, F18);
 - **contact export** into Newton ``Contacts`` (``update_contacts``) and **health** mirrored into the Warp data that
   Alloy's HealthMonitor reads (contacts, solver iterations, and each world's ``overflow`` word with MuJoCo Warp's bits
-  for dropped contacts or constraint rows, so a capacity overflow fails closed). A world MuJoCo C flags (non-finite
+  for dropped contacts or constraint rows, so a capacity overflow fails closed); the copy follows MuJoCo C's own
+  contact count (:mod:`alloy.route.mjc_core_export`). A world MuJoCo C flags (non-finite
   or huge qpos / qvel / qacc) is frozen (skipped) with NaN in its Newton state until reset, so it reads as a blow-up,
   as on MuJoCo Warp: the route turns MuJoCo C's auto-reset off.
 
@@ -58,13 +59,15 @@ from alloy._vendor import newton
 
 from alloy.core.errors import GraphCaptureError, SolverOptionError
 from alloy.route.mjc_core_cabi import EXTENSION, CWorld, load_extension
-from alloy.route.mjc_core_config import RouteConfig
+from alloy.route.mjc_core_config import RouteConfig, export_cap
 from alloy.route.mjc_core_consts import apply as apply_constants, publish, world_constants
+from alloy.route.mjc_core_export import grow_mirror, refit, start_cap
 from alloy.route.mjc_core_models import LightRows, body_maps, world_models
 from alloy.route.mjc_core_noslip import ScopedNoslipNumpy
 from alloy.route.mjc_core_line import LineRule
 from alloy.route.mjc_core_tick import NumpyPlugins, WorldOut, arena_full, plain_tick, tick
 from alloy.route.mjc_core_views import NewtonViews, overflow_bits
+from alloy.route.mjc_core_state import LiveState, install as install_state
 from alloy.route.mjc_core_window import STATE_BITS, WindowStart
 
 log = logging.getLogger("alloy.route")
@@ -111,8 +114,11 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
         kw.update(use_mujoco_cpu=True, separate_worlds=True)
         super().__init__(model, **kw)
         uninstall(self)              # float64 qpos needs no carry (the default-on install wraps every SolverMuJoCo)
-        self.route = route or RouteConfig()
         self.nworld = int(model.world_count)
+        resolved = self.get_max_contact_count() // max(1, self.nworld)   # Newton's nconmax, raised to the start's
+        self.route = export_cap(route or RouteConfig(), start_cap(resolved, int(kw.get("nconmax") or 0)))
+        if self.route.ncon_max > 0:            # before any consumer sizes its buffers from it (mjc_core_export)
+            grow_mirror(self.mjw_data, self.route.ncon_max, self.nworld)
         self.worlds: list[mujoco.MjModel] = []
         self.datas: list[mujoco.MjData] = []
         self.outs: list[Any] = []
@@ -124,6 +130,8 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
         self._consts: dict[int, dict[str, Any]] = {}
         self._stale = False
         self._refresh_constants()                    # before the pair refit reads the per-world weights
+        self.live = LiveState(self, self.nworld)     # the float64 state snapshots copy (mjc_core_state)
+        install_state()
 
     def _refresh_constants(self) -> None:
         """Each mass-drawn world's own mass-derived constants (``mjc_core_consts``), published to the Warp rows."""
@@ -172,6 +180,7 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
         self._maps, globs = body_maps(self, self.nworld)
         self.views = NewtonViews(self, self.nworld, globs)
         self.window = WindowStart(self.views)
+        self.start = WindowStart(self.views)    # the float64 state at the start a reset returns to (save_start)
         self._plain = int(self.mj_model.opt.integrator) in _PLAIN
         self._scope = self.route.scope(self.mj_model) if noslip is not None else None
         self._make_outputs()
@@ -259,8 +268,10 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
         self.finalize_route()
         self._rebuild_if_stale()
         self._set_dt(float(dt))
-        changed = self.views.changed_worlds(state_in)
-        self.views.push_state(self.datas, state_in, changed)
+        changed, live = self._take_live(state_in)                 # live: a restored snapshot (mjc_core_state)
+        rest = np.setdiff1d(changed, live)
+        start = self._restore_start(state_in, rest) if rest.size else rest
+        self.views.push_state(self.datas, state_in, np.setdiff1d(rest, start))    # start: reset to the saved start
         self._frozen[changed] = False
         self.views.push_control(self.datas, state_in, control)
         bits = np.zeros(self.nworld, np.int32)
@@ -269,6 +280,7 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
                 bits[w] = self._tick(w, int(nstep))
         self.views.pull(self.datas, self.outs, state_out, state_in)
         self.views.poison(state_out, np.flatnonzero(self._frozen))
+        self.live.save(self.worlds, self.datas, state_out)
         self.views.set_overflow(bits)
         self._after_tick(state_out)
 
@@ -282,6 +294,8 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
             plain_tick(m, d, self._numpy[w], nstep, out)
         else:
             tick(m, d, self._numpy[w], nstep, out)
+        if self.route.ncon_max > 0:
+            refit(w, out, m, d)                 # the export follows MuJoCo C's count (mjc_core_export)
         after, full1 = out.counters(), arena_full(d)
         if after["nonfinite"] != before["nonfinite"]:
             self._frozen[w] = True
@@ -316,7 +330,8 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
 
     def reset(self, state: newton.State, world_mask: Any = None, flags: Any = None) -> None:
         """Newton's reset of ``state`` (model defaults in the selected worlds), then those worlds' MjData restart from
-        it: data cleared, state pushed, counters zeroed, unfrozen."""
+        it: data cleared, state pushed, counters zeroed, unfrozen. A world whose start is the one ``save_start`` saved
+        (bit for bit) continues from that start's float64 MuJoCo state, as the run after the save did."""
         super().reset(state, world_mask=world_mask, flags=flags)
         if not self._ready:
             return
@@ -329,6 +344,7 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
             mujoco.mj_resetData(self.worlds[w], self.datas[w])
             self.outs[w].zero()
         self.views.push_state(self.datas, state, worlds)
+        self.live.forget(worlds)
         self._frozen[worlds] = False
         if self.views.last_q is None:
             return
@@ -336,6 +352,22 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
             self.views.remember(state)
         else:
             self._remember_worlds(state, worlds)
+        self._restore_start(state, worlds)
+
+    def _restore_start(self, state: newton.State, worlds: np.ndarray) -> np.ndarray:
+        """Each of ``worlds`` whose state is the saved start takes that start's float64 MuJoCo state (``save_start``)
+        and its welded bodies' current poses (a joint frame may have changed since); returns those worlds."""
+        back = self.start.restore(self.worlds, self.datas, state, only=worlds)
+        self.views.push_mocap(self.datas, back)
+        return back
+
+    def save_start(self, state: newton.State) -> None:
+        """The start a reset returns to is ``state`` now (``alloy.Sim.settle``): keep each world's float64 MuJoCo
+        state with it, so a run after a reset repeats the run after the save bit for bit (pushed from the float32
+        start, it drifted by 3e-8 rad within 20 steps of a two-joint arm). Example: ``solver.save_start(engine.state)``.
+        """
+        if self._ready:
+            self.start.save(self.worlds, self.datas, state)
 
     def _remember_worlds(self, state: newton.State, worlds: np.ndarray) -> None:
         q, qd = state.joint_q.numpy(), state.joint_qd.numpy()
@@ -354,17 +386,31 @@ class MjcCoreSolver(newton.solvers.SolverMuJoCo):
             n = self.window.restore(self.worlds, self.datas, state).size
             log.debug("CPU route: restart pass, %d of %d worlds continue from the window's float64 state", n,
                       self.nworld)
-        elif int(flags) & STATE_BITS:
-            self.window.save(self.worlds, self.datas, state)
+        else:
+            self._take_live(state)                   # a restored snapshot is not a fresh push at the window start
+            if int(flags) & STATE_BITS:
+                self.window.save(self.worlds, self.datas, state)
+
+    def _take_live(self, state: newton.State) -> tuple[np.ndarray, np.ndarray]:
+        """The worlds whose handed-in state differs from the route's last output, and of those the ones a restored
+        snapshot put back (``LiveState.restore``: their float64 rows are back in MjData and they count as unchanged)."""
+        changed = self.views.changed_worlds(state)
+        back = self.live.restore(self.worlds, self.datas, state, only=changed) if changed.size else changed
+        self.views.push_mocap(self.datas, back)              # welded bodies at the current joint frames' poses
+        if back.size and self.views.last_q is not None:
+            self._remember_worlds(state, back)
+        return changed, back
 
     def notify_model_changed(self, flags: Any) -> None:
         """Newton's update of its Warp and template models, each world's mass-derived constants, then the route's
-        per-world models again before the next step (data kept)."""
+        per-world models again before the next step (data kept). Welded bodies take the poses of changed joint frames
+        in every world (``NewtonViews.refresh_mocap``)."""
         super().notify_model_changed(flags)
         if hasattr(self, "_consts"):                 # not during Newton's own __init__
             self._refresh_constants()
         if getattr(self, "_ready", False):
             self._stale = True                       # rebuilt before the next step (_rebuild_if_stale)
+            self.views.refresh_mocap(self.datas)
 
     def route_report(self) -> dict[str, Any]:
         """Backend, settings, plug-ins and the summed counters (gate rows, logs)."""

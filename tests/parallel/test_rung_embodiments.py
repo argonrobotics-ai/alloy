@@ -9,6 +9,12 @@ import pytest
 from alloy.parallel import ladder_run
 from alloy.parallel.rung_tasks import B0_SEED, TASKS, TaskRung
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "graph and ordered modes on: the ordered MuJoCo Warp route, which refuses the C route")
+# Module-wide: its tests share a module fixture or a cache, so an unmarked test would build it on the C route.
+pytestmark = WARP_ROUTE
+
 
 def test_embodiment_tasks_are_registered_as_l3():
     emb = [k for k in TASKS if k.startswith("emb_")]

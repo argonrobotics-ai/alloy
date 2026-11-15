@@ -39,15 +39,27 @@ Opt-in accelerators (`accel.py`), off by default (off, the class is the stock lo
 - ``alloy_chebyshev_hold_self_contact=True``: particles of a self-contact pair (fold plies) are not extrapolated
   either (known gap cloth-fold-unsettled-default).
 
-Takes SolverVBD's arguments unchanged, plus those three; adapters and estimators registered for SolverVBD resolve by MRO.
+Self-contact gains apart from body contact (`SelfContactGains`; off unless asked, and cloth_accuracy "default" and
+"super" ask for R 400, kd 0: known gap cloth-fold-unsettled-default).
+Newton's VBD reads `model.soft_contact_ke` / `soft_contact_kd` for self-contact at every particle iteration and, at
+each contact refresh, mixes them into the body-particle material. ``alloy_self_contact_ke_ratio=R`` caps the
+self-contact stiffness at R · m / dt² (m the median particle mass: the inertia of one vertex's local solve, against
+which a stiffer contact pair converges more slowly in VBD's Gauss-Seidel sweep); ``alloy_self_contact_kd`` replaces
+its damping. Body contacts keep the model's values: the swap holds only inside the particle iteration and the
+proxy-particle harvest, the two places Newton reads them for self-contact.
+
+Takes SolverVBD's arguments unchanged, plus those; adapters and estimators registered for SolverVBD resolve by MRO.
 """
 
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
 import warp as wp
 
 from alloy._vendor import newton
@@ -77,14 +89,43 @@ def after_accumulate_hook_ok(src: str | None = None) -> bool:
     return src.count(_TILE_FLAG) == 1 and 0 <= loop < last_acc < flag < solve
 
 
+@dataclass(frozen=True)
+class SelfContactGains:
+    """Self-contact stiffness cap and damping apart from body contact (module docstring)."""
+
+    ke_ratio: float | None          # self-contact ke <= ke_ratio * m_ref / dt^2; None: the model's ke
+    kd: float | None                # self-contact kd [N s/m]; None: the model's kd
+    m_ref: float                    # median positive particle mass [kg]
+
+    @classmethod
+    def for_model(cls, model: newton.Model, ke_ratio: float | None, kd: float | None) -> SelfContactGains | None:
+        if ke_ratio is None and kd is None:
+            return None
+        if (ke_ratio is not None and not ke_ratio > 0.0) or (kd is not None and not kd >= 0.0):
+            raise ValueError(f"alloy_self_contact_ke_ratio must be > 0 and alloy_self_contact_kd >= 0, got "
+                             f"{ke_ratio!r}, {kd!r}")
+        m = model.particle_mass.numpy() if model.particle_count else np.zeros(0)
+        m = m[m > 0.0]
+        return cls(ke_ratio, kd, float(np.median(m)) if m.size else 0.0)
+
+    def values(self, ke: float, kd: float, dt: float) -> tuple[float, float]:
+        """(ke, kd) for self-contact at a step of dt, from the model's (body contact) values; never stiffer."""
+        if self.ke_ratio is not None and self.m_ref > 0.0 and dt > 0.0:
+            ke = min(float(ke), self.ke_ratio * self.m_ref / (dt * dt))
+        return ke, (kd if self.kd is None else self.kd)
+
+
 class SolverVBDAlloy(newton.solvers.SolverVBD):
     """SolverVBD with static-shape DAT under self-contact and a per-colour callback (module docstring)."""
 
     def __init__(self, model: newton.Model, *args, alloy_initial_guess: str = "inertial",
                  alloy_chebyshev_rho: float | None = None, alloy_chebyshev_hold_self_contact: bool = False,
+                 alloy_self_contact_ke_ratio: float | None = None, alloy_self_contact_kd: float | None = None,
                  **kwargs) -> None:
         cfg = AccelConfig(alloy_initial_guess, alloy_chebyshev_rho, bool(alloy_chebyshev_hold_self_contact))
+        gains = SelfContactGains.for_model(model, alloy_self_contact_ke_ratio, alloy_self_contact_kd)
         super().__init__(model, *args, **kwargs)
+        self.self_contact_gains = gains if self.particle_enable_self_contact else None
         cpu_owned = (self.particle_enable_self_contact and getattr(self, "collision_pipeline", None) is None
                      and not wp.get_device(self.device).is_cuda)
         self._sc_launch_full = self.particle_self_contact_evaluation_kernel_launch_size if cpu_owned else None
@@ -192,8 +233,27 @@ class SolverVBDAlloy(newton.solvers.SolverVBD):
             acc.pending_dt = None
         acc.start_iterations(self, contacts)
 
+    @contextmanager
+    def _self_contact_values(self, dt: float) -> Iterator[None]:
+        """The model's soft-contact ke / kd set to the self-contact values for the block, then put back."""
+        g, m = getattr(self, "self_contact_gains", None), self.model    # Newton's __init__ may run before it is set
+        if g is None:
+            yield
+            return
+        ke, kd = m.soft_contact_ke, m.soft_contact_kd
+        m.soft_contact_ke, m.soft_contact_kd = g.values(ke, kd, float(dt))
+        try:
+            yield
+        finally:
+            m.soft_contact_ke, m.soft_contact_kd = ke, kd
+
+    def coupling_harvest_proxy_particle_forces(self, *args, dt: float, **kwargs) -> None:
+        with self._self_contact_values(dt):
+            super().coupling_harvest_proxy_particle_forces(*args, dt=dt, **kwargs)
+
     def _solve_particle_iteration(self, state_in, state_out, contacts, dt):
-        self._iteration_with_callbacks(state_in, state_out, contacts, dt)
+        with self._self_contact_values(dt):
+            self._iteration_with_callbacks(state_in, state_out, contacts, dt)
         acc = self._accel
         if acc.x1 is None or self.model.particle_count == 0:
             return
@@ -287,4 +347,5 @@ class SolverVBDAlloy(newton.solvers.SolverVBD):
             self._announce_colour()
 
 
-__all__ = ["COLOUR_SLOTS", "GATHER_OVERWRITES", "ColourCallback", "SolverVBDAlloy", "after_accumulate_hook_ok"]
+__all__ = ["COLOUR_SLOTS", "GATHER_OVERWRITES", "ColourCallback", "SelfContactGains", "SolverVBDAlloy",
+           "after_accumulate_hook_ok"]

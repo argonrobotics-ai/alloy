@@ -102,14 +102,18 @@ def _prepare(robot: Any, data: Any, cfg: FitConfig) -> tuple[_Problem, Recording
         None if cfg.state_columns is None else [int(c) for c in cfg.state_columns], alias)
     if any(j in alias for j in rec.joints):          # a Recording read without the robot at hand
         rec = Recording([alias.get(j, j) for j in rec.joints], rec.episodes, rec.source, rec.notes)
-    if cfg.joints:
-        rec = rec.select(list(cfg.joints))
+    fitted = list(cfg.joints) if cfg.joints else list(rec.joints)
+    rec.select(fitted)                               # an unknown joint raises, with the recording's joints
     names = variables(cfg.parameters)
     dt = control_dt(rec if cfg.time_unit == "s" else units.convert(rec, time=cfg.time_unit))
-    bench = Bench(robot, rec.joints, cfg.worlds, dt, cfg.device)
-    rec = units.convert(rec, cfg.angle_unit, cfg.time_unit, bench.hinge)
-    units.check(rec, bench.lower, bench.upper, bench.hinge)
-    tracks = [resample(e, bench.dt) for e in rec.episodes]
+    # the recorded joints that are not fitted still replay their motion: it loads the fitted ones
+    bench = Bench(robot, fitted, cfg.worlds, dt, cfg.device, held=[j for j in rec.joints if j not in fitted])
+    replayed = fitted + bench.held_names
+    lower, upper, hinge = bench.ranges(replayed)
+    rec = units.convert(rec.select(replayed), cfg.angle_unit, cfg.time_unit, hinge)
+    units.check(rec, lower, upper, hinge)
+    tracks = [resample(e, bench.dt).split(len(fitted)) for e in rec.episodes]
+    rec = rec.select(fitted)
     has_moved = identify.moved(np.concatenate([t.command for t in tracks]),
                                np.concatenate([t.position for t in tracks]), bench.hinge)
     if not has_moved.any():

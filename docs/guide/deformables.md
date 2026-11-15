@@ -9,7 +9,22 @@ routes each to its solver (cloth to a VBD cloth solver, liquid to an SPH solver)
 `scene.add_cloth(name, size=(x, y), pos=..., resolution=21, mass=None, thickness=0.002, material="cotton_woven",
 self_contact=True)`
 - a flat sheet in its local x-y plane, centred at `pos`; orient it with `rpy=` or a quaternion keyword;
-- `resolution`: vertices along the longer side (or `(nx, ny)`); finer sheets fold more smoothly and cost more;
+- `resolution`: cells along the longer side, the shorter side in proportion, so a sheet of n x m cells has
+  (n + 1) x (m + 1) vertices (`resolution=20` on a square sheet: 441); or `(nx, ny)` cells. Cells are as near square
+  as whole counts allow, so `(nx, ny)` is kept when it matches the sheet's size, and a sheet gets at most 1,600 cells
+  (40 x 40 when square); the build warns, naming the grid it makes, when either does not hold. Finer sheets fold more
+  smoothly and cost more;
+  - keep the cell (`size / resolution`) at or under the fabric's bending length (B / w)^(1/3), B the material's
+    `elastic.bending` (N·m) and w the sheet's weight per area (N/m²): about 1.6 cm for `cotton_woven` at a towel's
+    0.52 kg/m². A coarser sheet cannot buckle where it folds. It stores the compression in its triangles and can fling
+    one particle past 20 m/s, and health then freezes the world (SPEED_FAIL).
+  - The 1,600-cell cap bounds this. A square cotton sheet over about 64 cm a side (40 cells of 1.6 cm) gets cells
+    coarser than its bending length whatever `resolution` asks for: a 1 m sheet at `resolution=60` builds 40 x 40
+    cells of 2.5 cm.
+  - Measured on ClothFold's towel only (bending length 1.57 cm): at 13 cells (1.85 cm) 7.3 % of worlds reset in the
+    turn, at 19 cells (1.26 cm) 2.1 % (`make("ClothFold-v0", resolution=19)`). A cell just under the length
+    (16 cells, 1.50 cm) still let that fold drag the towel, so leave a margin
+    (`docs/known_gaps/cloth-contact-exit-kick.md`).
 - `mass`: total kg; without it the mass comes from the material and thickness;
 - `thickness` is the contact thickness (particles of radius `thickness / 2`); sheets thinner than the 2 mm default
   need a smaller `Scene(dt=...)`. A fabric bends as its material card says (`elastic.bending`: the KES bending
@@ -109,9 +124,15 @@ self_contact=True)`
   step; at that solver's default of 10 a sheet that hangs or drapes is far from converged (it stretches 13 % and
   hangs too low). The default and "super" start each step from the last step's motion (VBD's adaptive initial
   guess) and accelerate the iterations (Chebyshev, rho 0.9): the default runs 40 of them, "super" 60. Particles
-  touching the cloth itself (a fold's plies) are not accelerated, since without that a folded stack kept bouncing
-  (`docs/known_gaps/cloth-fold-unsettled-default.md`; the plies still creep). The drape figures below predate
-  that; the drape laws still pass with it. Measured on the rc1-1110 release candidate, on a Cusick-style drape (a
+  touching the cloth itself (a fold's plies) are not accelerated, since without that a folded stack kept bouncing.
+  Cloth touching itself also has a contact stiffness of its own: at most 400 m / dt², with m the median particle
+  mass of the cloth and soft bodies on the cloth solver, and no collision damping (contact with bodies keeps the
+  material's). With it a towel folded in thirds comes to rest (8 of 8 starts within the fold's gates, 0.001 m/s).
+  The cap follows that one median, so a sheet more than about 9x lighter per vertex than it may not rest folded,
+  and a towel at a tenth of its weight still creeps (`docs/known_gaps/cloth-fold-unsettled-default.md`). A sheet
+  that folds onto itself steps 1.1-1.3x slower than without the cap (1.26x for a T-shirt's sleeve fold at 64
+  worlds on an L4), one that does not 1.00-1.04x. The drape figures below predate both; the drape laws still pass
+  with them. Measured on the rc1-1110 release candidate, on a Cusick-style drape (a
   30 cm disc over an 18 cm stand, 64 worlds on one L4), by the drape coefficient DC, the draped ring's shadow as a
   share of the flat ring (1 stays flat, 0 hangs straight down):
   - default: DC 0.741 (0.716 to 0.761 over the frames of the measuring window) at 0.43-0.52 % strain (1.64 simulated
@@ -227,8 +248,8 @@ moves faster than half `tool_speed` (pushed along, the push read up to 4.4x the 
 than 12x (at 100x the force read 38 % low where the tool first hit).
 A block that
 loses its support falls s times slowly (g / s), and health flags it QUASI_STATIC while it is pushed and as it falls:
-use the setting only for a block that stays on its support. The punch laws
-(mean pressure by the measured contact radius) are not claimed yet:
+use the setting only for a block that stays on its support. No punch law
+is claimed (the mean pressure by the measured contact radius reads 9-16 % under the cited value):
 [plasticity-mpm-solid-punch-force.md](../known_gaps/plasticity-mpm-solid-punch-force.md). Without the override
 such a solid is a soft body, which can yield at rest when its yield strain is small
 ([plasticity-soft-tets-low-yield.md](../known_gaps/plasticity-soft-tets-low-yield.md)).

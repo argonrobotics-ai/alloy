@@ -45,8 +45,10 @@ CPU, 1 world, `dt=0.01` (physics step 1.25 ms), MuJoCo C and MuJoCo Warp routes 
 - Health's depth equals the depth worked out from the bodies' heights within 0.01 mm.
 - A position-servoed arm link (kp 20,000) pressed onto a table passes 1 cm at t = 0.355 s and is frozen at
   t = 0.455 s, 18.7 mm deep. Before the fix it went 104.5 mm into the table with health OK.
-- 5 cm balls dropped 0.3, 0.6 and 0.9 m with restitution 0.6 dip 5.8, 8.2 and 10.1 mm at the bounce: PEN_WARN
-  while deep, OK at rest, never INVALID. A 10 cm, 5 kg cube dropped 0.4 m: the same.
+- 5 cm balls dropped 0.3, 0.6 and 0.9 m with restitution 0.6 dip 3.9, 5.2 and 6.8 mm at the bounce in a scene of
+  free balls only, whose contacts take the material's stiffness on an impact (5.8, 8.2 and 10.1 mm beside a free box,
+  a robot, a kinematic object or a gripped chain): PEN_WARN while deep, OK at rest, never INVALID. A 10 cm, 5 kg cube
+  dropped 0.4 m: the same (11.7 mm).
 - A 1 m cube at 10 kg/m3 dropped 5 cm / 0.5 m / 2 m / 5 m / 10 m dips 5.9 / 19 / 39 / 63 / 87 mm, each for under
   50 ms past 1 cm, and rests 0.05 mm deep: PEN_WARN while deep, never INVALID (87 mm is under its 10 cm).
 - Thin parts (`tests/precision/test_health_pen_measured.py`): a 5 mm plate pressed 2 / 3 / 6 mm into the ground

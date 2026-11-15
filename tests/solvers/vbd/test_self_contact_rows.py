@@ -6,9 +6,12 @@ the rest. The fix (``alloy.solvers.vbd.self_contact_rows``, opt-in ``alloy_self_
 ``ROWS_DEFAULT``) gives each row its own size, grows rows past 75 % full before a drop, and re-runs a period that
 dropped pairs.
 
-- R1 no drop: ten fine sheets stacked 1 mm apart (public API, defaults). With "fixed" rows it overflows (peak counts
-  over 32 / 64, SELF_CONTACT_OVERFLOW); with "scene" rows after EVERY step every row's count <= its size and the flag is
-  absent. (Bound: a pair beyond a row is never resolved.)
+- R1 no drop: ten 0.6 mm sheets started 1 mm apart, outside their 0.6 mm contact distance, so the pile is calm (no
+  ENERGY_JUMP, no latch) and crowded only by the detection reach (4.4 mm: eight layers). Inside the period (every
+  detection, not only the period's end) a row holds more than 32 / 64 pairs; "fixed" rows then drop pairs
+  (SELF_CONTACT_OVERFLOW), "scene" rows hold every pair (no flag; after every step each row's count <= its size).
+  (Bound: a pair beyond a row is never resolved.) Until 2026-11-14 R1 stacked 2 mm sheets 1 mm apart, inside their
+  margin: that pile blew up at the first check (ENERGY_JUMP, latched), and its counts came from the blow-up.
 - R2 growth rule: ``grown_sizes`` never shrinks, holds the need, stays under the cap, multiples of 8 when grown; the
   brute-force cross-layer count of N coincident flat grids (the least a row must hold; in-layer pairs inside the reach
   are the one-ring neighbours the filter drops) exceeds 32 / 64, and one scene-rows step sizes the rows above it.
@@ -73,36 +76,63 @@ def build_with_mode(scene: alloy.Scene, mode: str, monkeypatch: pytest.MonkeyPat
     return alloy.build(scene, device=device)
 
 
-def stacked_sheets(layers: int, resolution: int, gap: float = 0.004) -> alloy.Scene:
-    """Public API, defaults: ``layers`` fine 0.3 m sheets a few mm apart on a table."""
+def stacked_sheets(layers: int, resolution: int, gap: float = 0.004, thickness: float = 0.002) -> alloy.Scene:
+    """Public API, defaults: ``layers`` 0.3 m sheets ``gap`` apart on a table."""
     scene = alloy.Scene(dt=0.01)
     scene.add_ground()
     scene.add_box("table", size=(0.5, 0.5, 0.4), pos=(0, 0, 0.2), static=True)
     for i in range(layers):
-        scene.add_cloth(f"c{i}", size=(0.3, 0.3), pos=(0, 0, 0.404 + gap * i), resolution=resolution, mass=0.05)
+        scene.add_cloth(f"c{i}", size=(0.3, 0.3), pos=(0, 0, 0.404 + gap * i), resolution=resolution, mass=0.05,
+                        thickness=thickness)
     return scene
 
 
+def in_period_peaks(sim: Any) -> dict[str, int]:
+    """The most pairs one vertex / edge row held at any detection from now on (read after each one, inside the
+    period), filled in place while the sim steps."""
+    v, peak = _vbd(sim), {"vertex": 0, "edge": 0, "detections": 0}
+    watch = getattr(v, self_contact.WATCH_ATTR)
+    inner = watch.after_detection
+
+    def after() -> None:
+        inner()
+        ci = v.trimesh_collision_info
+        peak["vertex"] = max(peak["vertex"], int(ci.vertex_colliding_triangles_count.numpy().max()))
+        peak["edge"] = max(peak["edge"], int(ci.edge_colliding_edges_count.numpy().max()))
+        peak["detections"] += 1
+
+    watch.after_detection = after
+    return peak
+
+
 # ---------------------------------------------------------------- R1
-R1_LAYERS, R1_RES, R1_GAP, R1_STEPS = 10, 10, 0.001, 2     # 1 mm apart, inside the 2 mm margin: a pile
+# 0.6 mm sheets 1 mm apart: outside their 0.6 mm contact distance (a calm pile), eight layers inside the 4.4 mm reach
+R1_LAYERS, R1_RES, R1_GAP, R1_THICK, R1_STEPS = 10, 10, 0.001, 0.0006, 2
+BLOW_UP = ("ENERGY_JUMP", "LATCHED")
+
+
+def r1_run(mode: str, monkeypatch: pytest.MonkeyPatch) -> tuple[Any, dict[str, Any], dict[str, int]]:
+    sim = build_with_mode(stacked_sheets(R1_LAYERS, R1_RES, R1_GAP, R1_THICK), mode, monkeypatch)
+    peak = in_period_peaks(sim)
+    out = probe(sim, R1_STEPS)
+    assert peak["detections"] > 0 and not set(BLOW_UP) & set(out["flags"]), (out, peak)     # calm: overflow only
+    assert peak["vertex"] > NEWTON_ROWS[0] and peak["edge"] > NEWTON_ROWS[1], (out, peak)
+    return sim, out, peak
 
 
 @LONG
 @pytest.mark.slow
 def test_r1_fixed_rows_overflow_the_pile(monkeypatch) -> None:
-    out = probe(build_with_mode(stacked_sheets(R1_LAYERS, R1_RES, R1_GAP), "fixed", monkeypatch), R1_STEPS)
-    assert out["peak_vertex"] > NEWTON_ROWS[0] and out["peak_edge"] > NEWTON_ROWS[1], out
-    assert out["over"] and "SELF_CONTACT_OVERFLOW" in out["flags"], out
+    _, out, peak = r1_run("fixed", monkeypatch)
+    assert "SELF_CONTACT_OVERFLOW" in out["flags"], (out, peak)
 
 
 @LONG
 @pytest.mark.slow
 def test_r1_scene_rows_never_drop_a_pair(monkeypatch) -> None:
-    sim = build_with_mode(stacked_sheets(R1_LAYERS, R1_RES, R1_GAP), "scene", monkeypatch)
+    sim, out, peak = r1_run("scene", monkeypatch)
     assert _vbd(sim).alloy_rows is not None
-    out = probe(sim, R1_STEPS)
-    assert not out["over"] and "SELF_CONTACT_OVERFLOW" not in out["flags"], out
-    assert out["peak_vertex"] > NEWTON_ROWS[0], out                  # the rows really held more than Newton's 32
+    assert not out["over"] and "SELF_CONTACT_OVERFLOW" not in out["flags"], (out, peak)
 
 
 # ---------------------------------------------------------------- R2

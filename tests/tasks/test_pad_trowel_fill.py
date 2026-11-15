@@ -270,8 +270,9 @@ def test_the_sims_lift_lays_the_end_footprint_and_only_v6s_set_down_clears_it() 
       footprint gains; nothing moves outside it and nothing is dropped;
     - v6: the second run is set down 1.106 mm over the level (``LAYER`` + ``CLEAR``) and presses 0 on the ride
       watch; its runs need 2.58 and 2.58 N of the 20 N hold;
-    - v5's rule: set down at the level, it presses 0.7055 cm³, the laid layer (the row's press: 0.696 cm³), and fails
-      the watch.
+    - v5's rule: set down at the level, and since WP15's ruling 7 ``SET_DOWN_CLEAR`` (20 um) over it, it presses the
+      laid layer over its sole, 0.5724 of the 0.7055 cm³ (the row's press, at the level: 0.696 cm³), and fails the
+      watch.
 
     Not claimed: that a lift always lays. Per-exchange traces of this rig lay only with the front edge ending 0 to
     0.03 mm short of a cell centre (0.05 mm short or 0.03 mm past: the column is cut at the level before the lift)
@@ -287,8 +288,8 @@ def test_the_sims_lift_lays_the_end_footprint_and_only_v6s_set_down_clears_it() 
     with pytest.MonkeyPatch.context() as m:          # v5's rule: the next set-down read on a surface with no end lay
         m.setattr(ST, "END", 0)
         v5 = ST.read_line(ln.d, ln.h0, ln.f, T.tau_b(ln.task, ln.f["age"] + ln.d.t))
-    assert v6.count == v5.count == 1 and v6.stages == v5.stages and v6.stages[j] == (ln.d.level, 0.0)
-    assert v6.touches(j)[1] == pytest.approx(LAYER + MG.CLEAR, abs=1e-12) and v5.touches(j)[1] == 0.0
+    assert v6.count == v5.count == 1 and v6.stages == v5.stages and v6.stages[j] == (ln.d.level, ST.SET_DOWN_CLEAR)
+    assert v6.touches(j)[1] == pytest.approx(LAYER + MG.CLEAR, abs=1e-12) and v5.touches(j)[1] == ST.SET_DOWN_CLEAR
     sim, flow = _sim(ln, [ST.with_reads(ln.knife.keys, [ln.d], [r]) for r in (v6, v5)], END_CARRY / CARRY_CAP)
     watch = _Watch(ln, flow, *(ST.line_z(ln.d, r)[1] for r in (v6, v5)))
     hooks, snaps, checks = watch.hooks(), [], []
@@ -318,7 +319,8 @@ def test_the_sims_lift_lays_the_end_footprint_and_only_v6s_set_down_clears_it() 
     assert drop[0] == pytest.approx(0.71e-6, rel=0.02) and lb[0] == pytest.approx(4.66e-6, rel=0.01), (lb, la)
     pressed = [[r.pressed_m3 for r in c] for c in checks]
     assert pressed[0] == [0.0, 0.0] and pressed[1][0] == 0.0, pressed      # v6: no set-down presses paste
-    assert pressed[1][1] == pytest.approx(laid[1], rel=1e-6), pressed      # v5's rule presses the laid layer
+    over_sole = np.clip(over[1] - ST.SET_DOWN_CLEAR, 0.0, None).sum() * CELL * CELL   # v5's sole: the clearance up
+    assert pressed[1][1] == pytest.approx(over_sole, rel=1e-6), (pressed, laid)  # v5's rule presses the laid layer
     assert watch.ok().tolist() == [True, False] and watch.pressed[0] == 0.0, (watch.need, watch.pressed)
     needs = [[r.need_n for r in c] for c in checks]
     assert 2.0 < needs[1][0] and max(map(max, needs)) < 3.0 < T.HOLD, needs     # 2.58 N: v6's runs cut the layer

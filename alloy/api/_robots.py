@@ -4,7 +4,8 @@
 A robot whose file gives its root body a free joint (MJCF ``<freejoint/>``: a carton with flaps, a mobile base, a
 loose gripper) can start somewhere else in every world (``add_robot(pos=(worlds, 3))``, ``scene.randomize(robot, "x",
 lo, hi)``) and be moved while running (``sim.set_pose(robot, pos=...)``). These write the root free joint and run
-forward kinematics over the robot's joints, so every link follows its base. A robot welded to the world has one base
+forward kinematics over the robot's joints, so every link follows its base; a per-world start moves the whole file,
+its own floor and the parts it welds to the world too. A robot welded to the world has one base
 pose for all worlds: move the other objects per world instead.
 """
 
@@ -138,8 +139,11 @@ def starts(scene: Any, seed: int) -> dict[str, np.ndarray]:
 
 
 def place(built: Any, rows: dict[str, np.ndarray]) -> None:
-    """Shift each robot's start by its per-world ``starts`` rows in the Model (root free joint, then FK of the robot),
-    before the simulation snapshots its start state, so ``reset`` returns there. Example: ``place(built, rows)``."""
+    """Move each robot's whole file by its per-world ``starts`` rows in the Model, before the simulation snapshots
+    its start state, so ``reset`` returns there: its free root bodies (the base, links following by FK), its other
+    root bodies (a part welded to the world, such as an obstacle) and its own static shapes (the file's floor), each
+    world by its own row. Before, only the base moved: the file's floor stayed at the first world's height in every
+    world, so a world whose row was lower started with its legs inside it. Example: ``place(built, rows)``."""
     from alloy._vendor import newton  # noqa: PLC0415
 
     from alloy.api.names import NameIndex  # noqa: PLC0415
@@ -148,18 +152,47 @@ def place(built: Any, rows: dict[str, np.ndarray]) -> None:
     idx = NameIndex.from_built(built)
     state = m.state()
     newton.eval_fk(m, m.joint_q, m.joint_qd, state)
-    q, x_p, x_c = m.joint_q.numpy(), m.joint_X_p.numpy(), m.joint_X_c.numpy()
-    body_q, q_start = state.body_q.numpy(), m.joint_q_start.numpy()
+    a = _Arrays(m, state)
     for name, per_world in rows.items():
-        root = base_joint(idx, m, name, BuildError)
-        joints = idx.per_world(root, "joint")
-        bodies = idx.per_world(idx.body(name), "body")
-        for w, (j, b) in enumerate(zip(joints, bodies)):
-            a = int(q_start[j])
-            q[a:a + 7] = joint_coords(x_p[j], x_c[j], body_q[b, :3] + per_world[w], body_q[b, 3:7])
-        log.info("robot %s: per-world starts for %d worlds", name, len(per_world))
-    m.joint_q.assign(q)
+        base_joint(idx, m, name, BuildError)                     # a welded base cannot be placed per world
+        roots = [j for j in idx.robot_joints[name] if int(a.parent[j]) == -1]
+        h = built.handles[name]
+        stride = len(h.world_stride.shape)
+        statics = [s for s in h.template.shape if int(a.shape_body[s]) < 0]
+        for w, row in enumerate(np.asarray(per_world, np.float64)):
+            for j in (int(r) + w * idx.stride["joint"] for r in roots):
+                a.shift_root(j, row)
+            for s in (s + w * stride for s in statics):
+                a.shape_tf[s, :3] += row
+        log.info("robot %s: per-world starts for %d worlds (%d root bodies, %d static shapes)", name, len(per_world),
+                 len(roots), len(statics))
+    a.write(m)
     newton.eval_fk(m, m.joint_q, m.joint_qd, m)
+
+
+class _Arrays:
+    """Host copies of the Model arrays ``place`` edits (and what it reads to edit them)."""
+
+    def __init__(self, m: Any, state: Any) -> None:
+        self.q, self.x_p, self.x_c = m.joint_q.numpy().copy(), m.joint_X_p.numpy().copy(), m.joint_X_c.numpy()
+        self.parent, self.child, self.kind = m.joint_parent.numpy(), m.joint_child.numpy(), m.joint_type.numpy()
+        self.q_start, self.body_q = m.joint_q_start.numpy(), state.body_q.numpy()
+        self.shape_body = m.shape_body.numpy()
+        self.shape_tf = m.shape_transform.numpy().copy()
+
+    def shift_root(self, j: int, row: np.ndarray) -> None:
+        """Root joint ``j`` (parent: the world) moves its body by ``row``: a free joint's coordinates, any other's
+        parent frame."""
+        if int(self.kind[j]) != FREE_JOINT:
+            self.x_p[j, :3] += row
+            return
+        b, a = int(self.child[j]), int(self.q_start[j])
+        self.q[a:a + 7] = joint_coords(self.x_p[j], self.x_c[j], self.body_q[b, :3] + row, self.body_q[b, 3:7])
+
+    def write(self, m: Any) -> None:
+        m.joint_q.assign(self.q)
+        m.joint_X_p.assign(self.x_p)
+        m.shape_transform.assign(self.shape_tf)
 
 
 def set_pose(sim: Any, name: str, pos: Any, quat_wxyz: Any, world: int | None) -> None:
@@ -195,17 +228,19 @@ def set_pose(sim: Any, name: str, pos: Any, quat_wxyz: Any, world: int | None) -
 
 
 def base_joint(idx: Any, model: Any, name: str, error: type = SimulationError) -> int:
-    """The template free joint of robot ``name``'s root body; ``error`` when there is none (a welded base).
+    """The template free joint of robot ``name``'s base (its first body); ``error`` when the base has none (welded
+    to the world or jointed). Other root bodies of the file (a part welded to the world) do not count.
 
     Example: ``base_joint(sim.index, sim.engine.model, "carton")``."""
     joints = idx.robot_joints.get(name)
     if joints is None:
         raise error(f"{name!r} is not a robot", "pass a robot's name (scene.add_robot) or use set_pose on a free "
                     "body", field="name")
-    parent, kind = model.joint_parent.numpy(), model.joint_type.numpy()
-    roots = [j for j in joints if int(parent[j]) == -1]
-    if len(roots) == 1 and int(kind[roots[0]]) == FREE_JOINT:
-        return roots[0]
+    parent, child, kind = model.joint_parent.numpy(), model.joint_child.numpy(), model.joint_type.numpy()
+    base = idx.body(name)
+    for j in joints:
+        if int(child[j]) == base and int(parent[j]) == -1 and int(kind[j]) == FREE_JOINT:
+            return j
     raise error(f"robot {name!r} has no free base (its root is welded to the world or jointed), so it cannot be "
                 "placed per world", _WELDED_FIX, field="name")
 

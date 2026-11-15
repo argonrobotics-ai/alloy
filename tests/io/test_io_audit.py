@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Regression tests for the import/export findings of the 0.1.2 audit (S3-002, 005, 007, 013, 014, 015, 016):
+"""Regression tests for import and export findings of an outside audit of 0.1.2:
 each one is the auditor's repro, cut down, asserting the fixed behaviour."""
 
 from __future__ import annotations
@@ -90,7 +90,7 @@ def _errors(res) -> list[dict]:
     return [i for i in res.issues if i["level"] == "error"]
 
 
-# --- S3-005: dampratio servos and <include> files -----------------------------------------------------------------
+# --- dampratio servos and <include> files -----------------------------------------------------------------
 
 def test_include_scene_with_dampratio_servo_imports(tmp_path):
     src = tmp_path / "src"
@@ -124,7 +124,7 @@ def test_import_errors_are_api_errors_with_a_fix(tmp_path):
     assert isinstance(err.value, ImportFileError) and "unknown suffix" in err.value.message and err.value.fix
 
 
-# --- S3-007: URDF floating joints, and the fix text for a joint without a servo -----------------------------------
+# --- URDF floating joints, and the fix text for a joint without a servo -----------------------------------
 
 def test_urdf_floating_joint_on_an_empty_root_is_a_free_base(tmp_path):
     path = _write(tmp_path, "floating.urdf", URDF_FLOATING)
@@ -158,7 +158,7 @@ def test_target_on_a_urdf_joint_names_what_each_format_needs(tmp_path):
     assert "URDF has no servo gains" in err.value.fix and "PhysicsDriveAPI" in err.value.fix
 
 
-# --- S3-016: static-only robot files and unexpanded xacro ---------------------------------------------------------
+# --- static-only robot files and unexpanded xacro ---------------------------------------------------------
 
 def test_static_only_robot_file_is_refused_with_a_fix(tmp_path):
     path = _write(tmp_path, "static_table.xml", '<mujoco model="static_table"><worldbody><geom name="table" '
@@ -198,7 +198,7 @@ def test_unexpanded_xacro_urdf_is_refused_with_the_command(tmp_path):
     assert "xacro husky.urdf" in err2.value.fix
 
 
-# --- S3-014: per-body masses, passive damping and springs ---------------------------------------------------------
+# --- per-body masses, passive damping and springs ---------------------------------------------------------
 
 def test_import_keeps_each_body_mass_and_the_joint_spring(tmp_path):
     res = alloy.io.import_file(_write(tmp_path, "lamp_scene.xml", LAMP), tmp_path / "cards")
@@ -229,7 +229,7 @@ def test_export_writes_passive_joint_damping(tmp_path):
                                                                        abs=2e-3)
 
 
-# --- S3-015: mirror-scaled meshes ---------------------------------------------------------------------------------
+# --- mirror-scaled meshes ---------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("fmt", ["mjcf", "urdf"])
 def test_mirror_scaled_mesh_imports_with_outward_winding(tmp_path, fmt):
@@ -246,7 +246,7 @@ def test_mirror_scaled_mesh_imports_with_outward_winding(tmp_path, fmt):
     assert alloy.load(res.scene, device="cpu").check()["ok"]
 
 
-# --- S3-002: actuators in exported USD, the URDF index, and a card folder that can move ---------------------------
+# --- actuators in exported USD, the URDF index, and a card folder that can move ---------------------------
 
 def _arm_export(tmp_path) -> dict:
     scene = alloy.Scene(dt=0.01)

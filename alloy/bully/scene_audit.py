@@ -9,7 +9,9 @@ so ``(seed + b, batch, world)`` is a replay handle that rebuilds the exact trace
 
 Each finding names its class, the row that set it, the first control tick, a replay handle and, for the first
 ``attribute`` findings of each (class, cause), the body involved, found by replaying that world alone up to its first
-tick with a host probe (``culprit``); ``replays_alone`` says whether the world trips the same way alone.
+tick with a host probe (``culprit``); ``replays_alone`` says whether the world trips the same way alone. A scene's
+randomized values are drawn at the audit's ``seed`` (as ``alloy.build(scene, seed=)``), and a world replayed alone
+keeps its own draws (``scene_target.alone_target``): world w of a randomized scene is not world 0.
 
 SB-7 itself is unchanged: it runs ``python -m alloy.bully sb7`` on the registered targets.
 
@@ -39,7 +41,7 @@ import numpy as np
 from alloy.bully.culprit import BODY_CAUSES, BodyProbe, culprit
 from alloy.bully.rate import blowup_rate
 from alloy.bully.replay import EpisodeRunner
-from alloy.bully.scene_target import AuditOptions, Channel, scene_target
+from alloy.bully.scene_target import AuditOptions, Channel, alone_target, scene_target
 from alloy.bully.search import alloy_sha
 from alloy.bully.severity import world_cause
 from alloy.bully.stress import random_legal_traces
@@ -62,6 +64,7 @@ class ReplayHandle:
     world: int
     horizon_s: float
     options: dict[str, Any] = field(default_factory=dict)  # AuditOptions fields
+    draw_seed: int = 0  # the seed the scene's randomized values were drawn at (the audit's seed)
 
     def to_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -125,9 +128,9 @@ def audit(scene: Any, episodes: int = 256, seed: int = 0, device: str | None = N
     dev, opts, lim = resolve_device(device), options or AuditOptions(), limits or BullyLimits()
     if episodes < 1 or horizon_s <= 0.0:
         raise BullyError(f"episodes={episodes}, horizon_s={horizon_s}: pass episodes >= 1 and horizon_s > 0")
-    target, channel = scene_target(scene, opts, library, dev)
+    target, channel = scene_target(scene, opts, library, dev, draw_seed=seed)
     size = int(batch or min(episodes, GPU_BATCH if dev.startswith("cuda") else CPU_BATCH))
-    base = ReplayHandle(scene_text(scene), seed, size, 0, float(horizon_s), dataclasses.asdict(opts))
+    base = ReplayHandle(scene_text(scene), seed, size, 0, float(horizon_s), dataclasses.asdict(opts), seed)
     runner = EpisodeRunner(target, size, dev, lim)
     severities, findings = [], []
     for b in range(math.ceil(episodes / size)):
@@ -183,14 +186,17 @@ def attribute_bodies(target: BullyTarget, findings: list[AuditFinding], device: 
     if per_group <= 0 or not findings:
         return findings
     groups: dict[tuple[str, str], int] = collections.Counter()
-    alone = EpisodeRunner(target, 1, device, limits)
+    alone: dict[int, EpisodeRunner] = {}             # one-world runner per world, with that world's draws
     out = list(findings)
     for i in sorted(range(len(out)), key=lambda j: out[j].severity):
         f = out[i]
         if groups[(f.severity, f.cause)] >= per_group:
             continue
         groups[(f.severity, f.cause)] += 1
-        out[i] = _attributed(alone, target, f, limits)
+        w = f.handle.world
+        if w not in alone:
+            alone[w] = EpisodeRunner(alone_target(target, w), 1, device, limits)
+        out[i] = _attributed(alone[w], target, f, limits)
     return out
 
 
@@ -261,9 +267,9 @@ def replay_finding(handle: ReplayHandle | dict[str, Any], device: str | None = N
     produces (with the body when ``attribute``), or None when the world runs clean alone."""
     h = handle if isinstance(handle, ReplayHandle) else ReplayHandle(**handle)
     dev, lim = resolve_device(device), limits or BullyLimits()
-    target, _ = scene_target(h.scene, AuditOptions(**h.options), library, dev)
+    target, _ = scene_target(h.scene, AuditOptions(**h.options), library, dev, draw_seed=h.draw_seed)
     trace = random_legal_traces(target, h.batch, h.horizon_s, seed=h.seed)[h.world: h.world + 1]
-    runner = EpisodeRunner(target, 1, dev, lim)
+    runner = EpisodeRunner(alone_target(target, h.world), 1, dev, lim)
     found = episode_findings(runner.run(trace), lim, h, 1.0 / target.actions.rate_hz)
     if not found:
         return None

@@ -457,7 +457,9 @@ def _to_motors(root: ET.Element) -> int:
 
 def _motorized_file(src: Path, meshdir: str | None) -> Path:
     text = src.read_text(encoding="utf-8")
-    out = cache_dir() / f"{src.stem}-motor-{hashlib.sha256(text.encode()).hexdigest()[:16]}.xml"
+    # the copy holds absolute paths into src's folder (and meshdir), so two checkouts must not share it
+    key = hashlib.sha256(f"{src.parent}|{meshdir}|{text}".encode()).hexdigest()[:16]
+    out = cache_dir() / f"{src.stem}-motor-{key}.xml"
     if out.is_file():
         return out
     root = ET.fromstring(text)

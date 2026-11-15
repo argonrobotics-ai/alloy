@@ -77,19 +77,46 @@ class Channel:
     description: str
 
 
+@dataclass(frozen=True, eq=False)
+class SceneMaker:
+    """``BullyTarget.make_sim`` of a scene target: builds ``worlds`` worlds whose randomized values
+    (``scene.randomize``) are drawn at ``draw_seed``. ``alone(w)`` builds one world with world ``w``'s draws (its
+    global world id), so a finding of world ``w`` replays in that world's scene, not world 0's."""
+
+    lib: Any
+    card: Any
+    opts: AuditOptions
+    draw_seed: int = 0
+    world_ids: tuple[int, ...] | None = None
+
+    def __call__(self, worlds: int, dev: str) -> SceneSim:
+        return build_scene_sim(self.lib, self.card, worlds, dev, self.opts, draw_seed=self.draw_seed,
+                               world_ids=self.world_ids)
+
+    def alone(self, world: int) -> SceneMaker:
+        return dataclasses.replace(self, world_ids=(int(world),))
+
+
+def alone_target(target: BullyTarget, world: int) -> BullyTarget:
+    """``target`` building one world with world ``world``'s randomized values (``SceneMaker.alone``); a target
+    without them (a registered one) unchanged."""
+    if not isinstance(target.make_sim, SceneMaker):
+        return target
+    return dataclasses.replace(target, make_sim=target.make_sim.alone(world))
+
+
 def scene_target(scene: Any, options: AuditOptions | None = None, library: Any = None,
-                 device: str = "cpu") -> tuple[BullyTarget, Channel]:
+                 device: str = "cpu", *, draw_seed: int = 0) -> tuple[BullyTarget, Channel]:
     """``scene`` (YAML path, library scene name, YAML text or ``SceneCard``, as ``alloy.check``) as a bully
-    target, and the command channel found in it (a one-world build on ``device``)."""
+    target whose randomized values are drawn at ``draw_seed``, and the command channel found in it (a one-world
+    build on ``device``)."""
     from alloy.check.source import load_source  # noqa: PLC0415 - alloy.check builds on the bully package
 
     opts = options or AuditOptions()
     src = load_source(scene, library)
     card = dataclasses.replace(src.card, control_dt=opts.control_dt)
-    channel = discover(build_scene_sim(src.lib, card, 1, device, opts), opts)
-
-    def make_sim(worlds: int, dev: str) -> SceneSim:
-        return build_scene_sim(src.lib, card, worlds, dev, opts)
+    make_sim = SceneMaker(src.lib, card, opts, int(draw_seed))
+    channel = discover(make_sim(1, device), opts)
 
     rate = 1.0 / opts.control_dt
     actions = ActionSpace(low=channel.low, high=channel.high, rate_hz=rate, max_delta_per_tick=channel.max_delta,
@@ -100,12 +127,19 @@ def scene_target(scene: Any, options: AuditOptions | None = None, library: Any =
     return target, channel
 
 
-def build_scene_sim(lib: Any, card: Any, worlds: int, device: str, opts: AuditOptions) -> SceneSim:
-    """Assemble ``card`` for ``worlds`` worlds and wire the product simulation (graphs off)."""
+def build_scene_sim(lib: Any, card: Any, worlds: int, device: str, opts: AuditOptions, *, draw_seed: int = 0,
+                    world_ids: tuple[int, ...] | None = None) -> SceneSim:
+    """Assemble ``card`` for ``worlds`` worlds (``world_ids``: their global ids, whose randomized values they draw)
+    with the randomized values drawn at ``draw_seed`` (as ``alloy.build(scene, seed=)``), and wire the product
+    simulation (graphs off)."""
     from alloy.integration.wiring import build_simulation  # noqa: PLC0415
-    from alloy.scene.assembler import SceneAssembler  # noqa: PLC0415
+    from alloy.scene.assembler import SceneAssembler, digest_model  # noqa: PLC0415
+    from alloy.scene.randomize import apply_randomization, has_randomization  # noqa: PLC0415
 
-    built = SceneAssembler(lib).assemble(card, device, world_count=worlds)
+    built = SceneAssembler(lib).assemble(card, device, world_count=worlds, world_ids=world_ids)
+    if draw_seed and has_randomization(card):        # the assembly draws at 0; reset redraws at this seed
+        apply_randomization(built, int(draw_seed))
+        built.model_digest = digest_model(built.model)
     with wp.ScopedDevice(device):
         sim = SceneSim(build_simulation(built, opts.profile, graph="off", mjw_route=opts.mjw_route))
     sim.ordered = ordered_route(sim)

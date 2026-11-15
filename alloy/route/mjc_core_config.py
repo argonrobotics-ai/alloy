@@ -76,5 +76,14 @@ class RouteConfig:
         return 64 if spec.scope != ALL and not spec.surfaces else 2**31 - 1
 
 
+def export_cap(route: RouteConfig, resolved: int) -> RouteConfig:
+    """``route`` exporting at least ``resolved`` contacts per world (``mjc_core_export.start_cap`` of the entry's
+    nconmax as Newton resolved it, raised to the start's contacts). MuJoCo C solves every contact, so an export capped
+    below that flagged CONTACT_OVERFLOW from step 0 on contacts nothing dropped. No export (0) stays none."""
+    if route.ncon_max <= 0 or resolved <= route.ncon_max:
+        return route
+    return route.replace(ncon_max=int(resolved))
+
+
 __all__ = ["BACKENDS", "CPU_ROUTE_ENV", "CPU_ROUTE_KEY", "DEFAULT_CPU_ROUTE", "MJC", "NCON_MAX", "WARP", "RouteConfig",
-           "requested_route"]
+           "export_cap", "requested_route"]

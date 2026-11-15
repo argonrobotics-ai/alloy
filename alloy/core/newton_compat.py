@@ -29,10 +29,10 @@ from alloy.core.errors import NewtonPinError, SolverOptionError
 
 log = logging.getLogger("alloy.core")
 
-# Private pin (NEWTON-BUMP 2026-11-09): public release-1.8 db915e1c + our 12 commits (alloy/_vendor/VENDORED.md),
+# Private pin (2026-11-12): public v1.8.0 425db81f + our 12 commits (alloy/_vendor/VENDORED.md),
 # also as vendor/newton/pin.bundle for scripts/newton_env.sh; Alloy imports the vendored copy. Keep the two pin lines
 # bare: scripts (newton_env.sh, gpu_run.sh, gate_remote.py) read them with an end-anchored regex.
-NEWTON_PIN: Final[str] = "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0"
+NEWTON_PIN: Final[str] = "89bf98d10f1db80ccf849d3376f6dcf710af3569"
 # MuJoCo Warp release v3.17.0: Newton release-1.8 needs MuJoCo 3.17 (eq_data is 12 wide). It keeps the noslip solver.
 MJWARP_PIN: Final[str] = "f34c6dd52813852d0f1a2ab6d1f4d21ef1f0829f"
 

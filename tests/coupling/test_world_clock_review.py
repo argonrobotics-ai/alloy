@@ -16,6 +16,11 @@ import alloy
 from alloy.coupling.world_clock import Moves
 from alloy.testing.coupling_world_clock import SEED, SLOTS, escalated, level, scene, state, tripping
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+pytestmark = WARP_ROUTE
+
 PERIODS = 3
 
 

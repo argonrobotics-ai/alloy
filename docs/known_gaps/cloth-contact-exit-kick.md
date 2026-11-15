@@ -43,8 +43,19 @@ probe, not shipped.
   plane was not stale: the finger moved 2-4 um per exchange.
 
 ## Workaround
-- Opt-in: `body_particle_exit_speed=<m/s>` in the cloth solver's settings (`True` for 1 m/s), or
-  `ALLOY_EXIT_SPEED=<m/s>` in the environment (`alloy/solvers/vbd/exit_speed.py`).
+- For a sheet you mesh yourself, the fix for the turn resets below is the mesh: keep the cell (`size / resolution`)
+  at or under the fabric's bending length (B / w)^(1/3), B the material's `elastic.bending` and w the sheet's weight
+  per area, about 1.6 cm for `cotton_woven` at a towel's weight. A coarser mesh cannot buckle where it folds. It
+  stores the compression in its triangles and can fling one particle past 20 m/s (a turn reset). On ClothFold's
+  towel (bending length 1.57 cm) 19 cells (1.26 cm) cut turn resets from 7.3 % to 2.1 % of worlds against 13 cells
+  (1.85 cm). Leave a margin: 16 cells (1.50 cm) still let its fold drag the towel (`docs/guide/deformables.md`).
+- The exit-speed cap. Opt-in, and it stays opt-in (ruling 2026-11-14): `body_particle_exit_speed=<m/s>` in the
+  cloth solver's settings (`True` for 1 m/s), or `ALLOY_EXIT_SPEED=<m/s>` in the environment
+  (`alloy/solvers/vbd/exit_speed.py`).
+  - What it trades: it removes energy and momentum from the capped particles only (Limits below).
+  - When it helps: coarse cloth meshes squeezed between fingers. On ClothFold's 13-cell towel it nearly halved the
+    frozen worlds. On a 19-cell towel it gained about half a point, measured across two trees. The finer towel
+    already removes most of the cause.
 - How it works (split impulse): after each step, a particle whose record started the step inside its contact
   distance keeps its solved position. The outward normal speed that undoing the start depth gave it, past the cap, is
   taken off.
@@ -62,19 +73,50 @@ probe, not shipped.
     step; the coupler's record-momentum feedback gives a robot body back only what the particles took.
   - A particle squeezed sideways out of a wedge between two records leaves along the wedge, not along either normal,
     and that speed is not capped.
-- Measured on ClothFold (one L4 per run, main b5121ce81 with `ALLOY_EXIT_SPEED=1.0`; 2026-11-11 11:58Z):
+- Measured on ClothFold (one L4 per run, main b5121ce81 with `ALLOY_EXIT_SPEED=1.0`; 2026-11-11):
   - The pinch-and-lift repro, 128 worlds: no world reset, against 31 with the cap off.
-  - The task, 960 worlds a side, against a control of 1,088 a side with the cap off (main 1db240364; the trees differ
-    by the cap and by changes ClothFold does not use). The shipped demo's frozen worlds fell from 10.8 % to 6.0 %,
-    the slow-release script's from 8.9 % to 6.8 %.
-  - Its fold count did not rise measurably with the demo (+1.6 points, t 0.8). It rose 5.6 points (t 2.4) with the
-    slow release.
-  - The resets left come while the fingers squeeze and carry the towel in the turn (4.7 % of the worlds, against
-    5.9 % with the cap off). At and after the release they fell from 3.9 % to 1.7 %. Which exit the cap misses in the
-    turn is being traced (a wedge exit, a stretch snap, or a neighbour of a capped particle).
+  - The task, 1,024 worlds a side (16 runs), against a control of 1,088 a side with the cap off (main 1db240364; the
+    trees differ by the cap and by changes ClothFold does not use). The shipped demo's frozen worlds fell from 10.8 %
+    to 6.1 %, the slow-release script's from 8.9 % to 6.9 %. Resets fell from 214 (in 2 x 1,088 worlds) to 133 (in
+    2 x 1,024).
+  - Its fold count did not rise measurably with the demo (37.6 % against 35.9 %, 30 steps after the script's end;
+    at 960 worlds a side +1.6 points, t 0.8). It rose with the slow release (44.5 % against 39.0 %).
+  - The resets left come while the fingers squeeze and carry the towel in the turn. At 960 worlds a side: in the turn
+    4.7 % of the worlds against 5.9 % with the cap off; at and after the release 1.7 % against 3.9 %.
+  - On a 19-cell towel (1.26 cm cells, against the shipped 13, 1.85 cm) the cap does less: 5.0 % frozen with it
+    (b5121ce81) and 5.5 % without it (main 50cd06a51, 1,024 worlds a side each; the two trees are 484 commits
+    apart, so read this as about half a point). With the cap off the finer towel alone took the frozen worlds from
+    11.9 % to 5.5 % (same tree and VMs).
+- The turn's resets are mostly not a contact exit. A particle probe on the demo (13 cells, cap on) caught 25 turn
+  resets at the 20 m/s limit:
+  - The fastest particle speeds up over about 30 force exchanges (0.3-0.6 ms), not in one step. In about half of
+    the cases no finger is near it.
+  - Its triangles are squeezed in their own plane: 20-43 % edge compression in 19 of the 25, against a median of
+    1-2 % on the crease particles of healthy worlds at the same time. That compression falls as the particle
+    speeds up.
+  - A folded crease alone is not the marker: every healthy world has crease hinges as flat at that time.
+  - Cause: the membrane resists compression at full stiffness, and a coarse towel cannot buckle at the crease, so
+    the compression is stored and then released into one particle. Bending holds about 1e-4 J per folded hinge,
+    against 0.04 J for a 0.2 g particle at 20 m/s.
+  - The energy balance (a second probe round, 2026-11-14) closes. 31 turn resets in 4 x 128 worlds, same settings,
+    with the whole towel recorded at every exchange, measured from 85 exchanges before the 20 m/s mark (about 6 m/s)
+    to the mark:
+    - The membrane energy of the particle's six triangles fell by as much as the kinetic energy of the particle and
+      its neighbours rose: ratio 0.8-1.3 in 21 of 31.
+    - With no finger touching the particle (16 cases) the median ratio is 1.02, and 14 of the 16 close. Those six
+      triangles held about 0.05 J and gave up about 0.025 J.
+    - Bending changed by about 1e-5 J.
+    - In 7, mostly a particle held in 4-8 finger records, the membrane gave up more than the particle gained, and
+      the fingers took the rest.
+    - In 3 the membrane did not account for the gain. One of them, after the release, jumped from 7.6 to 26.5 m/s
+      in one exchange beside the floor, with no record started inside its contact distance, so the cap did not see
+      it. Not traced.
+  - A finer towel buckles instead. At 19 cells with the cap off, turn resets fell from 75 to 21 per 1,024 worlds
+    (after the release, from 32 to 20). With the cap on they fell from 46 to 15, while resets after the release rose
+    from 9 to 18.
 
 ## Planned fix
-- The cap as a default (the ClothFold rows above), after a decision and an audit verdict.
-- The turn's resets: a probe dump splits the fastest particle's speed by record count, normal and tangent, and
-  edge stretch.
+- Not a default cap: ruled 2026-11-14 that it stays opt-in (Workaround above).
+- The turn's resets: closed with the mesh rule (Workaround; ruling 2026-11-14). A limit on the membrane's
+  compressive stiffness in Newton's membrane kernel is an idea, not scheduled.
 - Then trace how the particle starts a step that deep, which the cap does not fix.

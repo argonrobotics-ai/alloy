@@ -258,9 +258,12 @@ class PortEnv(_Base):  # type: ignore[misc, valid-type]
         return info
 
     def _restart(self, done: np.ndarray) -> None:
+        """Autoreset: finished runs start their next episode with a seed moved on by ``num_envs``, so no world's seed
+        repeats an earlier episode's."""
         row = 0
         for slot in self._slots:
             if done[row:row + slot.worlds].any():
+                slot.seed += self.num_envs
                 slot.start()
             row += slot.worlds
 

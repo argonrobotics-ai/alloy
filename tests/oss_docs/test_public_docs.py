@@ -68,6 +68,9 @@ def _same_line(got: str, want: str) -> bool:
     return all(abs(float(g) - float(w)) <= ABS_TOL for g, w in pairs)
 
 
+_MISSING = re.compile(r"^ModuleNotFoundError: No module named '([\w.]+)'", re.M)   # h5py, gymnasium: extras
+
+
 def _run(code: str, cwd: Path) -> subprocess.CompletedProcess:
     python = os.environ.get("ALLOY_DOCS_PYTHON")
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
@@ -95,8 +98,8 @@ QUESTIONS = {f"answers/{name}.md" for name in (
     "mujoco-models-with-liquids-and-sand", "new-robotics-simulators-2026", "open-source-multi-physics-engines",
     "pip-installable-simulators", "robots-cloth-liquids-one-scene", "sand-and-granular-materials",
     "soft-body-manipulation-python")}
-NOT_RUN = {"how-to/evaluate-checkpoint.md": "needs rsl_rl and a trained checkpoint; run by hand on the 0.1.2 wheel",
-           "how-to/lerobot-dataset.md": "needs the lerobot extra, which changes the numpy pin; run by hand on 0.1.2"}
+NOT_RUN = {"how-to/evaluate-checkpoint.md": "needs rsl_rl and a trained checkpoint; run by hand on the published wheel",
+           "how-to/lerobot-dataset.md": "needs the lerobot extra, which changes the numpy pin; run by hand on the published wheel"}
 ANSWERS = {"faq.md"} | HOW_TO | COMPARE | QUESTIONS     # one question per page; on the site but not in its menu
 ONE_SENTENCE = {"answers/pip-installable-simulators.md":       # the only line of the set that names that product
                 "People looking for an alternative to Isaac Lab usually want a pip install and one GPU."}
@@ -249,6 +252,9 @@ def test_page_code_prints_what_the_page_says(page, tmp_path) -> None:
     if _id(page) in NOT_RUN:
         pytest.skip(NOT_RUN[_id(page)])
     res = _run(code, tmp_path)
+    missing = _MISSING.search(res.stderr) if res.returncode else None
+    if missing and missing.group(1).split(".")[0] != "alloy":
+        pytest.skip(f"the page needs {missing.group(1)}, an optional package this interpreter does not have")
     assert res.returncode == 0, f"{_id(page)} failed:\n{res.stdout[-1500:]}\n{res.stderr[-3000:]}"
     assert same_output(res.stdout, want), f"{_id(page)} printed:\n{res.stdout}\nbut the page says:\n{want}"
     for image in re.findall(r'path="([^"]+\.png)"', code):

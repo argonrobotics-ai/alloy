@@ -302,8 +302,9 @@ that ended in a fall, each reward term's mean) and appends it to `runs/go2/curve
 `runs/go2/model_last.pt`. At the end it rolls the policy out under six fixed commands and prints the speed reached.
 From Python: `from alloy.envs.loco.train import train, evaluate, ppo_config`.
 
-What we measured with that command on one NVIDIA L4, 4,096 worlds (98,304 samples per iteration), 400 iterations,
-two seeds (`--seed 0` and `--seed 1`):
+What we measured with that command on Alloy 0.1.2, on one NVIDIA L4, 4,096 worlds (98,304 samples per iteration),
+400 iterations, two seeds (`--seed 0` and `--seed 1`; later releases changed the reward's command reading and were
+not re-measured):
 
 - Speed: 2.3 s per iteration; 400 iterations took 15.3 and 15.2 minutes.
 - Learning:
@@ -496,8 +497,8 @@ python -m alloy.envs.loco.train --terrain rough --num-envs 4096 --iterations 300
 The printed lines then also carry `terrain_level`, the mean level of the worlds. A hand-written trot on a three-level
 field, with the curriculum moving the robots, is `examples/envs/go2_walk/rough_terrain.py`.
 
-What one run reached (seed 0, 4,096 worlds, 300 iterations, 29.5 M samples, 21-71 minutes in two runs on one L4; the
-default field of five levels, robots starting on levels 0 and 1):
+What one run reached on Alloy 0.1.2 (seed 0, 4,096 worlds, 300 iterations, 29.5 M samples, 21-71 minutes in two runs
+on one L4; the default field of five levels, robots starting on levels 0 and 1; not re-measured since):
 
 | iteration | mean terrain level | episodes that ended in a fall | `track_lin_vel` term mean |
 |---|---|---|---|

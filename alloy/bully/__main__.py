@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Bully CLI: ``python -m alloy.bully {run,b0,replay,try,sb7,targets} ...`` (SPEC §5.2 BUL-1, BUL-2, SB-7).
+"""Bully CLI: ``python -m alloy.bully {run,b0,replay,try,sb7,targets,audit} ...`` (SPEC §5.2 BUL-1, BUL-2, SB-7).
 
-Each command writes one JSON object to stdout (the record a results row cites) and logs progress to stderr.
+Each command writes one strict JSON object to stdout (the record a results row cites; ``jsonsafe``: non-finite
+numbers as "inf" / "-inf" / "nan") and logs progress to stderr. ``run`` reports the findings as filed in the corpus
+(ids, repro commands, REPEAT severities). An Alloy error (an unknown finding, a command that failed without a crash)
+writes ``{"error": {"type", "message", "fix"}}`` and exits 2.
 """
 
 from __future__ import annotations
@@ -11,7 +14,6 @@ import collections
 import contextlib
 import ctypes
 import dataclasses
-import json
 import logging
 import os
 import sys
@@ -23,6 +25,7 @@ import numpy as np
 import warp as wp
 
 from alloy.bully.corpus import Corpus
+from alloy.bully.jsonsafe import dumps
 from alloy.bully.rate import blowup_rate_from_severity
 from alloy.bully.replay import EpisodeRunner
 from alloy.bully.search import search_detailed
@@ -30,7 +33,7 @@ from alloy.bully.severity import MONITORS, classify, world_cause
 from alloy.bully.stress import named_stress_phases, random_legal_traces, tile_phases
 from alloy.bully.targets import get_target, target_names
 from alloy.bully.types import BullyLimits, EpisodeResult, SearchConfig
-from alloy.core.errors import BullyError
+from alloy.core.errors import AlloyError, BullyError
 from alloy.precision.types import HealthFlags
 
 log = logging.getLogger("alloy.bully")
@@ -40,18 +43,8 @@ _RECORD_STREAM: TextIO = sys.stdout  # the original stdout while main() runs; ev
 
 
 def _emit(obj: dict[str, Any]) -> None:
-    _RECORD_STREAM.write(json.dumps(obj, default=_jsonable, sort_keys=True) + "\n")
+    _RECORD_STREAM.write(dumps(obj) + "\n")
     _RECORD_STREAM.flush()
-
-
-def _jsonable(x: Any) -> Any:
-    if isinstance(x, np.ndarray):
-        return x.tolist()
-    if isinstance(x, np.generic):
-        return x.item()
-    if dataclasses.is_dataclass(x):
-        return dataclasses.asdict(x)
-    return str(x)
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -69,7 +62,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     _emit({"command": " ".join(sys.argv), "target": target.name, "device": args.device, "worlds": args.worlds,
            "generations_run": out.generations_run, "wall_s": out.wall_s, "best_badness": out.best_badness,
            "first_trip_generation": out.first_trip_generation, "replays": out.replays, "filed": filed,
-           "findings": [dataclasses.asdict(f) for f in out.findings]})
+           "findings": [corpus.record(fid) for fid in filed]})          # as filed: ids, repro, REPEAT severity
     return 0
 
 
@@ -89,7 +82,9 @@ def cmd_replay(args: argparse.Namespace) -> int:
     if args.close and res.trips == 0:
         corpus.set_status(args.finding, "closed")
     _emit({"replay": dataclasses.asdict(res), "status": corpus.record(args.finding)["status"]})
-    return 0 if (res.counts or args.close) else 1
+    if args.close:                                   # closed: every run clean
+        return 0 if res.trips == 0 else 1
+    return 0 if res.counts else 1
 
 
 def cmd_try(args: argparse.Namespace) -> int:
@@ -193,8 +188,9 @@ def cmd_audit(args: argparse.Namespace) -> int:
 
     opts = AuditOptions(control_dt=args.control_dt, channel=args.channel, push_g=args.push_g)
     report = audit(args.scene, episodes=args.episodes, seed=args.seed, device=args.device, horizon_s=args.horizon,
-                   batch=args.batch, options=opts, attribute=args.attribute)
+                   batch=args.batch, options=opts, attribute=args.attribute, library=args.library or None)
     if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(report.to_json() + "\n")
     _emit(report.to_dict())
     return 0 if report.ok else 1
@@ -251,7 +247,9 @@ def _parser() -> argparse.ArgumentParser:
     au.add_argument("--push-g", type=float, default=0.2)
     au.add_argument("--control-dt", type=float, default=0.02)
     au.add_argument("--attribute", type=int, default=3, help="findings per (class, cause) given a body")
-    au.add_argument("--out", default=None, help="also write the JSON report here")
+    au.add_argument("--out", default=None, help="also write the JSON report here (parent folders are made)")
+    au.add_argument("--library", action="append", default=[], help="card root the scene's cards come from "
+                    "(repeatable), as alloy.audit's --library")
     return p
 
 
@@ -267,7 +265,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "targets":
             _emit({"targets": target_names()})
             return 0
-        return handlers[args.cmd](args)
+        try:
+            return handlers[args.cmd](args)
+        except AlloyError as exc:                    # a record, not a traceback (module doc)
+            log.error("%s: %s", type(exc).__name__, exc)
+            _emit({"command": args.cmd, "error": {"type": type(exc).__name__, "message": str(exc),
+                                                  "fix": getattr(exc, "fix", None)}})
+            return 2
 
 
 @contextlib.contextmanager

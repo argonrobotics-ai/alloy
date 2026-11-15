@@ -26,6 +26,9 @@ keeps the template's bit for bit). Its other mass-derived constants (``body_invw
 ``tendon_invweight0``, ``dof_M0``, ``stat.meaninertia``) come from ``mj_setConst`` on a copy
 (``alloy.route.mjc_core_consts``), as the Warp route's come from Newton's ``set_const_0`` per world.
 
+Frame data: MuJoCo derives frame shortcuts and each body's bounding-volume tree from geom poses and centres of mass
+when it compiles; a world that moves either gets them again from its own values (``alloy.route.mjc_core_frames``).
+
 Then the CPU-route solver settings (:class:`RouteSettings`), the light-body rows at the route's step, and the noslip
 switch: with Alloy's scoped noslip the model's own ``opt.noslip_iterations`` is 0 (the two never run together).
 """
@@ -39,6 +42,8 @@ from typing import Any
 
 import mujoco
 import numpy as np
+
+from alloy.route import mjc_core_frames as frames
 
 log = logging.getLogger("alloy.route")
 
@@ -101,6 +106,7 @@ def world_models(solver: Any, nworld: int, settings: RouteSettings, scoped_nosli
         m = copy.copy(tmpl)
         for name, host in diff.items():
             _write_field(m, name, host[w], host[w] != host[0])
+        frames.refresh(m, diff, w)          # MuJoCo's compile-time frame data for what this world moved
         if "body_mass" in diff and np.any(diff["body_mass"][w] != diff["body_mass"][0]):
             m.body_subtreemass[:] = subtree_mass(m)
         if gravity is not None:

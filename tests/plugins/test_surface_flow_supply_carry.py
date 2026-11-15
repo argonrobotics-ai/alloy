@@ -24,6 +24,9 @@ from alloy.plugins.surface_flow.charts import PlaneChart
 from alloy.plugins.surface_flow.supply import Pool
 from alloy.plugins.surface_flow.supply_stub import StubFilm
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("a captured period's replay: CPU graph capture, which the C route does not do")
+
 G, RHO = 9.81, 998.0
 FAR = PlaneChart("far", cells=(2, 2))
 R, HT = 0.03, 0.1                                      # the glass's inside: 30 mm radius, 100 mm deep
@@ -291,6 +294,7 @@ def test_a_spinning_glass_emptied_keeps_its_velocity():
     assert np.allclose(after[:3], before[:3] + np.array([0.0, 0.0, -G]) * sim.clock.control_dt, rtol=0.0, atol=1e-4)
 
 
+@WARP_ROUTE
 def test_a_captured_period_replays_the_carried_mass_bit_for_bit():
     """The masses set in apply and pushed into MuJoCo Warp replay in a captured graph exactly as eager (CPU graphs)."""
     runs = []

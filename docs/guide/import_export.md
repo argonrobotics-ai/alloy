@@ -1,7 +1,9 @@
 # Import and export: MJCF, URDF, USD
 
 - **Robots** load directly: `scene.add_robot(name, "robot.xml" | "robot.urdf" | "robot.usd")` or
-  `alloy.load("robot.xml")`. Use this for anything with joints you will drive.
+  `alloy.load("robot.xml")`. Use this for anything with joints you will drive. A file loaded with `alloy.load` is
+  one robot: a body that was kinematic in the scene cannot be driven there; `alloy.io.import_file` makes a kinematic
+  card that can.
   USD files need the `usd` extra (`pip install "alloy-engine[usd]"`); MJCF and URDF need nothing extra. Writing USD
   (`export_scene`) needs nothing extra.
 - **Import to cards** (`alloy.io.import_file(path, out_dir)`): turns an MJCF / URDF / USD file into Alloy cards
@@ -10,7 +12,8 @@
 - **Export** (`alloy.io.export_scene(scene, out_dir)`): writes MJCF (`<name>.xml`, loaded once in MuJoCo as a
   check), URDF (`urdf/<object>.urdf` + `urdf/index.json`) and USD (`<name>.usda`) of world 0. Alloy-only features
   (cloth, liquid, precision contact) are listed in `res.unmapped`. A scene saved from Python exports from its file:
-  `export_scene(scene.save("my_scene"), out_dir)`.
+  `export_scene(scene.save("my_scene"), out_dir)`. URDF and USD export refuse a scene with a body that has several
+  joints: export `formats=["mjcf"]`, or give each axis its own body.
 - Command line, JSON out: `python -m alloy.io import robot.xml --out my_library`,
   `python -m alloy.io export --scene demo_peg_d12 --out exported`.
 

@@ -19,6 +19,9 @@ wp = pytest.importorskip("warp")
 from alloy.contact import mjw_boxbox_line as L  # noqa: E402
 from alloy.contact.mjw_boxbox import set_primitive_boxbox  # noqa: E402
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("MuJoCo Warp's box-box line contacts")
+
 SLAB = '<geom name="slab" type="box" size="0.3 0.6 0.00635" pos="0.35 0 -0.00635"/>'
 XML = f"""<mujoco><worldbody>{SLAB}
   <body name="box"><freejoint/><geom name="box" type="box" size="{{size}}"/></body>
@@ -201,6 +204,7 @@ def test_line_opt_out_ids_exist_and_reach_only_the_listed_scenes(monkeypatch) ->
     assert L.model_objects(SimpleNamespace(body_label=["a/worldbody/a", "a/worldbody/a/b", "c/worldbody/c"])) == {"a", "c"}
 
 
+@WARP_ROUTE
 def test_routed_entries_get_line_contacts() -> None:
     """Built through the route: DC3's QSFP check scene (opted out until its A/B, 52b9f01a) and its SFP+ scene both get
     the line contacts."""

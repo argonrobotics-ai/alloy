@@ -253,9 +253,10 @@ def sort_imported_contacts(m: Any, d: Any) -> wp.array:
         return s.inv
     _order_contacts(m, d, use_gcid=False)
     _gather_contacts(d, s)
-    wp.launch(_gather2d, dim=s.address.shape, inputs=[d.nacon, n, s.perm, d.contact.efc_address], outputs=[s.address])
+    wp.launch(_gather2d, dim=s.address.shape, inputs=[d.nacon, n, s.perm, d.contact.efc_address], outputs=[s.address],
+              device=d.nacon.device)
     wp.copy(d.contact.efc_address, s.address)
-    wp.launch(_invert, dim=n, inputs=[d.nacon, n, s.perm], outputs=[s.inv])
+    wp.launch(_invert, dim=n, inputs=[d.nacon, n, s.perm], outputs=[s.inv], device=d.nacon.device)
     return s.inv
 
 
@@ -292,25 +293,28 @@ def _rank_contacts(nacon: wp.array[int], naconmax: int, main: wp.array[wp.uint64
 
 def _order_contacts(m: Any, d: Any, use_gcid: bool) -> None:
     """Leaves the canonical permutation (new slot -> old slot) in the scratch ``perm``."""
+    dev = d.nacon.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     n = int(d.naconmax)
     s = _contact_scratch(m, d)
     c = d.contact
-    wp.launch(_iota, dim=n, inputs=[s.perm])
+    wp.launch(_iota, dim=n, inputs=[s.perm], device=dev)
     has_flex = int(c.flex.shape[0] == n and c.elem.shape[0] == n and c.vert.shape[0] == n)
     if n <= SMALL_CONTACTS:  # keys per slot (identity perm), then one ranking launch instead of two radix sorts
         tie, main = s.keys[:n], s.keys[n:2 * n]
         wp.launch(_contact_tie_keys, dim=n, inputs=[d.nacon, n, s.perm, c.pos, c.dist, c.frame, has_flex, c.flex,
-                                                    c.elem, c.vert, c.geomcollisionid, int(use_gcid)], outputs=[tie])
+                                                    c.elem, c.vert, c.geomcollisionid, int(use_gcid)], outputs=[tie],
+                  device=dev)
         wp.launch(_contact_main_keys, dim=n, inputs=[d.nacon, n, s.perm, c.worldid, c.geom, c.geomcollisionid,
-                                                     int(use_gcid), s.geom_bits, s.cid_bits], outputs=[main])
+                                                     int(use_gcid), s.geom_bits, s.cid_bits], outputs=[main],
+                  device=dev)
         wp.launch_tiled(_rank_contacts, dim=1, inputs=[d.nacon, n, main, tie], outputs=[s.perm],
-                        block_dim=RANK_LANES)
+                        block_dim=RANK_LANES, device=dev)
         return
     wp.launch(_contact_tie_keys, dim=n, inputs=[d.nacon, n, s.perm, c.pos, c.dist, c.frame, has_flex, c.flex, c.elem,
-                                                c.vert, c.geomcollisionid, int(use_gcid)], outputs=[s.keys])
+                                                c.vert, c.geomcollisionid, int(use_gcid)], outputs=[s.keys], device=dev)
     wp.utils.radix_sort_pairs(s.keys, s.perm, n)
     wp.launch(_contact_main_keys, dim=n, inputs=[d.nacon, n, s.perm, c.worldid, c.geom, c.geomcollisionid,
-                                                 int(use_gcid), s.geom_bits, s.cid_bits], outputs=[s.keys])
+                                                 int(use_gcid), s.geom_bits, s.cid_bits], outputs=[s.keys], device=dev)
     wp.utils.radix_sort_pairs(s.keys, s.perm, n)
 
 
@@ -423,7 +427,7 @@ def _fused_small(d: Any, s: _ContactScratch) -> bool:
 def _sort_small(d: Any, s: _ContactScratch, use_gcid: bool, move_addr: bool) -> None:
     n, c = int(d.naconmax), d.contact
     nslot = int(c.efc_address.shape[1]) if move_addr else 0
-    wp.launch_tiled(_sort_contacts_small, dim=1,
+    wp.launch_tiled(_sort_contacts_small, dim=1, device=d.nacon.device,
                     inputs=[d.nacon, n, int(use_gcid), s.geom_bits, s.cid_bits,
                             _cols({f: getattr(c, f) for f in _FUSED}), _cols(s.copies), nslot, c.efc_address,
                             s.address],
@@ -434,13 +438,13 @@ def _gather_contacts(d: Any, s: _ContactScratch) -> None:
     n, c = int(d.naconmax), d.contact
     if set(s.copies) == set(_FUSED):  # no flex fields: two launches instead of two per field
         src, tmp = _cols({f: getattr(c, f) for f in _FUSED}), _cols(s.copies)
-        wp.launch(_gather_fused, dim=n, inputs=[d.nacon, n, s.perm, src], outputs=[tmp])
-        wp.launch(_copy_fused, dim=n, inputs=[d.nacon, n, tmp], outputs=[src])
+        wp.launch(_gather_fused, dim=n, inputs=[d.nacon, n, s.perm, src], outputs=[tmp], device=d.nacon.device)
+        wp.launch(_copy_fused, dim=n, inputs=[d.nacon, n, tmp], outputs=[src], device=d.nacon.device)
         return
     for f, dst in s.copies.items():
-        wp.launch(_gather, dim=n, inputs=[d.nacon, n, s.perm, getattr(c, f)], outputs=[dst])
+        wp.launch(_gather, dim=n, inputs=[d.nacon, n, s.perm, getattr(c, f)], outputs=[dst], device=d.nacon.device)
     for f, src in s.copies.items():
-        wp.launch(_copy_used, dim=n, inputs=[d.nacon, n, src], outputs=[getattr(c, f)])
+        wp.launch(_copy_used, dim=n, inputs=[d.nacon, n, src], outputs=[getattr(c, f)], device=d.nacon.device)
 
 
 def install_order_hooks() -> int:

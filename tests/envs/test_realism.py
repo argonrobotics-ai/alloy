@@ -203,22 +203,27 @@ def test_action_delay_hands_the_writer_the_action_of_k_steps_ago(base, slowed):
                 hist[w] = []
 
 
+HELD = 0.5          # the stub writer's held (start) target, what an absolute writer's servo keeps before a command
+
+
 def _stub(mode="delta", worlds=3):
     xp = NumpyBackend("cpu")
     xp.seed(0)
     spec = SimpleNamespace(mode=mode)
-    return SimpleNamespace(xp=xp, num_envs=worlds, writer=SimpleNamespace(size=2, spec=spec), obs_groups=())
+    target = SimpleNamespace(numpy=lambda: np.full((worlds, 2), HELD, np.float32))     # the writer's control array
+    writer = SimpleNamespace(size=2, spec=spec, target=target, rows=(slice(None), slice(None)))
+    return SimpleNamespace(xp=xp, num_envs=worlds, writer=writer, obs_groups=())
 
 
-@pytest.mark.parametrize(("mode", "first"), [("delta", [0, 0, 1, 2]), ("absolute", [1, 1, 1, 2])])
+@pytest.mark.parametrize(("mode", "first"), [("delta", [0, 0, 1, 2]), ("absolute", [HELD, HELD, 1, 2])])
 def test_action_delay_before_k_actions_exist(mode, first):
     layer, env = ActionDelay(2), _stub(mode)
     layer.attach(env)
     out = [layer.on_action(np.full((3, 2), v, np.float32))[0, 0] for v in (1, 2, 3, 4)]
-    assert out == first
+    assert out == first                       # absolute: the held target, not the first action (Gemini audit T1-023)
     layer.on_reset(np.array([True, False, False]))                           # world 0 cleared, the others go on
     got = layer.on_action(np.full((3, 2), 9, np.float32))
-    assert got[0, 0] == (0 if mode == "delta" else 9) and got[1, 0] == 3
+    assert got[0, 0] == (0 if mode == "delta" else HELD) and got[1, 0] == 3
 
 
 # --- validation ----------------------------------------------------------------------------------------------------

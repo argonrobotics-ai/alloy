@@ -27,6 +27,9 @@ from alloy.scene.builtin_plugins import builtin_capabilities
 from alloy.scene.noslip_route import NOSLIP_KEY
 from mjc_scenes import ARM, CTRL
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("checks the suite's own default route (warp)")
+
 pytestmark = pytest.mark.cpu_route
 
 DT = 0.002
@@ -82,6 +85,7 @@ class Run:
             self.s0, self.s1 = self.s1, self.s0
 
 
+@WARP_ROUTE
 def test_factory_builds_refuses_and_defaults(monkeypatch) -> None:
     import os
 

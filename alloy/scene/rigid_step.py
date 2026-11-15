@@ -71,7 +71,8 @@ from alloy.scene import rigid_step_robots as RR
 from alloy.scene import rigid_step_warn as RW
 from alloy.scene.entries import FILL_IMPRATIO, RIGID_FAST_EFFECT, RIGID_TARGET, SLIDING_MIN_IMPRATIO
 from alloy.scene.integrator_route import concave_names
-from alloy.scene.native_gains import DEFAULT_IMP, native_gains, resting_floor
+from alloy.scene.native_gains import DEFAULT_IMP, resting_floor
+from alloy.scene.native_gains import static_gains as native_gains  # the planner sizes steps on the static rule
 from alloy.scene.template import is_compliant
 
 log = logging.getLogger("alloy.scene")
@@ -194,10 +195,13 @@ def _free(b: newton.ModelBuilder, body: int) -> bool:
                for j in range(len(b.joint_type)))
 
 
-def gains_of(t: Any) -> Gains:
+def gains_of(t: Any, gains: str = "rk4") -> Gains:
+    """The gains facts of ``t`` under the entry's gains mode ``gains`` (its resting floor follows the mode, as
+    ``native_gains`` writes it)."""
     K = t.decision.numbers["k_compliant"] if is_compliant(t.decision) else pt.material_k(
         pt.MaterialEntry(t.material_key, t.obj.material))
-    return Gains(float(K), float(t.obj.material.surface.restitution.value), resting_floor(t), is_compliant(t.decision))
+    return Gains(float(K), float(t.obj.material.surface.restitution.value), resting_floor(t, gains),
+                 is_compliant(t.decision))
 
 
 # --- facts ------------------------------------------------------------------------------------------------------
@@ -212,9 +216,10 @@ class Collected:
     starts: RW.Starts | None
 
 
-def collect_all(b: newton.ModelBuilder, objs: Sequence[Any], rows: Mapping[str, Any] | None) -> Collected:
-    """``BodyFacts`` (with start drops and loads) and ``Gains`` of every dynamic body that collides, with the start
-    data that gave the drops (no wall probe: ``collect`` adds it)."""
+def collect_all(b: newton.ModelBuilder, objs: Sequence[Any], rows: Mapping[str, Any] | None,
+                gains_mode: str = "rk4") -> Collected:
+    """``BodyFacts`` (with start drops and loads) and ``Gains`` (under ``gains_mode``) of every dynamic body that
+    collides, with the start data that gave the drops (no wall probe: ``collect`` adds it)."""
     facts, gains, boxes, offset, half = [], [], [], [], []
     for t in objs:
         if t.obj is None or t.obj.card.motion != "dynamic":
@@ -228,7 +233,7 @@ def collect_all(b: newton.ModelBuilder, objs: Sequence[Any], rows: Mapping[str, 
         r_gyr, slender = RB.inertia_facts(b, body, mass)
         facts.append(RB.BodyFacts(t.name, body, mass, min(x.thin for x in shapes), float(np.sort(h)[1]), r_gyr, slender,
                                   float(t.obj.card.loads.contact_speed.value)))
-        gains.append(gains_of(t))
+        gains.append(gains_of(t, gains_mode))
         boxes.append(shapes)
         pose = b.body_q[body]
         wc, wh = RB._rotated(pose, c, h)
@@ -246,9 +251,9 @@ def collect_all(b: newton.ModelBuilder, objs: Sequence[Any], rows: Mapping[str, 
 
 
 def collect(b: newton.ModelBuilder, objs: Sequence[Any], rows: Mapping[str, Any] | None,
-            control_dt: float) -> tuple[list[RB.BodyFacts], list[Gains]]:
-    """``collect_all``'s facts with each closed non-convex mesh's thinnest wall, and its gains."""
-    c = collect_all(b, objs, rows)
+            control_dt: float, gains_mode: str = "rk4") -> tuple[list[RB.BodyFacts], list[Gains]]:
+    """``collect_all``'s facts with each closed non-convex mesh's thinnest wall, and its gains under ``gains_mode``."""
+    c = collect_all(b, objs, rows, gains_mode)
     return [_with_walls(f, x, control_dt) for f, x in zip(c.facts, c.boxes, strict=True)], c.gains
 
 
@@ -449,7 +454,7 @@ def _describable(b: newton.ModelBuilder, t: Any) -> bool:
 def _eligible(b: newton.ModelBuilder, objs: Sequence[Any], scene: Any, req: RigidStepRequest,
               ctx: Ctx) -> RigidStep:
     control_dt = float(scene.control_dt)
-    facts, gains = collect(b, objs, req.rows, control_dt)
+    facts, gains = collect(b, objs, req.rows, control_dt, ctx.integrator)
     robots = RR.checks(b, objs, scene, ctx.today)       # the robots' caps (none without robots)
     if not facts and not robots:
         return RigidStep(ctx.today, ctx.today, "no dynamic body collides")

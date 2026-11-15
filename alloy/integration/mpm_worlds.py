@@ -201,6 +201,7 @@ class _OneWorld:
 
     def __init__(self, rs: Any, cs: Any, scale: float, store: Any) -> None:
         self.held: list[Any] = []
+        self.device = rs.momentum.velocity.device       # the solve's device (a bare launch would take the current one)
         strain, vel = self._table(rs.size, store), self._table(rs.momentum.velocity.shape[0], store)
         self.arrays = [(rs.rheology.stress, strain), (rs.delta_stress, strain), (rs.momentum.velocity, vel)]
         if cs is not None and cs.collision.has_colliders:
@@ -210,12 +211,12 @@ class _OneWorld:
             self.arrays += [(rs.momentum.velocity, None), (rs.momentum.velocity, None)]   # nothing to copy
         self.scale = fem.borrow_temporary(store, shape=(1,), dtype=float)
         self.held.append(self.scale)
-        wp.launch(_scale_kernel, dim=1, inputs=[self.scale, float(scale)])
+        wp.launch(_scale_kernel, dim=1, inputs=[self.scale, float(scale)], device=self.device)
 
     def _table(self, n: int, store: Any) -> Any:
         t = fem.borrow_temporary(store, shape=(2,), dtype=int)
         self.held.append(t)
-        wp.launch(_table_kernel, dim=1, inputs=[t, int(n)])
+        wp.launch(_table_kernel, dim=1, inputs=[t, int(n)], device=self.device)
         return t
 
     def release(self) -> None:

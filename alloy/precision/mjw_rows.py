@@ -321,25 +321,27 @@ def _fields(sparse: bool) -> tuple[str, ...]:
 def _permute_rows(d: Any, s: _RowScratch, nj: int, sparse: bool, keep_storage: bool = False) -> None:
     """Gather every row field into the canonical order. ``keep_storage``: J entries stay where they are and each row
     keeps its storage address (``J_rowadr`` moves with the row); otherwise ``mjw_jmove.rebuild_sparse`` relays them out."""
+    dev = d.nefc.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     e, nw = d.efc, int(d.nworld)
     if sparse and set(_fields(sparse)) == set(_RowCols.vars):  # two launches instead of two per field
         src, tmp = _row_cols({f: getattr(e, f) for f in _RowCols.vars}), _row_cols(s.copies)
-        wp.launch(_rows_gather, dim=(nw, nj), inputs=[d.nefc, nj, s.perm, src], outputs=[tmp])
-        wp.launch(_rows_copy, dim=(nw, nj), inputs=[d.nefc, nj, int(keep_storage), tmp], outputs=[src])
+        wp.launch(_rows_gather, dim=(nw, nj), inputs=[d.nefc, nj, s.perm, src], outputs=[tmp], device=dev)
+        wp.launch(_rows_copy, dim=(nw, nj), inputs=[d.nefc, nj, int(keep_storage), tmp], outputs=[src], device=dev)
         return
     for f in _fields(sparse):
         src = getattr(e, f)
         wp.launch(_row_gather, dim=(nw, nj), inputs=[d.nefc, nj, s.perm, src],
-                  outputs=[s.copies[f]])
+                  outputs=[s.copies[f]], device=dev)
     for f in _fields(sparse):
         if f == "J_rowadr" and not keep_storage:
             continue
         dst = getattr(e, f)
-        wp.launch(_row_copy, dim=(nw, nj), inputs=[d.nefc, nj, s.copies[f], dst])
+        wp.launch(_row_copy, dim=(nw, nj), inputs=[d.nefc, nj, s.copies[f], dst], device=dev)
 
 
 def sort_constraints(m: Any, d: Any) -> None:
     """Canonical row order per world (MuJoCo Warp calls this when ``opt.deterministic & CONSTRAINT``)."""
+    dev = d.nefc.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     nw, nj = int(d.nworld), int(d.njmax)
     if nw == 0 or nj == 0:
         return
@@ -354,44 +356,48 @@ def sort_constraints(m: Any, d: Any) -> None:
 
         cinv = sort_imported_contacts(m, d)  # contact rows then refer to canonical contact slots
         if not fused:  # (the fused sort remaps them in its key phase)
-            wp.launch(_remap_contact_ids, dim=(nw, nj), inputs=[d.nefc, nj, cinv, e.type], outputs=[e.id])
+            wp.launch(_remap_contact_ids, dim=(nw, nj), inputs=[d.nefc, nj, cinv, e.type], outputs=[e.id], device=dev)
     if fused:
         _sort_small(d, s, nj, route, _eq_type(m), cinv)
         return
-    wp.launch(_row_keys, dim=(nw, nj), inputs=[d.nefc, nj, _eq_type(m), e.type, e.id], outputs=[s.keys, s.vals])
+    wp.launch(_row_keys, dim=(nw, nj), inputs=[d.nefc, nj, _eq_type(m), e.type, e.id], outputs=[s.keys, s.vals],
+              device=dev)
     if small:  # one launch instead of radix + perm (+ the nnz scan on the route): fewer graph nodes at N = 1
         rownnz = e.J_rownnz if sparse and route else s.copies["type"]  # (unread unless the nnz check is on)
         wp.launch_tiled(_rank_rows, dim=nw, inputs=[d.nefc, nj, s.keys, rownnz, int(sparse and route),
                                                     int(d.njmax_nnz)],
-                        outputs=[s.perm, s.inv, d.overflow], block_dim=RANK_LANES)
+                        outputs=[s.perm, s.inv, d.overflow], block_dim=RANK_LANES, device=dev)
     else:
         wp.utils.radix_sort_pairs(s.keys, s.vals, nw * nj, end_bit=s.end_bit)
-        wp.launch(_row_perm, dim=(nw, nj), inputs=[d.nefc, nj, s.vals], outputs=[s.perm, s.inv])
+        wp.launch(_row_perm, dim=(nw, nj), inputs=[d.nefc, nj, s.vals], outputs=[s.perm, s.inv], device=dev)
     _permute_rows(d, s, nj, sparse, keep_storage=sparse and route)
     if sparse and route:  # storage stays in place; NJMAX_NNZ from the live total (in _rank_rows when small)
         if not small:
-            wp.launch(_live_nnz, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz], outputs=[s.nnz_flat])
+            wp.launch(_live_nnz, dim=(nw, nj), inputs=[d.nefc, nj, e.J_rownnz], outputs=[s.nnz_flat], device=dev)
             wp.utils.array_scan(s.nnz_flat, s.nnz_scan, inclusive=False)
             wp.launch(_nnz_overflow, dim=nw, inputs=[nj, s.nnz_flat, s.nnz_scan, int(d.njmax_nnz)],
-                      outputs=[d.overflow])
+                      outputs=[d.overflow], device=dev)
     elif sparse:
         rebuild_sparse(d, s, nj)
     else:
-        wp.launch(_cycle_leaders, dim=nw, inputs=[d.nefc, nj, s.perm], outputs=[s.lead])
-        wp.launch(_dense_permute, dim=(nw, e.J.shape[2]), inputs=[d.nefc, nj, s.perm, s.lead], outputs=[e.J])
+        wp.launch(_cycle_leaders, dim=nw, inputs=[d.nefc, nj, s.perm], outputs=[s.lead], device=dev)
+        wp.launch(_dense_permute, dim=(nw, e.J.shape[2]), inputs=[d.nefc, nj, s.perm, s.lead], outputs=[e.J],
+                  device=dev)
     if s.mark is not None and route:
-        wp.launch(_jtdaj_remap, dim=(nw, nj), inputs=[e.jtdaj_nblock, s.inv], outputs=[e.jtdaj_adr])
+        wp.launch(_jtdaj_remap, dim=(nw, nj), inputs=[e.jtdaj_nblock, s.inv], outputs=[e.jtdaj_adr], device=dev)
     elif s.mark is not None:
         wp.launch(_jtdaj_mark, dim=(nw, nj), inputs=[e.jtdaj_nblock, s.inv, e.jtdaj_adr, e.jtdaj_nrow],
-                  outputs=[s.mark])
-        wp.launch(_jtdaj_emit, dim=nw, inputs=[d.nefc, nj, s.mark], outputs=[e.jtdaj_adr, e.jtdaj_nrow])
+                  outputs=[s.mark], device=dev)
+        wp.launch(_jtdaj_emit, dim=nw, inputs=[d.nefc, nj, s.mark], outputs=[e.jtdaj_adr, e.jtdaj_nrow], device=dev)
     if int(d.naconmax) > 0 and d.contact.efc_address.shape[1] > 0:
         wp.launch(_remap_contacts, dim=(int(d.naconmax), d.contact.efc_address.shape[1]),
-                  inputs=[d.nacon, int(d.naconmax), nj, d.contact.worldid, s.inv], outputs=[d.contact.efc_address])
+                  inputs=[d.nacon, int(d.naconmax), nj, d.contact.worldid, s.inv], outputs=[d.contact.efc_address],
+                  device=dev)
 
 
 def _sort_small(d: Any, s: _RowScratch, nj: int, route: bool, eq_type: wp.array, cinv: wp.array | None) -> None:
     """Few worlds, sparse J: the whole row sort in one block-per-world launch (``_sort_rows_small``)."""
+    dev = d.nefc.device  # named: a caller outside the solver's ScopedDevice gets the data's device anyway
     e, nw = d.efc, int(d.nworld)
     src, tmp = _row_cols({f: getattr(e, f) for f in _RowCols.vars}), _row_cols(s.copies)
     n_c = int(d.naconmax)
@@ -402,13 +408,13 @@ def _sort_small(d: Any, s: _RowScratch, nj: int, route: bool, eq_type: wp.array,
                             int(route and s.mark is not None), e.jtdaj_nblock, d.nacon, n_c if remap_c else 0,
                             int(d.contact.efc_address.shape[1]) if remap_c else 0, d.contact.worldid,
                             int(cinv is not None), cinv if cinv is not None else d.nefc],
-                    outputs=[s.perm, s.inv, d.overflow, e.jtdaj_adr, addr], block_dim=RANK_LANES)
+                    outputs=[s.perm, s.inv, d.overflow, e.jtdaj_adr, addr], block_dim=RANK_LANES, device=dev)
     if not route:
         rebuild_sparse(d, s, nj)
         if s.mark is not None:
             wp.launch(_jtdaj_mark, dim=(nw, nj), inputs=[e.jtdaj_nblock, s.inv, e.jtdaj_adr, e.jtdaj_nrow],
-                      outputs=[s.mark])
-            wp.launch(_jtdaj_emit, dim=nw, inputs=[d.nefc, nj, s.mark], outputs=[e.jtdaj_adr, e.jtdaj_nrow])
+                      outputs=[s.mark], device=dev)
+            wp.launch(_jtdaj_emit, dim=nw, inputs=[d.nefc, nj, s.mark], outputs=[e.jtdaj_adr, e.jtdaj_nrow], device=dev)
 
 
 def _route_on(m: Any) -> bool:

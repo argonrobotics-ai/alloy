@@ -22,12 +22,14 @@ from typing import Any
 import numpy as np
 
 from alloy.bully.command import KIND, CrashCommand, is_command, replay_command
+from alloy.bully.jsonsafe import dumps, number
 from alloy.bully.types import BullyLimits, BullySeverity, Finding, ReplayResult
 from alloy.core.errors import BullyError
 
 log = logging.getLogger("alloy.bully")
 
 SCHEMA = "alloy.bully.finding/1"
+DEFAULT_ROOT = Path("bench/bully/corpus")
 _ID = re.compile(r"^BUL-(\d{4,})$")
 
 
@@ -42,13 +44,14 @@ def _finding_from_json(rec: dict[str, Any]) -> Finding:
     names = {f.name for f in dataclasses.fields(Finding)}
     kwargs = {k: v for k, v in rec.items() if k in names}
     kwargs["severity"] = BullySeverity(int(kwargs["severity"]))
+    kwargs["value"], kwargs["threshold"] = number(kwargs["value"]), number(kwargs["threshold"])   # "inf" back to inf
     return Finding(**kwargs)
 
 
 class Corpus:
     """Directory-backed corpus; every write is a whole file (no partial updates)."""
 
-    def __init__(self, root: Path = Path("bench/bully/corpus")) -> None:
+    def __init__(self, root: Path = DEFAULT_ROOT) -> None:
         self.root = Path(root)
 
     # ---------------------------------------------------------------- listing
@@ -94,7 +97,7 @@ class Corpus:
         """Assign a fresh id; a closed finding with the same cause makes this a REPEAT one severity higher."""
         same = self._same_cause(finding)
         fid = self.next_id()
-        finding = dataclasses.replace(finding, id=fid, repro=finding.repro.replace("<id>", fid))
+        finding = dataclasses.replace(finding, id=fid, repro=self._repro(finding.repro, fid))
         if same:  # catalogued cause, closed: REPEAT one severity higher (S1 stays S1)
             prior = same[-1]
             sev = BullySeverity(max(int(BullySeverity.S1), int(finding.severity) - 1))
@@ -102,11 +105,19 @@ class Corpus:
             log.warning("finding %s repeats closed %s: filed as %s", fid, prior["id"], sev.name)
         return finding
 
+    def _repro(self, repro: str, fid: str) -> str:
+        """The finding's repro command with its id, and ``--corpus`` when this corpus is not the default one (the
+        command would otherwise replay the default corpus's finding of that id, or none)."""
+        repro = repro.replace("<id>", fid)
+        if repro.startswith("python -m alloy.bully replay") and "--corpus" not in repro and self.root != DEFAULT_ROOT:
+            repro += f" --corpus {self.root}"
+        return repro
+
     def _write(self, finding: Finding, extra: dict[str, Any]) -> Path:
         out = self.root / finding.id
         out.mkdir(parents=True, exist_ok=False)
         rec = {**_finding_to_json(finding, finding.target, "open"), **extra}
-        (out / "finding.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
+        (out / "finding.json").write_text(dumps(rec, indent=2))
         log.info("filed %s: %s %s = %.4g (threshold %.4g) on %s", finding.id, finding.severity.name, finding.monitor,
                  finding.value, finding.threshold, finding.target or finding.scene_hash[:12])
         return out
@@ -135,7 +146,7 @@ class Corpus:
             raise BullyError(f"status must be open or closed, got {status!r}")
         rec = self.record(finding_id)
         rec["status"] = status
-        (self.root / finding_id / "finding.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
+        (self.root / finding_id / "finding.json").write_text(dumps(rec, indent=2))
 
     # ---------------------------------------------------------------- replay
     def replay(self, finding_id: str, device: str, runs: int = 10, limits: BullyLimits | None = None,
@@ -161,7 +172,7 @@ class Corpus:
         line = {**dataclasses.asdict(result), **(extra or {})}
         line.setdefault("date", dt_mod.datetime.now(dt_mod.timezone.utc).isoformat(timespec="seconds"))
         with open(self.root / finding_id / "replays.jsonl", "a") as fh:
-            fh.write(json.dumps(line, sort_keys=True) + "\n")
+            fh.write(dumps(line) + "\n")
 
     def last_replay(self, finding_id: str) -> dict[str, Any] | None:
         path = self.root / finding_id / "replays.jsonl"

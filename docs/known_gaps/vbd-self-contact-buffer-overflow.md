@@ -106,6 +106,9 @@
     4-sheet stack differ by 6 um, and a sized-row run differs from a fixed-row one by the same 6 um. The bit for bit
     law is a CPU law.
   - Not measured: the GPU's total memory at the peak (the table is the rows' own bytes).
+  - Repeats: of 11 runs of the 12-sheet stack with sized rows (16 worlds, 2026-11-09 and 11-10), 4 ended INVALID at
+    ENERGY_JUMP, all among the last 7. The table's row is from one of the first 4 runs, none of which froze.
+    Not traced. Fixed rows were run once there, with no ENERGY_JUMP.
   - A scene that never fills a row (a finding from the rc1 audit): a calm drape (one L4, 64 worlds, default accuracy,
     wall plus read time, 3 rounds; development notes, not shipped) ran 6.3 % slower with sized rows than with
     fixed rows in rc1, and 0.2 % slower after 0.1.1. There were two causes. A host read every period made the host
@@ -115,6 +118,11 @@
     makes no read that waits and runs within 3 % of fixed rows.
 - The default since 2026-11-10: it changes nothing below the fill mark (CPU bit for bit,
   law R3) and replaces dropped pairs where a scene is crowded (law R1).
+  - Law R1's pile (CPU): ten 0.6 mm sheets started 1 mm apart, outside their 0.6 mm contact distance, so it stays
+    calm (no ENERGY_JUMP). Eight layers lie inside the 4.4 mm detection reach, and a row lists 64 / 120 pairs in
+    the first two control periods: fixed rows drop pairs (SELF_CONTACT_OVERFLOW), sized rows drop none.
+  - Until 2026-11-14 the law stacked 2 mm sheets 1 mm apart, inside their contact distance. That pile blew up at
+    the first check (ENERGY_JUMP), and its counts came from the blow-up. No number on this page came from it.
 
 ## Pass-through after dropped pairs (opt-in since 2026-11-10)
 - Dropped pairs are often harmless, so SELF_CONTACT_OVERFLOW alone stays DEGRADED. On request health also measures

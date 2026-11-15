@@ -13,6 +13,11 @@ import alloy
 from alloy.coupling.fine_pack import HEALTH_INDEX, TransferError, WorldTransfer, control_snapshot, snapshot
 from alloy.integration.simulation import _health_arrays
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("moves MuJoCo Warp state between fine packs")
+# Module-wide: its tests share a module fixture or a cache, so an unmarked test would build it on the C route.
+pytestmark = WARP_ROUTE
+
 W, E = 4, 2                         # the coarse pack's worlds; the world moved
 
 

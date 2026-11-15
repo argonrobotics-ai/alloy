@@ -15,6 +15,10 @@ import dataclasses
 import numpy as np
 import pytest
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+
 ROWS = ("e_scale", "z_ref", "m_tot", "l_char")
 E, SLOT = 1, 0            # world 1 re-runs in the fine pack's only slot, built as world 0 (the one that starts higher)
 
@@ -89,6 +93,7 @@ def _run(fine: bool, drop: float = 0.5, trip: int = 1, periods: int = 3):
     return out, seen, sim
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(1800)

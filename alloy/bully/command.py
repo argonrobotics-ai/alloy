@@ -7,8 +7,9 @@ and a ``command`` block: the argv, the alloy commit and venv pins it was found a
 markers that mean a crash. It has no ``trace.npz``; its scene hash is the hash of the argv (the dedup key).
 
 One replay run is one full run of the command from a checkout (``workdir``). A run trips when the process dies on a
-signal (segfault: rc -11, or 139 through a shell) or prints a crash marker. A run that exits non-zero without a
-marker, or times out, is a setup error and stops the replay: it is neither a trip nor clean. Such crashes are
+fault signal (``CRASH_SIGNALS``: SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS, SIGTRAP, SIGSYS; rc -sig directly, 128 + sig
+through a shell) or prints a crash marker. A run that exits non-zero otherwise (a SIGKILL or SIGTERM from outside, an
+error exit), or times out, is a setup error and stops the replay: it is neither a trip nor clean. Such crashes are
 intermittent (SCR-SC3-3: 3 crashes in 8 runs), so a command replay counts at one crash or more, and ``--close``
 still needs every run clean (10 by default).
 """
@@ -18,6 +19,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import logging
+import signal
 import subprocess
 import sys
 import tempfile
@@ -30,13 +32,16 @@ from alloy.core.errors import BullyError
 log = logging.getLogger("alloy.bully")
 
 KIND = "command"
-_SIGNAL_RC = (-11, -6, 134, 139)   # SIGSEGV / SIGABRT, direct or through a shell
+#: signals a process raises on itself when it faults (a kill from outside, SIGKILL or SIGTERM, is not a crash)
+CRASH_SIGNALS = (signal.SIGSEGV, signal.SIGABRT, signal.SIGFPE, signal.SIGILL, signal.SIGBUS, signal.SIGTRAP,
+                 signal.SIGSYS)
+_SIGNAL_RC = frozenset(rc for s in CRASH_SIGNALS for rc in (-int(s), 128 + int(s)))   # direct, or through a shell
 
 
 @dataclasses.dataclass(frozen=True)
 class CrashCommand:
-    """A pinned program run. ``argv`` placeholders: ``{python}`` (this interpreter), ``{device}``, ``{out}`` (a
-    fresh directory per run)."""
+    """A pinned program run. ``argv`` placeholders, also inside an argument (``{out}/dump.bin``, ``--out={out}``):
+    ``{python}`` (this interpreter), ``{device}``, ``{out}`` (a fresh directory per run)."""
 
     argv: tuple[str, ...]
     commit: str                     # alloy commit the crash was found at (40 hex)
@@ -60,7 +65,12 @@ class CrashCommand:
 
     def resolve(self, device: str, out: Path) -> list[str]:
         sub = {"{python}": sys.executable, "{device}": device, "{out}": str(out)}
-        return [sub.get(a, a) for a in self.argv]
+        resolved = []
+        for a in self.argv:
+            for key, value in sub.items():
+                a = a.replace(key, value)
+            resolved.append(a)
+        return resolved
 
 
 def is_command(rec: dict[str, Any]) -> bool:
@@ -92,8 +102,18 @@ def run_crashed(cmd: CrashCommand, workdir: Path, device: str) -> bool:
         log.info("command run crashed: rc %d, markers %s", res.returncode, hit)
         return True
     if res.returncode != 0:
-        raise BullyError(f"command failed without a crash (rc {res.returncode}): {text[-600:]}")
+        raise BullyError(f"command failed without a crash (rc {res.returncode}{_signal_name(res.returncode)}): "
+                         f"{text[-600:]}")
     return False
+
+
+def _signal_name(rc: int) -> str:
+    """", killed by SIGKILL" for a signal exit (direct or through a shell), else ""."""
+    sig = -rc if rc < 0 else rc - 128 if rc > 128 else 0
+    try:
+        return f", killed by {signal.Signals(sig).name}" if sig else ""
+    except ValueError:
+        return ""
 
 
 def replay_command(rec: dict[str, Any], device: str, runs: int, workdir: Path) -> tuple[ReplayResult, dict]:

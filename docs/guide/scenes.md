@@ -75,10 +75,13 @@ print(sim.state(world=0)["marble.pos"])                        # inside the bin,
 
 `kinematic=True` on any shape or fixture (`add_box`, `add_open_box`, ...) makes it follow commands only: it pushes
 everything it touches but nothing pushes it. Use it for a tilting tray, a moving wall, a conveyor pusher or a pouring
-cup (liquids see the moving walls every physics step).
+cup (liquids see the moving walls every physics step). Parts meant to close a container (a lid on a box) must touch
+or overlap: liquid pushed hard against a gap between two parts gets through it, even a gap narrower than its
+particles.
 - `sim.drive(name, velocity=, angular_velocity=, pivot=, duration=)`: constant linear (m/s) and angular (rad/s,
-  world axes) velocity about `pivot` (a world point; default the object's origin or the fixture's centre), for
-  `duration` seconds, then hold. Drives on several objects run at once.
+  world axes) velocity about `pivot` (a world point; default the object's origin or the fixture's centre, in each
+  world), for `duration` seconds, then hold. `velocity`, `angular_velocity` and `pivot` each take one (x, y, z) for
+  every world or an (N, 3) array, one row per world. Drives on several objects run at once.
 - `sim.set_pose(name, pos=, quat_wxyz=, world=)`: teleport a kinematic or free body now, with zero velocity.
 - `sim.stop_drives()`: every kinematic object holds where it is.
 - `sim.settle(seconds)`: run with no commands, then make the settled state the start that `sim.reset()` returns to.
@@ -110,7 +113,7 @@ print("pusher back at x %.3f" % sim.state(["pusher"], world=0)["pusher.pos"][0],
 
 `add_mesh(name, path | vertices=, faces=, collision=...)` takes an OBJ or STL (binary or ASCII) file or `(V, 3)` /
 `(F, 3)` arrays; faces wind counter-clockwise seen from outside, and the mesh must be watertight. `collision=`:
-- `"convex"` (default): the convex hull. Fast; right for solid, roughly convex parts.
+- `"convex"` (default): the convex hull (Convex hulls, below). Fast; right for solid, roughly convex parts.
 - `"decompose"`: convex pieces of a concave part, split once at build and cached (needs CoACD and trimesh, the
   `import` extra: `install.md`; without them the build raises `FeatureUnavailableError` naming the command).
 - `"sdf"`: a signed-distance field of the true shape, for concave parts; contact is approximate (about a millimetre),
@@ -137,6 +140,24 @@ resting on a soft pad ran 0.28x to 0.30x real time over 64 worlds (0.018x to 0.0
 squeeze stayed within 4.2 % of the neo-Hookean law (median 1.9 %), and none of 256 randomized drops glitched.
 `rigid=True` keeps a soft-material mesh rigid.
 
+### Convex hulls
+
+- A `collision="convex"` mesh collides as a convex hull of its vertices. Alloy gives that hull as many vertices as it
+  needs to stay within 0.1 mm of the mesh's own hull, or 1 % of its smallest size if that is less, up to 2,048.
+  Before, the hull had at most 64 vertices, which could cut small features: a top's rounded tip became one point
+  0.3 mm off its axis.
+- A mesh already within that distance at 64 vertices is unchanged, and so is any mesh whose hull has 64 vertices or
+  fewer. `collision="decompose"` parts and robot meshes are unchanged too.
+- Cost, measured with 64 worlds of 12 scanned objects as convex meshes:
+  - on one L4, 15 % fewer steps per second for a typical set and 39 % for the most detailed;
+  - on the CPU's default route, up to 24 % fewer (8 worlds).
+- To keep the fast hull, give the mesh `hull_vertices=64` (`add_mesh(..., hull_vertices=64)`; on a card,
+  `hull_vertices: 64` in `shape.mesh`), or any count from 4 to 2,048. It is a fixed cap, as before this change, and
+  64 steps exactly as earlier releases did.
+- A mesh still more than that distance out at 2,048 vertices warns once at build, naming the gap. The fix it names is
+  a primitive shape or a mesh with fewer vertices for a convex mesh, and `collision="decompose"` for a concave one.
+  A mesh with `hull_vertices` set never warns.
+
 ## Materials and friction
 
 - `alloy.materials()` lists every library material with its kind (rigid / elastic / fluid / granular), density,
@@ -148,21 +169,39 @@ squeeze stayed within 4.2 % of the neo-Hookean law (median 1.9 %), and none of 2
   card, aluminium on aluminium: 1.05, so it also slides at 1.05, not at the kinetic 0.40). Without a pair card it is
   the harmonic mean of the two materials' `mu_dynamic`. `friction=` and `scene.set_friction` set that one number. A
   coefficient above 1 tips a cube before it slides, so check such a pair with a flat block.
-- Restitution reads higher than set. On MuJoCo contacts (rigid bodies and robots), a restitution of 0 still rebounds
-  at about 0.1-0.15 of the impact speed (0.11-0.15 at 1-5 m/s on a 0.3125 ms rigid step; less at the default 1.25 ms
-  step: 0.08 at 2 m/s), and every restitution reads a little higher than set (0.5 gives about 0.55): the contact lets
-  go when its force reaches zero, not at zero overlap. Measured with a 5 mm ball on a pane, on the CPU. There is no
-  setting for a dead stop yet; a fix is planned for a later release.
+- Restitution on MuJoCo contacts. A ball rebounds as set in a scene whose free bodies are all balls: a 4.1 kg steel
+  ball leaves within 0.05 of its restitution with up to 8 of them (and with any number on the CPU's default route),
+  and within about 0.08 with more than 8 on MuJoCo Warp (a GPU, or `ALLOY_CPU_ROUTE=warp`), where it varies with
+  impact speed (0.57 at 1 m/s, 0.46 at 2 m/s for 0.5) because that route takes one contact solve per step. A
+  restitution of 0 stops it within 0.07 of the impact speed (0.02 at a 0.3125 ms rigid step). The rebound is the speed
+  the ball leaves with: a heavy ball leaves its contact while still about 1 mm in, so after a slow drop it barely
+  clears the surface. Everything else keeps the earlier contacts:
+  - boxes, capsules, cylinders and meshes rest on several points and keep extra damping so that they come to rest;
+    they rebound at most about 0.1-0.2 whatever the setting (a 0.1 m steel box at 0.5 or 0.8: 0.04-0.11). Stiffer
+    contacts there would make a sliding body rock (a 30 cm cube pushed to 4.6 m/s: 8.6 deg against 3.9);
+  - a ball in a scene with one of them, and balls of about 0.1 kg and under at the default step (their contact is
+    already as stiff as the step allows);
+  - every body in a scene with a robot, a kinematic object or a gripped chain.
+
+  There a restitution of 0 rebounds at about 0.1-0.15 of the impact speed, and every restitution reads a little higher
+  than set (0.5 gives about 0.55): the contact lets go when its force reaches zero, not at zero overlap. Measured on
+  the CPU and one L4.
+- In a scene whose free bodies are all balls, a ball that starts about 1 cm or more inside another body pops out hard
+  enough to freeze its world (ENERGY_JUMP): a 4.1 kg steel ball 10 mm into the ground, which popped out before
+  (lighter balls, 0.5 kg, froze from 5 mm with either contacts). START_PEN names the overlap: place bodies apart.
 - `scene.add_material("my_rubber", density=1100, friction=1.2, restitution=0.2)` makes a new rigid material;
   `like="nitrile_70a"` copies another one's other properties.
 - `scene.set_friction("finger", "cube", 1.1)` sets the friction of one pair of objects, overriding their materials.
 - Contact stiffness comes from the materials; change materials or `dt`, not solver internals.
-- Impacts go deeper than the contact stiffness says. The contact stiffness of a material card (1e6 N/m for a default
+- Impacts go deeper than the contact stiffness says, except for balls in a scene whose free bodies are all balls. The
+  contact stiffness of a material card (1e6 N/m for a default
   pair) holds for a resting load. On an impact, MuJoCo's soft contact acts about 10-20x softer, so a heavy body
   hitting a wall at walking speed goes 3-4x deeper than that stiffness gives (a 6.8 kg ball at 1.7 m/s: 14-15 mm,
   measured on one L4 at 3.33 / 1.67 / 0.42 ms steps, so a smaller step does not change it). Past 1 cm health reads
   PEN_WARN, and a harder hit can reach the depth at which it freezes the world (PEN_FAIL: [health.md](health.md)). A
-  fix is planned for a later release.
+  ball in a scene whose free bodies are all balls takes the material's stiffness on an impact, up to what the step
+  allows: the same ball goes 7.7 mm deep at the automatic step, 3.9 mm at 1.67 ms and 2.7 mm at 0.42 ms (CPU; an
+  undamped spring of that stiffness: 4.5 mm).
 - The material also decides the solver. Stiff materials (metals, hard plastics, wood, glass) stay rigid; soft ones
   (rubbers, foams, silicone) can make the object a soft body (`sim.routes()[name]["route"] == "soft_vbd"`), which
   deforms and steps much slower, especially on the CPU; the build logs a warning when that happens. Pass
@@ -200,6 +239,9 @@ squeeze stayed within 4.2 % of the neo-Hookean law (median 1.9 %), and none of 2
 
 - `scene.to_json()` / `alloy.Scene.from_dict(data)`: the scene as JSON data (keeps everything you added).
 - `scene.save(directory)` writes the engine's YAML cards (`materials/`, `objects/`, `scenes/scene.yaml`) and
-  returns the scene file; `alloy.load(that_file)` builds it again. See `cards.md` for the card format.
+  returns the scene file; `alloy.load(that_file)` builds it again. It copies the cards, materials and meshes it
+  takes from your own card roots into the folder, and it warns for what cards cannot keep (heat, cloth and liquid
+  accuracy, the rigid step, `set_joint_yield`, robot randomization, `add_push`, object anchors), which
+  `scene.to_json()` keeps. See `cards.md` for the card format.
 - `alloy.load(path)` also takes `.json` Scene data, a `.yaml` scene card, and robot files (`.xml` MJCF, `.urdf`,
   `.usd`), which it places on a ground plane.

@@ -67,6 +67,11 @@ def _install_guards() -> None:
     except ImportError:
         return
     mjw_lazy_factor.install()
+    try:                # the one-pass free-body guard of the discrete integrator's gyroscopic term
+        from alloy.contact import mjw_free_gyro
+    except ImportError:
+        return
+    mjw_free_gyro.install()
 
 
 _install_guards()

@@ -20,6 +20,11 @@ import alloy
 from alloy.core.snapshot import _state_arrays
 from alloy.coupling.fine_pack import WorldTransfer, _control_world
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+pytestmark = WARP_ROUTE
+
 W, SLOTS, SEED, PERIODS = 4, 1, 0, 5
 LIGHT, HEAVY = 500.0, 8000.0
 TARGET = 0.1 * (1.0 + np.arange(W))       # [rad] each world's shoulder target at the last period (ramped up to it)

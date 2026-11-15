@@ -25,6 +25,9 @@ from alloy.scene.builtin_plugins import _mujoco
 from alloy.scene.coordinate_carry import (CARRY_KEY, CarryError, carry_plan, guard_trips, install_coordinate_carry,
                                           uninstall)
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("the float32 coordinate carry; the C route keeps float64 qpos and needs none")
+
 DT = 1e-3
 Q0, OFFSET = 2.2, 0.01           # rad: FR3 joint 4's angle in C18, and the servo's start error
 KP, KV = 3500.0, 350.0           # FR3 joint 3/4 servo (menagerie fr3.xml), kv / kp = 0.1 s
@@ -78,6 +81,7 @@ def _run(model: newton.Model, kw: dict, seconds: float, target: float | None = N
     return s0.joint_q.numpy(), s0.joint_qd.numpy(), solver
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("path", PATHS)
 def test_servo_freezes_short_and_the_carry_settles_it(path):
     target = float(np.float32(Q0 + OFFSET))
@@ -89,6 +93,7 @@ def test_servo_freezes_short_and_the_carry_settles_it(path):
     assert guard_trips(solver) == 0
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("path", PATHS)
 @pytest.mark.parametrize("rot", [0.0, math.pi / 2])
 def test_free_body_creep_below_the_spacing_moves_only_with_the_carry(path, rot):
@@ -101,6 +106,7 @@ def test_free_body_creep_below_the_spacing_moves_only_with_the_carry(path, rot):
     assert carry_plan(solver).counts == {"axes": 0, "free_positions": 3}
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("path", PATHS)
 @pytest.mark.parametrize("rig", ["hinge", "free"])
 def test_body_q_is_fk_of_the_carried_joint_q(path, rig):
@@ -130,6 +136,7 @@ def test_body_q_is_fk_of_the_carried_joint_q(path, rig):
     assert pushed > 0 and guard_trips(solver) == 0                  # the carry added residuals back on the way
 
 
+@WARP_ROUTE
 def test_default_on_at_construction_and_the_opt_outs():
     direct = newton.solvers.SolverMuJoCo(_hinge(), **ROUTE)
     assert hasattr(direct, "_alloy_carry") and "step" in vars(direct)
@@ -143,6 +150,7 @@ def test_default_on_at_construction_and_the_opt_outs():
         uninstall(wrapped)
 
 
+@WARP_ROUTE
 def test_off_leaves_the_solver_alone_and_repeats_are_bitwise():
     solver = _mujoco(_hinge(), {**ROUTE, CARRY_KEY: False})
     assert "step" not in vars(solver) and not hasattr(solver, "_alloy_carry")
@@ -152,6 +160,7 @@ def test_off_leaves_the_solver_alone_and_repeats_are_bitwise():
     assert install_coordinate_carry(a[2]) == "already installed"
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("path", PATHS)
 def test_coupler_restart_passes_replay_the_residual(path):
     """Each step as a coupler runs it: an input update, a pass, then two restart passes from the same input."""
@@ -174,6 +183,7 @@ def test_coupler_restart_passes_replay_the_residual(path):
     assert s0.joint_qd.numpy().tobytes() == plain[1].tobytes()
 
 
+@WARP_ROUTE
 def test_coupler_world_reset_keeps_the_other_worlds():
     """SolverCoupled.reset notifies a restart before reset(world_mask): only the masked world's residual changes."""
     one = newton.ModelBuilder(gravity=(0.0, 0.0, 0.0))
@@ -206,6 +216,7 @@ def test_coupler_world_reset_keeps_the_other_worlds():
     assert state.saved.numpy()[world == 1].tobytes() == before[world == 1].tobytes()
 
 
+@WARP_ROUTE
 def test_reset_zeroes_the_residuals():
     model = _free()
     q, _, solver = _run(model, {CARRY_KEY: True}, 0.01)
@@ -231,6 +242,7 @@ def test_guard_refuses_a_change_that_is_not_rounding():
     assert np.all(solver._alloy_carry.carry.numpy() == 0.0)
 
 
+@WARP_ROUTE
 def test_guard_scales_by_the_ref_offset():
     """An MJCF ref: Newton's q = qpos - ref starts at 0 while MuJoCo's qpos is 0.15 rad, so MuJoCo rounds at the 0.15 rad
     spacing (1.5e-8). A 5 urad/s creep (5e-9 per 1 ms step) freezes without the carry, and with it moves at its velocity
@@ -254,6 +266,7 @@ def test_guard_scales_by_the_ref_offset():
     assert guard_trips(solver) == 0 and abs(q[0] - 5e-6 * T) < 1.5e-8
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("path", PATHS)
 def test_guard_scales_by_a_translated_parent_frame(path):
     """A free joint whose parent frame sits 3 m out: Newton's position starts at 0, MuJoCo's world position at 3 m, so
@@ -318,6 +331,7 @@ def test_weld_rows_previous_step_state_is_snapshotted(left_out):
                                               "drop them from adapters.MUJOCO_CORE" if left_out else "resume not bitwise")
 
 
+@WARP_ROUTE
 def test_residual_is_registered_solver_state():
     from alloy.core.registry import state_arrays_for, state_world_maps_for
     from alloy.coupling.adapters import register_builtin_adapters
@@ -330,6 +344,7 @@ def test_residual_is_registered_solver_state():
         assert maps[key].numpy().tolist() == [0, 0, 0]
 
 
+@WARP_ROUTE
 def test_refuses_without_the_round_trip_or_on_rk4():
     with pytest.raises(CarryError, match="update_data_interval"):
         install_coordinate_carry(newton.solvers.SolverMuJoCo(_hinge(), update_data_interval=0, **ROUTE))

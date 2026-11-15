@@ -28,7 +28,7 @@ from alloy.api import _args as A, _contact_relax, catalog
 from alloy.api._cloth_route import add_cloth_route
 from alloy.api.errors import SceneError
 from alloy.api import _heat, _liquid, _liquid_accuracy, _quasi_static, _random, _rigid_step, _robots, _rods, _worlds
-from alloy.api._items import _box_volume, _cloth_vertices, _mesh_spec, _overrides
+from alloy.api._items import COLLISIONS, _box_volume, _cloth_cells, _mesh_shape, _mesh_spec, _overrides
 from alloy.api._heat import HeatMixin
 from alloy.api._joint_yield import JointYieldMixin
 from alloy.scene import cloth_accuracy as CA
@@ -39,7 +39,6 @@ GROUND_MATERIAL = "plywood_marine"
 CLOTH_MATERIAL = "cotton_woven"
 LIQUID_MATERIAL = "water"
 SPH_SPACING = 4.0e-3       # m, liquid_accuracy "default"'s spacing: add_pour sizes pours in it (the build re-sizes)
-COLLISIONS = ("convex", "decompose", "sdf", "mesh")
 RANDOM_FIELDS = _random.FIELDS     # short names accepted by Scene.randomize -> card paths
 
 
@@ -143,7 +142,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
 
     def add_mesh(self, name: str, path: str | Path | None = None, *, vertices: Any = None, faces: Any = None,
                  scale: float | Sequence[float] = 1.0, collision: str = "convex", pos: Any = (0.0, 0.0, 0.0),
-                 **kw: Any) -> str:
+                 hull_vertices: int | None = None, **kw: Any) -> str:
         """A rigid triangle mesh from an OBJ/STL file or from ``vertices`` (V, 3) and ``faces`` (F, 3) arrays.
 
         ``collision``: "convex" (hull; fast), "decompose" (convex parts), "sdf" (exact, for cups, bins, holes) or
@@ -152,13 +151,13 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
         (cached under ``$ALLOY_CACHE_DIR/hulls``), or uses a ``<stem>.hulls.obj`` shipped beside the mesh file; it
         needs ``pip install "alloy-engine[import]"`` (CoACD, trimesh) and a closed mesh. For cups, bins and holes prefer ``add_open_box`` / ``add_open_cylinder`` /
         ``add_block_with_hole`` (static boxes: exact and fast). Faces wind counter-clockwise seen from outside.
+        ``hull_vertices`` ("convex" only): None keeps the hull within 0.1 mm of the mesh's own (up to 2,048 vertices;
+        12 scanned meshes step 15-39 % slower on an L4 than at 64, up to 24 % on the CPU); 64 is the earlier fast hull.
 
-        Example: ``scene.add_mesh("cup", vertices=v, faces=f, collision="sdf", static=True)``."""
-        A.one_of(collision, COLLISIONS, "collision")
-        mesh = _mesh_spec(path, vertices, faces)
-        s = [float(scale)] * 3 if isinstance(scale, (int, float)) else A.sizes(scale, 3, "scale")
-        shape = {"mesh": {"path": "", "sha256": "", "scale": s, "collision": collision}}
-        return self._add(name, "mesh", shape, pos, None, mesh=mesh, **kw)
+        Example: ``scene.add_mesh("cup", vertices=v, faces=f, collision="sdf", static=True)``; a fast hull:
+        ``scene.add_mesh("scan", "scan.obj", hull_vertices=64)``."""
+        shape = _mesh_shape(scale, collision, hull_vertices)
+        return self._add(name, "mesh", shape, pos, None, mesh=_mesh_spec(path, vertices, faces), **kw)
 
     # --- deformables, liquids, robots, library objects -----------------------------------------------------------
 
@@ -167,7 +166,8 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
                   mass: float | None = None, friction: float | None = None, quat_xyzw: Any = None,
                   quat_wxyz: Any = None, rpy: Any = None, self_contact: bool = True) -> str:
         """A cloth sheet, flat in its local x-y plane, centred at ``pos``. ``size``: (x, y) in m; ``resolution``:
-        vertices along the longer side (or (nx, ny)); ``mass``: total kg (else from the material and thickness).
+        cells along the longer side, the shorter in proportion (20 on a square sheet: 441 vertices), or (nx, ny); cells
+        near square, at most 1,600 (warns if not kept); ``mass``: total kg (else from the material and thickness).
         ``thickness``: the contact thickness (particles of radius thickness / 2; a fabric bends as its card says at any
         thickness); the health monitor flags penetration past half of it, so thinner sheets need a smaller ``dt``.
         ``self_contact`` (default True): the sheet collides with itself, so a fold or a pile stays in layers
@@ -178,7 +178,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
         Example: ``scene.add_cloth("towel", size=(0.5, 0.5), pos=(0, 0, 0.6), resolution=25, mass=0.1)``."""
         lx, ly = A.sizes(size, 2, "size")
         t = A.positive(thickness, "thickness", "m")
-        n = _cloth_vertices(resolution, lx, ly)
+        n = _cloth_cells(name, resolution, lx, ly)
         shape = {"primitive": {"kind": "box", "size": [0.5 * lx, 0.5 * ly, 0.5 * t]}}
         thick = A.user_q(t, "sheet thickness set through alloy.Scene.add_cloth")
         if self_contact not in (True, False):

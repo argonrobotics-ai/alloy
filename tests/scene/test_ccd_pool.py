@@ -23,6 +23,9 @@ from alloy.precision.mjw_ccd import CCD_KEY, set_ccd_slots, with_ccd_slots  # no
 from alloy.precision.types import CheckPolicy, HealthFlags  # noqa: E402
 from alloy.scene.builtin_plugins import _mujoco  # noqa: E402
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("MuJoCo Warp's CCD pool and its overflow bit")
+
 WORLDS, BOXES, NCONMAX = 2, 2, 16
 
 
@@ -45,6 +48,7 @@ def _solver(model, **kw):
         return _mujoco(model, {"use_mujoco_contacts": True, "nconmax": NCONMAX, **kw})
 
 
+@WARP_ROUTE
 def test_the_entry_sizes_the_pool_per_world_and_no_kwarg_keeps_the_default() -> None:
     model = _boxes_on_cylinder()
     assert int(_solver(model).mjw_data.naccdmax) == NCONMAX * WORLDS              # MuJoCo Warp's default
@@ -65,6 +69,7 @@ def _step_and_check(slots: int):
     return ccd, monitor.poll()
 
 
+@WARP_ROUTE
 def test_a_full_pool_overflows_into_contact_overflow_and_a_sized_one_does_not() -> None:
     ccd, report = _step_and_check(slots=BOXES)                  # room for every box in every world
     assert not ccd.any()

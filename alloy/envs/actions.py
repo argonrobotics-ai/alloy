@@ -19,7 +19,9 @@ Kinds:
 - "effort": joint force / torque;
 - "ctrl": MuJoCo-native actuators (``<general>``, ``<motor>``, ...) by "robot/actuator" or the joint they drive; a
   ``<general>`` position servo's control is its joint target;
-- "auto" (default): "position" when the scene has joint-target actuators, else "ctrl".
+- "auto" (default): each joint or actuator its own, so one action can drive both: joint targets where the joint has
+  an MJCF ``<position>`` actuator, MuJoCo ctrl for the rest (``<general>``, ``<motor>``); with no names, every
+  actuated joint and every MuJoCo-native actuator of the scene.
 """
 
 from __future__ import annotations
@@ -77,15 +79,32 @@ def control_array(control: Any, kind: str) -> Any:
     return obj
 
 
-def resolve_kind(spec: ActionSpec, layout: Layout) -> str:
-    """The concrete kind for ``spec.kind == "auto"``: joint targets when the named joints have them, else ctrl."""
+def default_names(spec: ActionSpec, layout: Layout) -> list[str]:
+    """What ``ActionSpec(joints=None)`` drives: every actuated joint (kind "position", "velocity", "effort"), every
+    MuJoCo-native actuator ("ctrl"), or both ("auto"; an actuator on an actuated joint once, as the joint)."""
+    joints = layout.actuated_joints()
+    if spec.kind == "ctrl":
+        return list(layout.actuators)
     if spec.kind != "auto":
-        return spec.kind
-    names = list(spec.joints) if spec.joints is not None else None
-    if names is None:
-        return "position" if layout.actuated_joints() or not layout.actuators else "ctrl"
-    targeted = all(n in layout.joints and layout.joints[n].actuated for n in names)
-    return "position" if targeted or not layout.actuators else "ctrl"
+        return joints
+    return joints + [n for n, a in layout.actuators.items() if a.joint not in joints]
+
+
+def resolve_kinds(spec: ActionSpec, layout: Layout, names: Sequence[str]) -> list[str]:
+    """The kind of each named joint or actuator: ``spec.kind``, or for "auto" joint targets where the joint has a
+    joint-target actuator and MuJoCo ctrl otherwise. Example: ``resolve_kinds(ActionSpec(), lay, ["arm/x"])``."""
+    if spec.kind != "auto":
+        return [spec.kind] * len(names)
+    return ["position" if (n in layout.joints and layout.joints[n].actuated) or not layout.actuators else "ctrl"
+            for n in names]
+
+
+def resolve_kind(spec: ActionSpec, layout: Layout) -> str:
+    """The one kind ``spec`` writes, or "mixed" when "auto" picks joint targets for some columns and ctrl for others.
+    Example: ``resolve_kind(ActionSpec(), env.layout)``."""
+    names = list(spec.joints) if spec.joints is not None else default_names(spec, layout)
+    kinds = set(resolve_kinds(spec, layout, names)) or {"position"}
+    return kinds.pop() if len(kinds) == 1 else "mixed"
 
 
 class ActionWriter:
@@ -94,19 +113,18 @@ class ActionWriter:
     def __init__(self, spec: ActionSpec, layout: Layout, engine: Any, xp: Any) -> None:
         spec.validate()
         self.spec, self.layout, self.engine, self.xp = spec, layout, engine, xp
-        self.kind = resolve_kind(spec, layout)
-        self.target = control_array(engine.control, self.kind)
-        if self.target is None:
-            raise EnvError(f"this scene has no control.{KINDS[self.kind]}", "use kind='position' with MJCF "
-                           "<position> actuators, or kind='ctrl' with MuJoCo <general>/<motor> actuators", field="kind")
-        default = layout.actuated_joints() if self.kind != "ctrl" else list(layout.actuators)
-        self.joints = list(spec.joints) if spec.joints is not None else default
+        self.joints = list(spec.joints) if spec.joints is not None else default_names(spec, layout)
         if not self.joints:
             raise EnvError("the scene has no actuated joints to act on", "add a robot whose MJCF has actuators, or "
                            "name joints in ActionSpec(joints=[...])", field="joints")
-        cols = [self._columns(j) for j in self.joints]
-        self.rows_np = np.concatenate([c[0] for c in cols], axis=1)                     # (W, A)
-        self.rows = xp.asarray(self.rows_np, "int64")
+        self.kinds = resolve_kinds(spec, layout, self.joints)                  # per named joint / actuator
+        self.kind = self.kinds[0] if len(set(self.kinds)) == 1 else "mixed"
+        cols = [self._columns(j, k) for j, k in zip(self.joints, self.kinds)]
+        self.rows_np = np.concatenate([c[0] for c in cols], axis=1)                     # (W, A), per column's array
+        self.groups = self._groups([k for c, k in zip(cols, self.kinds) for _ in range(c[0].shape[1])])
+        single = len(self.groups) == 1                      # one control array (every kind but "mixed")
+        self.target = self.groups[0][1] if single else None
+        self.rows = self.groups[0][2] if single else None
         lo, hi = self._limits(np.concatenate([c[1] for c in cols]), np.concatenate([c[2] for c in cols]))
         self.low, self.high, self.low_np, self.high_np = xp.asarray(lo), xp.asarray(hi), lo, hi
         self.delta = xp.asarray(np.broadcast_to(np.asarray(spec.delta, np.float32), (self.size,)).copy())
@@ -125,21 +143,45 @@ class ActionWriter:
     def column_names(self) -> list[str]:
         """One name per action column ("robot/joint", or "robot/joint[k]" for multi-dof joints)."""
         out = []
-        for j in self.joints:
-            w = self._columns(j)[0].shape[1]
+        for j, kind in zip(self.joints, self.kinds):
+            w = self._columns(j, kind)[0].shape[1]
             out += [j] if w == 1 else [f"{j}[{k}]" for k in range(w)]
         return out
 
-    def _columns(self, name: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _groups(self, col_kinds: list[str]) -> list[tuple[str, Any, Any, Any]]:
+        """Per control array written: (kind, array, rows (W, a), its columns (a,), or None for every column)."""
+        out = []
+        for kind in dict.fromkeys(col_kinds):
+            target = control_array(self.engine.control, kind)
+            if target is None:
+                raise EnvError(f"this scene has no control.{KINDS[kind]}", "use kind='position' with MJCF "
+                               "<position> actuators, or kind='ctrl' with MuJoCo <general>/<motor> actuators",
+                               field="kind")
+            cols = np.flatnonzero(np.asarray(col_kinds) == kind)
+            every = len(cols) == len(col_kinds)
+            out.append((kind, target, self.xp.asarray(self.rows_np[:, cols], "int64"),
+                        None if every else self.xp.asarray(cols, "int64")))
+        return out
+
+    def _columns(self, name: str, kind: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """(rows (W, k), lower (k,), upper (k,)) of one named joint or actuator."""
-        if self.kind == "ctrl":
+        if kind == "ctrl":
             a = self.layout.actuator(name)
             return a.rows[:, None], np.array([a.lower]), np.array([a.upper])
         r = self.layout.joint(name)
-        rows = r.target_q if self.kind == "position" else r.qd
-        if self.kind == "position" and rows.shape[1] != len(r.lower):
+        if kind in ("position", "velocity") and not r.actuated and self._ctrl_driven(name):
+            raise EnvError(f"{name!r} is driven by a MuJoCo actuator (<general>, <motor>), not by a joint target, so "
+                           f"kind={kind!r} would not move it", "use ActionSpec(kind='auto') (the default) or "
+                           "kind='ctrl' for it", field="kind")
+        rows = r.target_q if kind == "position" else r.qd
+        if kind == "position" and rows.shape[1] != len(r.lower):
             return rows, np.full(rows.shape[1], -np.inf), np.full(rows.shape[1], np.inf)
         return rows, r.lower, r.upper
+
+    def _ctrl_driven(self, joint: str) -> bool:
+        """Whether a MuJoCo-native actuator drives ``joint``."""
+        return any(a.joint is not None and joint in (a.joint, a.joint.split("/", 1)[1])
+                   for a in self.layout.actuators.values())
 
     def _limits(self, lo: np.ndarray, hi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         n, s = self.size, self.spec
@@ -172,10 +214,22 @@ class ActionWriter:
             if s.mode == "normalized":
                 values = self.low + (a + 1.0) * 0.5 * (self.high - self.low)
             else:
-                values = xp.clip(self.held(xp.view(self.target)[self.rows], self.window) + self.delta * a,
-                                 self.low, self.high)
-        xp.update(self.target, lambda t: t.__setitem__(self.rows, values))
+                values = xp.clip(self.held(self.current(), self.window) + self.delta * a, self.low, self.high)
+        for _kind, target, rows, cols in self.groups:
+            part = values if cols is None else values[:, cols]
+            xp.update(target, lambda t, rows=rows, part=part: t.__setitem__(rows, part))
         return values
+
+    def current(self) -> Any:
+        """(W, A) the targets (or ctrl values) in force now, one column per action column. Example: internal."""
+        xp = self.xp
+        if len(self.groups) == 1:
+            _kind, target, rows, _cols = self.groups[0]
+            return xp.view(target)[rows]
+        out = xp.zeros((self.layout.worlds, self.size))
+        for _kind, target, rows, cols in self.groups:
+            out[:, cols] = xp.view(target)[rows]
+        return out
 
     def held(self, current: Any, window: Any) -> Any:
         """(W, A) targets ``current`` kept within ``window`` (A,) of each column's measured joint position (an
@@ -191,12 +245,12 @@ class ActionWriter:
         joints: hinges and slides; a ``ctrl`` column needs a position servo on a joint, not a ``<motor>``)."""
         rows, has = np.zeros(self.rows_np.shape, np.int64), np.zeros(self.size, bool)
         col = 0
-        for name in self.joints:
-            width = self._columns(name)[0].shape[1]
-            act = self.layout.actuator(name) if self.kind == "ctrl" else None
+        for name, kind in zip(self.joints, self.kinds):
+            width = self._columns(name, kind)[0].shape[1]
+            act = self.layout.actuator(name) if kind == "ctrl" else None
             joint = name if act is None else (act.joint if act.position else None)
             r = self.layout.joints.get(joint) if joint is not None else None
-            if r is not None and width == 1 and r.width == 1 and self.kind in ("position", "ctrl"):
+            if r is not None and width == 1 and r.width == 1 and kind in ("position", "ctrl"):
                 rows[:, col], has[col] = r.q[:, 0], True
             col += width
         return rows, has
@@ -244,4 +298,5 @@ class ActionWriter:
         return out
 
 
-__all__ = ["ActionSpec", "ActionWriter", "KINDS", "MODES", "WINDOW_STEPS", "control_array", "resolve_kind"]
+__all__ = ["ActionSpec", "ActionWriter", "KINDS", "MODES", "WINDOW_STEPS", "control_array", "default_names",
+           "resolve_kind", "resolve_kinds"]

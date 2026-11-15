@@ -17,7 +17,7 @@ from types import ModuleType
 
 ENGINES = ("newton", "mujoco_warp")
 # What the vendored packages report as __version__ (pip's versions for the pins; tests check they agree).
-VERSIONS = {"newton": "1.8.0rc1", "mujoco_warp": "3.17.0"}
+VERSIONS = {"newton": "1.8.0", "mujoco_warp": "3.17.0"}
 
 # Newton's SolverMuJoCo compares the installed `newton` distribution's declared MuJoCo pins with the loaded ones. The
 # vendored copy has no distribution, so the only `newton` it can find is a user's own: never Alloy's business.

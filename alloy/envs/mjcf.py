@@ -20,22 +20,37 @@ from pathlib import Path
 from alloy.envs.errors import EnvError
 
 
+TRIM_VERSION = "2"             # what a trimmed copy holds: change it with any change to the trim's output
+
+
 def cache_dir() -> Path:
     """Where trimmed robot files go: ``$ALLOY_CACHE`` or ``~/.cache/alloy``, sub-folder ``envs``."""
     root = Path(os.environ.get("ALLOY_CACHE", Path.home() / ".cache" / "alloy"))
     return root / "envs"
 
 
+# attributes that name another element, by what they name (MJCF reference: equality, actuator, sensor, contact, tendon)
+_REFS = {"bodies": ("body", "body1", "body2"), "joints": ("joint", "joint1", "joint2", "jointinparent"),
+         "geoms": ("geom", "geom1", "geom2"), "sites": ("site", "site1", "site2"),
+         "tendons": ("tendon", "tendon1", "tendon2")}
+_NAMED = {"body": "bodies", "joint": "joints", "freejoint": "joints", "geom": "geoms", "site": "sites"}
+_OBJTYPE = {"body": "bodies", "xbody": "bodies", "joint": "joints", "geom": "geoms", "site": "sites",
+            "tendon": "tendons"}
+
+
 def without_bodies(path: str | Path, bodies: Sequence[str]) -> Path:
-    """A copy of the MJCF ``path`` without the named top-level bodies, their meshes, contact pairs and keyframes.
+    """A copy of the MJCF ``path`` without the named top-level bodies, their meshes and keyframes, and every
+    equality, actuator, sensor, contact or tendon row that names something inside them.
 
     Example: ``without_bodies("scene.xml", ["mug"])`` -> a cached file path."""
     src = Path(path).resolve()
     if not src.is_file():
         raise EnvError(f"robot file {src.name!r} not found", "pass the path of an existing MJCF file", field="path")
     text = src.read_text(encoding="utf-8")
-    # the copy holds absolute paths into src's folder, so two checkouts of one file must not share it
-    key = hashlib.sha256((str(src.parent) + "|" + text + "|" + ",".join(sorted(bodies))).encode()).hexdigest()[:16]
+    # the copy holds absolute paths into src's folder, so two checkouts of one file must not share it; a copy an
+    # older trimmer wrote must not be reused either
+    raw = "|".join([TRIM_VERSION, str(src.parent), text, ",".join(sorted(bodies))])
+    key = hashlib.sha256(raw.encode()).hexdigest()[:16]
     out = cache_dir() / f"{src.stem}-{key}.xml"
     if out.is_file():
         return out
@@ -51,9 +66,12 @@ def without_bodies(path: str | Path, bodies: Sequence[str]) -> Path:
 
 def _drop_bodies(root: ET.Element, names: set[str]) -> None:
     world = root.find("worldbody")
-    missing = set(names)
+    missing, gone = set(names), {k: set() for k in _REFS}       # what the dropped bodies held, by kind
     for body in list(world) if world is not None else []:
         if body.tag == "body" and body.get("name") in names:
+            for el in body.iter():
+                if el.get("name") and el.tag in _NAMED:
+                    gone[_NAMED[el.tag]].add(el.get("name"))
             world.remove(body)
             missing.discard(body.get("name"))
     if missing:
@@ -66,21 +84,44 @@ def _drop_bodies(root: ET.Element, names: set[str]) -> None:
         for mesh in list(asset.findall("mesh")):
             if mesh.get("name") not in used:
                 asset.remove(mesh)
-    kept = {b.get("name") for b in root.iter("body")}
-    for contact in root.findall("contact"):
-        for item in list(contact):
-            refs = [item.get(k) for k in ("body1", "body2") if item.get(k)]
-            if any(r not in kept for r in refs):
-                contact.remove(item)
+    gone["tendons"] |= _drop_dangling(root, ("tendon",), gone)    # first: actuators and sensors can name a tendon
+    _drop_dangling(root, ("equality", "actuator", "sensor", "contact"), gone)
+
+
+def _drop_dangling(root: ET.Element, sections: tuple[str, ...], gone: dict[str, set[str]]) -> set[str]:
+    """Remove each row of ``sections`` that (or any element inside it) names a body, joint, geom, site or tendon in
+    ``gone`` (an equality on a dropped finger would make the build fail); returns the removed rows' names. Only what
+    was dropped counts: the world body ("world") and names from included files stay named."""
+    def dangling(row: ET.Element) -> bool:
+        for el in row.iter():
+            if any(el.get(a) in gone[cat] for cat, attrs in _REFS.items() for a in attrs):
+                return True
+            kind = _OBJTYPE.get(el.get("objtype", ""))
+            if kind and el.get("objname") in gone[kind]:
+                return True
+        return False
+
+    removed: set[str] = set()
+    for section in (s for tag in sections for s in root.findall(tag)):
+        for row in [r for r in section if dangling(r)]:
+            section.remove(row)
+            removed |= {row.get("name")} - {None}
+    return removed
 
 
 def _absolute_files(root: ET.Element, base: Path) -> None:
-    meshdir = root.find("compiler")
-    sub = meshdir.get("meshdir") if meshdir is not None else None
+    """Every relative ``file`` made absolute the way MuJoCo resolves it: meshes, height fields and skins under
+    ``meshdir``, textures under ``texturedir``, both falling back to ``assetdir``, anything else beside the file."""
+    compiler = root.find("compiler")
+    get = compiler.get if compiler is not None else (lambda _key: None)
+    asset = get("assetdir")
+    folders = {"mesh": get("meshdir") or asset, "hfield": get("meshdir") or asset, "skin": get("meshdir") or asset,
+               "texture": get("texturedir") or asset}
     for el in root.iter():
         f = el.get("file")
         if f and not Path(f).is_absolute():
-            folder = base / sub if sub and el.tag == "mesh" else base
+            sub = folders.get(el.tag)
+            folder = base / sub if sub else base
             el.set("file", str((folder / f).resolve()))
 
 

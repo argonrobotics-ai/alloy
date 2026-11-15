@@ -312,7 +312,7 @@ def _contact_layer(built: BuiltScene, native: str, p: IntegrationProfile, solver
     from alloy.contact.pipeline import AlloyContactLayer  # noqa: PLC0415 - WP3
 
     coupled = _coupled_precision(built, native, p)      # wire() ran check_isolated before building solvers
-    layer = AlloyContactLayer(built.model, pairs, native=native,
+    layer = AlloyContactLayer(built.model, pairs, native=native, no_soft=contact_free_particles(dynamic_entries(built)),
                               precision_contacts_per_world=p.precision_contacts_per_world)
     binding = None
     if native == "mujoco" and pairs:

@@ -12,6 +12,11 @@ from alloy.bench import cli
 from alloy.bench import solvers as SV
 from alloy.core.errors import LawError
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "a bare ModelBuilder fixture with bodies in the global world, which the C route refuses; checks the "
+    "MuJoCo Warp solver types")
+
 
 def test_solver_settings_defaults_and_overrides() -> None:
     s = SV.SolverSettings("featherstone")
@@ -166,6 +171,7 @@ def test_command_records_the_cli_arguments(tmp_path) -> None:
     assert rep["command"].startswith("python -m alloy.bench run --law A16 --quick")
 
 
+@WARP_ROUTE
 def test_mujoco_is_built_as_the_route_builds_it() -> None:
     # rk4 entries get SyncedMuJoCo (no per-step float32 state push, WP2 3e803f3); others stock SolverMuJoCo
     from alloy._vendor import newton

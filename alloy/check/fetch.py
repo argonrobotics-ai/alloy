@@ -26,6 +26,8 @@ from alloy.check.source import IMPORTS_DIR
 
 log = logging.getLogger("alloy.check")
 
+UNKNOWN_OBJECT = "unknown object"      # the card rules' error for a placement whose object no library holds
+
 
 def fetch_imported(lib: Any, names: Iterable[str]) -> list[Finding]:
     """Fetch the missing files of each imported object in ``names``; a card error per object still missing."""
@@ -77,6 +79,25 @@ def _from_hub(lib: Any, name: str) -> list[Finding]:
                         fetch_fix(name, exc), objects=(name,), field=name)]
 
 
+def one_per_object(fetched: list[Finding], cards: list[Finding]) -> list[Finding]:
+    """``fetched`` then ``cards``, with one error per object the library lacks. In Hub mode such an object has two:
+    the failed Hub fetch and the card rules' "unknown object". The card error stays when it names a close library
+    object (its ``suggestion``, which ``apply_fixes`` uses); else the Hub's, whose fix says why the fetch failed and
+    names the Hub's close objects. Example: ``one_per_object(fetch_imported(lib, names), card_findings(src))``."""
+    unknown: dict[tuple[str, ...], list[Finding]] = {}
+    for f in cards:
+        if f.level == "error" and UNKNOWN_OBJECT in f.message:
+            unknown.setdefault(f.objects, []).append(f)
+    drop: set[int] = set()
+    for f in fetched:
+        same = unknown.get(f.objects, [])
+        if any(c.suggestion for c in same):
+            drop.add(id(f))
+        else:
+            drop.update(id(c) for c in same)
+    return [f for f in (*fetched, *cards) if id(f) not in drop]
+
+
 def import_root_of(lib: Any, name: str) -> Path | None:
     """The import library root (``.../imports/<source>``) that holds object card ``name``, or None."""
     if not lib.has_object(name):
@@ -88,4 +109,4 @@ def import_root_of(lib: Any, name: str) -> Path | None:
     return None
 
 
-__all__ = ["fetch_imported", "import_root_of"]
+__all__ = ["fetch_imported", "import_root_of", "one_per_object"]

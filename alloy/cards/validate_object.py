@@ -18,6 +18,7 @@ from alloy.cards.defaults import default_leaf_paths, is_routing_leaf
 from alloy.cards.paths import CardView
 from alloy.cards.validate import (DEFAULT_LEAF_WARNING, NAME_RE, ROUND_SHAPES, Issues, check_leaves, check_nonneg,
                                   check_plain_floats, check_positive, fmt)
+from alloy.contact.hull_limits import hull_vertices_problem
 from alloy.core.errors import CardError
 
 if TYPE_CHECKING:
@@ -88,6 +89,8 @@ def _check_mesh_source(iss: Issues, card: ct.ObjectCard, s: ct.MeshSource, lib: 
         check_positive(iss, f"shape.scale.{i}", k)
     if s.max_parts < 1 or s.max_parts > card.budget.collision_parts:
         iss.error("shape.max_parts", f"{s.max_parts} outside [1, budget.collision_parts={card.budget.collision_parts}]")
+    if problem := hull_vertices_problem(s.hull_vertices, s.collision):
+        iss.error("shape.hull_vertices", problem)
     path = _asset(lib, iss, "shape.path", s.path)
     if path is None:
         return None

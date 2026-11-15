@@ -148,15 +148,12 @@ def test_the_bath_towel_folds_in_thirds(thirds_fold):
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(10800)
-@pytest.mark.xfail(strict=False, reason="known gap cloth-fold-unsettled-default: the folded towel is still moving at "
-                   "the measuring point, so its height is a draw: with the default's self-contact hold and "
-                   "SCR-WP11-F32, 2 of 8 nudged starts are over 25 mm (26.0 and 30.5 mm; without F32 0 of 8). Kept "
-                   "by the coordinator's ruling of 2026-11-10 02:42Z; the 35 mm guard below is hard")
 def test_the_thirds_fold_lies_within_25_mm(thirds_fold):
-    """Gym-Anything's normal extent (ptp z <= 25 mm). Rows (CPU, the start nudged 1 um per seed; WP2's 8-seed
-    spreads, 2026-11-09): with the default's self-contact hold, main before SCR-WP11-F32 0 of 8 over 25 mm, with
-    SCR-WP11-F32 2 of 8 (26.0 and 30.5 mm). Without the hold: main 3 of 10 over (17.9-39.0 mm), F32 5 of 10
-    (12.7-35.7 mm), the towel moving at 0.06-0.13 m/s ([internal note] notes/wp11-f32/spread; fold_spread.py)."""
+    """Gym-Anything's normal extent (ptp z <= 25 mm). A plain law since the fold default of 2026-11-14 (cloth-on-cloth
+    ke capped at 400 m / dt^2, no collision damping): 8 nudged starts (CPU, 1 um per seed) at 12.6-12.7 mm, none over
+    25 mm, the towel at rest (0.001 m/s; known gap cloth-fold-unsettled-default). Before it the folded towel was still
+    moving at the measuring point and the height was a draw (2 of 8 over 25 mm, 26.0 and 30.5 mm), so this law was an
+    expected failure (strict=False) from 2026-11-10 to 2026-11-14."""
     assert thirds_fold.gates["normal_extent"], thirds_fold.metrics
 
 
@@ -164,6 +161,6 @@ def test_the_thirds_fold_lies_within_25_mm(thirds_fold):
 @pytest.mark.law
 @pytest.mark.timeout(10800)
 def test_the_thirds_fold_lies_within_35_mm(thirds_fold):
-    """The hard guard beside the 25 mm draw (coordinator 2026-11-10 02:42Z): the worst of 8 nudged starts with the
-    default's hold and SCR-WP11-F32 is 30.5 mm. A fold standing higher than 35 mm is a regression, not the draw."""
+    """The coarse guard kept from the draw (coordinator 2026-11-10 02:42Z): the worst start before the fold default
+    stood at 30.5 mm. A fold higher than 35 mm is a regression of the fold, not of its settling."""
     assert thirds_fold.metrics["normal_extent"] <= 0.035, thirds_fold.metrics

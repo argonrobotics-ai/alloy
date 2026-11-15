@@ -143,7 +143,7 @@ def solve_bounds(J: wp.array) -> dict[str, Any]:
         wp.launch_tiled(_solve_bound, dim=int(d.nworld),
                         inputs=[m.opt.impratio_invsqrt, d.contact.friction, d.contact.dim, e.type, e.id,
                                 e.jtdaj_adr, e.jtdaj_nrow, e.jtdaj_nblock, d.nefc, e.J_rownnz, e.J_rowadr, e.J, e.D],
-                        outputs=[s["hbound"], s["rowmax"]], block_dim=BOUND_LANES)
+                        outputs=[s["hbound"], s["rowmax"]], block_dim=BOUND_LANES, device=J.device)
         s["fresh"] = True
     return s
 

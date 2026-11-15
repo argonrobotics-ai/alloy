@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 import mujoco
 import numpy as np
 
+from alloy.route.mjc_core_export import copy_contacts
 from alloy.route.mjc_core_line import LineRule
 from alloy.route.mjc_core_noslip import ScopedNoslipNumpy
 
@@ -55,6 +56,19 @@ class WorldOut:
 
     def zero(self) -> None:
         self.counts = dict.fromkeys(COUNTERS, 0)
+
+    def grow_contacts(self, n: int) -> None:
+        """Contact buffers for ``n`` contacts (counters kept, contents not: the caller copies the contacts again)."""
+        self.ncon_max, self.ncon = int(n), 0
+        self.geom = np.zeros((n, 2), np.int32)
+        self.pos, self.frame, self.dist, self.force = np.zeros((n, 3)), np.zeros((n, 9)), np.zeros(n), np.zeros((n, 6))
+
+    def set_ncon(self, n: int) -> None:
+        self.ncon = int(n)
+
+    def uncount(self, contacts: int) -> None:
+        """Take ``contacts`` back out of the export overflow counter (``mjc_core_export.refit`` copied them)."""
+        self.counts["contact_overflow"] -= int(contacts)
 
 
 @dataclass
@@ -151,15 +165,8 @@ def export_contacts(m: mujoco.MjModel, d: mujoco.MjData, out: WorldOut) -> None:
     n = min(int(d.ncon), out.ncon_max)
     out.counts["contact_overflow"] += int(d.ncon) - n
     out.ncon = n
-    if n == 0:
-        return
-    c = d.contact
-    out.geom[:n] = c.geom[:n]
-    out.pos[:n] = c.pos[:n]
-    out.frame[:n] = c.frame[:n]
-    out.dist[:n] = c.dist[:n]
-    for i in range(n):
-        mujoco.mj_contactForce(m, d, i, out.force[i])
+    if n:
+        copy_contacts(m, d, out, n)
 
 
 def pull_state(m: mujoco.MjModel, d: mujoco.MjData, body_map: np.ndarray, q: np.ndarray, qd: np.ndarray) -> None:

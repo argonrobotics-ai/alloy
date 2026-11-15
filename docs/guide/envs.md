@@ -100,8 +100,10 @@ under the default `autoreset="same_step"` (the observation `step` returns is alr
 returned one under `"next_step"` or `"disabled"`. A reset clears the world's record in `sim.health()` and
 `sim.check()`; the env keeps the count: `info["episode"]["invalid"]` marks the episodes that ended frozen, and
 `env.invalid_episodes` counts them per world since the env was built: once per frozen episode, and `env.reset()`
-does not clear it. With `autoreset="disabled"` a frozen world stays frozen, so it counts once per step until you
-reset it. Each line the one-command trainer prints gives `invalid_episodes`, the count since the previous line.
+does not clear it. With `autoreset="disabled"` a frozen world stays frozen until you reset it, and counts once.
+Each line the one-command trainer prints gives `invalid_episodes`, the count since the previous line. A reset world
+starts with no `sim.apply_wrench` load (the other worlds keep theirs), and a reset of every world also stops every
+`sim.drive`, as `sim.reset()` does; a drive keeps running through a reset of some worlds.
 
 `ClothFold-v0` has two grasps, and results depend on which one you use:
 - `grasp="friction"`, the default: the fingers hold the towel by friction alone, as a real gripper does. The
@@ -149,7 +151,12 @@ print(env.obs_names()[:3], env.action_names(), sorted(info["terms"]))
   particle objects such as the water in a cup on the slide: without it a 3 cm jitter left 20-41 % of the water
   outside the cup after 10 steps, with it none), and a pose that puts a finger inside a resting object starts
   overlapping it (START_PEN), so start a hand open and close it with actions.
-- `actions=ActionSpec(joints, mode="delta" | "absolute")` drives any robot's servos; with no `actions`, every servo.
+- Checks and observations read `env.state`, every world's state with the keys of `sim.state()`
+  (`env.state.start` at each world's last reset). The keys a solver keeps rather than the bodies' poses (a heated
+  liquid's `"<name>.temperature"`, a metal sheet's, wire's or yielding joint's `"<name>.plastic_strain"`) are copied
+  from the device at each read, so an observation that holds one costs a copy per step.
+- `actions=ActionSpec(joints, mode="delta" | "absolute")` drives any robot's servos; with no `actions`, every servo:
+  MJCF `<position>` joint targets and MuJoCo `<general>` / `<motor>` controls together, each joint by its own.
   In delta mode an action of 1 moves a joint's target `delta` (m or rad) in that step, starting from the last target
   kept within `window` of the joint's measured position (default 5 x `delta`), so a joint held by a wall, a table or
   a part does not run its target on and push harder every step. A slow servo, one that lags its target by more than
@@ -165,8 +172,6 @@ Limits of your own task, each with its workaround:
   outside an environment `sim.set_targets` on such a joint raises). Workaround: before training, print
   `env.sim.names()["actuators"]` and check it covers every joint you drive; add a `<position joint="..." kp="..."/>`
   line for each one that is missing.
-- A rod's centre line is not in the task state: `"<rod>.points"` is a key of `sim.state()` only. Workaround: the rod's
-  link bodies, `"<rod>/0.pos"` and up ([rods.md](rods.md), State).
 - Two slide joints on one MJCF body merge into one joint named `x_y` that actions cannot drive: use one body per joint
   ([robots.md](robots.md), Adding a robot).
 - `VectorEnv(scene, task, ...)` builds the simulation itself with `worlds`, `device`, `seed` and `profile` only: it
@@ -217,7 +222,10 @@ not at any step before it: it says whether the task holds when the episode ends.
 - An episode ended by `failure=` or `max_steps` reports the check at that step (usually False); one ended by an
   INVALID world reports False.
 - A scene whose worlds share one episode clock (`env.together`) ends every episode at `max_steps`; success is still
-  read at that step. The task-port envs below report their port's verdict, judged when the run ends.
+  read at that step. A world that goes INVALID there stays frozen at reward 0 until then (the `invalid_penalty` once,
+  on the step it froze) and its episode ends at that common end as one frozen episode, terminated in the RL
+  wrappers; rsl_rl's random episode lengths (`init_at_random_ep_len`) leave the one clock as it is. The task-port
+  envs below report their port's verdict, judged when the run ends.
 
 To count a success at any step, keep your own record of `info["success"]`:
 
@@ -323,8 +331,10 @@ the three whose default has not been seen to finish.
 One episode on the port's own script, one world, default options unless the row names one, first-run compiles
 included. L4: one NVIDIA L4, from the 0.1.0 release-candidate wheel. CPU: 16 or 32 cores, one run or two per number;
 the 16-core runs from that wheel, the 32-core runs from a source tree. All of these ran before the ports' verdicts
-were reworked. The envs do not end early: a policy's episode takes as long as the script's. "No verdict" means the
-run was stopped before the episode ended.
+were reworked. The envs do not end early: a policy's episode runs until the port's own run ends, when its scripted
+plan finishes or at the task's time limit, so a policy that leaves the script's path can run to the limit (a forklift
+parked in the bay a few cm from the scripted spot runs 90 s, not 17 s). "No verdict" means the run was stopped before
+the episode ended.
 
 Three defaults have not been seen to reach a verdict from the released package, on any machine:
 `RinseGlassware-v0`, `ConcreteToolJoints-v0` and `ConcretePadEdge-v0`. Each has a shorter option (below): one glass
@@ -441,7 +451,9 @@ controls and nobody is in the seat, so `operator_seated` and `head_clear_of_guar
 port reads its checks once per 20 ms control period, where the task latches them every physics step: the checks
 marked "sampled" use the task's thresholds on those samples. `no_strike` counts only the objects the port builds, and
 its impulse takes the largest contact of each sample. `time_limit` is judged from whether the port's scripted plan
-finished before the limit. Starts are fixed (the task draws them per seed).
+finished before the limit, so it is not judged on a run where the policy applied controls of its own (an action that
+differs from `info["expert_action"]`); success then needs every other judged check. Starts are fixed (the task draws
+them per seed).
 
 | env (task) | as the task does | by another measure | not judged |
 |---|---|---|---|

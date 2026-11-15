@@ -6,14 +6,16 @@ own objects.
 
 ## Card kinds
 
-Each card is a YAML file with `schema: alloy.<kind>/1` and a `name` equal to its file name.
+Each card is a YAML file with `schema: alloy.<kind>/1`. Material and object cards also carry a `name` equal to their
+file name; a pair card is named by its two materials (`a`, `b`), and a scene card by its file name (it has no `name`
+key).
 
 | Kind | Directory | Holds |
 |---|---|---|
 | `material` | `materials/` | density, `surface` (mu_static, mu_dynamic, restitution; contact uses one friction coefficient per pair, from `mu_dynamic`: `scenes.md`, Materials and friction), `elastic`, `fluid` properties |
 | `pair` | `pairs/` | friction for one pair of materials |
 | `object` | `objects/` | `shape` (primitive or mesh) + `material` + `motion: static` or `dynamic`; precision features |
-| `scene` | `scenes/` | placed `objects` with `pose: [x, y, z, qx, qy, qz, qw]`, `robots`, `worlds`, `control_dt`, `randomize` |
+| `scene` | `scenes/` | placed `objects` (each with `object`, `pose: [x, y, z, qx, qy, qz, qw]` and an optional `randomize` list of `{field, lo, hi}`), `robots` (required: `[]` for none), `worlds`, `control_dt` |
 
 - Quantities take units: `10 mm`, `0.5 MPa`, `1040 kg/m^3`. Primitive sizes in cards are **half** extents
   (boxes), `[radius]` (spheres) and `[radius, half height]` (cylinders, capsules); the Python API takes full sizes.

@@ -17,6 +17,10 @@ import pytest
 
 import alloy
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+
 W, SLOTS, SEED = 4, 1, 0
 LIGHT, HEAVY = 500.0, 8000.0          # [kg/m3] the box's density range: 13.5 g to 216 g at a 3 cm edge
 NAMES = ["box", "cloth"]
@@ -164,6 +168,7 @@ def test_keyword_off_is_one_run_and_one_pack() -> None:
 
 # --- fail today: the gap --------------------------------------------------------------------------------------------
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_cost_is_each_packs_own_rung_not_the_finest_for_all() -> None:
@@ -182,6 +187,7 @@ def test_cost_is_each_packs_own_rung_not_the_finest_for_all() -> None:
         sim.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -217,6 +223,7 @@ def _spread(a: list[dict[str, Any]], b: list[dict[str, Any]], worlds: Any) -> fl
                for x, y in zip(a, b, strict=True) for k in x["state"])
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -240,6 +247,7 @@ def test_the_coarse_worlds_are_a_run_with_the_residents_slots_parked() -> None:
         ref.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -262,6 +270,7 @@ def test_the_coarse_clock_is_the_finest_need_among_the_unparked_worlds() -> None
             sim.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -291,6 +300,7 @@ def test_the_other_worlds_stay_within_the_leaks_spread_of_a_run_without_the_land
         b.close()
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_reads_and_inputs_reach_a_resident() -> None:
@@ -323,6 +333,7 @@ def test_reads_and_inputs_reach_a_resident() -> None:
         sim.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -352,6 +363,7 @@ def test_moves_repeat_with_the_seed_and_reset_clears_them() -> None:
         sa.close()
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_identical_worlds_take_nobody_and_change_no_bit() -> None:

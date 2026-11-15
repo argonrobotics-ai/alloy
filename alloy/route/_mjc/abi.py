@@ -136,5 +136,15 @@ class MjcOut:
                  "noslip_overflow", "line_fired")
         return {n: getattr(self.struct, n) for n in names}
 
+    def grow_contacts(self, n: int) -> None:
+        """Contact buffers for ``n`` contacts (counters kept, contents not: the caller copies the contacts again)."""
+        self.geom = np.zeros((n, 2), np.int32)
+        self.pos, self.frame = np.zeros((n, 3)), np.zeros((n, 9))
+        self.dist, self.force = np.zeros(n), np.zeros((n, 6))
+        for name in ("geom", "pos", "frame", "dist", "force"):
+            arr = getattr(self, name)
+            setattr(self.struct, name, _ptr(arr, _i32p if arr.dtype == np.int32 else _f64p))
+        self.struct.ncon_max, self.struct.ncon = int(n), 0
+
 
 __all__ = ["ABI", "ERRORS", "Config", "MjcConfig", "MjcOut", "Out", "declare"]

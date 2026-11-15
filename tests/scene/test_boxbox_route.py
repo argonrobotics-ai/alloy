@@ -14,6 +14,12 @@ from alloy._vendor.mujoco_warp import DisableBit  # noqa: E402
 
 from alloy.scene.builtin_plugins import _mujoco  # noqa: E402
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "a bare ModelBuilder fixture with bodies in the global world, which the C route refuses; MuJoCo "
+    "Warp's primitive box-box fix")
+pytestmark = WARP_ROUTE
+
 NATIVECCD = int(DisableBit.NATIVECCD)
 
 

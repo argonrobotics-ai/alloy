@@ -63,11 +63,20 @@ def items_look(source) -> dict | None:
 
     raw = scene_look(scene)
     key = json.dumps(raw, sort_keys=True, default=str)
-    if key not in _MEMO:
+    hit = _MEMO.get(key)
+    if hit is None or any(_cached(ref, res) for ref, res in hit[1]):   # a texture fetched since: draw it now
         if len(_MEMO) >= _MEMO_MAX:
             _MEMO.clear()
-        _MEMO[key] = _drawable(_with_cached_textures(raw, scene))
-    return _MEMO[key]
+        look, missing = _with_cached_textures(raw, scene)
+        hit = _MEMO[key] = (_drawable(look), missing)
+    return hit[0]
+
+
+def textures_on_disk(look: dict) -> dict:
+    """``look`` (a look layer: materials and assign rules) with each material whose texture is not on disk drawn in
+    its family's flat tone (``flat_tone``), with the one warning naming the fetch command. The full-material tracer
+    passes the cards' library looks through it, so a missing texture never stops a render."""
+    return _with_cached_textures(look, None)[0] if look and look.get("materials") else look
 
 
 def _cached(ref: str, res: str) -> bool:
@@ -85,20 +94,22 @@ def _texture(spec: dict, key: str) -> tuple[str | None, str]:
     return eff.get("texture"), str(eff.get("res", "2k"))
 
 
-def _with_cached_textures(raw: dict, scene) -> dict:
-    """``raw`` with each material whose texture the cache lacks given its item's own library texture when that is
-    cached, else its family's flat tone (``flat_tone``)."""
+def _with_cached_textures(raw: dict, scene) -> tuple[dict, tuple[tuple[str, str], ...]]:
+    """(``raw`` with each material whose texture the cache lacks given its item's own library texture when that is
+    cached (``scene`` given), else its family's flat tone (``flat_tone``); the (ref, res) of those textures)."""
     from alloy.scene.variants.looks import TEXTURE_FIELDS  # noqa: PLC0415
     out = {**raw, "materials": dict(raw["materials"])}
     own: dict[str, dict] = {}
     flat: list[str] = []
+    missing: list[tuple[str, str]] = []
     for mkey, spec in raw["materials"].items():
         item, _, key = mkey.partition(":")
         ref, res = _texture(spec, mkey)
         if not ref or _cached(ref, res):
             continue
+        missing.append((ref, res))
         if item not in own:
-            own[item] = _library_materials(scene, item)
+            own[item] = _library_materials(scene, item) if scene is not None else {}
         base = own[item].get(key)
         bref, bres = _texture(base, mkey) if base else (None, "")
         rest = {k: v for k, v in spec.items() if k not in TEXTURE_FIELDS}
@@ -111,7 +122,7 @@ def _with_cached_textures(raw: dict, scene) -> dict:
             out["materials"][mkey] = {**rest, "texture": None, "base_color": list(tone)}
             flat.append(f"{mkey}: {ref}")
     _warn_flat(flat)
-    return out
+    return out, tuple(missing)
 
 
 def flat_tone(spec: dict) -> tuple[float, float, float] | None:

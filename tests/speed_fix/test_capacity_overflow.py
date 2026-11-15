@@ -4,9 +4,10 @@
 - Rows: MuJoCo Warp's pool of n x worlds is shared, so one world can take more than n contacts while the pool holds
   them all; its rows (3 per contact here) then pass r x n + R. Ten boxes landing on the ground in world 0 (40
   contacts) and in the air in world 1, at n = 24: world 0 reads ROW_OVERFLOW (INVALID, frozen), not CONTACT_OVERFLOW
-  (the pool of 48 holds the 40), and sim.check() names it with contact_capacity as the fix; world 1 stays OK. On the
-  CPU's MuJoCo C route, which keeps every row, the same world reads CONTACT_OVERFLOW instead (its contact export
-  is n per world).
+  (the pool of 48 holds the 40), and sim.check() names it with contact_capacity as the fix; world 1 stays OK. The
+  CPU's MuJoCo C route keeps every contact and row and copies them for its readers into a pool of n x worlds: at
+  n = 24 that pool holds world 0's 40 and nothing is flagged (nothing was dropped); at n = 16 (a pool of 32) the
+  same world reads CONTACT_OVERFLOW and world 1 stays OK.
 - CCD scratch: a pool of 1 slot per world (WP5's internal ``set_ccd_slots``) under four cylinders resting on a
   table reads CONTACT_OVERFLOW in every world; at contact_capacity the scratch is the pool (naccdmax = naconmax) and
   the same scene reads nothing.
@@ -57,12 +58,14 @@ def test_a_world_past_its_share_of_the_pool_reads_row_overflow(monkeypatch):
 
 
 @pytest.mark.law
-def test_the_c_route_reads_the_same_world_as_a_contact_overflow(monkeypatch):
+@pytest.mark.parametrize("capacity, flagged", [(16, True), (24, False)])
+def test_the_c_route_flags_the_same_world_only_past_its_copy(capacity, flagged, monkeypatch):
     monkeypatch.setenv("ALLOY_CPU_ROUTE", "mjc")
-    sim = alloy.build(_uneven(), device="cpu", contact_capacity=24)
+    sim = alloy.build(_uneven(), device="cpu", contact_capacity=capacity)
     sim.step(20)
     f = _flags(sim)
-    assert "CONTACT_OVERFLOW" in f[0] and not f[1] & {"ROW_OVERFLOW", "CONTACT_OVERFLOW"}, f
+    assert ("CONTACT_OVERFLOW" in f[0]) == flagged and not f[1] & {"ROW_OVERFLOW", "CONTACT_OVERFLOW"}, f
+    assert sim.check()["ok"] != flagged, sim.check()["problems"]
 
 
 def _cylinders(worlds: int = 2) -> alloy.Scene:

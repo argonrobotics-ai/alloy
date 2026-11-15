@@ -76,21 +76,40 @@ def _env(arm: str, worlds: int) -> VectorEnv:
     return VectorEnv(scene, task, worlds=worlds, device="cpu", seed=0, backend="numpy", autoreset="disabled")
 
 
-def _run(env: VectorEnv, action, steps: int) -> tuple[float, float]:
-    """(steady, peak) penetration in mm over all worlds: steady = the deepest contact at checks from step 40 on, once
-    every arm has landed (the Panda by step 10; the FR3 and UR10e, which start higher, by about 25)."""
-    steady = 0.0
+def _run(env: VectorEnv, action, steps: int, arm: str = "") -> tuple[float, float, int]:
+    """(steady, peak) penetration in mm over all worlds, and the checks at which an arm part touched its table or the
+    cube in some world (``arm`` given): steady = the deepest contact at checks from step 40 on, once every arm has
+    landed (the Panda by step 10; the FR3 and UR10e, which start higher, by about 25)."""
+    steady, touched = 0.0, 0
     for k in range(1, steps + 1):
         env.step(action(k))
+        if k % 10 == 0 and arm:
+            touched += _touches(env, arm)
         if k >= 40 and k % 10 == 0:
             h = env.sim.health()
             steady = max(steady, max(float(w.get("max_penetration_m") or 0.0) for w in h["worlds"]))
     h = env.sim.health()
     assert h["invalid_worlds"] == [], h["invalid_worlds"]
-    return 1e3 * steady, 1e3 * max(float(w.get("peak_penetration_m") or 0.0) for w in h["worlds"])
+    return 1e3 * steady, 1e3 * max(float(w.get("peak_penetration_m") or 0.0) for w in h["worlds"]), touched
+
+
+def _touches(env: VectorEnv, arm: str) -> bool:
+    """Some world has a contact between a part of ``arm`` and its table or the cube (read from the contacts: a depth
+    floor counted the gripper's fingers touching each other, the UR10e's only contact at random from its start)."""
+    import alloy.viewer  # noqa: PLC0415
+
+    other = {"cube", f"{arm}/table"}
+    for w in range(env.sim.worlds):
+        c = alloy.viewer.contacts(env.sim, world=w)
+        for a, b in zip(c["body_a"], c["body_b"], strict=True):
+            ends = {str(a), str(b)}
+            if ends & other and any(e.startswith(f"{arm}/") and e not in other for e in ends):
+                return True
+    return False
 
 
 PRESS = {"panda": [(1, 1.0)], "fr3": [(1, 1.0)], "ur10e": [(1, 0.5), (2, 1.0)]}   # drives the hand onto the table
+LEAD = {"ur10e": 30}  # random actions start after these press steps (the UR10e starts high above its table)
 
 
 @pytest.mark.timeout(900)
@@ -106,7 +125,7 @@ def test_an_arm_pressing_on_its_table_stays_valid_and_shallow(arm):
             a[:, i] = s
         return a
 
-    steady, peak = _run(env, press, 100)
+    steady, peak, _ = _run(env, press, 100)
     print(f"{arm} press: steady {steady:.3f} mm, arrival peak {peak:.3f} mm")
     assert steady <= STEADY_MM
 
@@ -114,13 +133,21 @@ def test_an_arm_pressing_on_its_table_stays_valid_and_shallow(arm):
 @pytest.mark.timeout(900)
 @pytest.mark.parametrize("arm", sorted(PACKS))
 def test_random_actions_keep_every_arm_valid_and_shallow(arm):
-    """8 worlds, 3 s of uniform random joint deltas; some world touches the table or the cube (peak > 0.05 mm)."""
+    """8 worlds, 3 s of uniform random joint deltas; an arm part touches its table or the cube in some world. The
+    UR10e starts too high for random deltas to reach the table in 3 s, so it first presses for LEAD steps (WP0's C
+    route triage: its 0.05 mm depth floor had passed on Warp on the fingers touching each other alone, 0.060 mm, and
+    failed on MuJoCo C, which resolves that touch at 0.024 mm)."""
     env = _env(arm, 8)
     env.reset(seed=0)
     rng = np.random.default_rng(0)
-    steady, peak = _run(env, lambda _k: rng.uniform(-1.0, 1.0, (8, env.writer.size)).astype(np.float32), 150)
-    print(f"{arm} random: steady {steady:.3f} mm, peak {peak:.3f} mm")
-    assert steady <= STEADY_MM and peak > 0.05
+    press = np.zeros((8, env.writer.size), np.float32)
+    for i, s in PRESS[arm]:
+        press[:, i] = s
+    lead = LEAD.get(arm, 0)
+    steady, peak, touched = _run(env, lambda k: press if k <= lead else
+                                 rng.uniform(-1.0, 1.0, (8, env.writer.size)).astype(np.float32), 150, arm)
+    print(f"{arm} random: steady {steady:.3f} mm, peak {peak:.3f} mm, checks touching {touched} of 15")
+    assert steady <= STEADY_MM and touched > 0
 
 
 PART, TCP, PART_XY = 0.025, 0.1034, (0.6152, 0.0)    # the hand's xy at that home, measured
@@ -214,6 +241,6 @@ def test_the_robot_governs_a_contact_with_a_users_default_table():
     env.reset(seed=0)
     press = np.zeros((W, env.writer.size), np.float32)
     press[:, 1] = 1.0
-    steady, peak = _run(env, lambda _k: press, 100)
+    steady, peak, _ = _run(env, lambda _k: press, 100)
     print(f"panda on a 0.02 s slab: steady {steady:.3f} mm, peak {peak:.3f} mm")
     assert steady <= STEADY_MM

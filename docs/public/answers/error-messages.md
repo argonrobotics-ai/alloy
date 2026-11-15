@@ -47,17 +47,18 @@ name 'block' is already in the scene
 pick another name (taken: ground, block)
 ```
 
-## `device 'cuda:0' asked for but no CUDA GPU is visible`
+## `no body, joint or particle object named 'blok'`
 
-You asked for a GPU on a machine without one. This text appears on a CPU-only machine only.
+A state key names something the scene does not have (`alloy.UnknownNameError`). The fix lists the names it has.
 
 ```python
-explain(lambda: alloy.build(scene, device="cuda:0"))
+sim = alloy.build(scene, device="cpu")
+explain(lambda: sim.state(["blok"]))
 ```
 
 ```text
-device 'cuda:0' asked for but no CUDA GPU is visible
-pass device='cpu' (slower) or run on a machine with an NVIDIA GPU and driver
+no body, joint or particle object named 'blok'
+use a name from sim.names() (bodies: block; joints: -; particles: -; static: ground)
 ```
 
 ## `joint 'shoulder' has no actuator, so a position target cannot move it`
@@ -70,12 +71,14 @@ ARM = """<mujoco><compiler angle="radian"/><worldbody><body name="link1" pos="0 
   <geom type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="1"/></body></worldbody></mujoco>"""
 arm_scene = alloy.Scene(dt=0.01)
 arm_scene.add_robot("arm", mjcf=ARM, pos=(0, 0, 0.5))
-explain(lambda: alloy.build(arm_scene).set_targets({"shoulder": 0.5}))
+explain(lambda: alloy.build(arm_scene, device="cpu").set_targets({"shoulder": 0.5}))
 ```
 
 ```text
 joint 'shoulder' has no actuator, so a position target cannot move it
-add <position joint="..." kp="..."/> for it to the robot's MJCF <actuator> block
+give the joint a servo in the robot file. MJCF: add <position joint="..." kp="..."/> to its <actuator> block.
+USD: a PhysicsDriveAPI stiffness (damping for a velocity target) on the joint. A URDF has no servo gains (a
+<transmission> names an interface only): convert it to MJCF and add the actuator there
 ```
 
 ## Keep in mind

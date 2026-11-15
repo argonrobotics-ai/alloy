@@ -13,6 +13,9 @@ from alloy.scene import noslip_route as NR
 from alloy.scene.assembler import SceneAssembler
 from alloy.sim import Simulation
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("MuJoCo Warp's noslip options and scoped noslip registry")
+
 UP = (0.0, 0.0, 0.0, 1.0)
 YAM = "robots/yam_bench/robot.xml"
 
@@ -43,6 +46,7 @@ def _built(lib, worlds: int = 2):
     return SceneAssembler(lib).assemble(card, "cpu", world_count=worlds)
 
 
+@WARP_ROUTE
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(600)
 def test_routed_robot_scene_installs_scoped_noslip():
@@ -144,6 +148,7 @@ def _bench_scene(assets=None):
     return SceneAssembler(lib).assemble(card, "cpu", world_count=1)
 
 
+@WARP_ROUTE
 def test_bench_mjcf_noslip_reaches_the_solver(bench_assets):
     from alloy._vendor import newton
 

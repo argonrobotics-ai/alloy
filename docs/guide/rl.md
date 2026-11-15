@@ -332,8 +332,9 @@ env.close()
   the set value.
 
 Not covered: noise is white, drawn anew each step (no bias, drift or quantization); delays are whole control steps
-(no latency inside a step); camera images pass through untouched (no image noise, delay or history); `ActionDelay`
-with absolute-target actions is tested on a stand-in writer only; the layers were tested on the CPU and, on a GPU,
+(no latency inside a step); camera images pass through untouched (no image noise, delay or history); with
+absolute-target actions `ActionDelay` holds each world's start target until its first delayed action arrives (tested
+on a stand-in writer and on the Go2 env); the layers were tested on the CPU and, on a GPU,
 only run by the example (`examples/envs/14_sim2real_layers.py`, 64 worlds: measured noise 0.020 for 0.02 set). No
 policy trained with these layers has been run on a real robot.
 

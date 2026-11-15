@@ -63,13 +63,69 @@ def _test_cpu_route() -> str:
     return route or "warp"
 
 
-os.environ["ALLOY_CPU_ROUTE"] = _test_cpu_route()
+SUITE_CPU_ROUTE = _test_cpu_route()
+os.environ["ALLOY_CPU_ROUTE"] = SUITE_CPU_ROUTE
+
+# @pytest.mark.warp_route("<why>") (per test, or module-level pytestmark; physics 2026-11-14): the test checks a
+# mechanism of the warp CPU route (graph capture, the world clock, MuJoCo Warp's data, ...), so a run of the suite on
+# the C route (ALLOY_TEST_CPU_ROUTE=mjc) keeps it on warp. The reason is required: a later C-route feature finds here
+# what that route was never tested on. Set before the test's fixtures (module-scoped ones built for it included) and
+# put back after its teardown; unmarked tests are not touched (a module-scoped fixture may set the route itself).
+# A module-scoped fixture that an unmarked test built first keeps its route: mark the module then.
+WARP_ROUTE_MARK = "warp_route"
+ROUTE_ENV = "ALLOY_CPU_ROUTE"
+
+
+def _warp_route_reason(item: pytest.Item) -> str | None:
+    """The marked test's reason (None when unmarked); a mark without a non-empty reason stops the run."""
+    mark = item.get_closest_marker(WARP_ROUTE_MARK)
+    if mark is None:
+        return None
+    reason = mark.args[0] if mark.args else mark.kwargs.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        raise pytest.UsageError(f"{item.nodeid}: @pytest.mark.{WARP_ROUTE_MARK} needs its reason, e.g. "
+                                f'@pytest.mark.{WARP_ROUTE_MARK}("reads mjw_data.efc")')
+    return reason.strip()
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", f"{WARP_ROUTE_MARK}(reason): checks a warp-route mechanism; stays on warp "
+                                       f"when {TEST_CPU_ROUTE_ENV}=mjc (tests/conftest.py)")
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):  # noqa: ANN201 - a hook wrapper
+    """A marked test on the C route runs on warp, setup to teardown, and the route it found is put back after (its
+    reason in user_properties, which reach the junit and, under xdist, the controller's summary)."""
+    reason = _warp_route_reason(item)
+    if reason is None or SUITE_CPU_ROUTE == "warp":
+        yield
+        return
+    saved = os.environ.get(ROUTE_ENV)
+    os.environ[ROUTE_ENV] = "warp"
+    item.user_properties.append((WARP_ROUTE_MARK, reason))
+    try:
+        yield
+    finally:
+        if saved is None:
+            os.environ.pop(ROUTE_ENV, None)
+        else:
+            os.environ[ROUTE_ENV] = saved
 
 
 def pytest_terminal_summary(terminalreporter) -> None:  # noqa: ANN001 - pytest's TerminalReporter
-    """Which CPU route this run tested, in every log, also under -q (a release tier runs the suite on both)."""
+    """Which CPU route this run tested, in every log, also under -q (a release tier runs the suite on both), and the
+    tests a C-route run kept on warp, by reason."""
     how = f"{TEST_CPU_ROUTE_ENV}={os.environ[TEST_CPU_ROUTE_ENV]}" if os.environ.get(TEST_CPU_ROUTE_ENV) else "default"
-    terminalreporter.write_line(f"alloy CPU route: {os.environ['ALLOY_CPU_ROUTE']} ({how})")
+    terminalreporter.write_line(f"alloy CPU route: {SUITE_CPU_ROUTE} ({how})")
+    kept: dict[str, set[str]] = {}
+    for reports in terminalreporter.stats.values():
+        for rep in reports:
+            for key, reason in getattr(rep, "user_properties", ()):
+                if key == WARP_ROUTE_MARK:
+                    kept.setdefault(reason, set()).add(rep.nodeid)
+    for reason, ids in sorted(kept.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        terminalreporter.write_line(f"  {len(ids)} kept on warp: {reason}")
 
 REPO = Path(__file__).resolve().parents[1]
 COMPILE_HEAVY_TIMEOUT_S = 180
@@ -84,10 +140,12 @@ def _cuda_available() -> bool:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Skip ``gpu`` tests without CUDA; give ``compile_heavy`` 180 s and ``gpu`` 600 s unless a test sets its own."""
+    """Skip ``gpu`` tests without CUDA; give ``compile_heavy`` 180 s and ``gpu`` 600 s unless a test sets its own;
+    every ``warp_route`` mark has its reason."""
     has_cuda = _cuda_available()
     skip_gpu = pytest.mark.skip(reason="no CUDA device (gpu marker)")
     for item in items:
+        _warp_route_reason(item)  # a warp_route mark without its reason stops the run here, on every route
         explicit = item.get_closest_marker("timeout") is not None
         if "gpu" in item.keywords:
             if not has_cuda:

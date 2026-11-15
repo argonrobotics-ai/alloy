@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 from scipy.special import erf
 
 from alloy.tasks import paint_metrics as pm
@@ -83,16 +84,19 @@ def mist_escape(lay: Any, pos: tuple[float, float, float]) -> float:
 
 
 def escape_share(lay: Any, efficiency: float, rays: tuple[np.ndarray, np.ndarray],
-                 pos: tuple[float, float, float]) -> float:
-    """Share of what the can sends from nozzle position ``pos`` (box frame; the can upright) that leaves the box:
-    its rays (``rays``: DC5's table, directions [R, 3] and fractions [R]) that cross the rim's plane outside the
-    opening or leave through it, and its mist (``1 - efficiency``, :func:`mist_escape`). The rays' share is of the
-    table's own total: its fractions are normalised, but their sum rounds off 1 by an ulp where the CPU's exp and
-    arccos round otherwise (AVX-512), and a can whose every ray and its mist leave sends exactly all of it."""
+                 pos: tuple[float, float, float], turn: np.ndarray | None = None) -> float:
+    """Share of what the can sends from nozzle position ``pos`` (box frame) that leaves the box: its rays (``rays``:
+    DC5's table for the upright can, directions [R, 3] and fractions [R]; ``turn``, the can's quaternion xyzw, turns
+    them with a turned can) that cross the rim's plane outside the opening or leave through it, and its mist
+    (``1 - efficiency``, :func:`mist_escape`). The rays' share is of the table's own total: its fractions are
+    normalised, but their sum rounds off 1 by an ulp where the CPU's exp and arccos round otherwise (AVX-512), and a
+    can whose every ray and its mist leave sends exactly all of it."""
     x, y, z = pos
     hx, hy, rim = 0.5 * lay.box[0], 0.5 * lay.box[1], lay.rim_z
     over = abs(x) <= hx and abs(y) <= hy
     dirs, wt = rays
+    if turn is not None:
+        dirs = Rotation.from_quat(np.asarray(turn, np.float64)).apply(dirs)
     dz = dirs[:, 2]
     mist = (1.0 - efficiency) * mist_escape(lay, pos)
     if over and z < rim and (dz <= 0.0).all():
@@ -117,11 +121,23 @@ def mist_dust(xe: np.ndarray, ye: np.ndarray, areas: np.ndarray, aims: np.ndarra
     the chart is not on it."""
     out = np.zeros((len(fall), len(xe) - 1, len(ye) - 1))
     for w, f in enumerate(fall):
-        s = DRIFT * f
-        cx = np.diff(interval_share(aims[:, :1], s, -np.inf, xe[None, :]), axis=1)      # [P, nx] shares per column
-        cy = np.diff(interval_share(aims[:, 1:], s, -np.inf, ye[None, :]), axis=1)
-        out[w] = ((solids[w][:, None] * cx).T @ cy) / areas
+        out[w] = dust_at(xe, ye, areas, _spots(aims, 0.0, f), solids[w])
     return out
+
+
+def dust_at(xe: np.ndarray, ye: np.ndarray, areas: np.ndarray, spots: np.ndarray, solids: np.ndarray) -> np.ndarray:
+    """One world's mist dust [nx, ny] (as :func:`mist_dust`): ``solids`` [P] (m³) released at ``spots`` [P, 4] (the
+    nozzle's x, y, z in the box frame and its fall to the chart), each drifting σ = ``DRIFT`` x its fall."""
+    s = DRIFT * spots[:, 3:4]
+    cx = np.diff(interval_share(spots[:, :1], s, -np.inf, xe[None, :]), axis=1)          # [P, nx] shares per column
+    cy = np.diff(interval_share(spots[:, 1:2], s, -np.inf, ye[None, :]), axis=1)
+    return ((solids[:, None] * cx).T @ cy) / areas
+
+
+def _spots(aims: np.ndarray, z: float, fall: float) -> np.ndarray:
+    """``aims`` [P, 2] as spots [P, 4] at height ``z`` with fall ``fall``."""
+    n = len(aims)
+    return np.column_stack([aims[:, 0], aims[:, 1], np.full(n, z), np.full(n, fall)])
 
 
 @dataclass
@@ -151,11 +167,18 @@ def dust_books(lay: Any, aims: np.ndarray, z: np.ndarray, fall: np.ndarray, soli
                laid: np.ndarray, books: DustBooks) -> None:
     """Book one batch of mist: ``solids`` [W, P] m³ released at ``aims`` [P, 2] from heights ``z`` [W] (box frame),
     falling ``fall`` [W] m; ``laid`` [W] m³ the dust put on the chart."""
+    rows = np.array([books_at(lay, _spots(aims, zw, f), solids[w]) for w, (zw, f) in enumerate(zip(z, fall))])
+    books.add(rows[:, 0], laid, rows[:, 1], rows[:, 2])
+
+
+def books_at(lay: Any, spots: np.ndarray, solids: np.ndarray) -> tuple[float, float, float]:
+    """One world's batch of mist [m³]: ``solids`` [P] released at ``spots`` [P, 4] (as :func:`dust_at`); returns what
+    was released, what stays in the box off the chart, and what leaves it (:func:`mist_escape`)."""
     hx, hy = 0.5 * lay.chart_size[0], 0.5 * lay.chart_size[1]
-    out = np.array([[mist_escape(lay, (a[0], a[1], zw)) for a in aims] for zw in z]).reshape(solids.shape)
+    out = np.array([mist_escape(lay, (a[0], a[1], a[2])) for a in spots])
     stays = solids * (1.0 - out)
-    chart = np.array([[rect_share(a[0], a[1], DRIFT * f, hx, hy) for a in aims] for f in fall]).reshape(solids.shape)
-    books.add(solids.sum(axis=1), laid, (stays * (1.0 - chart)).sum(axis=1), (solids * out).sum(axis=1))
+    chart = np.array([rect_share(a[0], a[1], DRIFT * a[3], hx, hy) for a in spots])
+    return float(solids.sum()), float((stays * (1.0 - chart)).sum()), float((solids * out).sum())
 
 
 def can_books(read: dict, world: int = 0) -> dict:
@@ -245,5 +268,5 @@ def evaluate(h_declared: np.ndarray, read: dict, outside: float, dust: DustBooks
 
 
 __all__ = ["CELL", "COAT_FRAC", "DENSITY", "DUST_REL", "DustBooks", "EVEN", "FAILED", "FLASH", "MAX_DEPTH", "PHI0",
-           "SOLIDS_REL", "can_books", "coat_checks", "dust_books", "escape_share", "evaluate", "interval_share",
-           "mist_dust", "mist_escape", "rect_share", "spray_progress"]
+           "SOLIDS_REL", "books_at", "can_books", "coat_checks", "dust_at", "dust_books", "escape_share", "evaluate",
+           "interval_share", "mist_dust", "mist_escape", "rect_share", "spray_progress"]

@@ -30,7 +30,7 @@ from typing import Any
 
 import numpy as np
 
-from alloy.envs.actions import UNBOUNDED, WINDOW_STEPS, ActionSpec, ActionWriter, resolve_kind
+from alloy.envs.actions import UNBOUNDED, WINDOW_STEPS, ActionSpec, ActionWriter, resolve_kinds
 from alloy.envs.errors import EnvError
 from alloy.envs.layout import Layout
 
@@ -209,11 +209,12 @@ class EEActionSpec:
         return EEWriter(self, layout, engine, xp)
 
 
-def _target_limits(layout: Layout, kind: str, names: list[str]) -> tuple[np.ndarray, np.ndarray]:
-    """Each target column's (lower, upper) range from the robot file, a joint without limits (a continuous hinge)
-    open both ways: inverse kinematics sets its target, so it needs no range to scale into."""
+def _target_limits(layout: Layout, kinds: list[str], names: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    """Each target column's (lower, upper) range from the robot file (``kinds``: each name's control kind), a joint
+    without limits (a continuous hinge) open both ways: inverse kinematics sets its target, so it needs no range to
+    scale into."""
     lows, highs = [], []
-    for name in names:
+    for name, kind in zip(names, kinds):
         if kind == "ctrl":
             a = layout.actuator(name)
             lows.append(np.array([a.lower], np.float64))
@@ -239,8 +240,8 @@ class EEWriter:
         self.n_arm, self.n_extra = len(arm), len(spec.extra)
         self.n_ee = 6 if spec.orientation else 3
         names = [*arm, *spec.extra]
-        kind = resolve_kind(ActionSpec(names, kind=spec.kind, mode="absolute"), layout)
-        lo, hi = _target_limits(layout, kind, names)
+        kinds = resolve_kinds(ActionSpec(names, kind=spec.kind, mode="absolute"), layout, names)
+        lo, hi = _target_limits(layout, kinds, names)
         inner = ActionSpec(names, kind=spec.kind, mode="absolute", low=lo, high=hi)
         self.inner = ActionWriter(inner, layout, engine, xp)
         self.arm = ArmKinematics.build(layout, engine, xp, spec.body, [_joint_name(layout, j) for j in arm])
@@ -264,7 +265,7 @@ class EEWriter:
 
     @property
     def kind(self) -> str:
-        """The control kind written ("position" or "ctrl"). Example: ``writer.kind``."""
+        """The control kind written ("position", "ctrl", or "mixed" for both). Example: ``writer.kind``."""
         return self.inner.kind
 
     @property
@@ -294,7 +295,7 @@ class EEWriter:
         Example: ``targets = writer.apply(np.zeros((env.num_envs, writer.size)))``."""
         xp = self.xp
         a = xp.clip(self._check(actions), -1.0, 1.0)
-        current = self._held(xp.view(self.inner.target)[self.inner.rows])                     # (W, arm + extra)
+        current = self._held(self.inner.current())                                            # (W, arm + extra)
         dq = damped_least_squares(xp, self._rows(self.jacobian()), a[:, :self.n_ee] * self._scale,
                                   self.spec.damping, self._eye)
         parts = [current[:, :self.n_arm] + dq]

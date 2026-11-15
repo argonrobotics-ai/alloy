@@ -76,8 +76,8 @@ def test_box_delay_is_zero_to_max_delay():
 
 def test_box_torque_limit_bounds():
     box = Box.around(["torque_limit"], nominal())
-    np.testing.assert_allclose(box.hi[0], [30.0, 10.0], atol=1e-12)
-    np.testing.assert_allclose(box.lo[0], [6.0, 2.0], atol=1e-12)
+    np.testing.assert_allclose(box.hi[0], [150.0, 50.0], atol=1e-12)    # the file's limit (0.2 x kp without) x 5
+    np.testing.assert_allclose(box.lo[0], [6.0, 2.0], atol=1e-12)       # ... / 5: the search can raise or lower it
     assert box.log.all()
 
 

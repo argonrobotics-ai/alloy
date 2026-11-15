@@ -32,10 +32,10 @@ ROOT = Path(__file__).resolve().parents[1]
 VENDOR = ROOT / "alloy" / "_vendor"
 PREFIX = "alloy._vendor."
 ROOTS = ("newton", "mujoco_warp")
-NEWTON_SHA = "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0"     # NEWTON_PIN: our 12 commits on release-1.8 db915e1c
-NEWTON_BASE = "db915e1c79e9e4a09f61221f743e1e4fe814d75c"    # public upstream base of our patches (release-1.8)
+NEWTON_SHA = "89bf98d10f1db80ccf849d3376f6dcf710af3569"     # NEWTON_PIN: our 12 commits on v1.8.0 425db81f
+NEWTON_BASE = "425db81f01e402b51f96f560e154d529d645c6de"    # public upstream base of our patches (v1.8.0)
 MJW_SHA = "f34c6dd52813852d0f1a2ab6d1f4d21ef1f0829f"        # MJWARP_PIN
-NEWTON_VERSION, MJW_VERSION = "1.8.0rc1", "3.17.0"        # what pip reported for the pinned installs
+NEWTON_VERSION, MJW_VERSION = "1.8.0", "3.17.0"        # what pip reported for the pinned installs
 
 # Not shipped: each package's own tests and test data (Alloy never imports them).
 NEWTON_EXCLUDE = (re.compile(r"^tests/"), re.compile(r"(^|/)\.gitignore$"))   # .gitignore: meaningless in a package

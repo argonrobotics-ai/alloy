@@ -53,8 +53,9 @@ On the CPU the default rig reads the same way (2,360 particles: inside 41-100 %,
   presses the sleeves flat.
 
 ## Planned fix
-- The route's particle contact stiffness for cloth on cloth: a default from the fabric's own compression, not the
-  bulk stiffness (the unsettled-fold gap, docs/known_gaps/cloth-fold-unsettled-default.md). When that lands the
-  fine rig needs only its mesh.
+- The route's particle contact stiffness for cloth on cloth: since 2026-11-14 the default caps it at 400 m / dt²
+  with no collision damping (docs/known_gaps/cloth-fold-unsettled-default.md). That settles the thirds fold, but
+  not this sleeve: on the default rig the sleeves still spring back (the strict expected failure below holds on
+  both sides of the change). A stiffness from the fabric's own compression is still the lead.
 - `tests/tasks/test_laundry_tee.py` holds both: the fine rig's fold as a GPU law, and the default rig's settled
   gates as a strict expected failure.

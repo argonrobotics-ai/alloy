@@ -14,6 +14,8 @@ number, so they are the same on every device and for every world count.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 import numpy as np
@@ -127,10 +129,27 @@ def attach(sim: Any, scene: Any, seed: int) -> None:
     sim.engine.reset_hooks.append(sim._pushes.on_reset)
 
 
+@contextmanager
+def paused(sim: Any) -> Iterator[None]:
+    """No pushes while ``sim.settle`` runs (it runs with no new commands, and its end becomes the start every reset
+    returns to): every world drops a push it holds, the pusher does not tick, and it ticks again afterwards from new
+    waits. Nothing without pushes. Example: ``with paused(sim): sim.step(n)``."""
+    pusher = getattr(sim, "_pushes", None)
+    if pusher is None:
+        yield
+        return
+    pusher.on_reset(None)
+    sim._pushes = None
+    try:
+        yield
+    finally:
+        sim._pushes = pusher
+
+
 def forces(sim: Any) -> dict[str, np.ndarray]:
     """{body: (worlds, 3) push force held now, N}. Example: ``forces(sim)["go2/base"]``."""
     pusher = getattr(sim, "_pushes", None)
     return {} if pusher is None else {k: v.copy() for k, v in pusher.force.items()}
 
 
-__all__ = ["Pusher", "add", "attach", "forces", "refuse"]
+__all__ = ["Pusher", "add", "attach", "forces", "paused", "refuse"]

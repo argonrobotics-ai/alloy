@@ -326,8 +326,10 @@ def _held_logs() -> Iterator[None]:
 def _trial(b: newton.ModelBuilder, mode: str, request, gains: Callable, report) -> tuple[tuple, float]:
     """(every contact value, inertia and floor armature the gains pass writes, its rigid step) on a copy of ``b``,
     its log lines held back (``_held_logs``; the real pass gives them once)."""
+    from alloy.scene.native_gains import planning_rule  # noqa: PLC0415
+
     bb, rep = copy.deepcopy(b), copy.deepcopy(report)
-    with _held_logs():
+    with _held_logs(), planning_rule():     # decided on the static gains; the real pass may write impact gains
         gains(bb, mode, request, rep)
     mj = tuple((k, _bits(a.values)) for k, a in sorted(bb.custom_attributes.items()) if k.startswith("mujoco:"))
     values = (_bits(bb.shape_material_ke), _bits(bb.shape_material_kd), _bits(bb.body_inertia),

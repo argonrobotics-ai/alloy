@@ -2,9 +2,10 @@
 """Go2 on rough ground with a difficulty curriculum: the flat velocity task on a field of terrain tiles.
 
 Every world's robot starts on the platform of one tile. When a world's episode ends, its level goes up if the robot
-walked more than half a tile away from its start, down if it covered less than half the distance its command asked
-for, and it starts the next episode on a tile of the new level (a robot that clears the last level is sent to a
-random one). ``env.levels`` is each world's level; ``env.state["terrain.level"]`` the same as a state key. Example::
+walked more than half a tile away from its start, down if it ended less than half as far from its start as its
+commands (each step's, followed in the robot's own heading) would have taken it, and it starts the next episode on a
+tile of the new level (a robot that clears the last level is sent to a random one). ``env.levels`` is each world's
+level; ``env.state["terrain.level"]`` the same as a state key. Example::
 
     from alloy.envs.loco import go2_rough
     env = go2_rough(num_envs=1024)
@@ -80,6 +81,7 @@ class RoughEnv(LocoEnv):
         self.start_levels = xp.asarray(np.arange(w) // terrain.kinds % self._start_levels, "int64")
         self.levels = xp.copy(self.start_levels)
         self.spawn = xp.zeros((w, 2))
+        self.asked = xp.zeros((w, 2))            # commanded travel this episode (world frame, m), for the curriculum
         self.randomizer = _Placer(self.randomizer, self)
         self._placed = True
 
@@ -111,14 +113,29 @@ class RoughEnv(LocoEnv):
                 self._update_levels(mask)            # also on a seeded reset: the same random draws either way
             if self._restore:
                 self.levels = self.xp.where(mask, self.start_levels, self.levels)
+            self.asked = self.xp.where(mask[:, None], 0.0, self.asked)
         super().reset_worlds(mask)
+
+    def _after_reward(self, done: Any) -> bool:
+        """Add this step's commanded travel (the command the step ran under, turned by the base's heading) before
+        the command is resampled; the curriculum compares the walk with it."""
+        if self._placed:
+            q = self.state["base.quat_xyzw"]
+            x, y, z, w = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+            hx, hy = 1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + w * z)         # the body x axis in the world
+            norm = self.xp.clip(self.xp.norm(self.xp.stack([hx, hy], -1), -1), 1e-6, 1e6)
+            c, s = hx / norm, hy / norm
+            v = self.commands.value
+            step = self.xp.stack([c * v[:, 0] - s * v[:, 1], s * v[:, 0] + c * v[:, 1]], -1) * float(self.sim.dt)
+            self.asked = self.asked + step
+        return super()._after_reward(done)
 
     def _update_levels(self, mask: Any) -> None:
         xp, t = self.xp, self.terrain
         s = self.state
         played = mask & (s["steps"] > 0)
         walked = xp.norm(s[f"{self.config.name}/{self.config.robot.base}.pos"][:, 0:2] - self.spawn, -1)
-        asked = xp.norm(s["command"][:, 0:2], -1) * s["t"]
+        asked = xp.norm(self.asked, -1)             # where the commands asked it to go, as a straight line
         up = played & (walked > 0.5 * t.spec.tile)
         down = played & ~up & (walked < 0.5 * asked)
         level = self.levels + xp.asarray(up, "int64") - xp.asarray(down, "int64")

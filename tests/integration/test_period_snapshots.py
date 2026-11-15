@@ -13,6 +13,9 @@ import alloy
 from alloy.integration import period_snapshots as PS
 from alloy.integration import profiles as P
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("CPU graph capture, which the C route does not do (graph-on snapshots)")
+
 
 @pytest.fixture(params=["on", "off"])
 def graph(request, monkeypatch):
@@ -37,6 +40,7 @@ def counted(sim) -> list[int]:
     return at
 
 
+@WARP_ROUTE
 def test_fast_checks_save_after_check_steps_only(graph) -> None:
     """profile="fast" (checks every 10 steps, a single MuJoCo entry, one 10 ms step per period): the first period,
     then after each check step: steps 0, 1, 11, 21 over 25 periods, and no health copy."""
@@ -57,6 +61,7 @@ def test_standard_checks_save_every_period() -> None:
     assert at == [n * k for k in range(5)] and sim.physics_steps == 5 * n
 
 
+@WARP_ROUTE
 def test_a_latched_world_freezes_at_its_last_checked_state(graph) -> None:
     """World 1 is kicked to over 20 m/s right after the check at step 10; the check at step 20 latches it INVALID. It
     freezes where it was checked (after step 10), not where its failing period started (after step 19, in flight);
@@ -81,6 +86,7 @@ ARM = """<mujoco><compiler angle="radian"/><worldbody><body name="link1" pos="0 
   <actuator><position joint="shoulder" kp="200" kv="10"/></actuator></mujoco>"""
 
 
+@WARP_ROUTE
 def test_periods_that_never_end_on_a_check_save_every_period(graph) -> None:
     """WP5: a robot scene under profile="fast" steps 8 x 1.25 ms per period with checks every 10; no period ends on a
     check step (gcd 2), so it is not sparse and saves every period, as before."""

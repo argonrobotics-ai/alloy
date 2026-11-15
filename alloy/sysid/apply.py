@@ -6,7 +6,8 @@ scene's JSON carries the values and needs no file). At build, ``install`` writes
 world before the solvers are made and before ``scene.randomize`` rows are drawn: those rows then scale the fitted
 values. ``attach`` puts the fitted action delay in front of the robot's servos: each control period the commanded
 targets are read, the delayed ones are stepped, and the commanded ones are put back (host work, outside any
-captured graph: two array copies per control period for a robot with a delay).
+captured graph: two array copies per control period for a robot with a delay). The first command after the build
+or a reset is delayed as well: until it arrives the servos hold each joint where it is at that moment.
 
 A scene without ``sysid=`` never imports this module and builds and steps exactly as before.
 """
@@ -14,6 +15,7 @@ A scene without ``sysid=`` never imports this module and builds and steps exactl
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -61,11 +63,63 @@ def install(scene: Any, built: Any) -> None:
     for name, fitted in _robots(scene).items():
         joints = M.RobotJoints.read(built, name)
         _columns(name, joints, fitted)
+        M.limit_actuators(built.model, joints)
         for f in M.FIELDS:
             names = [j for j, vals in fitted.items() if f in vals]
             if names:
                 M.write(built.model, joints, {f: np.asarray([fitted[j][f] for j in names])}, joints.pick(names))
         log.info("robot %s: fitted joint parameters of %d joints applied (sysid)", name, len(fitted))
+
+
+@dataclass
+class _Rows:
+    """The delayed control rows of one kind (``ctrl`` or ``position``), a column per joint, a row per world."""
+
+    rows: list[np.ndarray] = field(default_factory=list)       # control row of the joint in every world
+    seconds: list[float] = field(default_factory=list)
+    coords: list[np.ndarray] = field(default_factory=list)     # the joint's coordinate in state.joint_q
+    gear: list[float] = field(default_factory=list)            # control value = gear x (joint position + ref)
+    ref: list[np.ndarray] = field(default_factory=list)
+
+    def hold(self, engine: Any) -> np.ndarray:
+        """(worlds, joints) control values that hold every joint where it is now."""
+        q = engine.state.joint_q.numpy().astype(np.float64)
+        return np.stack([g * (q[c] + r) for c, g, r in zip(self.coords, self.gear, self.ref)], axis=1)
+
+
+def _delayed_rows(scene: Any, built: Any) -> dict[str, _Rows]:
+    from alloy.api._actuators import Actuators  # noqa: PLC0415
+    from alloy.api.names import NameIndex  # noqa: PLC0415
+
+    model, worlds = built.model, int(built.world_count)
+    world = np.arange(worlds)
+    qd_start = model.joint_qd_start.numpy()
+    acts = Actuators.from_model(model, NameIndex.from_built(built).robot_joints, qd_start)
+    start = getattr(model, "joint_target_q_start", None)
+    start = start.numpy() if start is not None else model.joint_q_start.numpy()
+    dof_ref = getattr(getattr(model, "mujoco", None), "dof_ref", None)
+    dof_ref = None if dof_ref is None else dof_ref.numpy()
+    out = {"ctrl": _Rows(), "position": _Rows()}
+    for name, fitted in _robots(scene).items():
+        joints = M.RobotJoints.read(built, name)
+        for j, vals in fitted.items():
+            if float(vals.get("delay", 0.0)) <= 0.0:
+                continue
+            col = int(joints.pick([j])[0])
+            row, dof = int(joints.servo_rows[col]), int(joints.dofs[col])
+            kind = out["ctrl" if row >= 0 else "position"]
+            if row >= 0:
+                kind.rows.append(row + world * joints.stride["actuator"])
+                kind.gear.append(acts.gear_of(row))
+                kind.ref.append(np.zeros(worlds) if dof_ref is None else dof_ref[dof + world * joints.stride["dof"]])
+            else:
+                joint = int(np.searchsorted(qd_start, dof, side="right")) - 1
+                kind.rows.append(start[joint + world * (int(model.joint_count) // worlds)])
+                kind.gear.append(1.0)
+                kind.ref.append(np.zeros(worlds))
+            kind.coords.append(int(joints.q_index[col]) + world * joints.stride["coord"])
+            kind.seconds.append(float(vals["delay"]))
+    return {k: v for k, v in out.items() if v.rows}
 
 
 def attach(scene: Any, engine: Any) -> None:
@@ -74,29 +128,12 @@ def attach(scene: Any, engine: Any) -> None:
     Example: ``attach(scene, engine)`` once the simulation is wired."""
     built = engine.built
     worlds, dt = int(built.world_count), float(built.control_dt)
-    rows: dict[str, list[np.ndarray]] = {"ctrl": [], "position": []}
-    seconds: dict[str, list[float]] = {"ctrl": [], "position": []}
-    world = np.arange(worlds)
-    for name, fitted in _robots(scene).items():
-        joints = M.RobotJoints.read(built, name)
-        start = getattr(built.model, "joint_target_q_start", None)
-        start = start.numpy() if start is not None else built.model.joint_q_start.numpy()
-        for j, vals in fitted.items():
-            if float(vals.get("delay", 0.0)) <= 0.0:
-                continue
-            col = int(joints.pick([j])[0])
-            row = int(joints.servo_rows[col])
-            if row >= 0:
-                rows["ctrl"].append(row + world * joints.stride["actuator"])
-            else:
-                joint = int(np.searchsorted(built.model.joint_qd_start.numpy(), joints.dofs[col], side="right")) - 1
-                rows["position"].append(start[joint + world * (int(built.model.joint_count) // worlds)])
-            seconds["ctrl" if row >= 0 else "position"].append(float(vals["delay"]))
-    kinds = [k for k in rows if rows[k]]
+    kinds = _delayed_rows(scene, built)
     if not kinds:
         return
-    delay = SimDelay(engine, {k: np.stack(rows[k], axis=1) for k in kinds},
-                     {k: np.broadcast_to(np.asarray(seconds[k]), (worlds, len(seconds[k]))) for k in kinds}, dt)
+    delay = SimDelay(engine, {k: np.stack(v.rows, axis=1) for k, v in kinds.items()},
+                     {k: np.broadcast_to(np.asarray(v.seconds), (worlds, len(v.seconds))) for k, v in kinds.items()},
+                     dt, {k: (lambda v=v: v.hold(engine)) for k, v in kinds.items()})
     inner = engine.step_period
 
     def step_period() -> None:
@@ -109,8 +146,8 @@ def attach(scene: Any, engine: Any) -> None:
     engine.step_period = step_period
     engine.reset_hooks.append(delay.reset)
     engine.sysid_delay = delay
-    log.info("sysid: action delay on %d joints (largest %.1f ms)", sum(len(seconds[k]) for k in kinds),
-             1e3 * max(max(seconds[k]) for k in kinds))
+    log.info("sysid: action delay on %d joints (largest %.1f ms)", sum(len(v.seconds) for v in kinds.values()),
+             1e3 * max(max(v.seconds) for v in kinds.values()))
 
 
 __all__ = ["attach", "install", "item_value", "refuse_rerun_worlds"]

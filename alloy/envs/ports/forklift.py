@@ -17,6 +17,8 @@ port's own ``TruckIO.apply`` (the drive, the mast's valves and the signals the c
 truck's pose and velocity, the mast's lift and tilt and the fork's side-shift as the port observes them. Success
 and the reward are the port's verdict (its re-implementation of the task's criteria; partial score otherwise). The
 two criteria the task checks on the operator (seated, head clear of the guard) are not judged: nobody is in the seat.
+Nor is ``time_limit`` on a run where the policy applied controls of its own: the port judges it by its scripted plan
+finishing first, which says nothing about a policy's driving.
 """
 
 from __future__ import annotations
@@ -86,9 +88,15 @@ class TruckControls:
         self.io.apply(Controls(throttle=float(a[0]), brake=float(a[1]), steer=float(a[2]), park=bool(a[3] > 0.5),
                                direction=int(np.clip(np.rint(a[4]), -1, 1)), lift=float(a[5]), tilt=float(a[6]),
                                sideshift=float(a[7]), key_on=bool(a[8] > 0.5), engine_on=bool(a[9] > 0.5)))
+        self.io.policy_drove = True                     # the port's verdict then leaves time_limit not judged
 
-    def proprio(self, sim: Any) -> np.ndarray:  # noqa: ARG002
-        return np.asarray(_proprio(self.io.observe(0.0)), np.float32)[None]
+    def proprio(self, sim: Any) -> np.ndarray:
+        return np.asarray(_proprio(self.io.observe(_now(sim))), np.float32)[None]
+
+
+def _now(sim: Any) -> float:
+    """The episode's time [s]: the periods stepped, counted as the port's own loop counts them."""
+    return round(int(getattr(sim, "periods", 0)) * float(sim.clock.control_dt), 9)
 
 
 def _proprio(obs: Any) -> list[float]:

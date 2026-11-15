@@ -345,8 +345,9 @@ class ObsHistory(_Buffered):
 
 class ActionDelay(Layer):
     """The writer gets the action from ``k`` control steps ago (``k`` or ``(lo, hi)``, drawn per world at every reset).
-    Before ``k`` actions exist a world gets zeros ("delta" and "normalized" writers) or its first action (an
-    "absolute" writer). A reset clears the world's buffer. ``env.state["action"]`` keeps the action the policy sent.
+    Before ``k`` actions exist a world gets zeros ("delta" and "normalized" writers) or the target its writer held at
+    the reset (an "absolute" writer: the servo keeps the start target until the first command arrives). A reset clears
+    the world's buffer. ``env.state["action"]`` keeps the action the policy sent.
 
     Example: ``ActionDelay((0, 2))``."""
 
@@ -357,9 +358,10 @@ class ActionDelay(Layer):
         self.xp, self.stream = env.xp, _Stream(env.xp)
         n, size = env.num_envs, env.writer.size
         self.absolute = getattr(env.writer.spec, "mode", "delta") == "absolute"
+        self.writer = env.writer
         self.k = self.stream.steps(self.lo, self.hi, n)
         self.buf = self.xp.zeros((n, self.hi, size))            # the last hi actions, newest last
-        self.first = self.xp.zeros((n, size))
+        self.first = self._held() if self.absolute else self.xp.zeros((n, size))
         self.seen = self.xp.zeros(n, "int64")
 
     def on_action(self, actions: Any) -> Any:
@@ -367,7 +369,6 @@ class ActionDelay(Layer):
             return actions
         xp = self.xp
         a = xp.asarray(actions, "float32")
-        self.first = xp.where((self.seen == 0)[:, None], a, self.first)
         full = xp.cat([self.buf, a[:, None]], axis=1)
         out = _gather(xp, full, self.hi - self.k)
         fill = self.first if self.absolute else xp.zeros(out.shape)
@@ -382,3 +383,10 @@ class ActionDelay(Layer):
         self.k = xp.where(mask, new, self.k)
         self.buf = xp.where(_bcast(mask, 3), xp.zeros(self.buf.shape), self.buf)
         self.seen = xp.where(mask, xp.zeros(mask.shape[0], "int64"), self.seen)
+        if self.absolute:                                       # the writer has put the start targets back
+            self.first = xp.where(mask[:, None], self._held(), self.first)
+
+    def _held(self) -> Any:
+        """(W, A) the targets the writer holds now (an absolute writer's columns)."""
+        w = self.writer
+        return self.xp.asarray(self.xp.view(w.target)[w.rows], "float32")

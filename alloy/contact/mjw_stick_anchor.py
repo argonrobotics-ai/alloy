@@ -318,16 +318,18 @@ def launch_anchor(st: AnchorState, m: Any, d: Any) -> None:
     rows = [d.nacon, con.dim, con.worldid, con.geom, con.efc_address, con.frame, con.dist, con.includemargin,
             con.solref, con.solreffriction, con.solimp, d.efc.type, d.efc.vel, m.opt.timestep, st.index, st.partner]
     scratch = [st.sums, st.count]
-    wp.launch(_clear, dim=st.claim.shape, inputs=[*scratch, st.claim])
+    dev = st.partner.device      # named: a caller outside the solver's ScopedDevice gets the state's device anyway
+    wp.launch(_clear, dim=st.claim.shape, inputs=[*scratch, st.claim], device=dev)
     for _ in range(SLOTS):   # one new partner per marked geom per round: SLOTS rounds seat all that can be seated
         wp.launch(_ask, dim=d.naconmax, inputs=[d.nacon, con.dim, con.worldid, con.geom, con.efc_address,
-                                                d.efc.type, st.index, st.partner, elliptic, st.claim])
-        wp.launch(_grant, dim=st.claim.shape, inputs=[st.claim, st.partner, st.slip, st.sliding])
+                                                d.efc.type, st.index, st.partner, elliptic, st.claim], device=dev)
+        wp.launch(_grant, dim=st.claim.shape, inputs=[st.claim, st.partner, st.slip, st.sliding], device=dev)
     wp.launch(_gather, dim=d.naconmax, inputs=[*rows, con.friction, d.efc.D, d.efc.aref, elliptic, flags, discrete,
-                                               *scratch])
+                                               *scratch], device=dev)
     wp.launch(_advance, dim=st.claim.shape, inputs=[m.opt.timestep, *scratch, float(st.cap), st.partner, st.slip,
-                                                    st.sliding])
-    wp.launch(_apply, dim=d.naconmax, inputs=[*rows, st.slip, st.sliding, elliptic, flags, discrete, d.efc.aref])
+                                                    st.sliding], device=dev)
+    wp.launch(_apply, dim=d.naconmax, inputs=[*rows, st.slip, st.sliding, elliptic, flags, discrete, d.efc.aref],
+              device=dev)
 
 
 def anchored_make_constraint(inner: Any, st: AnchorState) -> Any:

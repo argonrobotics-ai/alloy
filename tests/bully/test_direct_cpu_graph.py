@@ -20,6 +20,9 @@ from alloy._vendor import newton
 from alloy.bully.direct import DirectSim, graph_safe
 from alloy.core.errors import BullyError, GraphCaptureError
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("CPU graph capture, which the C route does not do")
+
 PERIODS = 4
 
 
@@ -207,6 +210,7 @@ def test_odd_substeps_and_overrides_stay_eager():
     assert sim.graph_mode == "eager" and sim.clock.t == pytest.approx(0.01)
 
 
+@WARP_ROUTE
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(180)
 def test_t12_target_replays_bitwise():

@@ -161,6 +161,7 @@ class MeshSource:
     scale: Vec3 = (1.0, 1.0, 1.0)
     collision: Literal["convex", "decompose", "sdf", "mesh"] = "convex"
     max_parts: int = 32
+    hull_vertices: int | None = None    # convex: at most this many hull vertices (None: within 0.1 mm, hull_cap)
 
 
 @dataclass(frozen=True)

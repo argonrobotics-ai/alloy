@@ -193,7 +193,8 @@ def simulate(task: Task, device: str = "cpu", spec: TruckSpec = TruckSpec()) -> 
         elif end is None and task.waits_at is not None:              # its job ends in a wait: run on to the limit
             done_t = waiting.update(op.phase, io.speed(), t)          # speed and t both after the step
     log.info("%s: last phase %s at t=%.2f s, plan finished at %s", task.name, op.phase, t, done_t)
-    ep = replace(rec.episode(fault), plan_done_t=done_t, plan_known=True)
+    policy = bool(getattr(io, "policy_drove", False))       # an env's policy applied controls of its own
+    ep = replace(rec.episode(fault), plan_done_t=done_t, plan_known=not policy)
     return ep, task.score(ep, SITE)
 
 

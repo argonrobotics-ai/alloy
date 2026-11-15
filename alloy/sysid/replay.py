@@ -29,10 +29,19 @@ MIN_DT, MAX_DT = 0.002, 0.02       # control periods the replay runs at; a recor
 
 @dataclass
 class Track:
-    """One episode on the simulation's control periods: ``command`` and ``position`` (n + 1, J)."""
+    """One episode on the simulation's control periods: ``command`` and ``position`` (n + 1, J). ``held``
+    (n + 1, C) and ``held_start`` (C,): the recorded commands and first position of the bench's ``held`` joints."""
 
     command: np.ndarray
     position: np.ndarray
+    held: np.ndarray | None = None
+    held_start: np.ndarray | None = None
+
+    def split(self, count: int) -> Track:
+        """The first ``count`` columns as the joints to compare, the rest as held joints.
+        Example: ``resample(episode, dt).split(2)``."""
+        return Track(self.command[:, :count], self.position[:, :count], self.command[:, count:],
+                     self.position[0, count:])
 
 
 def control_dt(rec: Recording) -> float:
@@ -53,20 +62,38 @@ def resample(episode: Episode, dt: float) -> Track:
 
 
 class Bench:
-    """The robot on its stand in ``worlds`` worlds, and the joints of the recording in it."""
+    """The robot on its stand in ``worlds`` worlds, and the joints of the recording in it: ``joints`` get the
+    candidate parameters and are compared; ``held`` joints (other recorded joints of the robot) keep the robot
+    file's values and replay their recorded start and commands, so the robot moves as a whole as it did."""
 
     def __init__(self, robot: Any, joints: list[str] | None, worlds: int, dt: float,
-                 device: str | None = None) -> None:
+                 device: str | None = None, held: list[str] | None = None) -> None:
         import alloy  # noqa: PLC0415
 
         scene, self.notes = bench_scene(robot, worlds, dt)
         self.sim = alloy.build(scene, device=device, seed=0)
         self.joints = M.RobotJoints.read(self.sim.built, NAME)
+        if not self.joints.names:
+            raise SysidError(f"robot {str(robot)!r} has no position-servoed joint to identify",
+                             "alloy.sysid fits position servos: give a robot file that defines them (MJCF: a "
+                             "<position> or affine <general> actuator per joint; USD: a joint drive with a "
+                             "stiffness). A URDF file carries no servo gains: write the robot as MJCF with its "
+                             "actuators", field="robot")
         self.joint_names = list(joints) if joints else list(self.joints.names)      # None: every servoed joint
         self.cols = self.joints.pick(self.joint_names)
         self.names = [self.joints.full(j) for j in self.joint_names]
+        self.held_names = [j for j in (held or []) if j in self.joints.names and j not in self.joint_names]
+        self.held_cols = self.joints.pick(self.held_names)
         self.worlds, self.dt = int(worlds), float(self.sim.dt)
         self.nominal = {f: v[self.cols] for f, v in self.joints.nominal.items()}
+        free = [j for j in self.joints.names if j not in self.joint_names + self.held_names]
+        if free:
+            self.notes.append(f"not in the recording, replayed at the robot file's start pose: {', '.join(free)}")
+
+    def ranges(self, names: list[str]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """``(lower, upper, hinge)`` of servoed joints ``names``. Example: ``bench.ranges(["elbow"])``."""
+        cols = self.joints.pick(names)
+        return self.joints.lower[cols], self.joints.upper[cols], self.joints.hinge[cols]
 
     @property
     def lower(self) -> np.ndarray:
@@ -88,15 +115,15 @@ class Bench:
             M.write(self.sim.built.model, self.joints, values, self.cols)
             M.notify(self.sim.engine)
 
-    def _start(self, position: np.ndarray) -> None:
-        """Every world's recorded joints at ``position`` (J,), all at rest."""
+    def _start(self, position: np.ndarray, cols: np.ndarray) -> None:
+        """Every world's joints ``cols`` at ``position``, all at rest."""
         from alloy._vendor import newton  # noqa: PLC0415
 
         self.sim.reset()
         eng = self.sim.engine
         model, state = eng.model, eng.state
         q, qd = state.joint_q.numpy(), state.joint_qd.numpy()
-        at = self.joints.q_index[self.cols][None, :] + np.arange(self.worlds)[:, None] * self.joints.stride["coord"]
+        at = self.joints.q_index[cols][None, :] + np.arange(self.worlds)[:, None] * self.joints.stride["coord"]
         q[at] = position[None, :]
         qd[:] = 0.0
         state.joint_q.assign(q)
@@ -110,15 +137,21 @@ class Bench:
         shape = (self.worlds, len(self.cols))
         delay = np.broadcast_to(np.asarray(fields.get("delay", 0.0), np.float64), shape)
         keys = [f"{n}.q" for n in self.names]
+        held = [self.joints.full(j) for j in self.held_names]
         out = []
         for track in tracks:
-            self._start(track.position[0])
+            if held and track.held is None:
+                raise SysidError("this bench holds joints the track has no commands for",
+                                 "split the track (Track.split) or build the bench without held=", field="held")
+            start = track.position[0] if not held else np.concatenate([track.position[0], track.held_start])
+            self._start(start, np.concatenate([self.cols, self.held_cols]))
             line = DelayLine(delay / self.dt)
             sim_q = np.empty((len(track.command), *shape))
             sim_q[0] = track.position[0]
             for k in range(len(track.command) - 1):
                 target = line.push(np.broadcast_to(track.command[k], shape))
-                self.sim.set_targets({n: target[:, j] for j, n in enumerate(self.names)})
+                self.sim.set_targets({**{n: target[:, j] for j, n in enumerate(self.names)},
+                                      **{n: float(track.held[k, c]) for c, n in enumerate(held)}})
                 self.sim.step(1)
                 state = self.sim.state(self.names)
                 sim_q[k + 1] = np.stack([state[key] for key in keys], axis=1)

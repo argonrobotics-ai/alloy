@@ -142,7 +142,8 @@ def test_ccd_contacts_take_the_resting_floor():
         assert len(zeta[name]) and np.allclose(mj.pair_solreffriction.numpy(), (0.02, 1.0))
     assert zeta["nut_m6"].min() >= NG.ZETA_CCD - 1e-6
     assert zeta["cube_beech_30"].min() >= NG.ZETA_MULTIPOINT - 1e-6   # beech e = 0.5: ζ(e) 0.215, floored
-    assert NG.restitution_cap(NG.ZETA_CCD) == pytest.approx(0.163, abs=1e-3)
+    # the zero-force release (a contact lets go at zero push), 0.298 at zeta 0.5; 0.163 was the zero-overlap rule
+    assert NG.restitution_cap(NG.ZETA_CCD) == pytest.approx(0.298, abs=1e-3)
 
 
 @pytest.mark.gpu

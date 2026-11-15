@@ -23,6 +23,10 @@ from alloy.coupling.fine_pack import (HEALTH_INDEX, TransferError, WorldTransfer
 from alloy.coupling.world_clock_params import HOME, WorldParams
 from alloy.integration.simulation import _health_arrays
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+
 W, E = 3, 2                         # the coarse pack's worlds; the world moved
 SEED = 3
 PROFILE = ("standard", None)
@@ -168,6 +172,7 @@ def packs():
             s.close()
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(1800)
 def test_a_moved_slot_is_the_world_built_alone(packs) -> None:
@@ -202,6 +207,7 @@ def test_a_randomized_world_out_and_back_is_itself_and_the_slot_gets_its_own_bac
     assert there.params.restore(0) == []                                      # nothing kept: a second call is a no-op
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(1800)
 def test_a_moved_randomized_world_steps_as_in_its_own_pack(packs) -> None:

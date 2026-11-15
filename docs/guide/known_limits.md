@@ -34,9 +34,10 @@ score). None of them is in this release, and we promise no dates.
   leave fillet-2f at 0.79 to 0.80, against the shipped 0.81.
 - Dents in solid parts by default. Today a metal sheet or wire keeps a dent or a bend (`deformables.md`, `rods.md`),
   and a solid block that yields is opt-in (a metal block only with quasi-static mass scaling,
-  `scene.set_quasi_static_mass_scale`), and its punch laws are not claimed yet
-  ([plasticity-mpm-solid-punch-force.md](../known_gaps/plasticity-mpm-solid-punch-force.md)). Planned: the punch
-  laws checked against the textbook indentation depth first, then yielding solids on that route by default.
+  `scene.set_quasi_static_mass_scale`), and no punch law is claimed: the mean pressure reads 9-16 % under the cited
+  value and elastic indentation is not resolved
+  ([plasticity-mpm-solid-punch-force.md](../known_gaps/plasticity-mpm-solid-punch-force.md)), so the route stays
+  opt-in. Closing that gap needs a change to how the MPM grid meets the tool or solves the stress; none is started.
 
 ## Writing a limit file
 

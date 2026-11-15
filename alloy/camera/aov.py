@@ -269,7 +269,8 @@ class AovPass:
     def __init__(self, renderer):
         self._r = weakref.ref(renderer)  # the renderer keeps this pass: no strong reference back
         self.sc = getattr(renderer, "sc", None)
-        if not hasattr(self.sc, "geo") or not hasattr(getattr(renderer, "cams", None), "extent"):  # not a tracer.Renderer
+        from .tracer.renderer import Renderer
+        if not isinstance(renderer, Renderer):  # the full-material renderer's scene and cameras differ: a native crash
             raise CameraError("depth, id and flow images are not available on the full-material camera yet",
                               "render them from the fast camera: no look, quality='fast', a model or SceneData scene")
         self.prm = Params()

@@ -30,7 +30,7 @@ import warp as wp
 
 from alloy._vendor import newton
 import alloy._vendor.newton.examples; from alloy._vendor import newton
-from alloy._vendor.newton.exceptions import NewtonWarning
+from alloy._vendor.newton import NewtonWarning
 from alloy._vendor.newton.solvers import SolverSteel
 
 TOWER_HEIGHTS = (6, 7, 5, 6)

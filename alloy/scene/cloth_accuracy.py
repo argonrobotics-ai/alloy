@@ -6,8 +6,11 @@ The router (``RouterConfig.cloth_accuracy``) tags every CLOTH_VBD decision with 
 VBD entry (``alloy.scene.entries.solver_kwargs``) then runs ``KWARGS[setting]``: SolverVBDAlloy's adaptive initial
 guess and Chebyshev-accelerated iterations (alloy/solvers/vbd/accel.py), at DEFAULT_ITERATIONS by default and
 SUPER_ITERATIONS for "super". "fast" runs VBD's own solve (its inertial start, no Chebyshev, FAST_ITERATIONS = 10:
-the behaviour before the switch). The entry is shared, so soft solids in a scene with cloth step with the same
-setting. A VBD entry without cloth (soft solids only) carries no tag and is unchanged.
+the behaviour before the switch). The default and "super" also run cloth-on-cloth contact at a stiffness of its
+own, at most 400 m / dt² (m the entry's median particle mass), with no collision damping (SolverVBDAlloy's
+self-contact gains): a towel folded in thirds then comes to rest (docs/known_gaps/cloth-fold-unsettled-default.md).
+The entry is shared, so soft solids in a scene with cloth step with the same setting. A VBD entry without cloth
+(soft solids only) carries no tag and is unchanged.
 
 Why (rulings 2026-11-08 10:15Z and 11:08Z; docs/notes/wp2-results.md, SCR-WP2-13): at VBD's own 10 iterations cloth
 is far from converged. A 30 cm disc draped over an 18 cm stand stretches up to 10 % and hangs too low, at drape
@@ -33,9 +36,11 @@ DEFAULT_ITERATIONS = 40
 SUPER_ITERATIONS = 60
 FAST_ITERATIONS = 10                  # VBD's own (the capability default)
 DEFAULT_KWARGS: Mapping[str, Any] = {"alloy_initial_guess": "adaptive", "alloy_chebyshev_rho": 0.9,
-                                     "alloy_chebyshev_hold_self_contact": True, "iterations": DEFAULT_ITERATIONS}
+                                     "alloy_chebyshev_hold_self_contact": True, "iterations": DEFAULT_ITERATIONS,
+                                     "alloy_self_contact_ke_ratio": 400.0, "alloy_self_contact_kd": 0.0}
 SUPER_KWARGS: Mapping[str, Any] = {"alloy_initial_guess": "adaptive", "alloy_chebyshev_rho": 0.9,
-                                   "alloy_chebyshev_hold_self_contact": True, "iterations": SUPER_ITERATIONS}
+                                   "alloy_chebyshev_hold_self_contact": True, "iterations": SUPER_ITERATIONS,
+                                   "alloy_self_contact_ke_ratio": 400.0, "alloy_self_contact_kd": 0.0}
 FAST_KWARGS: Mapping[str, Any] = {"alloy_initial_guess": "inertial", "alloy_chebyshev_rho": None,
                                   "iterations": FAST_ITERATIONS}
 KWARGS: Mapping[str, Mapping[str, Any]] = {"default": DEFAULT_KWARGS, "super": SUPER_KWARGS, "fast": FAST_KWARGS}

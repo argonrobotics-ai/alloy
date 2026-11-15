@@ -15,6 +15,10 @@ from alloy.core.errors import RouteError
 import alloy
 from alloy.scene.builtin_plugins import SOLREF_DAMPRATIO, SOLREF_FIX, _mujoco, check_solref
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "a bare ModelBuilder fixture with bodies in the global world, which the C route refuses")
+
 
 def _model(joint: str = "", geom: str = "") -> newton.Model:
     xml = f"""<mujoco><worldbody><body pos="0 0 1">
@@ -42,6 +46,7 @@ def test_shorthand_raises_naming_the_joint_or_geom(joint, geom, names):
         assert name in str(err.value)
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize(("joint", "geom"), [
     ('solreflimit="0.005 1" solreffriction="0.004"', 'solref="0.003 1"'),    # explicit; friction is padded right
     ('solreflimit="-1000 -10"', 'solref="-2000 -20"'),                         # direct stiffness/damping

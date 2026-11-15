@@ -125,7 +125,9 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         if actions.device != self._tdevice:
             actions = actions.to(self._tdevice)
         self._obs, reward, terminated, truncated, info = self._env.step(actions)
-        frozen = info["invalid"]                       # an INVALID world ends for good: no time-limit bootstrap
+        # an INVALID world's episode ends for good when it ends (no time-limit bootstrap); one whose scene resets
+        # all worlds together sits frozen, at reward 0, until that common end
+        frozen = info["invalid"] & (terminated | truncated)
         terminated, truncated = terminated | frozen, truncated & ~frozen
         self._count(info)
         self._just_restarted = bool((terminated | truncated).any())

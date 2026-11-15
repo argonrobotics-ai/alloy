@@ -13,8 +13,9 @@ import pytest
 import alloy.bully
 from alloy.bully.actions import PASSIVE, PassiveActions, bind_actions
 from alloy.bully.replay import EpisodeRunner
-from alloy.bully.scene_audit import ReplayHandle, audit, replay_finding
-from alloy.bully.scene_target import AuditOptions, ctrl_box
+from alloy.bully.scene_audit import ReplayHandle, audit, episode_findings, replay_finding
+from alloy.bully.scene_target import AuditOptions, ctrl_box, scene_target
+from alloy.bully.stress import random_legal_traces
 from alloy.bully.types import ActionSpace, BullyLimits, BullyTarget
 from alloy.core.errors import BullyError
 
@@ -55,11 +56,14 @@ def test_findings_name_cause_tick_body_and_replay_alone():
 
 
 def test_episodes_after_a_reset_match_a_fresh_build():
-    """Batch 1 of a run (after a reset) equals batch 0 of a fresh run at the same seed: no carried-over health."""
+    """Batch 1 of a run (after a reset) equals the same episodes on a fresh build of the same scene: no carried-over
+    health. The audit's seed draws the scene (demo_peg_d12 randomizes the peg), batch b runs the traces of seed + b."""
     a = audit(SCENE, episodes=4, seed=5, device="cpu", horizon_s=0.06, batch=2, limits=TOUCHY, attribute=0)
-    b = audit(SCENE, episodes=2, seed=6, device="cpu", horizon_s=0.06, batch=2, limits=TOUCHY, attribute=0)
+    target, _ = scene_target(SCENE, AuditOptions(), None, "cpu", draw_seed=5)
+    res = EpisodeRunner(target, 2, "cpu", TOUCHY).run(random_legal_traces(target, 2, 0.06, seed=6))
+    fresh = episode_findings(res, TOUCHY, ReplayHandle(SCENE, 6, 2, 0, 0.06, draw_seed=5), 1.0 / target.actions.rate_hz)
     key = [(f.handle.world, f.cause, f.first_tick, round(f.value, 6)) for f in a.findings if f.handle.seed == 6]
-    assert key == [(f.handle.world, f.cause, f.first_tick, round(f.value, 6)) for f in b.findings]
+    assert key and key == [(f.handle.world, f.cause, f.first_tick, round(f.value, 6)) for f in fresh]
 
 
 def test_bad_arguments_raise():

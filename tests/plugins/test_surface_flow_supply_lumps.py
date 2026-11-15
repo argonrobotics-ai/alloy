@@ -24,6 +24,9 @@ from alloy.plugins.surface_flow.supply_lump import lumps_of
 from alloy.plugins.surface_flow.supply_stub import (CHART, FAUCET, StubFilm, faucet_network, ledger_sides, lump_arrays,
                                                      run_stub, slab_scene)
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("a captured period: CPU graph capture, which the C route does not do")
+
 R_T = 0.03                                               # a tomato of 30 mm radius, fixed 0.12 m up under the faucet
 Z_T = 0.12
 DT = 0.02                                                # one exchange a period
@@ -120,6 +123,7 @@ def _flow(nozzle: Nozzle) -> SurfaceFlow:
                        nozzles=(nozzle,), network=net, max_depth=1.0e-2)
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("case", ["jet_on_lump", "spray_on_lump", "jet_on_shape"])
 def test_species_go_where_the_water_goes(case):
     """WP15's film, a soapy faucet (5 kg/m³) over a fixed tomato, its lump arrays registered after the build (a lumped

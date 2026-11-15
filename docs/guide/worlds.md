@@ -95,7 +95,8 @@ under Build options for speed, below.
 - Robots and gravity take their own randomized fields (mass, friction, servo gains, ...), drawn at build or again
   at each reset (`when="reset"`):
   [Randomizing robots](randomize_robots.md).
-- One joint target per world: `sim.set_targets({"arm/elbow": np.array([...])})` with N values.
+- One joint target per world: `sim.set_targets({"arm/elbow": np.array([...])})` with N values. Every target is a
+  finite number; NaN, inf or a list of the wrong length raises `SimulationError` naming the joint.
 - A world that fails (INVALID health) is frozen at its last good state (under `profile="fast"`, its last checked
   state: The rigid step); the other worlds go on.
 
@@ -221,8 +222,8 @@ Five more `alloy.build(...)` options, each in one process only (`processes=` ref
   every body that starts near the material is that robot's link or welded, else standard (a free body that reaches the
   material later also runs one pass, resting within 0.5 mm of standard). `"fast"` runs one pass at 2.5 ms exchanges
   for every body: a free body landing on the material rests about 3 mm deeper, and one resting on it bobs about 15 µm
-  before it settles. A robot in sand on one L4, seconds per 10 ms period: 0.365 standard, 0.188 auto, 0.104 fast for
-  one world; 13.2, 7.0 and 4.3 over 64 worlds (auto's finger within 0.025 mm of standard). `sim.routes()` names the
+  before it settles. A robot in sand on one L4, seconds per 10 ms period: 0.374 standard, 0.192 auto, 0.107 fast for
+  one world; 13.4, 7.1 and 3.9 over 64 worlds (auto's finger within 0.025 mm of standard). `sim.routes()` names the
   setting on the material; `ALLOY_MPM_COUPLING` sets it for a whole run, worker processes included.
 - `mpm_sweeps="partial"` (opt-in; `"full"` is the default): pastes (dough, mayonnaise, ...) and other MPM materials
   re-sweep only the grid blocks still moving, with the same stop test: 256 dough worlds on one L4 ran about 1.3x

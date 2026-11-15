@@ -32,7 +32,12 @@ print(sim.state(world=0)["cup.pos"], sim.check()["ok"])
   `--photo bowl.jpg --name yellow_bowl`, `--text "a red ceramic coffee mug with a handle"`.
 - Size: `size=` (longest side in m) or `units=` (`m`, `cm`, `mm`, `in`, `ft`); otherwise inferred from the object's
   category. Mass: `mass=` with `mass_source=` (for example "kitchen scale") turns the estimate into a measured value.
+- Model files (MJCF / URDF / USD): a model file with one object names its card `name=`; joints without actuators
+  are kept as passive joints; a file with actuators is a robot (`Scene.add_robot`); `material=`, `mass=`, `size=`,
+  `units=` and `up=` do not apply to model files.
 - Photo and text need the mesh generator; its set-up, licences and every option: `alloy/create/README.md`.
+  `generator_setup.sh` also runs from the installed copy (`python -m alloy.docs` shows where); set `ALLOY_SRC` only
+  if it cannot find the alloy package.
 - `alloy.audit.audit(scene_file, rounds=3, episodes=16, library=["my_objects"])` stress-tests a whole scene (check
   rounds plus adversarial episodes) and reports what breaks, as JSON.
 - Runnable: `examples/create/` (mesh, photo, text, and create -> compose -> audit).

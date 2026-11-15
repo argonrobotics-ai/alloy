@@ -23,6 +23,10 @@ from alloy._vendor import newton
 from alloy.integration import profiles as P
 from alloy.integration import reset_graphs as RG
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "graphs dropped and captured again on reset: CPU graph capture, which the C route does not do")
+
 ARM = """<mujoco><compiler angle="radian"/><worldbody><body name="link1" pos="0 0 0.1">
   <joint name="shoulder" type="hinge" axis="0 1 0" range="-2 2" damping="2"/>
   <geom type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="1"/>
@@ -103,6 +107,7 @@ def _episode(scene: alloy.Scene, keep: bool, kick: bool) -> tuple[list, dict]:
     return out, eng.graph_stats()
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize(("make", "kick"), [(cubes, True), (arm, False), (randomized_cubes, True)])
 def test_kept_graphs_replay_the_dropped_run_bit_for_bit(make, kick) -> None:
     """Free cubes on the ground (one latches INVALID and is reset), a servo arm and the cubes with a randomized
@@ -144,6 +149,7 @@ def _fast_episode(keep: bool) -> tuple[list, dict]:
     return out, eng.graph_stats()
 
 
+@WARP_ROUTE
 def test_the_fast_profile_keeps_its_graphs_bit_for_bit() -> None:
     """Checks every 10 steps: the check pattern is in the graph key and the period snapshots are saved after check
     steps only (WP7's note)."""
@@ -153,6 +159,7 @@ def test_the_fast_profile_keeps_its_graphs_bit_for_bit() -> None:
     assert (stats_k["reset_kept"], stats_k["reset_dropped"], stats_d["reset_dropped"]) == (4, 0, 4)
 
 
+@WARP_ROUTE
 def test_a_late_health_setter_drops_the_graphs_at_the_next_reset() -> None:
     """Health's setters that rebind an array (after the first step): the next reset drops, as it always did."""
     sim = alloy.build(cubes(), device="cpu", seed=0)
@@ -162,6 +169,7 @@ def test_a_late_health_setter_drops_the_graphs_at_the_next_reset() -> None:
     assert sim.engine.reset_graphs == {"kept": 0, "dropped": 1}
 
 
+@WARP_ROUTE
 def test_a_masked_reset_captures_nothing_new() -> None:
     """After every check pattern of the schedule is captured (a few periods), resets add no capture."""
     sim = alloy.build(cubes(), device="cpu", seed=0)
@@ -174,6 +182,7 @@ def test_a_masked_reset_captures_nothing_new() -> None:
     assert stats["captures"] == before and stats["reset_kept"] == 3, stats
 
 
+@WARP_ROUTE
 def test_a_randomized_reset_drops_the_graphs_only_when_its_redraw_changes_a_value() -> None:
     """A reset draws the reset worlds' values at the scene's draw seed: the values the model holds, so nothing is
     written and the graphs are kept (TRAIN-FIX 3a). A world redrawn at another seed in between gets its values back:
@@ -192,6 +201,7 @@ def test_a_randomized_reset_drops_the_graphs_only_when_its_redraw_changes_a_valu
     assert sim.engine.reset_graphs == {"kept": 2, "dropped": 1}
 
 
+@WARP_ROUTE
 def test_a_direct_notify_drops_the_graphs_at_the_next_reset_only() -> None:
     """Code that edits the model and notifies a solver itself (alloy.episode.layout): the next reset drops, the one
     after keeps."""

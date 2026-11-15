@@ -70,13 +70,13 @@ class CarriageCommand:
         self.size, self.proprio_size = FIELDS * self.T, 13 * self.T
         self.low, self.high = np.tile(LOW, self.T), np.tile(HIGH, self.T)
         self.dt = float(getattr(self.c.ctx, "control_dt", None) or sim.built.control_dt)
-        self.overridden = False
+        self.program = (self.c.keys.numpy().copy(), self.c.n.numpy().copy())   # the script: the expert's command
+        self.overridden = np.zeros((self.W, self.T), bool)                    # a tool the policy took over
 
     def _times(self) -> np.ndarray:
         return self.c.ctx.time.numpy().astype(np.float64).reshape(-1)[: self.W]
 
-    def _targets(self, t: np.ndarray) -> np.ndarray:
-        table, n = self.c.keys.numpy(), self.c.n.numpy()
+    def _targets(self, t: np.ndarray, table: np.ndarray, n: np.ndarray) -> np.ndarray:
         out = np.zeros((self.W, self.T, FIELDS), np.float32)
         for w in range(self.W):
             for k in range(self.T):
@@ -85,24 +85,27 @@ class CarriageCommand:
         return out
 
     def read(self, sim: Any) -> np.ndarray:  # noqa: ARG002
-        return self._targets(self._times() + self.dt).reshape(self.W, -1)
+        """The script's command for the coming period in every world, also for a tool the policy took over."""
+        return self._targets(self._times() + self.dt, *self.program).reshape(self.W, -1)
 
     def write(self, sim: Any, a: np.ndarray) -> None:
+        """A tool given its program's command keeps its program, untouched; any other (and every later command for a
+        tool once taken over) replaces that tool's program, in its world only, with a ramp to the command."""
         a = np.asarray(a, np.float32).reshape(self.W, self.T, FIELDS)
-        if not self.overridden and np.array_equal(a.reshape(self.W, -1), self.read(sim)):
+        take = self.overridden | ~np.all(a == self.read(sim).reshape(self.W, self.T, FIELDS), axis=-1)
+        if not take.any():
             return                                                         # the program itself: untouched
         t = self._times()
-        now = self._targets(t)
         table, n = self.c.keys.numpy().copy(), self.c.n.numpy().copy()
-        for w in range(self.W):
-            for k in range(self.T):
-                r = w * self.T + k
-                for j, (when, v) in enumerate(((t[w], now[w, k]), (t[w] + self.dt, a[w, k]))):
-                    table[r, j] = (when, tuple(v[:3]), v[3], v[4], v[5], int(round(float(a[w, k, 6]))), a[w, k, 7])
-                n[r] = 2
+        now = self._targets(t, table, n)
+        for w, k in zip(*np.nonzero(take)):
+            r = w * self.T + k
+            for j, (when, v) in enumerate(((t[w], now[w, k]), (t[w] + self.dt, a[w, k]))):
+                table[r, j] = (when, tuple(v[:3]), v[3], v[4], v[5], int(round(float(a[w, k, 6]))), a[w, k, 7])
+            n[r] = 2
         self.c.keys.assign(table)                                          # in place: captured graphs keep it
         self.c.n.assign(n)
-        self.overridden = True
+        self.overridden |= take
 
     def proprio(self, sim: Any) -> np.ndarray:
         q, qd = sim.state.body_q.numpy()[self.tools], sim.state.body_qd.numpy()[self.tools]
@@ -110,13 +113,14 @@ class CarriageCommand:
 
 
 def _runner(module: str, settings: str):  # noqa: ANN202
-    def run(worlds: int, device: str, seed: int, **task: Any) -> Any:  # noqa: ARG001 - worlds take seed + w
-        """The port's run; keyword options set its task's settings (e.g. pad-edge's ``window=(0.37, 0.37)``)."""
+    def run(worlds: int, device: str, seed: int, **task: Any) -> Any:
+        """The port's run: its task's settings with ``seed`` (world w takes seed + w) and the keyword options (e.g.
+        pad-edge's ``window=(0.37, 0.37)``)."""
         import importlib  # noqa: PLC0415
 
         mod = importlib.import_module(f"alloy.tasks.{module}")
-        made = getattr(mod, settings)(**{k: tuple(v) if isinstance(v, list) else v for k, v in task.items()})
-        return mod.run(made if task else None, worlds=worlds, device=device)
+        opts = {k: tuple(v) if isinstance(v, list) else v for k, v in task.items()}
+        return mod.run(getattr(mod, settings)(seed=seed, **opts), worlds=worlds, device=device)
 
     return run
 

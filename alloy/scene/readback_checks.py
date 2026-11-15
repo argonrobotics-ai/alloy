@@ -273,6 +273,12 @@ def check_style3d(built: BuiltScene, plan: Plan, t: TemplateObject) -> Result:
 
 
 def _cloth_area(m, tri_ids: np.ndarray) -> float:
+    """Rest area [m²] of a sheet's triangles: the builder's own per-triangle areas, computed in float64 before the
+    model stores positions as float32. Areas from the float32 positions of a sheet a few metres from the origin were
+    off by about 1e-6 and failed the 1e-6 mass readback (a 0.24 x 0.12 m sheet at x = 3 m would not build)."""
+    areas = getattr(m, "tri_areas", None)
+    if areas is not None and areas.shape[0] > 0:
+        return float(areas.numpy()[tri_ids].astype(np.float64).sum())
     idx = m.tri_indices.numpy()[tri_ids]
     x = m.particle_q.numpy().astype(np.float64)
     a, b, c = x[idx[:, 0]], x[idx[:, 1]], x[idx[:, 2]]

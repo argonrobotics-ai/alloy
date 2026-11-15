@@ -82,6 +82,10 @@ the Franka FR3, a UR10e, two humanoids, a quadruped and a hand.
 - A joint with no actuator cannot be driven: `set_targets` raises an error that names the line to add.
 - There is no call that attaches or welds an object to a gripper, so a grasp holds only through friction and finger
   force ([no attach or weld](../../known_gaps/grasp-no-attach-or-weld.md)).
+- Start an object clear of the palm and fingers: an overlap of a few mm with the hand throws the object before the
+  fingers close, and `sim.check()` stays `ok` for overlaps under 1 cm (it lists a PEN_WARN note).
+- A heavy body that hits a robot at speed can sink in far enough to make the world INVALID (PEN_FAIL): robot scenes
+  keep soft impact contacts. Give the impacting body stiffer contacts (`solref`, `solimp`) in its MJCF.
 - A grasp can come out differently on a CPU and a GPU: one measured grasp held on a GPU and slipped on the CPU, with
   health OK on both. Check a grasp on the device you train on.
 - Alloy steps your MJCF with its own settings: the file's `timestep`, `integrator` and `cone` are not used; its

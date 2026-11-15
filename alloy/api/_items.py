@@ -6,12 +6,15 @@ Example: ``_overrides(0.2, None, 0.8, None, static=False)`` -> ``{"mass": 0.2, "
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from alloy.api import _args as A
+from alloy.api._say import warn
 from alloy.api.errors import SceneError
+from alloy.contact.hull_limits import hull_vertices_problem
 
 
 def _box_volume(half: Sequence[float]) -> float:
@@ -43,17 +46,63 @@ def _overrides(mass: Any, density: Any, friction: Any, restitution: Any, static:
     return out
 
 
-def _cloth_vertices(resolution: Any, lx: float, ly: float) -> int:
-    """Vertex count of a cloth grid. Example: ``_cloth_vertices(21, 0.5, 0.5)`` -> 441."""
-    if isinstance(resolution, (int, float)):
-        n = int(resolution)
-        if n < 3:
-            raise SceneError(f"resolution must be >= 3, got {resolution!r}", "pass resolution=21 (vertices per side)",
-                             field="resolution")
-        long, short = max(lx, ly), min(lx, ly)
-        return n * max(3, int(round(n * short / long)))
-    nx, ny = (int(v) for v in A.sizes(resolution, 2, "resolution"))
-    return nx * ny
+CLOTH_CELLS_MAX = 1600   # the most cells a sheet gets: alloy.scene.emitters.deformable.CLOTH_VERTS_TARGET (a law)
+
+
+def _cloth_cells(name: str, resolution: Any, lx: float, ly: float) -> int:
+    """The cells cloth ``name`` asks for, the card's budget: ``resolution`` along the longer side and the shorter
+    side's share (at least 3), or nx * ny. The build lays them out as near-square cells (``cloth_grid``), so a sheet
+    of n x m cells has (n + 1) x (m + 1) vertices; it warns when that grid is not the one asked for.
+
+    Example: ``_cloth_cells("towel", 20, 0.5, 0.5)`` -> 400 (20 x 20 cells, 21 x 21 = 441 vertices)."""
+    asked = _asked_grid(resolution, lx, ly)
+    cells = asked[0] * asked[1]
+    got = cloth_grid(cells, lx, ly)
+    if got != asked:
+        why = (f"a sheet gets at most {CLOTH_CELLS_MAX:,} cells" if cells > CLOTH_CELLS_MAX else
+               f"its cells are as near square as whole counts allow, so they follow the sheet's {lx:g} x {ly:g} m")
+        warn("add_cloth %r: resolution %r gives a %d x %d-cell sheet (%d vertices), not %d x %d: %s", name,
+             resolution, got[0], got[1], (got[0] + 1) * (got[1] + 1), asked[0], asked[1], why)
+    return cells
+
+
+def _asked_grid(resolution: Any, lx: float, ly: float) -> tuple[int, int]:
+    """Cells along x and y that ``resolution`` asks for (checked)."""
+    if not isinstance(resolution, (int, float)):
+        nx, ny = (int(v) for v in A.sizes(resolution, 2, "resolution"))
+        return nx, ny
+    n = int(resolution)
+    if n < 3:
+        raise SceneError(f"resolution must be >= 3, got {resolution!r}", "pass resolution=20 (cells along the longer "
+                         "side: 21 vertices)", field="resolution")
+    m = max(3, int(round(n * min(lx, ly) / max(lx, ly))))
+    return (n, m) if lx >= ly else (m, n)
+
+
+def cloth_grid(cells: int, lx: float, ly: float) -> tuple[int, int]:
+    """Cells along x and y of the sheet the build makes for ``cells``: square cells of side sqrt(lx * ly / cells),
+    at most ``CLOTH_CELLS_MAX`` in all, each side's count rounded (``alloy.scene.emitters.deformable.cloth_mesh``);
+    it has (nx + 1) * (ny + 1) vertices. Example: ``cloth_grid(400, 0.5, 0.5)`` -> (20, 20)."""
+    cell = math.sqrt(lx * ly / min(cells, CLOTH_CELLS_MAX))
+    return max(1, round(lx / cell)), max(1, round(ly / cell))
+
+
+COLLISIONS = ("convex", "decompose", "sdf", "mesh")
+
+
+def _mesh_shape(scale: Any, collision: str, hull_vertices: int | None) -> dict[str, Any]:
+    """``add_mesh``'s checked ``shape`` dict (``hull_vertices`` written only when set). Example:
+    ``_mesh_shape(1.0, "convex", 64)``."""
+    A.one_of(collision, COLLISIONS, "collision")
+    s = [float(scale)] * 3 if isinstance(scale, (int, float)) else A.sizes(scale, 3, "scale")
+    if problem := hull_vertices_problem(hull_vertices, collision):
+        raise SceneError(problem, "leave hull_vertices=None (the hull keeps within 0.1 mm of the mesh's own), or give "
+                         "an int from 4 to 2048 on a collision='convex' mesh (64: the earlier fast hull)",
+                         field="hull_vertices")
+    mesh: dict[str, Any] = {"path": "", "sha256": "", "scale": s, "collision": collision}
+    if hull_vertices is not None:
+        mesh["hull_vertices"] = int(hull_vertices)
+    return {"mesh": mesh}
 
 
 def _mesh_spec(path: Any, vertices: Any, faces: Any) -> dict[str, Any]:

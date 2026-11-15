@@ -7,108 +7,108 @@
       "name": "newton",
       "module": "alloy._vendor.newton",
       "kind": "vendored",
-      "pin": "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0",
-      "version": "1.8.0rc1",
-      "base": "db915e1c79e9e4a09f61221f743e1e4fe814d75c",
-      "base_in_release": null,
+      "pin": "89bf98d10f1db80ccf849d3376f6dcf710af3569",
+      "version": "1.8.0",
+      "base": "425db81f01e402b51f96f560e154d529d645c6de",
+      "base_in_release": "1.8.0",
       "where": [
         "alloy/_vendor/VENDORED.md",
         "alloy/core/newton_compat.py NEWTON_PIN"
       ],
-      "why": "Alloy uses Newton 1.8 APIs (coupled solvers, compact soft contacts) that no final release has yet, plus eleven VBD cloth and contact commits and the N-solver proxy coupling of ours on top of the public release-1.8 branch (2026-11-09, five days after 1.8.0rc1). The commit ships inside the alloy-engine wheel as alloy/_vendor/newton (its LICENSE, NOTICE and SPDX headers kept), so installing Alloy never installs or touches a separate newton package.",
+      "why": "Alloy uses Newton 1.8 APIs (coupled solvers, compact soft contacts) at the public v1.8.0 release (2026-11-11), plus eleven VBD cloth and contact commits and the N-solver proxy coupling of ours on top of it, rebased unchanged from release-1.8 (1.8.0rc1). The commit ships inside the alloy-engine wheel as alloy/_vendor/newton (its LICENSE, NOTICE and SPDX headers kept), so installing Alloy never installs or touches a separate newton package.",
       "released": false,
       "patches": [
         {
-          "commit": "1b9275393c29a5b302d518a87ae26c736fe7f3ae",
-          "was": "5721809f",
+          "commit": "0c264156650eeee0839d1e053b999dbaca722333",
+          "was": "1b927539",
           "topic": "bending",
           "upstream": "pr-open",
           "pr": 5131,
           "why": "the dihedral bending force of hinges with triangles under about 1 mm was dropped (degeneracy test was absolute)"
         },
         {
-          "commit": "1c4c9440ebbbc62f727e7e40a1de3f98d3a4c52f",
-          "was": "00199c60",
+          "commit": "79bac9befd70ddd4fc9d945e551cfa90038e4ca3",
+          "was": "1c4c9440",
           "topic": "bending",
           "upstream": "pr-open",
           "pr": 5131,
           "why": "test for the bending fix"
         },
         {
-          "commit": "11b06386458e84137ded9621a2b2f540dbb7fde6",
-          "was": "a30fc1e4",
+          "commit": "f3431590886e25de544ccc2299bab6f70cf35d6e",
+          "was": "11b06386",
           "topic": "bending",
           "upstream": "pr-open",
           "pr": 5131,
           "why": "test for the bending fix"
         },
         {
-          "commit": "762c75c9324473b28032465ccda4e52ac7f9b533",
-          "was": "6a4c1483",
+          "commit": "59769ec27b79150571bf3667f78dcfd924dd5a43",
+          "was": "762c75c9",
           "topic": "lumped-corner-hessian",
           "upstream": "not-posted",
           "pr": null,
           "why": "edge/face soft contacts over-relaxed with a squared barycentric weight; a clamped sheet chattered and lost most of its friction at 10-20 iterations"
         },
         {
-          "commit": "4e578c412559a254961a802290f4d03fb271581b",
-          "was": "65b7c92e",
+          "commit": "31790f8e7c01407b81213897e968f73dd6ceb7cc",
+          "was": "4e578c41",
           "topic": "lumped-corner-hessian",
           "upstream": "not-posted",
           "pr": null,
           "why": "tests for the lumped corner Hessian"
         },
         {
-          "commit": "28b23602b86d0fe897c9f0553f74569ffa9d99e0",
-          "was": "55a6cdd4",
+          "commit": "3e7a67186b3b2791375d19d51054aa55feeea2be",
+          "was": "28b23602",
           "topic": "smooth-self-contact-onset",
           "upstream": "not-posted",
           "pr": null,
           "why": "self-contact stiffness jumped from 0 to full at the contact distance; resting cloth layers jittered"
         },
         {
-          "commit": "0017063a4bfc4bc2eabc12cb77582da552f4a75a",
-          "was": "47afecd7",
+          "commit": "5b7d41ef970a10ce81fb582e1a7b1d14e63f0d99",
+          "was": "0017063a",
           "topic": "lumped-corner-hessian",
           "upstream": "not-posted",
           "pr": null,
           "why": "tests aligned with the lumped corner Hessian (tests only; the attachment test is upstream's rewrite from #5146)"
         },
         {
-          "commit": "217d9a77976c3ff4d9c80c2b4f3fe9e98cc1f05a",
-          "was": "4629ac08",
+          "commit": "797835d6ba71cb3f3949f64328c14476abda13a4",
+          "was": "217d9a77",
           "topic": "membrane-normal",
           "upstream": "not-posted",
           "pr": null,
           "why": "the out-of-plane stiffness of the membrane Hessian made flat cloth converge very slowly out of plane"
         },
         {
-          "commit": "948b257c2ab2d6bcd2c4ff9cae459c5016db4f60",
-          "was": "8f3466f9",
+          "commit": "17b328c33ff7a07209bfc14f8ba9849429d458f8",
+          "was": "948b257c",
           "topic": "membrane-normal",
           "upstream": "not-posted",
           "pr": null,
           "why": "keeps the clamped normal stiffness for cloth pieces in contact (the exact value broke gripper pinches and resting film); ported onto release-1.8's accumulate_elasticity_force_and_hessian"
         },
         {
-          "commit": "3cfcde2e06be3c0c5b554b036a06ebcbd6b56992",
-          "was": "4c8869b7",
+          "commit": "7be7ddb2ab35bf2b154a4c503bb83085a8d29638",
+          "was": "3cfcde2e",
           "topic": "pinned-piece-start",
           "upstream": "not-posted",
           "pr": null,
           "why": "a pinned sheet with stiff hinges settled past its static equilibrium at finite iterations (inertial start x + h*v + h^2*a_ext); pinned pieces start from x + h*v"
         },
         {
-          "commit": "4be4c8219c70c5bc6f0fa1a417c63722f66299d2",
-          "was": "4f3b41ef",
+          "commit": "b4025c1eb7ff8e1d5b2e1128d6049f56a17b9792",
+          "was": "4be4c821",
           "topic": "bending-angle-wrap",
           "upstream": "not-posted",
           "pr": null,
           "why": "a fold resting near +-pi read a 2*pi bending-angle difference and got a wrong-way torque (jitter on folds and seams)"
         },
         {
-          "commit": "25b4603cfb37dfa250d8b9e1727b39514ab6e8a0",
-          "was": "d15a836c",
+          "commit": "89bf98d10f1db80ccf849d3376f6dcf710af3569",
+          "was": "25b4603c",
           "topic": "proxy-graph",
           "upstream": "not-posted",
           "pr": null,
@@ -117,12 +117,12 @@
       ],
       "routes": {
         "vendored": "shipped inside alloy-engine as alloy/_vendor/newton; no separate newton wheel",
-        "release": "public newton==1.8.0 from PyPI once final, with the unmerged commits upstreamed or vendored (paused)",
+        "release": "public newton==1.8.0 from PyPI (final since 2026-11-11) once our twelve commits are upstreamed (paused)",
         "wait": "#5146 is upstream and in the base; #5131 is open; nine commits are not posted"
       },
       "path": "alloy/_vendor/newton",
       "base_branch": "release-1.8",
-      "base_contains_release": "1.8.0rc1",
+      "base_contains_release": "1.8.0",
       "dropped": [
         {
           "was": "5db5889f",

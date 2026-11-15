@@ -80,7 +80,7 @@ def check(scene: Any, worlds: int | None = None, seconds: float | None = None, *
     report = CheckReport(scene=src.label, settings={"worlds": worlds, "seconds": seconds if run else 0.0,
                                                     "device": dev, "profile": profile, "seed": seed,
                                                     "expect_rest": expect_rest, "contacts": contacts})
-    _stage(report, "cards", lambda: report.add(_fetch(src) + card_findings(src), "cards"))
+    _stage(report, "cards", lambda: report.add(_card_stage(src), "cards"))
     if not report.ok:
         return _skip_rest(report, "card errors (fix them first)", t0)
     built = _assemble_fitting(report, src, dev, worlds) if run else _assemble(report, src, dev, worlds)
@@ -121,11 +121,12 @@ def resolve_settings(device: str | None, worlds: int | None, seconds: float | No
     return dev, worlds, seconds
 
 
-def _fetch(src: Source) -> list[Finding]:
-    """Files of imported objects the scene places, fetched from the asset store first (``alloy.check.fetch``)."""
-    from alloy.check.fetch import fetch_imported  # noqa: PLC0415
+def _card_stage(src: Source) -> list[Finding]:
+    """Files of imported objects the scene places, fetched first (asset store or Hub: ``alloy.check.fetch``), then
+    the card rules; one error per object no library holds."""
+    from alloy.check.fetch import fetch_imported, one_per_object  # noqa: PLC0415
 
-    return fetch_imported(src.lib, [pl.object for pl in src.card.objects])
+    return one_per_object(fetch_imported(src.lib, [pl.object for pl in src.card.objects]), card_findings(src))
 
 
 def _stage(report: CheckReport, name: str, fn) -> None:

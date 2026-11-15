@@ -171,14 +171,14 @@ class Simulation:
             hook(world_mask)
 
     def _redraw(self, plan: Any, world_mask: wp.array | None) -> None:
-        """Redraw the reset worlds' object rows (TRAIN-FIX 3a, TA-8 F1). Only worlds whose draw differs from the value
-        the model holds are written, and only then are the solvers told: on a plain reset the draw seed gives every
-        world its values again, so nothing is written. A world whose start draw changed (a caller redrew it at another
-        seed) gets its objects' root coordinates from the model and forward kinematics on their joints alone. The
-        state of every other world is left as it is: the restore above already put the reset worlds at their start.
+        """Redraw the reset worlds' object rows. Only worlds whose draw differs from the value the model holds are
+        written, and only then are the solvers told: on a plain reset the draw seed gives every world its values
+        again, so nothing is written. A world whose start draw changed (a caller redrew it at another seed) gets its
+        objects' root coordinates from the model and forward kinematics on their joints alone. The state of every
+        other world is left as it is: the restore above already put the reset worlds at their start.
 
-        Cost (TRAIN-FIX 3b, TA-8 F3): every row's draws at the seed are made once for all worlds (``_draws``); a reset
-        compares them with the held values and reads the mask back from the device only when one differs."""
+        Cost: every row's draws at the seed are made once for all worlds (``_draws``); a reset compares them with the
+        held values and reads the mask back from the device only when one differs."""
         from alloy.scene.randomize import POSE_AXES, apply_randomization, draw_seed
 
         seed, count = draw_seed(self.built), self.built.world_count
@@ -209,8 +209,15 @@ class Simulation:
 
     def _restart(self, moved: Mapping[str, set[int]]) -> None:
         """Put each object of ``moved`` ({name: worlds}) at its start in those worlds: its root joint's coordinates
-        from the model (where the start draws are written), then FK on that object's joints only."""
+        from the model (where the start draws are written), then FK on that object's joints only; an object without
+        a joint whose particles move gets its particles' start positions from the model."""
         model, handles = self.model, self.built.handles
+        particles = {n: w for n, w in moved.items() if not handles[n].template.joint}
+        if particles:
+            self._restart_particles(particles)
+        moved = {n: w for n, w in moved.items() if n not in particles}
+        if not moved:
+            return
         qs, mq = model.joint_q_start.numpy(), model.joint_q.numpy()
         jq, joints = self.state.joint_q.numpy().copy(), np.zeros(model.joint_count, bool)
         for name, worlds in moved.items():
@@ -222,6 +229,15 @@ class Simulation:
         self.state.joint_q.assign(jq)
         newton.eval_fk(model, self.state.joint_q, self.state.joint_qd, self.state,
                        joint_mask=wp.array(joints, dtype=wp.bool, device=model.device))
+
+    def _restart_particles(self, moved: Mapping[str, set[int]]) -> None:
+        mq, pq = self.model.particle_q.numpy(), self.state.particle_q.numpy().copy()
+        for name, worlds in moved.items():
+            h = self.built.handles[name]
+            for w in worlds:
+                a = h.template.particle.start + w * len(h.world_stride.particle)
+                pq[a:a + len(h.template.particle)] = mq[a:a + len(h.template.particle)]
+        self.state.particle_q.assign(pq)
 
     def _notify(self, flags) -> None:
         for s in getattr(self.stepper, "solvers", lambda: [])():

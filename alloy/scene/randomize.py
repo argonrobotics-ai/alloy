@@ -106,10 +106,20 @@ def _youngs(built: BuiltScene, h: ObjectHandle, worlds: Sequence[int], ratio: np
         _scale_rows(m.joint_stiffness, rows, ratio)
 
 
-def _pose(built: BuiltScene, h: ObjectHandle, worlds: Sequence[int], axis: int, values: np.ndarray) -> None:
+def _pose(built: BuiltScene, h: ObjectHandle, worlds: Sequence[int], axis: int, values: np.ndarray,
+          base: Callable[[], np.ndarray] | None = None) -> None:
+    """Start coordinate ``axis`` per world: the free root joint's, or for an object without one whose particles move
+    (soft body, MPM, cloth or liquid card) its particles shifted so that its placement's coordinate becomes the draw;
+    ``base()`` is that coordinate now per world (the previous draw, else the card's): a redraw does not compound."""
     m = built.model
+    if not h.template.joint and h.template.particle and base is not None:
+        rows = _gids(h.template.particle, len(h.world_stride.particle), worlds)
+        q = m.particle_q.numpy()
+        q[rows, axis] += (np.asarray(values, np.float64) - base())[:, None].astype(q.dtype)
+        m.particle_q.assign(q)
+        return
     if not h.template.joint:
-        raise AssemblyError(f"{h.name}: pose randomization needs a free root joint")
+        raise AssemblyError(f"{h.name}: pose randomization needs a free root joint or particles")
     jq = m.joint_q.numpy()
     qs = m.joint_q_start.numpy()
     for w, v in zip(worlds, values):
@@ -254,7 +264,8 @@ def _write(built: BuiltScene, plan: Plan, name: str, r: Randomization, worlds: l
     for leaf in SURFACE:
         writers[f"material.surface.{leaf}"] = lambda leaf=leaf: _surface(built, plan, name, leaf, worlds, vals)
     for path, axis in POSE_AXES.items():
-        writers[path] = lambda axis=axis: _pose(built, h, worlds, axis, vals)
+        writers[path] = lambda axis=axis: _pose(built, h, worlds, axis, vals,
+                                                lambda: _base(built, plan, name, r.field, worlds))
     fn = writers.get(r.field)
     if fn is None and r.field.split(".")[0] in ROUTING_ONLY:
         note = (f"{name}.{r.field}", "randomized routing/sizing input: the worst end of its range is used at "

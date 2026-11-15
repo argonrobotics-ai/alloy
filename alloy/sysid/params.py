@@ -27,6 +27,7 @@ UNITS = {"kp": "N·m/rad", "kd": "N·m·s/rad", "damping": "N·m·s/rad", "vel":
          "delay": "s", "armature": "kg·m²", "torque_limit": "N·m"}
 GAIN_FACTOR = 8.0           # kp, kd + damping: the file's value / 8 ... x 8
 ARMATURE_FACTOR = 10.0
+TORQUE_FACTOR = 5.0         # torque limit: the file's value / 5 ... x 5 (around 0.2 x kp when it has none)
 FRICTION_SHARE = 0.1        # dry friction: 0 ... this share of the joint's torque limit (or 5x the file's value)
 MAX_DELAY = 0.05            # s
 
@@ -72,7 +73,7 @@ class Box:
             elif name == "friction":
                 hi[v] = np.maximum(5.0 * nominal["friction"], FRICTION_SHARE * torque)
             elif name == "torque_limit":
-                lo[v], hi[v], log[v] = 0.2 * torque, torque, True
+                lo[v], hi[v], log[v] = torque / TORQUE_FACTOR, torque * TORQUE_FACTOR, True
             else:
                 hi[v] = float(max_delay)
         return cls(list(names), lo, hi, log.astype(bool))

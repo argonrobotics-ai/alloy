@@ -9,7 +9,8 @@ quadruped, a mobile base) hung so that nothing touches the ground. For an MJCF f
 - a free-base robot (a top-level body with a free joint and actuated joints below it) is welded where it is,
   ``LIFT`` metres higher.
 
-URDF and USD files are used as they are (their base is welded unless the file gives it a joint).
+USD files are used as they are (their base is welded unless the file gives it a joint). A file without position
+servos (any URDF: the format has no servo gains) is refused by the bench with the fix.
 """
 
 from __future__ import annotations
@@ -22,6 +23,30 @@ from alloy.sysid.errors import SysidError
 
 LIFT = 0.5          # m a welded free base is raised, so hanging legs clear the file's floor
 NAME = "robot"      # the robot's name in the replay scene
+NO_VALUES = {"schema": "alloy.sysid/1", "joints": {}}   # built as add_robot(sysid=) builds: every servo with a force range
+
+
+ROBOT_FILES = ("scene.xml", "robot.xml")
+
+
+def shipped() -> dict[str, Path]:
+    """{name: robot file} of the shipped robots: ``panda``, ``go2``, ... for the ``emb_*`` folders, the folder's
+    name for the others. Benchmark task scenes and solver variants of a robot are not listed (their full folder
+    name still resolves). Example: ``sorted(shipped())``."""
+    from alloy.cards.library import default_root  # noqa: PLC0415
+
+    root = default_root() / "robots"
+    out: dict[str, Path] = {}
+    for folder in sorted(root.iterdir()) if root.is_dir() else []:
+        file = _robot_file(folder)
+        if file is None or folder.name.startswith("task_") or folder.name.endswith(("_route", "_stiff")):
+            continue
+        out[folder.name.split("_", 2)[-1] if folder.name.startswith("emb_") else folder.name] = file
+    return out
+
+
+def _robot_file(folder: Path) -> Path | None:
+    return next((folder / f for f in ROBOT_FILES if (folder / f).is_file()), None)
 
 
 def resolve(robot: str | Path) -> Path:
@@ -31,18 +56,18 @@ def resolve(robot: str | Path) -> Path:
     path = Path(str(robot)).expanduser()
     if path.is_file():
         return path.resolve()
-    root = default_root() / "robots"
-    folders = sorted(p.name for p in root.iterdir() if (p / "scene.xml").is_file()) if root.is_dir() else []
-    key = str(robot).lower()
-    plain = [f for f in folders if not f.endswith(("_route", "_stiff"))]
-    hits = [f for f in folders if f == key] or [f for f in plain if f.split("_", 2)[-1] == key] \
-        or [f for f in plain if key in f.split("_")]
+    names, key = shipped(), str(robot).lower()
+    if key in names:
+        return names[key]
+    folder = default_root() / "robots" / key
+    if key and folder.is_dir() and _robot_file(folder) is not None:
+        return _robot_file(folder)
+    hits = [n for n in names if key in n.split("_")]
     if len(hits) == 1:
-        return root / hits[0] / "scene.xml"
-    names = sorted({f.split("_", 2)[-1] for f in plain})
+        return names[hits[0]]
     raise SysidError(f"robot {str(robot)!r} is neither a file nor one shipped robot" +
                      (f" (it matches {hits})" if hits else ""),
-                     f"pass a robot file (MJCF, URDF or USD) or one of {names}", field="robot")
+                     f"pass a robot file (MJCF or USD) or one of {sorted(names)}", field="robot")
 
 
 def actuator_joints(robot: str | Path) -> dict[str, str]:
@@ -132,11 +157,11 @@ def bench_scene(robot: str | Path, worlds: int, dt: float) -> tuple[Any, list[st
     scene = alloy.Scene(worlds=int(worlds), dt=float(dt))
     if path.suffix.lower() in (".xml", ".mjcf"):
         text, notes = bench_mjcf(path)
-        scene.add_robot(NAME, mjcf=text)
+        scene.add_robot(NAME, mjcf=text, sysid=NO_VALUES)
     else:
         notes = []
-        scene.add_robot(NAME, path)
+        scene.add_robot(NAME, path, sysid=NO_VALUES)
     return scene, notes
 
 
-__all__ = ["LIFT", "NAME", "actuator_joints", "bench_mjcf", "bench_scene", "resolve"]
+__all__ = ["LIFT", "NAME", "actuator_joints", "bench_mjcf", "bench_scene", "resolve", "shipped"]

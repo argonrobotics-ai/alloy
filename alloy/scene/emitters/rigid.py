@@ -25,6 +25,7 @@ from alloy._vendor import newton
 
 from alloy.cards.types import (MeshSource, MJCFSource, ParticleSource, Primitive, ResolvedObject, SDFSource,
                                USDSource)
+from alloy.contact import hull_cap, hull_limits
 from alloy.core.errors import AssemblyError
 from alloy.route.types import Route, RouteDecision
 from alloy.scene.emitters.common import TriMesh, add_primitive, load_hulls, load_mesh, newton_mesh, shape_config
@@ -73,8 +74,11 @@ def _add_shapes(b: newton.ModelBuilder, body: int, obj: ResolvedObject,
 
 def _add_mesh(b: newton.ModelBuilder, body: int, src: MeshSource, cfg: newton.ModelBuilder.ShapeConfig,
               name: str) -> None:
+    hull_limits.check(src, name)
     raw = load_mesh(src)
     mesh = newton_mesh(raw)
+    if src.collision == "convex":            # hull vertices by geometric error, not Newton's fixed 64 (hull_cap)
+        mesh.maxhullvert = hull_cap.maxhullvert(raw.vertices, name, src.hull_vertices)
     if src.collision == "convex" and len(raw.vertices) > CONVEX_SOURCE_MAX:
         _add_large_convex(b, body, raw, mesh, cfg, name)
     elif src.collision == "convex":
@@ -93,7 +97,7 @@ def _add_large_convex(b: newton.ModelBuilder, body: int, raw: TriMesh, mesh: new
     builds the support adjacency of a convex source vertex by vertex, which ran past 19 min on a 655,362-vertex
     sphere; meshes this size had failed earlier at a 6.25 TiB width probe, so no scene that built changes."""
     first = b.shape_count
-    b.add_shape_convex_hull(body, mesh=mesh.compute_convex_hull(), cfg=cfg, label=name)
+    b.add_shape_convex_hull(body, mesh=hull_cap.capped_mesh(mesh), cfg=cfg, label=name)   # MuJoCo's capped hull
     _add_display_mesh(b, body, raw, cfg, name, range(first, b.shape_count))
     log.info("%s: %d mesh vertices collide as their %d-vertex hull (display: the full mesh)", name,
              len(raw.vertices), mesh.maxhullvert)
@@ -124,6 +128,7 @@ def _emit_decomposed(b: newton.ModelBuilder, obj: ResolvedObject, cfg: newton.Mo
     from alloy.cards.geometry import MeshData, is_watertight
 
     card, src = obj.card, obj.card.shape
+    hull_limits.check(src, card.name)
     if obj.part_materials:
         raise AssemblyError(f"{card.name}: collision='decompose' with part_materials is not supported yet (the body "
                             "mass would not equal card_mass); use one material or collision='convex'/'mesh'")

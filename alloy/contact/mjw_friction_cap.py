@@ -42,7 +42,8 @@ log = logging.getLogger(__name__)
 
 CAP_KEY = "alloy:friction_cap"     # MuJoCo entry kwarg (entries.mujoco_overrides): the cap in m/s2, or None / 0 = off
 CAP_DEFAULT = 20.0                 # m/s2: 4 mu g at mu 0.5 (module docstring)
-ENV = "ALLOY_FRICTION_CAP"         # "0" turns the cap off everywhere (A/B runs)
+ENV = "ALLOY_FRICTION_CAP"         # "0" turns the cap off everywhere (A/B runs; balls in capped entries keep impact-
+                                   # matched gains, so it is not the behaviour before them: native_gains.impact_applies)
 _vec5 = wp.types.vector(length=5, dtype=wp.float32)
 
 
@@ -74,7 +75,8 @@ def launch_cap(d: Any, cap: float) -> None:
     from alloy._vendor.mujoco_warp._src.types import ConstraintType  # noqa: PLC0415
 
     wp.launch(cap_friction_aref, dim=d.naconmax, inputs=[d.nacon, d.contact.dim, d.contact.worldid,
-              d.contact.efc_address, d.efc.type, d.efc.aref, int(ConstraintType.CONTACT_ELLIPTIC), float(cap)])
+              d.contact.efc_address, d.efc.type, d.efc.aref, int(ConstraintType.CONTACT_ELLIPTIC), float(cap)],
+              device=d.efc.aref.device)
 
 
 def capped_make_constraint(inner: Any, cap: float) -> Any:

@@ -492,3 +492,10 @@ def test_2c_refuses_an_mjcf_labelled_body():
     assert IR._not_eligible(b, [SimpleNamespace(decision=SimpleNamespace(entry="mujoco"),
                                                 ranges=SimpleNamespace(body=[0]))]) == ""
 
+for _name in """test_r1_runs_on_mujoco_warp_only test_r1_scene_steps_on_implicitfast test_r1_precision_profile_keeps_rk4
+        test_factory_drops_rk4_under_sleeping test_2c_margin_keeps_a_denser_stack_at_5_ms
+        test_r1_clutter_runs_implicitfast_on_rk4_gains test_factory_drops_rk4_on_contacts_made_once_per_step
+        test_r1_keeps_rk4_up_to_the_count_and_with_a_floored_body
+        test_2c_entry_refuses_the_precision_profile_on_the_engine_path
+        test_2c_stack_takes_its_own_gains_with_every_contact_as_todays""".split():
+    pytest.mark.warp_route("implicitfast + friction cap: MuJoCo Warp only (C route: rk4)")(globals()[_name])

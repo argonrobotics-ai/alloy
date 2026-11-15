@@ -61,10 +61,12 @@ def not_drawn(base: Any) -> list[str]:
 
 def drawable(look: dict, res: str = "2k") -> tuple[dict, list[str]]:
     """(``look`` the full-material camera can draw, what was left out): a texture missing from the local asset cache
-    is dropped (the material keeps its preset colour) and features the camera does not mirror (``tex_tint``,
+    is dropped and the material drawn in its family's flat tone, as ``sim.render()`` draws it (``item_looks``; its
+    preset colour when it has no family), and features the camera does not mirror (``tex_tint``,
     procedural crust / crumb / scratches, decals, imperfection maps, planar mapping) are turned off. Only the contact
     sheet uses this; the variant scenes keep their looks."""
     from alloy.camera.errors import CameraError  # noqa: PLC0415
+    from alloy.camera.item_looks import flat_tone  # noqa: PLC0415
     from alloy.camera.looks.spec import UNSUPPORTED_DETAILS, resolve_spec  # noqa: PLC0415
     from alloy.camera.looks.textures import local_texture_files  # noqa: PLC0415
 
@@ -79,7 +81,11 @@ def drawable(look: dict, res: str = "2k") -> tuple[dict, list[str]]:
                 have[ref] = False
         if ref and not have[ref]:
             spec["texture"] = None
-            dropped.append(f"{key}: {ref} (not in the local asset cache)")
+            tone = flat_tone({**entry, "texture": ref})     # not the white placeholder of textured presets
+            if tone is not None:
+                spec["base_color"] = list(tone)
+            dropped.append(f"{key}: {ref} (not in the local asset cache"
+                           f"{'; a flat colour of its family' if tone is not None else ''})")
         for field, off, on in (("tex_tint", False, bool(eff.get("tex_tint"))),
                                ("detail", None, eff.get("detail") in UNSUPPORTED_DETAILS),
                                ("texture_alpha", False, bool(eff.get("texture_alpha"))),

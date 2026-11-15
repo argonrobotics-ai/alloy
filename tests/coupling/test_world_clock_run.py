@@ -20,6 +20,10 @@ from alloy.testing.coupling_world_clock import scene as _scene
 from alloy.testing.coupling_world_clock import state as _state
 from alloy.testing.coupling_world_clock import tripping as _tripping
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+
 
 @pytest.fixture(scope="module")
 def run() -> Any:
@@ -37,6 +41,7 @@ def run() -> Any:
     sim.close()
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_the_finest_world_resides_from_the_first_period_and_the_books_add_up(run: Any) -> None:
@@ -59,6 +64,7 @@ def test_the_finest_world_resides_from_the_first_period_and_the_books_add_up(run
     assert taken * 1.25 <= shared
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_the_coarse_clock_is_the_unparked_worlds_own_need(run: Any) -> None:
@@ -72,6 +78,7 @@ def test_the_coarse_clock_is_the_unparked_worlds_own_need(run: Any) -> None:
         assert np.all(dt[rest] == sim.dt / 2 ** row["level"]) and np.all(dt[~rest] == sim.dt / 2 ** row["book"]["j_fine"])
 
 
+@WARP_ROUTE
 @pytest.mark.law
 @pytest.mark.timeout(900)
 def test_reads_are_the_fine_slots_and_health_stays_ok(run: Any) -> None:
@@ -89,6 +96,7 @@ def test_reads_are_the_fine_slots_and_health_stays_ok(run: Any) -> None:
     assert not health["invalid_worlds"] and not health.get("degraded_worlds"), health
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(1800)
@@ -110,6 +118,7 @@ def test_the_coarse_worlds_are_a_run_with_that_slot_parked(run: Any) -> None:
         ref.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(1800)
@@ -140,6 +149,7 @@ def test_bad_values_are_build_errors(kw: dict[str, Any]) -> None:
 
 # --- S2b: a re-run ask is an entry ----------------------------------------------------------------------------------
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -191,6 +201,7 @@ def _fine_stepping(sim: Any) -> tuple[Any, list[bool]]:
     return fine.stepper, inside
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -235,6 +246,7 @@ def test_a_sticky_escalation_inside_a_rerun_entrys_period_survives_the_period() 
 REPEAT = "a repeat trip"
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -258,6 +270,7 @@ def test_a_repeat_trip_is_refused_and_the_coarse_floor_rises_as_without_the_opti
         s1.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -287,6 +300,7 @@ def test_an_entrant_runs_no_entry_at_an_own_step_coarser_than_in_the_pack_it_lef
         sim.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)

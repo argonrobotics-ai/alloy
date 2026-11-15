@@ -20,6 +20,9 @@ from alloy.scene.assembler import SceneAssembler, digest_model
 from alloy.scene.noslip_route import NOSLIP_KEY, install_entry_noslip
 from alloy.testing import scene as S
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("the scoped noslip registry of MuJoCo Warp models")
+
 ROD_PASS = {"sag_err": -6e-4, "drop_err": -0.03, "period_err": -0.003, "finite": 1.0, "passed": 1.0}
 
 
@@ -116,6 +119,7 @@ def test_entry_noslip_scopes_the_precision_pairs(monkeypatch):
     assert seen["spec"].pairs == ()
 
 
+@WARP_ROUTE
 @pytest.mark.compile_heavy
 @pytest.mark.timeout(900)
 def test_fast_peg_installs_pair_noslip_and_steps():

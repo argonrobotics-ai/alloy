@@ -37,6 +37,8 @@ print(rec.saved, rec.dropped, ep.length, ep.obs["state"].shape, ep.actions.shape
 
 Four episodes were saved and none dropped. The first has 150 steps of 22 observation values and 3 action values.
 To write files instead, use `HDF5Writer` (`pip install h5py`) or `LeRobotWriter`.
+`HDF5Writer(path, resume=True)` adds to a file an earlier run wrote, and `copy_hdf5(path, writer)` writes a file's
+episodes to another writer, for example a `LeRobotWriter` at the end of a long run.
 
 Now evaluate a policy. `evaluate` runs it for a number of episodes and reports how many ended in success.
 
@@ -60,7 +62,8 @@ interval are in `result.summary()`; with so few episodes the interval is wide, s
 - For a policy without memory, leave the `action[i]` columns out of its input: the state vector ends with the
   previous action, and a single-step behaviour-cloning network that reads it learns to repeat itself.
 - For keyboard teleoperation, build the environment with a `max_steps` long enough for one demonstration
-  (`max_steps=3000` is 30 s).
+  (`max_steps=3000` is 30 s). Only what you approve is saved: Enter saves the running episode, and an attempt that
+  runs into `max_steps` without Enter is dropped.
 - Teleoperation drives the environment's action columns. On a joint-action environment a 7-joint arm is driven
   joint by joint; to drive the hand, build the environment with `alloy.envs.diffik.EEActionSpec` actions (an
   opt-in first version, tested on the CPU).

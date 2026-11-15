@@ -141,12 +141,27 @@ def _make_env(terrain: str, num_envs: int, device: str | None, seed: int, config
 def evaluate(venv: Any, policy: Any, seconds: float = 6.0) -> list[dict[str, Any]]:
     """Roll ``policy`` out under each of ``EVAL_COMMANDS`` (pushes stay as the environment has them) and print one
     JSON line per command: the commanded and the reached base velocity (mean over worlds and over the last
-    three quarters of the rollout), how many worlds fell, how often feet were off the ground and non-foot contacts.
+    three quarters of the rollout), how many worlds fell (an episode that ended before its time limit), how often feet
+    were off the ground and non-foot contacts. A terrain curriculum is held for the evaluation, so every command runs
+    on the levels training left.
 
     Example: ``evaluate(wrap(env, "rsl_rl"), runner.get_inference_policy())``."""
+    env = venv.unwrapped
+    curriculum = getattr(env, "curriculum", None)
+    if curriculum:
+        env.curriculum = False                       # resets between commands must not move the levels
+    try:
+        return _evaluate(venv, env, policy, seconds)
+    finally:
+        if curriculum:
+            env.curriculum = curriculum
+        env.commands.release()
+
+
+def _evaluate(venv: Any, env: Any, policy: Any, seconds: float) -> list[dict[str, Any]]:
     import torch  # noqa: PLC0415
 
-    env, rows = venv.unwrapped, []
+    rows: list[dict[str, Any]] = []
     steps = max(4, int(round(seconds / float(env.sim.dt))))
     for command in EVAL_COMMANDS:
         env.commands.set(command)
@@ -154,9 +169,9 @@ def evaluate(venv: Any, policy: Any, seconds: float = 6.0) -> list[dict[str, Any
         vel, swing, other, fell = [], [], [], torch.zeros(env.num_envs, dtype=torch.bool, device=venv.device)
         for k in range(steps):
             with torch.no_grad():
-                obs, _reward, _dones, _extras = venv.step(policy(obs))
+                obs, _reward, dones, extras = venv.step(policy(obs))
+            fell |= dones.bool() & ~extras["time_outs"].bool()        # ended, and not by the time limit: it fell
             s = env.state
-            fell |= s["steps"] < k + 1                              # the world's episode restarted: it fell
             if k >= steps // 4:
                 vel.append(torch.cat([s["base.lin_vel_b"][:, 0:2], s["base.ang_vel_b"][:, 2:3]], -1))
                 swing.append(1.0 - s["feet.contact"].mean())
@@ -167,7 +182,6 @@ def evaluate(venv: Any, policy: Any, seconds: float = 6.0) -> list[dict[str, Any
                      "feet_off_ground_share": round(float(torch.stack(swing).mean()), 3),
                      "non_foot_contacts": round(float(torch.stack(other).mean()), 4)})
         print(json.dumps(rows[-1]), flush=True)
-    env.commands.release()
     return rows
 
 

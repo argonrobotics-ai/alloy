@@ -7,7 +7,11 @@ They replace Newton's per-step Warp push/pull of its C path (8 launches, 0.86 ms
   each world's MjData takes its row. Same semantics as Newton, once per call (per tick on the fast path).
 - **state in**: MuJoCo C keeps float64 ``qpos`` / ``qvel`` between steps. A Newton state is pushed (Newton's
   ``_update_mjc_data``, float32 -> float64) only into worlds whose ``joint_q`` / ``joint_qd`` differ from what the
-  route last wrote: the first step, a reset, a snapshot restore, a user edit.
+  route last wrote: the first step, a reset, a user edit. A restored snapshot or checkpoint takes its float64 state
+  back instead (``mjc_core_state``), as a restart pass takes the window start (``mjc_core_window``). Pushed worlds
+  also take their own
+  poses of the bodies welded to the world (MuJoCo mocap bodies, one row per world), as every world does after a
+  joint-frame change.
 - **state out**: body_q / body_qd from MuJoCo's FK (float64, cast to Newton's float32), joint_q / joint_qd through
   Newton's ``convert_mj_coords_to_warp_kernel`` (free / ball quaternion order, kinematic joints from the input state).
 - **contacts**: the tick's exported contacts into a Newton ``Contacts`` (shape ids, normal, body-local points, world
@@ -50,6 +54,8 @@ class NewtonViews:
         d = solver.mjw_data
         self.ctrl, self.qfrc, self.xfrc = _host(d.ctrl), _host(d.qfrc_applied), _host(d.xfrc_applied)
         self.qpos, self.qvel = _host(d.qpos), _host(d.qvel)
+        mocap = int(solver.mj_model.nmocap) > 0                # bodies welded to the world: MuJoCo mocap bodies
+        self.mocap_pos, self.mocap_quat = (_host(d.mocap_pos), _host(d.mocap_quat)) if mocap else (None, None)
         self.overflow = _host(d.overflow)
         self.coord_world = joint_coord_world(self.model).numpy() if self.model.joint_coord_count else None
         self.dof_world = joint_dof_world(self.model).numpy() if self.model.joint_dof_count else None
@@ -80,13 +86,35 @@ class NewtonViews:
         return np.flatnonzero(bad)
 
     def push_state(self, datas: list[Any], state: Any, worlds: np.ndarray) -> None:
-        """Newton joint_q / joint_qd -> qpos / qvel of ``worlds`` (Newton's conversion)."""
+        """Newton joint_q / joint_qd -> qpos / qvel of ``worlds`` (Newton's conversion), and their welded bodies'
+        poses (``push_mocap``)."""
         if worlds.size == 0:
             return
         self.solver._update_mjc_data(self.solver.mjw_data, self.model, state)
         for w in worlds.tolist():
             datas[w].qpos[:] = self.qpos[w]
             datas[w].qvel[:] = self.qvel[w]
+        self.push_mocap(datas, worlds)
+
+    def push_mocap(self, datas: list[Any], worlds: np.ndarray) -> None:
+        """Each of ``worlds`` takes its own row of the poses Newton gives the bodies welded to the world (MuJoCo mocap
+        bodies: Newton writes every world's row of the Warp data's ``mocap_pos`` / ``mocap_quat`` from the joint frames
+        in its state push and after a joint-frame change). A new MjData holds the template's pose, world 0's, so
+        without this a body welded at another pose in another world stood at world 0's pose there."""
+        if self.mocap_pos is None:
+            return
+        for w in worlds.tolist():
+            datas[w].mocap_pos[:] = self.mocap_pos[w]
+            datas[w].mocap_quat[:] = self.mocap_quat[w]
+
+    def refresh_mocap(self, datas: list[Any]) -> None:
+        """After a joint-frame change, every world's welded bodies at their new poses. Newton's own C path (the route
+        runs with ``use_mujoco_cpu``) poses world 0's row only, so the route writes every world's from the joint frames
+        (``write_state=False``: the mocap poses alone) and pushes them."""
+        if self.mocap_pos is None:
+            return
+        self.solver._update_mjc_data(self.solver.mjw_data, self.model, write_state=False)
+        self.push_mocap(datas, np.arange(self.nworld))
 
     # ---- out --------------------------------------------------------------------------------------------------------
     def pull(self, datas: list[Any], outs: list[Any], state_out: Any, state_in: Any) -> None:

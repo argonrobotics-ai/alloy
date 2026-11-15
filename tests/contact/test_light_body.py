@@ -18,6 +18,10 @@ from alloy.contact import light_body as LB
 from alloy.scene.builtin_plugins import _mujoco
 from alloy.scene.native_gains import stable_ke
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "a bare ModelBuilder fixture with bodies in the global world, which the C route refuses")
+
 DT = 0.0008333333333    # T12's step
 TAU, DMAX, M_LIGHT, M_HEAVY = 0.0020833333333, 0.99, 0.0127, 5.0
 SOLIMP = f"0.95 {DMAX} 0.001 0.5 2"
@@ -115,6 +119,7 @@ def _stepped(kw: dict, xml: str = XML) -> tuple[dict[str, np.ndarray], dict[str,
     return _rows(_solver(kw, xml), bool(kw.get("use_mujoco_cpu")))
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("cpu", [False, True], ids=["mujoco_warp", "mujoco_c"])
 def test_entry_stiffens_only_light_mjcf_rows(cpu):
     geom, pair = _stepped({"use_mujoco_cpu": True} if cpu else {})
@@ -150,12 +155,14 @@ def test_material_rows_are_not_the_files():
     assert "geom_solref" not in rows and [_short(m, m.pair_geom1[i]) for i in rows["pair_solref"].idx] == ["floor"]
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("cpu", [False, True], ids=["mujoco_warp", "mujoco_c"])
 def test_entry_kwarg_turns_the_rule_off(cpu):
     geom, pair = _stepped({LB.LIGHT_KEY: False, **({"use_mujoco_cpu": True} if cpu else {})})
     assert geom["light_box"][0] == pytest.approx(TAU, rel=1e-6) and pair["floor"][0] == pytest.approx(TAU, rel=1e-6)
 
 
+@WARP_ROUTE
 @pytest.mark.parametrize("cpu", [False, True], ids=["mujoco_warp", "mujoco_c"])
 def test_rk4_gains_flag_takes_the_rk4_cap(cpu):
     """F6 R1: an implicitfast entry on rk4's gains (the factories pass ``GAINS_KEY``) gets rows bitwise equal to the

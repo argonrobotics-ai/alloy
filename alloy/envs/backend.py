@@ -114,6 +114,10 @@ class NumpyBackend:
         """Euclidean norm over ``axis``. Example: ``xp.norm(p - q)``."""
         return np.linalg.norm(x, axis=axis)
 
+    def atan2(self, y: Any, x: Any) -> np.ndarray:
+        """The angle of (x, y), elementwise, in (-pi, pi]. Example: ``xp.atan2(s, c)``."""
+        return np.arctan2(y, x)
+
     def where(self, cond: Any, a: Any, b: Any) -> np.ndarray:
         """``a`` where ``cond`` else ``b``. Example: ``xp.where(done, 0.0, r)``."""
         return np.where(cond, a, b)
@@ -220,6 +224,10 @@ class TorchBackend:
     def norm(self, x: Any, axis: int = -1) -> Any:
         """Euclidean norm over ``axis``. Example: ``xp.norm(p - q)``."""
         return self.torch.linalg.vector_norm(x, dim=axis)
+
+    def atan2(self, y: Any, x: Any) -> Any:
+        """The angle of (x, y), elementwise, in (-pi, pi]. Example: ``xp.atan2(s, c)``."""
+        return self.torch.atan2(y, x)
 
     def where(self, cond: Any, a: Any, b: Any) -> Any:
         """``a`` where ``cond`` else ``b``. Example: ``xp.where(done, 0.0, r)``."""

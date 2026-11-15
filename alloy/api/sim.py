@@ -162,12 +162,15 @@ class Sim:
         return Trajectory(data, meta)
 
     def settle(self, seconds: float) -> Sim:
-        """Run ``seconds`` with no new commands, then make the settled state the start that ``reset()`` returns to
-        (piles, drapes and soft parts start a few mm off rest), also in a scene with ``scene.randomize`` (each world
-        settles from its own draws). Example: ``sim.settle(0.5)``."""
-        self.step(int(round(float(seconds) / self.dt)))
+        """Run ``seconds`` with no new commands and no ``scene.add_push`` pushes, then make the settled state the start
+        that ``reset()`` returns to (piles, drapes and soft parts start a few mm off rest), also in a scene with
+        ``scene.randomize`` (each world settles from its own draws). Example: ``sim.settle(0.5)``."""
+        with _robot_random_push.paused(self):          # a push would be baked into every reset's start
+            self.step(int(round(float(seconds) / self.dt)))
         world_clock_api.evict(self.engine)     # clock_worlds: the settled start is saved from this simulation
         self.engine._initial.save(self.engine.state)
+        for solver in getattr(self.engine, "solvers", ()):  # the CPU route keeps the settled float64 state with it
+            getattr(solver, "save_start", lambda _state: None)(self.engine.state)
         self._io.save_controls()               # reset returns to the targets the settle ran with
         self._settled = True
         self._rebase()
@@ -248,8 +251,7 @@ class Sim:
             self.engine.reset()
             forget_raised(self.engine)             # a reset world may fail, and raise, again
             if self._settled and getattr(self.built, "randomized", None) is not None:
-                # the settled start, with each world's draws (AUDIT-STACK API-1); since TRAIN-FIX 3a the engine's own
-                # restore keeps it too (its redraw no longer re-runs FK from the build pose), so this repeats it
+                # the settled start with each world's draws (the engine's restore keeps it too)
                 self.engine._initial.restore(self.engine.state, None)
                 _robot_random_apply.S.place(self.engine)     # start rows: the restore put the robots back
                 self._rebase()

@@ -5,7 +5,7 @@ fixes. They live here under their own names, with their licences, file headers a
 
 | Directory | Upstream | Pinned commit | Licence |
 |---|---|---|---|
-| `alloy/_vendor/newton` | https://github.com/newton-physics/newton | `25b4603c` (25b4603cfb37dfa250d8b9e1727b39514ab6e8a0) = public release-1.8 `db915e1c` + 12 commits of ours | Apache-2.0 (`newton/LICENSE.md`, third-party notices in `newton/licenses/`) |
+| `alloy/_vendor/newton` | https://github.com/newton-physics/newton | `89bf98d1` (89bf98d10f1db80ccf849d3376f6dcf710af3569) = public v1.8.0 `425db81f` + 12 commits of ours | Apache-2.0 (`newton/LICENSE.md`, third-party notices in `newton/licenses/`) |
 | `alloy/_vendor/mujoco_warp` | https://github.com/google-deepmind/mujoco_warp | `f34c6dd5` (f34c6dd52813852d0f1a2ab6d1f4d21ef1f0829f), release v3.17.0 (Newton release-1.8 needs MuJoCo 3.17: `eq_data` is 12 wide); files unchanged. Alloy patches it at run time (the EPA of the unmerged mujoco_warp#1845 and the ordered route, both listed below) | Apache-2.0 (`mujoco_warp/LICENSE`, `mujoco_warp/AUTHORS`) |
 
 Alloy imports only these copies (`from alloy._vendor import newton`), so installing Alloy never touches a `newton` or
@@ -25,27 +25,31 @@ keys of its own. It is installed only when Warp is 1.18.0 and its function's sou
 `SOURCE_SHA256`; otherwise the build logs a warning and keeps Warp's. `tests/integration/test_nanogrid_lookup.py`
 fails on any other Warp, so a Warp bump re-checks the copy.
 
-## Our Newton commits on release-1.8 `db915e1c`
+## Our Newton commits on v1.8.0 `425db81f`
 
-`25b4603c` is public release-1.8 `db915e1c` (2026-11-09, "Backport the Steel PRs on the 1.8 milestone", #5208; it
-contains v1.8.0rc1 `91fb115d`) plus the 12 commits below, rebased on 2026-11-09 onto public release-1.8 from the
-previous pin `d15a836c` (public `ac7f7830` + 13). The 13th, `5db5889f` (PR #5146, attachment forces in the deterministic VBD
-contact gather), is upstream as `99374901c` and was dropped.
+`89bf98d1` is public v1.8.0 `425db81f` (2026-11-11, "Prepare Newton 1.8.0", #5277, the head of release-1.8) plus the
+12 commits below, rebased on 2026-11-12 onto it from the previous pin `25b4603c` (public release-1.8 `db915e1c` + the
+same 12). Every commit applied unchanged (`git range-diff`: 12 of 12 equal). Between `db915e1c` and `425db81f`
+upstream changed docstrings, moved `NewtonWarning` and `NewtonDeprecationWarning` to the package root (the
+`newton.exceptions` module is gone; Alloy never imported it), sped up `intersect_ray` and the tiled camera's ray
+trace (Alloy uses neither), and added examples. The pin before, `d15a836c` (public `ac7f7830` + 13), carried a 13th
+commit, `5db5889f` (PR #5146, attachment forces in the deterministic VBD contact gather), upstream since as
+`99374901c`.
 
 | Commit | Was | Topic | Why | Upstream |
 |---|---|---|---|---|
-| `1b927539` | `5721809f` | VBD bending degeneracy test scale-free | Hinges with triangles under ~1 mm lost their dihedral bending force | issue #5130, PR #5131 |
-| `1c4c9440` | `00199c60` | Test: hinge with a near-degenerate triangle | Covers the fix above | PR #5131 |
-| `11b06386` | `a30fc1e4` | Test: hinge just above the relative threshold | Covers the fix above | PR #5131 |
-| `762c75c9` | `6a4c1483` | Lumped per-corner Hessian for VBD edge and face soft contacts | Barycentric-squared weights under-stiffened corner contacts | not posted (on hold) |
-| `4e578c41` | `65b7c92e` | Test: lumped corner Hessian in the full-surface contact tests | Covers the fix above | not posted |
-| `28b23602` | `55a6cdd4` | VBD self-contact starts smoothly at the contact distance | A force step at onset made contact chatter | not posted (on hold) |
-| `0017063a` | `47afecd7` | Test: contact tests aligned with the lumped corner Hessian | Covers the two fixes above (the attachment test is upstream's rewrite, #5146) | not posted |
-| `217d9a77` | `4629ac08` | Out-of-plane stiffness of the VBD membrane Hessian | Flat, unstretched cloth converged very slowly out of plane | not posted (on hold) |
-| `948b257c` | `8f3466f9` | Keep the clamped membrane normal stiffness for cloth in contact | The fix above must not soften cloth in contact. Rebased onto upstream's `accumulate_elasticity_force_and_hessian` (an `exact_normal` argument: the solve passes the free-piece test, upstream's attachment setup the clamped value) | not posted (on hold) |
-| `3cfcde2e` | `4c8869b7` | Start pinned VBD pieces from x + h*v (`particle_pinned_piece_start`, default off) | Pinned pieces started from rest positions | not posted (on hold) |
-| `4be4c821` | `4f3b41ef` | Wrap the VBD bending angle difference at pi | Folds resting near +-pi flipped across the atan2 branch | not posted (on hold) |
-| `25b4603c` | `d15a836c` | Couple more than two solvers over an acyclic proxy graph (`SolverCoupledProxy`) | Robot -> soft body -> liquid chains | not posted (on hold) |
+| `0c264156` | `1b927539` | VBD bending degeneracy test scale-free | Hinges with triangles under ~1 mm lost their dihedral bending force | issue #5130, PR #5131 |
+| `79bac9be` | `1c4c9440` | Test: hinge with a near-degenerate triangle | Covers the fix above | PR #5131 |
+| `f3431590` | `11b06386` | Test: hinge just above the relative threshold | Covers the fix above | PR #5131 |
+| `59769ec2` | `762c75c9` | Lumped per-corner Hessian for VBD edge and face soft contacts | Barycentric-squared weights under-stiffened corner contacts | not posted (on hold) |
+| `31790f8e` | `4e578c41` | Test: lumped corner Hessian in the full-surface contact tests | Covers the fix above | not posted |
+| `3e7a6718` | `28b23602` | VBD self-contact starts smoothly at the contact distance | A force step at onset made contact chatter | not posted (on hold) |
+| `5b7d41ef` | `0017063a` | Test: contact tests aligned with the lumped corner Hessian | Covers the two fixes above (the attachment test is upstream's rewrite, #5146) | not posted |
+| `797835d6` | `217d9a77` | Out-of-plane stiffness of the VBD membrane Hessian | Flat, unstretched cloth converged very slowly out of plane | not posted (on hold) |
+| `17b328c3` | `948b257c` | Keep the clamped membrane normal stiffness for cloth in contact | The fix above must not soften cloth in contact. Rebased onto upstream's `accumulate_elasticity_force_and_hessian` (an `exact_normal` argument: the solve passes the free-piece test, upstream's attachment setup the clamped value) | not posted (on hold) |
+| `7be7ddb2` | `3cfcde2e` | Start pinned VBD pieces from x + h*v (`particle_pinned_piece_start`, default off) | Pinned pieces started from rest positions | not posted (on hold) |
+| `b4025c1e` | `4be4c821` | Wrap the VBD bending angle difference at pi | Folds resting near +-pi flipped across the atan2 branch | not posted (on hold) |
+| `89bf98d1` | `25b4603c` | Couple more than two solvers over an acyclic proxy graph (`SolverCoupledProxy`) | Robot -> soft body -> liquid chains | not posted (on hold) |
 
 Each commit's changelog fragment is in Newton's `changelog/` directory at that commit. Upstream posting is on hold by
 user decision (2026-11-07).
@@ -57,7 +61,7 @@ user decision (2026-11-07).
 2. **Module-name strings.** Strings that name a module (`sys.modules` filters, `wp.load_module`, deprecation frames,
    the examples map) are rewritten from a reviewed table in the script. Data namespaces stay as upstream: USD and
    MJCF `newton:` attributes, recording type tags (`newton.geometry.Mesh`), the cache directory and the logger names.
-3. **`__version__`.** It is static (`1.8.0rc1`, `3.17.0`, what pip reports for the pins), because a vendored
+3. **`__version__`.** It is static (`1.8.0`, `3.17.0`, what pip reports for the pins), because a vendored
    package has no distribution metadata.
 4. **Notice line.** Every `.py` file gets one line under its licence header (Apache-2.0 4(b)): "Vendored in Alloy:
    alloy/_vendor/VENDORED.md lists the changes made to upstream, imports included." Vendored line numbers are
@@ -97,8 +101,11 @@ Code is otherwise byte-identical to the pinned commits (item 7's call rewrite as
 
 Alloy's runtime patches stay where they were, in Alloy's own modules: the MuJoCo Warp EPA from
 google-deepmind/mujoco_warp#1845 (`alloy/contact/vendor/mjw_pr1845_*.py`, keyed on the sha256 of the vendored stock
-files), the ordered MuJoCo Warp route (`alloy/precision/mjw_*`) and the coordinate carry
-(`alloy/scene/coordinate_carry.py`). `alloy.build(scene, contact_capacity=n)` without `constraint_rows` swaps
+files), the ordered MuJoCo Warp route (`alloy/precision/mjw_*`), the coordinate carry
+(`alloy/scene/coordinate_carry.py`) and the one-pass free-body guard of the discrete integrator's gyroscopic term
+(`alloy/contact/mjw_free_gyro.py`: it replaces `forward._launch_discrete_free_gyro`; its two replaced functions are
+pinned by source hash, and a change keeps the stock launcher, as `ALLOY_MJW_FREE_GYRO=0` does). `alloy.build(scene,
+contact_capacity=n)` without `constraint_rows` swaps
 `alloy._vendor.mujoco_warp.put_data` for the engine build only (`alloy/api/_capacity.py` `rows_from_contacts`: a
 context manager, restored after a failing build too; it only passes another `njmax` and `njmax_nnz`), never otherwise.
 `alloy._vendor.alias_top_level_names()` is an opt-in alias, so unchanged

@@ -118,8 +118,13 @@ class _Lib:
 
 
 def test_imported_files_fetched_or_reported(tmp_path, monkeypatch):
+    """The imported-library path, the same on every machine: the Hub is turned off, so an object the library
+    lacks (``other``) is left to card validation instead of being fetched from the Hub."""
+    from alloy.assets.hub.source import REPO_ENV
     from alloy.check import fetch
     from alloy.compose import fetch as store
+
+    monkeypatch.setenv(REPO_ENV, "")
 
     card = tmp_path / "imports" / "ycb_gso" / "objects" / "ycb" / "ycb_mug.yaml"
     card.parent.mkdir(parents=True)
@@ -135,3 +140,47 @@ def test_imported_files_fetched_or_reported(tmp_path, monkeypatch):
     monkeypatch.setenv(store.STORE_ENV, str(tmp_path / "store"))
     monkeypatch.setattr(store, "fetch_object", lambda root, name, s: got.append(name) or 1)
     assert fetch.fetch_imported(lib, ["ycb_mug"]) == [] and got == ["ycb_mug"]
+
+
+def test_object_missing_from_library_fetched_from_hub(monkeypatch):
+    """Hub mode (no imported library and no store, as on a fresh install): an object the library lacks is fetched
+    from the Hub, and a failed fetch is one card error naming the Hub's fix and `alloy fetch`. No network: the
+    fetch is a stand-in."""
+    from alloy.assets.hub import lazy
+    from alloy.assets.hub.source import HubError
+    from alloy.check import fetch
+
+    lib = _Lib(None)
+    fetched = []
+    monkeypatch.setattr(lazy, "hub_mode", lambda store=None: True)
+    monkeypatch.setattr(lazy, "ensure", lambda lib, name, repo=None: fetched.append(name))
+    assert fetch.fetch_imported(lib, ["other"]) == [] and fetched == ["other"]
+
+    def offline(lib, name, repo=None):
+        raise HubError("the Hub is not reachable", "check the network connection", field="repo")
+
+    monkeypatch.setattr(lazy, "ensure", offline)
+    (f,) = fetch.fetch_imported(lib, ["other"])
+    assert f.level == "error" and f.objects == ("other",) and "the Hub is not reachable" in f.message
+    assert f.fix.startswith("check the network connection") and "alloy fetch other" in f.fix
+    monkeypatch.setattr(lazy, "hub_mode", lambda store=None: False)
+    assert fetch.fetch_imported(lib, ["other"]) == []
+
+
+def test_one_error_per_object_the_library_lacks():
+    """A failed Hub fetch and the card rules' "unknown object" for one object: the card error stays when it names a
+    close library object, else the Hub's; findings about other objects stay."""
+    from alloy.check.fetch import one_per_object
+
+    hub = Finding("cards", "error", "mug: not on this machine, and the Hub fetch failed: offline", "x",
+                  objects=("mug",))
+    close = Finding("cards", "error", "scene.objects.1.object: unknown object 'mug'", "use one of ['mug_a']",
+                    objects=("mug",), suggestion={"field": "scene.objects.1.object", "replace_with": "mug_a"})
+    bare = Finding("cards", "error", "scene.objects.1.object: unknown object 'mug'", "use one of []",
+                   objects=("mug",))
+    other = Finding("cards", "error", "cube: unknown object 'cube'", "y", objects=("cube",))
+    assert one_per_object([hub], [close, other]) == [close, other]
+    assert one_per_object([hub], [bare, other]) == [hub, other]
+    assert one_per_object([], [bare]) == [bare] and one_per_object([hub], []) == [hub]
+    twice = Finding("cards", "error", "scene.objects.2.object: unknown object 'mug'", "use one of []", objects=("mug",))
+    assert one_per_object([hub], [bare, twice]) == [hub]               # the object placed twice: still one error

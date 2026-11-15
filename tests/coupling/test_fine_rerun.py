@@ -12,6 +12,9 @@ from alloy.coupling.capture_passes import PER_WORLD_REPORT_FIELDS, merge_reports
 from alloy.coupling.fine_rerun import widen_report
 from alloy.coupling.types import CouplingReport
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route("fine re-runs, which the C route does not take (a re-run runs as before there)")
+
 
 def _report(worlds: int, base: float, dt_x: float, **notes) -> CouplingReport:
     row = base + np.arange(worlds, dtype=np.float64)
@@ -99,6 +102,7 @@ def _run(fine: bool, trip_period: int | tuple[int, ...] = 2, periods: int = 5, w
     return out, sim
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -128,6 +132,7 @@ def test_the_fine_pack_rerun_equals_todays_whole_rerun() -> None:
         b.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -172,6 +177,7 @@ def test_a_refused_rerun_is_todays_bit_for_bit() -> None:
         b.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)
@@ -199,6 +205,7 @@ def test_the_band_after_a_fine_rerun_keeps_the_kept_worlds_speeds() -> None:
         b.close()
 
 
+@WARP_ROUTE
 @pytest.mark.slow
 @pytest.mark.law
 @pytest.mark.timeout(2400)

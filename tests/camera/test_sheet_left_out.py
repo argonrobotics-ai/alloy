@@ -7,6 +7,9 @@ empty all the same: a sheet of a table with a towel and a block of water was pix
 table, with nothing reported. Now each such item is named in ``left_out`` (the variant files keep it; ``alloy render``
 of a variant draws it). The rigid tiles are unchanged: the sheet of the scene with the towel and water is the sheet
 of the scene without them, bit for bit, until the sheet draws particles (open: 0.1.x).
+
+A texture that is not on disk is drawn in its family's flat tone, as ``sim.render()`` draws it (S2-026); with every
+texture on disk, and for materials without one, ``drawable`` changes nothing, so those tiles stay as they were.
 """
 from __future__ import annotations
 
@@ -53,3 +56,24 @@ def test_the_contact_sheet_names_the_cloth_and_liquid_it_does_not_draw(tmp_path,
     rigid_left_out, rigid = _sheet(tmp_path, particles=False)
     assert rigid_left_out == []                                    # a rigid scene: nothing left out
     assert np.array_equal(img, rigid)                              # the rigid tiles are unchanged
+
+
+def test_cached_and_untextured_materials_reach_the_sheet_unchanged(tmp_path, monkeypatch):
+    """S2-026's flat tone touches only textures missing from the cache: cached and untextured materials keep
+    their texture and colour, so their tiles are what they were."""
+    import alloy
+    from alloy.scene.variants.looks import scene_look
+    from alloy.scene.variants.sheet import drawable
+    from tests.camera.helpers import fake_texture
+    import alloy.camera.item_looks as IL
+    monkeypatch.setenv("ALLOY_RENDER_ASSETS", str(tmp_path / "cache"))
+    raw = scene_look(alloy.vary(_scene(False), 1, pos=0.0, seed=3)[0])
+    textured = {k: IL._texture(m, k) for k, m in raw["materials"].items() if IL._texture(m, k)[0]}
+    assert textured, raw["materials"]
+    for ref, res in textured.values():
+        fake_texture(tmp_path / "cache", ref, res)
+    sheet, dropped = drawable(raw)
+    assert not [d for d in dropped if "cache" in d], dropped
+    for key, spec in raw["materials"].items():
+        got = sheet["materials"][key]
+        assert got.get("texture") == spec.get("texture") and got.get("base_color") == spec.get("base_color"), key

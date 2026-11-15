@@ -25,6 +25,11 @@ from alloy.envs import EnvError, Task, VectorEnv
 from alloy.envs.placement import lowest_z, rest_on_floor
 from alloy.live.worldops import WorldOps
 
+# On the C route (ALLOY_TEST_CPU_ROUTE=mjc) these tests stay on warp: tests/conftest.py, warp_route.
+WARP_ROUTE = pytest.mark.warp_route(
+    "the per-world clock (clock_worlds), which the C route does not have: it steps as before there")
+pytestmark = WARP_ROUTE
+
 W, SLOTS, SEED = 4, 1, 0
 LIGHT, HEAVY = 500.0, 8000.0
 LIFT = 0.006                       # [m] how far above where it rests rest_on_floor puts world 0's box (all worlds move)

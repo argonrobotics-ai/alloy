@@ -4,6 +4,12 @@
 - ``native="mujoco"``: MJWarp collides the bulk; the layer runs only the precision pipeline and ``contacts()`` is the
   precision stream, which ``MixedContactBinding`` appends inside MJWarp's ``contactfilter`` (D10).
 - ``native="newton"``: a bulk ``CollisionPipeline`` fills ``contacts()``; precision rows are appended after it.
+  ``no_soft``: particles given no soft candidates. The wiring passes the contact-free ones (SPH, MPM: their solvers
+  read no contacts), as the fallback contact buffer already leaves them out. Newton sizes the soft buffer as every
+  particle x shape x world, so one SDF bowl beside 847 water particles a world took
+  22,022 slots at 2 worlds (0 under contacts='mujoco'), and a 16-world scene of 10,642 particles and 579 shapes a
+  world asked for 98.6 M (1.18 GB, out of memory on an L4). The remaining particles keep Newton's candidates, in
+  Newton's order (every shape, its flags applied per thread as before), so their contacts are unchanged.
 
 The precision pipeline uses explicit pairs (each pair once per world), ``publish_capacity=False`` and, when
 ``deterministic``, Newton's sorted contacts plus ``contact_matching="latest"`` (needed for the D22 weights). Its
@@ -143,7 +149,8 @@ class AlloyContactLayer:
     def __init__(self, model: newton.Model, pairs: Sequence[PrecisionPairSpec], *,
                  native: Literal["mujoco", "newton"] = "mujoco", precision_contacts_per_world: int = 256,
                  deterministic: bool = True, sdf_cache_dir: Path | None = None,
-                 hydro_iso_per_world: float | None = None, measure_unsupported: bool = False) -> None:
+                 hydro_iso_per_world: float | None = None, measure_unsupported: bool = False,
+                 no_soft: Sequence[int] | None = None) -> None:
         if native not in ("mujoco", "newton"):
             raise ValueError(f"native must be 'mujoco' or 'newton', got {native!r}")
         _check_native(pairs, native, measure_unsupported)
@@ -151,6 +158,7 @@ class AlloyContactLayer:
         self.deterministic, self.sdf_cache_dir = deterministic, sdf_cache_dir
         self.hydro_iso_per_world = hydro_iso_per_world      # override the iso-voxel estimate (measured value)
         self.device = model.device
+        self.no_soft = np.unique(np.asarray([] if no_soft is None else no_soft, np.int64))
         self.world_pairs = world_shape_pairs(model, self.pairs) if self.pairs else np.zeros((0, 0, 2), np.int32)
         self._binding = None
         self.overflow = wp.zeros(1, dtype=wp.int32, device=self.device)        # merge rows dropped
@@ -250,8 +258,9 @@ class AlloyContactLayer:
         prec_cap = sum(c.rigid_contact_max for _, c, _ in self._precision)
         self._parity = None
         if self.native == "newton":
-            self._bulk = newton.CollisionPipeline(self.model, rigid_contact_max=self._bulk_capacity() + prec_cap,
-                                                  deterministic=self.deterministic, publish_capacity=False)
+            with self._soft_candidates():
+                self._bulk = newton.CollisionPipeline(self.model, rigid_contact_max=self._bulk_capacity() + prec_cap,
+                                                      deterministic=self.deterministic, publish_capacity=False)
             self._parity = ParityRecheck(self.model)          # Warp parity sign on watertight meshes (mesh_sign)
             self._contacts, self._sidecar = sidecar_from_pipeline(AlloyContactSidecar, self._bulk)
         elif len(self._precision) == 1:
@@ -265,6 +274,19 @@ class AlloyContactLayer:
             self._sidecar = AlloyContactSidecar.allocate(self._contacts.rigid_contact_max, device=self.device)
         self.row_stiffness = wp.zeros(self._contacts.rigid_contact_max, dtype=wp.float32, device=self.device)
         self._zero_start = wp.zeros(1, dtype=wp.int32, device=self.device)
+
+    def _soft_candidates(self):
+        """Context: Newton's soft candidate builder without the ``no_soft`` particles (every shape kept), or Newton's
+        own builder when there are none (module docstring)."""
+        import contextlib  # noqa: PLC0415
+
+        if self.no_soft.size == 0:
+            return contextlib.nullcontext()
+        from alloy.coupling.proxy_contacts import _filtered_builder  # noqa: PLC0415 - no contact -> coupling cycle
+
+        ok = np.ones(int(self.model.particle_count or 0), dtype=bool)
+        ok[self.no_soft[self.no_soft < ok.size]] = False
+        return _filtered_builder(ok, np.ones(int(self.model.shape_count or 0), dtype=bool))
 
     def _bulk_capacity(self) -> int:
         probe = newton.CollisionPipeline(self.model, publish_capacity=False)

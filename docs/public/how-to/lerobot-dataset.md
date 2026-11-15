@@ -45,7 +45,8 @@ torch.Size([22]) torch.Size([3])
 The dataset holds 4 episodes of 150 frames at 100 frames per second. Each frame has `observation.state`, `action`,
 `next.reward`, `next.done`, `next.success` and the task text. A camera adds an `observation.images.<name>` video
 (`video=False` stores exact PNG images). To keep an HDF5 file in the robomimic layout too, pass an `HDF5Writer` in the
-same list.
+same list. LeRobot's ACT and Diffusion policy configs want an image or `observation.environment_state`:
+`LeRobotWriter(..., env_state=["cube"])` moves the state columns of the named objects there.
 
 One measured number: behaviour cloning from 1,000 scripted demonstrations on the shipped `PickPlace-v0` task (a gantry
 gripper, state observations) placed the object in 256 of 256 held-out episodes; alloy-engine 0.1.0rc2, one training
@@ -56,7 +57,8 @@ run, one NVIDIA L4, the tester's own trainer (Alloy ships none).
 - Alloy records, replays and evaluates; it trains no policy, and training a LeRobot policy on the dataset or running
   `lerobot-eval` against an Alloy environment needs glue of your own.
 - The dataset is readable only after the writer is closed (`generate` closes it): a recording killed before that
-  leaves a folder LeRobot cannot open. For a long run, record to HDF5.
+  leaves a folder LeRobot cannot open. For a long run, record to HDF5 and convert at the end with
+  `copy_hdf5("demos/lift.hdf5", LeRobotWriter(...))`.
 - On Python 3.11 the `lerobot` extra installs nothing: use Python 3.12, or record to HDF5 there.
 - The control rate must be a whole number of steps per second (`dt=0.01` is 100 per second).
 - Full list: [Keep in mind](../keep-in-mind.md).
