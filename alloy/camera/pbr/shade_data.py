@@ -181,12 +181,13 @@ def _world_emission_estimate(pack) -> float:
 
 def _world_map(pack, device: str):
     """The world: an equirect HDRI (Environment Texture -> Background), or an in-memory image
-    (``static["world"]["image"]``, rows top first, with ``strength`` and ``use_mis``) for scenes built in Python."""
+    (``static["world"]["image"]``, rows top first, with ``strength``, ``use_mis`` and ``rotation``, the 3x3 world ->
+    image direction of a Mapping node) for scenes built in Python."""
     from . import lights as L
     w = pack.static["world"]
     if "image" in w:
         return L.make_world(np.asarray(w["image"], np.float32), strength=float(w.get("strength", 1.0)),
-                            use_mis=bool(w.get("use_mis", True)), device=device)
+                            rotation=w.get("rotation"), use_mis=bool(w.get("use_mis", True)), device=device)
     from .world_nodes import lighting_background, mapping_rotation
     tree = w["tree"]
     env = next((n for n in tree["nodes"] if n["type"] == "ShaderNodeTexEnvironment"), None)

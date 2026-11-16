@@ -146,10 +146,13 @@ def _bound_scene_data(frame, body: np.ndarray, local: np.ndarray, present: np.nd
 
 
 def _camera_background(static: dict):
-    """The plain colour camera rays see (world_nodes.camera_background), None for a plain world or a Python world."""
-    tree = (static.get("world") or {}).get("tree")
+    """The plain colour camera rays see (world_nodes.camera_background, or a Python world's ``camera_color``), None
+    when they see the world itself."""
+    world = static.get("world") or {}
+    tree = world.get("tree")
     if not tree:
-        return None
+        color = world.get("camera_color")
+        return None if color is None else [float(x) for x in color]
     from .world_nodes import camera_background
     bg = camera_background(tree)
     return None if bg is None else [float(x) for x in bg]

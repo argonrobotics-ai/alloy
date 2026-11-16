@@ -91,9 +91,10 @@ _REMEDIES: tuple[tuple[str, str, str], ...] = (
     ("PrecisionError", r"", "a world became INVALID: lower dt (Scene(dt=...)), remove initial overlaps, or build "
                             "with profile='standard' to freeze bad worlds instead of raising"),
     ("NewtonPinError", r"", _INSTALL_FIX),
-    ("CouplingError", r"no dynamic entry", "every object in this scene is static, so nothing steps: add a dynamic "
-                                           "object (to check a static fixture, place a small object on it), or run "
-                                           "plug-ins on it: alloy.build(scene, plugins=[...]) steps them alone"),
+    ("CouplingError", r"no dynamic entry", "nothing in this scene is dynamic (its parts are static or kinematic), "
+                                           "and this engine-layer build needs something to step: build it with "
+                                           "alloy.build(scene), which steps such a scene with no solver (kinematic "
+                                           "parts move with sim.drive and sim.set_pose), or add a dynamic object"),
     ("CouplingError", r"", "too many different solvers touch each other in one scene: split it or make some objects "
                            "static"),
     ("AssemblyError", r"world_count", "pass worlds >= 1"),

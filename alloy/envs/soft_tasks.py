@@ -3,15 +3,19 @@
 
 - ``Pour-v0``: 100 ml of water pours from a spout 25 cm up (``Scene.add_pour``, 100 ml/s); the agent moves a bowl on an
   x / y carriage under the stream and keeps it there. Success: at least 75 % of the water in the bowl.
-- ``ClothFold-v0`` (experimental): fold a 24 cm towel along its diagonal with the Cartesian gripper (cloth
-  self-contact on, so the folded layers rest on each other). Slow: about 8 s a step on an L4 for 4 worlds, 13 s for
-  64, more during the fold (the 30 g fingers on the cloth set 512 force exchanges a step). The scripted demo
+- ``ClothFold-v0`` (experimental): fold a 24 cm towel (19 cells a side) along its diagonal with the Cartesian
+  gripper (cloth self-contact on, so the folded layers rest on each other). Slow: on an L4 at 64 worlds a step takes
+  about 23 s while the gripper moves over the towel and 45 s averaged over an episode (the 30 g fingers on the cloth
+  set 512 force exchanges a step); a fresh kernel cache adds about 12 min before the first step ends. The scripted demo
   (examples/envs/09_cloth_fold.py) presses the fingertips on the towel with a stated 35 N while the fingers close (a
   touch alone gathers nothing) and takes the press off before the lift; the gripper squeezes the pinch with ~32 N
   (``GRIP_SQUEEZE``) and over the turn's second half it aims the held corner at the far corner where that corner is
-  now. On 64 worlds of an L4 the pinch holds in all 64 and the demo folds 25-27 in three runs; worlds the env resets
-  after an INVALID (a towel vertex in the pinch thrown past 20 m/s) count as not folded. ``grasp="attach"`` is an
-  opt-in shortcut, not a friction grasp (``alloy.envs.cloth_attach``; docs/guide/envs.md).
+  now. Over 1,024 worlds (16 runs of 64 on L4s) the demo folds 55 % (51 % still folded 30 steps after its end); worlds
+  the env resets after an INVALID (a towel vertex thrown past 20 m/s, 5.5 %) count as not folded.
+  ``resolution=13`` gives the earlier, coarser towel: 1.5x faster per step on an L4, but the demo folds 38 % on it,
+  since the half being turned over pushes the half lying on the table off its place (its corner springs off at release
+  less often, though: 26 % of worlds against 34 % at 19 cells). ``grasp="attach"`` is an opt-in shortcut, not a
+  friction grasp (``alloy.envs.cloth_attach``; docs/guide/envs.md).
 
 A liquid scene resets one world at a time like any other (SPH's snapshot keeps each world's particles apart);
 ``pour_task`` ends each episode at max_steps (``end_on_success=False``), so success is read at the end. Here the
@@ -100,22 +104,35 @@ def pour_task(camera: bool = False, max_steps: int = 100, start_offset: float = 
 
 GRIP = "gripper"
 TOWEL = (0.24, 0.24)                       # m, square towel
+# Cells a side of the towel's mesh: 1.26 cm cells, under the fabric's bending length (B / w)^(1/3) = 1.57 cm (the
+# card's bending at the towel's 520 g/m2), so the fold's crease forms in the mesh. On 13 cells (1.85 cm) the half being
+# turned over pushed the half lying on the table off its place, and the fold missed the far corner (placed off in
+# 23.9 % of 1,024 demo worlds, 5.3 % at 19 cells; tests/envs/test_cloth_fold_mesh.py has two guards).
+TOWEL_CELLS = 19
 # m of close travel past the fingers' meeting point (gantry_gripper's ``squeeze``): the stopped fingers press the
 # 2-layer towel ridge with ~32 N instead of 2.6 N, so the pinch holds through the fold (gap #2, SC4, 2026-11-08)
 GRIP_SQUEEZE = 0.02
 
 
-def cloth_fold_scene(worlds: int = 1, seed: int = 0, resolution: int = 13, vary: bool = True) -> Any:
-    """A 24 cm square towel (2 mm, 30 g, cloth self-contact on, so folded layers rest on each other) flat on the
-    table, and the Cartesian gripper above its +x +y corner. Example: ``alloy.build(cloth_fold_scene(4), worlds=4)``."""
+def add_towel(scene: Any, resolution: int = TOWEL_CELLS) -> None:
+    """ClothFold-v0's towel: 24 cm square, 2 mm, 30 g, cloth self-contact on (folded layers rest on each other), flat
+    on the ground at the origin; ``resolution`` cells a side."""
+    scene.add_cloth("towel", size=TOWEL, pos=(0.0, 0.0, 0.003), resolution=resolution, mass=0.03, thickness=0.002,
+                    friction=0.8, self_contact=True)
+
+
+def cloth_fold_scene(worlds: int = 1, seed: int = 0, resolution: int = TOWEL_CELLS, vary: bool = True) -> Any:
+    """A 24 cm square towel (2 mm, 30 g, 19 cells a side, cloth self-contact on, so folded layers rest on each other)
+    flat on the table, and the Cartesian gripper above its +x +y corner. ``resolution``: the towel's cells a side (the
+    earlier default, 13, steps faster, and its fold misses the far corner more often). Example:
+    ``alloy.build(cloth_fold_scene(4), worlds=4)``."""
     from alloy.api.scene import Scene  # noqa: PLC0415
 
     from alloy.envs.robots import gantry_gripper  # noqa: PLC0415
 
     scene = Scene(worlds=worlds, dt=0.02)
     scene.add_ground()
-    scene.add_cloth("towel", size=TOWEL, pos=(0.0, 0.0, 0.003), resolution=resolution, mass=0.03, thickness=0.002,
-                    friction=0.8, self_contact=True)
+    add_towel(scene, resolution)
     grip = gantry_gripper(squeeze=GRIP_SQUEEZE)
     scene.add_robot(GRIP, mjcf=grip, pos=(TOWEL[0] / 2 - 0.01, TOWEL[1] / 2 - 0.01, 0.2))
     return maybe_vary(scene, vary, seed)

@@ -136,7 +136,7 @@ def swap(spec: dict, rng, lib: CardLibrary | None = None) -> tuple[str, dict] | 
 
 def look_textures(lib: CardLibrary | None = None) -> dict[str, str]:
     """Texture set -> resolution of every CC0 set that a WP20 preset or a library look names and the pool does not
-    hold (e.g. ``polyhaven:american_walnut_veneer`` of the ``wood_walnut_oiled`` preset), so that a full ``fetch``
+    hold (e.g. ``polyhaven:coated_pine`` of the ``wood_pine`` library look), so that a full ``fetch``
     leaves every default look textured."""
     from alloy.looks.resolve import KINDS
     from alloy.render.blender.presets import DEFAULTS, PRESETS

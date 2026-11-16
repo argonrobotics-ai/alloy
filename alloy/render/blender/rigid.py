@@ -29,6 +29,7 @@ from materials import MaterialLibrary
 log = logging.getLogger(__name__)
 SMOOTH_ANGLE_DEG = 30.0
 BEVEL_TYPES = ("box", "cylinder", "cone", "mesh")
+VISUAL = "/visual"  # label suffix of the display mesh the scene adds beside an item's collision hulls
 
 
 class ShapePoser:
@@ -75,7 +76,12 @@ class RigidSet:
         self._build()
 
     def labels(self, shape: dict) -> list[str]:
-        return [shape.get("label", ""), self.body_labels.get(int(shape.get("body", -1)), "")]
+        """The labels look rules match a shape on: its own and its body's, and for the ``<item>/visual`` mesh drawn in
+        place of an item's collision hulls also ``<item>`` (as the full-material camera does), so a rule on a static
+        item, which has no body label, reaches its drawn shape."""
+        label = shape.get("label", "")
+        out = [label, self.body_labels.get(int(shape.get("body", -1)), "")]
+        return out + [label[: -len(VISUAL)]] if label.endswith(VISUAL) else out
 
     def _build(self) -> None:
         heroes: dict[int, bpy.types.Object] = {}

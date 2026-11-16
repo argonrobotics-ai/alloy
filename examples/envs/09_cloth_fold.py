@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """ClothFold-v0 (experimental): fold a towel along its diagonal with the Cartesian gripper (scripted policy).
 
-The pinch holds the 2 mm towel through the fold in every world; about 40 % of the corners end within 3 cm of their
-target, so expect partial folds (JSON).
+The pinch holds the 2 mm towel through the fold in nearly every world; about 55 % of the corners end within 3 cm of
+their target, so expect partial folds (JSON). Its "misses" count the rest: "placed_off" (the held corner over 3 cm from
+the far corner as the fingers begin to open), "release" (within 3 cm, but the fold did not hold once they opened) and
+"reset" (worlds the env reset after an INVALID).
 
 Lower the fingers onto the towel 1.2 cm in from its +x +y corner and close them. Lift as soon as they stop closing
 (on the cloth they gather, or shut), turn the held point half a circle about the fold line (the other diagonal) onto
@@ -19,21 +21,23 @@ beyond the gantry's 4.5 N weight): its target follows the palm press / kp below 
 value wherever the palm is. Two steps before the lift the press is taken off, and at all other times the z target
 never goes below the fingertips' contact height (no wind-up). A touch alone slides over flat cloth without
 gathering it (0 of 64 folded); with the press the fingers gather a ridge and stop on it.
-64 worlds on an L4 (GPU runs differ run to run): folded 25, 27 and 27 in
-three runs (and 12, 14 of 32 in two 32-world groups; the towel never slipped out); before the corner aim, 15-25 of 64
-in eight runs; before the squeeze and the drift target, 11-16 in three. The misses: the stiff towel is dragged along
-by its lifted half (placed off, 15-18 of 64) or springs off the target as the fingers open (14-19). A world the
-engine marks INVALID (a towel vertex in the pinch thrown past 20 m/s, 3-5 per run) is reset by the env and counts as
-not folded.
-Slow, use a GPU: on an L4 a step takes about 8 s for 4 worlds and 13 s for 64 (more during the fold), since the
-30 g fingers on the cloth set 512 force exchanges per 20 ms step (``alloy.estimate``); a fresh kernel cache adds about
-10 min at the first step. A whole fold (142 steps) takes about 35 min for 4 worlds, an hour for 64.
+1,024 worlds (16 runs of 64 on L4s; GPU runs differ run to run, by about 6 points a run): folded 55 % at the
+script's end, 51 % 30 steps later. The misses: the corner springs off the target as the fingers open (34 %), the
+towel is dragged off its place by its lifted half (placed off, 5 %), and a world the engine marks INVALID (a towel
+vertex thrown past 20 m/s, 5.5 %) is reset by the env and counts as not folded. On the earlier 13-cell towel
+(``make("ClothFold-v0", resolution=13)``) 1,024 worlds on the same L4s folded 38 %: placed off 24 %, at release 26 %,
+INVALID 12 % (before that, at 13 cells and 64 worlds a run: 25-27 in three runs with the corner aim, 15-25 in eight
+before it, 11-16 in three before the squeeze and the drift target).
+Slow, use a GPU: on an L4 a step of 64 worlds takes about 23 s while the gripper moves over the towel and 45 s
+averaged over the fold, since the 30 g fingers on the cloth set 512 force exchanges per 20 ms step
+(``alloy.estimate``); a fresh kernel cache adds about 12 min at the first step. A whole fold (142 steps) took 24 min
+for 4 worlds and about 1 h 40 min for 64.
 Run: python examples/envs/09_cloth_fold.py [num_envs] [press_N] [grasp]   (the whole fold; the numbers above: 64 35)
 grasp "attach" holds the pinched towel to the fingers until they open (``make("ClothFold-v0", grasp="attach")``): a
 shortcut as cloth benchmarks grasp, not a friction grasp (``alloy.envs.cloth_attach``); the default is "friction".
 With no arguments it runs one world through the pinch and the lift only (QUICK_FOLD_STEPS of the turn) and prints
-whether the corner rose 5 cm (it did by turn step 8 in all 64 worlds of the runs above): about 64 steps, roughly
-10 min on an L4 with a warm kernel cache (one world steps about as fast as four: 7.6 s a step before the pinch).
+whether the corner rose 5 cm (it did by the 11th turn step in all 1,015 worlds of the runs above not reset by then):
+about 64 steps, 21 min on a fresh L4, 12 of them compiling.
 """
 import json
 import sys
@@ -113,10 +117,16 @@ tz, q = xp.to_numpy(s["gripper/z.q"]), xp.to_numpy(s["gripper/close.q"])
 fastest = np.zeros(NUM_ENVS)                          # the fingers' fastest close step in this pinch
 pinch_steps, gap_at_lift, peak = np.zeros(NUM_ENVS, int), np.full(NUM_ENVS, np.nan), np.zeros(NUM_ENVS)
 held = a0.copy()                                      # the towel point between the fingers, taken at the lift
+reset = np.zeros(NUM_ENVS, bool)                      # worlds the env reset after an INVALID (count as not folded)
+gap_at_release = np.full(NUM_ENVS, np.nan)            # corner a to corner b (xy) after the first release step
 for _ in range(sum(STEPS.values())):                  # 142 steps, under the task's 150
     obs, reward, terminated, truncated, info = env.step(xp.asarray(action(s, phase, since, tz, held)))
     s = env.state
     tz, q_new = xp.to_numpy(info["targets"])[:, 2], xp.to_numpy(s["gripper/close.q"])
+    reset |= xp.to_numpy(info["invalid"]).astype(bool)
+    first_release = (phase == RELEASE) & (since == 0)
+    gap_at_release[first_release] = np.linalg.norm(
+        (xp.to_numpy(corner(s, 1.0)) - xp.to_numpy(corner(s, -1.0)))[first_release, :2], axis=1)
     fastest = np.where(phase == PINCH, np.maximum(fastest, q_new - q), 0.0)
     end = advance(phase, since, q_new, q_new - q, fastest)
     lift = end & (phase == PINCH)
@@ -127,8 +137,15 @@ for _ in range(sum(STEPS.values())):                  # 142 steps, under the tas
     if QUICK and ((phase > FOLD) | ((phase == FOLD) & (since >= QUICK_FOLD_STEPS))).all():
         break
 gap, lifted = xp.to_numpy(info["terms"]["corner_gap"]), np.isfinite(gap_at_lift)
+folded = xp.to_numpy(info["success"]).astype(bool) & ~reset
+missed = ~folded & ~reset
+# a miss: the held corner was over 3 cm from the far corner as the fingers began to open (placed off), or within 3 cm
+# and the fold did not hold once they opened (release)
+off = missed & ~(gap_at_release < 0.03)
+misses = {"placed_off": int(off.sum()), "release": int((missed & ~off).sum()), "reset": int(reset.sum())}
 print(json.dumps({"worlds": NUM_ENVS, "press_N": PRESS_N, "grasp": GRASP, "quick": QUICK,
-                  "folded": None if QUICK else float(xp.to_numpy(info["success"]).mean()),
+                  "folded": None if QUICK else float(folded.mean()),
+                  "misses": None if QUICK else misses,
                   "mean_corner_gap_m": None if QUICK else round(float(gap.mean()), 3),   # quick: mid-turn, no result
                   "lifted_5cm": float((peak > 0.05).mean()),
                   "mean_pinch_steps": round(float(pinch_steps.mean()), 1),

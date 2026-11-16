@@ -20,7 +20,7 @@ from alloy.core.registry import SolverCapability, registered_routes, solver
 from alloy.parallel.types import PackSpec
 from alloy.route.router import Router
 from alloy.route.types import Route, SceneContext
-from alloy.scene.inertia import restore_authored_inertia
+from alloy.scene.inertia import floor_kinematic_inertia, mujoco_bodies, restore_authored_inertia
 from alloy.scene import fast_profile as FP, fixed_pairs as FIX, integrator_route as IR, ortho_membrane as OMB
 from alloy.scene import mjcf_options as MO, template as tp, vbd_contact as VC
 from alloy.scene.builtin_plugins import register_builtin_solvers
@@ -83,8 +83,9 @@ class SceneAssembler:
         main.replicate(tmpl.builder, copy_count=worlds, spacing=(0.0, 0.0, 0.0))
         if main.particle_count or any(t.decision.route == Route.ROD_VBD for t in tmpl.objects):
             OMB.colour(main)   # VBD needs colours (finalize leaves particle_colors unset); woven triangles count too
+        floor_kinematic_inertia(main)          # a driven body's inertia does not act: no Newton correction
         model = main.finalize(device=device)
-        restore_authored_inertia(main, model)
+        restore_authored_inertia(main, model, mujoco_bodies(tmpl.objects, tcounts["body"], worlds, model.body_count))
         log.info("assembled %d objects x %d worlds on %s: %d bodies, %d shapes, %d particles", len(plan.objects),
                  worlds, device, model.body_count, model.shape_count, model.particle_count)
         return finish_scene(self, plan, tmpl, model, tcounts, worlds, world_id_offset, capacities, pairs, world_ids)

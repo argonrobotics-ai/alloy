@@ -3,9 +3,11 @@
 
 Every drawn shape of world 0 (and the shared ones; ``from_newton.drawn_shapes``) becomes one mesh in its body's
 frame, with smooth corner normals (30 degree auto-smooth) and a look material: the look's ``assign`` rules (regex on
-the shape and body labels, first match wins) and ``materials`` entries, else a matte plastic of the shape's colour.
-Lights come from the look's ``lights`` and ``world`` (HDRI from the local asset cache, or a studio gradient), else
-from a :class:`~alloy.camera.scene.Lighting`. Worlds 1..N-1 reuse world 0's meshes on their own bodies.
+the shape and body labels, first match wins; the ``<item>/visual`` mesh drawn in place of an item's collision hulls
+is matched on ``<item>`` too) and ``materials`` entries, else a matte plastic of the shape's colour.
+Lights come from the look's ``lights`` and ``world`` (``look_world``: HDRI from the local asset cache or a studio
+gradient, turned and with the camera background the look names), else from a :class:`~alloy.camera.scene.Lighting`.
+Worlds 1..N-1 reuse world 0's meshes on their own bodies.
 
 Example::
 
@@ -15,6 +17,7 @@ Example::
 from __future__ import annotations
 
 import json
+import logging
 import math
 from pathlib import Path
 
@@ -23,11 +26,15 @@ import numpy as np
 from .card_looks import assigned, fallback_rules
 from .errors import CameraError
 from .from_newton import _model_colors, _shape_mesh, default_rgb, drawn_shapes, palette_index
+from .look_world import look_world
 from .pbr.pack_io import Frame, Mesh, Pack
 from .scene import Lighting, quat_to_matrix
 from .smooth import corner_normals
 
 DEFAULT_PRESET = "plastic_matte"
+VISUAL = "/visual"  # label suffix of the display mesh the scene adds beside an item's collision hulls
+log = logging.getLogger(__name__)
+_WARNED: set[str] = set()  # items already warned about by _warn_hull_only_rules, so each warning prints once
 
 
 def _xf_matrix(xf) -> np.ndarray:
@@ -100,15 +107,17 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
     flags, ty = model.shape_flags.numpy(), model.shape_type.numpy()
     labels, blabels = _labels(model)
     body = model.shape_body.numpy()
-    names, specs, fb = [], {}, None
+    names, specs, fb, ruled = [], {}, None, set()
     for s in shapes:
         bl = blabels[body[s]] if body[s] >= 0 and body[s] < len(blabels) else ""
-        name = assigned(look, [labels[s], bl])
+        cand = _rule_labels(labels[s], bl)
+        name = assigned(look, cand)
         if name is not None:
             specs.setdefault(name, look.get("materials", {}).get(name, name))
             names.append(name)
+            ruled.add(s)
             continue
-        name = assigned(items, [labels[s], bl]) if items else None
+        name = assigned(items, cand) if items else None
         if name is not None:
             specs.setdefault(name, items["materials"][name])
             names.append(name)
@@ -116,7 +125,7 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
         if fb is None:  # the scene's look does not cover this shape: its card's library look, if any
             from .item_looks import textures_on_disk  # a texture not on disk: its family's flat tone
             fb = textures_on_disk(fallback_rules([labels[i] for i in shapes] + list(blabels)))
-        name = assigned(fb, [labels[s], bl]) if fb else None
+        name = assigned(fb, cand) if fb else None
         if name is not None:
             specs.setdefault(name, fb["materials"][name])
         else:
@@ -124,11 +133,47 @@ def _materials(model, shapes: list[int], look: dict, items: dict | None = None) 
             name = f"shape_{'%02x%02x%02x' % tuple(int(round(255 * c)) for c in rgb)}"
             specs.setdefault(name, {"preset": DEFAULT_PRESET, "base_color": list(rgb)})
         names.append(name)
+    _warn_hull_only_rules(model, look, [s for s in shapes if s not in ruled], labels)
     mats, tex = {}, {}
     for name, spec in specs.items():
         mats[name] = material_tree(name, spec)
         tex.update(mats[name].pop("textures", {}))
     return names, mats, tex
+
+
+def _rule_labels(label: str, body_label: str) -> list[str]:
+    """The labels a look rule is matched against: the shape's and its body's, and for the ``<item>/visual`` mesh drawn
+    in place of an item's collision hulls (a decomposed or a large mesh) also ``<item>``, so a rule on the item colours
+    it even where the item has no body label (a static item)."""
+    if label.endswith(VISUAL):
+        return [label, body_label, label[: -len(VISUAL)]]
+    return [label, body_label]
+
+
+def _warn_hull_only_rules(model, look: dict, unruled: list[int], labels: list[str]) -> None:
+    """Warn once per item when its drawn ``<item>/visual`` shape got no material from the look while a look rule
+    matches one of the item's collision hulls (``<item>/hull_<k>``), which the camera does not draw."""
+    if not look.get("assign"):
+        return
+    items = {labels[s][: -len(VISUAL)]: labels[s] for s in unruled if labels[s].endswith(VISUAL)}
+    items = {k: v for k, v in items.items() if k not in _WARNED}
+    if not items:
+        return
+    world = model.shape_world.numpy()
+    for h in np.flatnonzero(~drawn_shapes(model) & ((world == 0) | (world == -1))):  # world 0's hidden shapes
+        lb = labels[h]
+        item = lb if lb in items else lb.rsplit("/", 1)[0]  # a large mesh's hull is <item>, decomposed <item>/hull_<k>
+        if item not in items:
+            continue
+        name = assigned(look, [lb])
+        if name is None:
+            continue
+        _WARNED.add(item)
+        log.warning("look: %r gets no look material, but the rule for %r matches its collision hull %r, which the "
+                    "camera does not draw; match the item name %r instead (the drawn shape takes the item's rules)",
+                    items.pop(item), name, lb, item)
+        if not items:
+            return
 
 
 def _labels(model) -> tuple[list[str], list[str]]:
@@ -174,27 +219,11 @@ def _lighting_lights(lighting: Lighting) -> list[dict]:
     return out
 
 
-def studio_sky(height: int = 64, width: int = 128) -> np.ndarray:
-    """Alloy's studio background as an equirect image (rows top first): dark floor, grey horizon, bright top
-    (colour ramp 0.35 -> 0.03, 0.55 -> 0.25, 1.0 -> 1.0 over 0.5 z + 0.5), as the Blender build's default world."""
-    z = np.cos(np.pi * (np.arange(height) + 0.5) / height)  # row 0 = straight up
-    x = 0.5 * z + 0.5
-    v = np.interp(x, [0.35, 0.55, 1.0], [0.03, 0.25, 1.0])
-    return np.repeat(np.repeat(v[:, None, None], width, axis=1), 3, axis=2).astype(np.float32)
-
-
 def _world(look: dict, lighting: Lighting | None) -> dict:
-    """The pack world: the look's HDRI (local asset cache), the studio gradient, or the Lighting's constant sky."""
-    cfg = look.get("world") or {}
-    if cfg.get("hdri"):
-        from alloy.render.blender.assets import AssetCache
-        from .pbr.lights import load_hdr
-        path = AssetCache().hdri(cfg["hdri"], cfg.get("res", "4k"))
-        if path is None:
-            raise CameraError(f"HDRI {cfg['hdri']!r} is not available", "check the reference or the network")
-        return {"image": load_hdr(str(path)), "strength": float(cfg.get("strength", 1.0)), "use_mis": True}
+    """The pack world: a look's world section (``look_world``: its HDRI or the studio gradient, turn and camera
+    background), else the Lighting's constant sky."""
     if look:
-        return {"image": studio_sky(), "strength": float(cfg.get("strength", 1.0)), "use_mis": True}
+        return look_world(look)
     lt = lighting or Lighting.studio()
     c = np.asarray(lt.world_color, np.float32) * np.float32(lt.world_strength)
     return {"image": np.tile(c, (8, 16, 1)), "strength": 1.0, "use_mis": False,
@@ -247,6 +276,7 @@ def pack_from_model(model, look=None, lighting: Lighting | None = None, items: d
     item_looks). ``deform``: a :class:`~alloy.camera.deform.DeformLayout`, whose per-world meshes come last, then
     those of ``liquid`` (a :class:`~alloy.camera.liquid_scene.LiquidLayout`: capacity placeholders, filled live)."""
     look = _load_look(look)
+    world = _world(look, lighting)
     shapes = _template_shapes(model)
     if not shapes:
         raise CameraError("the model has no visible shapes in world 0", "add shapes before creating the camera")
@@ -268,7 +298,7 @@ def pack_from_model(model, look=None, lighting: Lighting | None = None, items: d
         from .liquid_scene import liquid_pack_meshes
         binding = _add_dynamic(liquid_pack_meshes(liquid), meshes, mats, tex, binding)
     lights = _look_lights(look) if look else _lighting_lights(lighting or Lighting.studio())
-    static = {"pack_version": 2, "frames": [0], "settings": _settings(look), "world": _world(look, lighting),
+    static = {"pack_version": 2, "frames": [0], "settings": _settings(look), "world": world,
               "materials": mats, "materials_used_by_meshes": sorted({m.meta["materials"][0] for m in meshes}),
               "textures": tex}
     frame = Frame(0, _default_camera([m for m in meshes if m.meta.get("kind") != "liquid"]), lights, meshes)

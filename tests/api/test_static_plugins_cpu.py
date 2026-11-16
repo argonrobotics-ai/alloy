@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-"""A scene whose only dynamics are plug-ins builds and steps (WP13's combination sweep, F6; CPU).
+"""A scene whose only dynamics are plug-ins builds and steps (WP13's combination sweep, F6; CPU), as a static one does.
 
 A surface film on a static plate failed with "scene has no dynamic entry to step" and needed a dummy free body. Now
 the plug-ins step alone, on the rigid step a dummy would get: the film flows exactly as with the dummy (bit for bit).
+A static plate alone builds too (``tests/api/test_posed_only_scene.py`` has static and kinematic parts).
 """
 
 from __future__ import annotations
@@ -44,9 +45,12 @@ def test_film_alone_on_a_static_plate_flows_as_with_a_dummy_body():
     sim.close()
 
 
-def test_a_static_scene_without_plugins_says_how_to_step():
+def test_a_static_scene_without_plugins_builds_too():
     scene = alloy.Scene(dt=0.01)
     scene.add_box("plate", size=(0.2, 0.05, 0.02), pos=(0, 0, 0.5), static=True)
-    with pytest.raises(alloy.BuildError) as err:
-        alloy.build(scene, device="cpu")
-    assert "dynamic object" in err.value.fix and "plugins=" in err.value.fix
+    sim = alloy.build(scene, device="cpu")          # was a BuildError: "scene has no dynamic entry to step"
+    try:
+        sim.step(1)
+        assert sim.engine.parts.stepper.report().notes["stepper"].startswith("static")
+    finally:
+        sim.close()

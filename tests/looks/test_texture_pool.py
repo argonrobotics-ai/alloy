@@ -46,6 +46,19 @@ def test_library_pool_has_every_family_with_6_to_10_cc0_textures(lib):
         assert "albedo" not in e.spec
 
 
+def test_every_texture_a_preset_names_is_in_the_pool_under_the_presets_family(lib):
+    """A preset's texture is a pool set, so ``--fetch-textures --family <f>`` brings it and variants can swap it
+    (american_walnut_veneer of wood_walnut_oiled was outside the pool until 0.1.6)."""
+    from alloy.render.blender.presets import PRESETS
+    by_tex = {e.texture: e for e in pool.entries(lib)}
+    named = {k: v["texture"] for k, v in PRESETS.items() if v.get("texture")}
+    assert "polyhaven:american_walnut_veneer" in named.values()
+    for preset, tex in named.items():
+        assert tex in by_tex, (preset, tex)
+        assert by_tex[tex].family == pool.PRESET_FAMILY.get(preset, by_tex[tex].family), (preset, tex)
+    assert not set(named.values()) & set(pool.look_textures(lib))
+
+
 def test_library_pool_looks_render_in_the_path_tracer(lib):
     """Every pool look builds a camera material the path tracer accepts (no subsurface, decal, tint, ...)."""
     from alloy.camera.looks import material_tree
@@ -258,8 +271,8 @@ def test_a_1k_only_cache_renders_a_full_quality_look_with_no_res(tmp_path, monke
     with pytest.raises(CameraError) as err:
         textures.local_texture_files("polyhaven:oak_veneer_01", "2k")
     assert "python -m alloy.looks --fetch-textures --family wood" in err.value.fix and "AssetCache" not in err.value.fix
-    with pytest.raises(CameraError) as err:                 # a preset's set outside the pool: the full fetch has it
-        textures.local_texture_files("polyhaven:american_walnut_veneer", "2k")
+    with pytest.raises(CameraError) as err:                 # a library look's set outside the pool: the full fetch has it
+        textures.local_texture_files("polyhaven:coated_pine", "2k")
     assert err.value.fix.startswith("fetch it with python -m alloy.looks --fetch-textures, or")
     with pytest.raises(CameraError) as err:                 # no fetch brings it: say what the fetch takes
         textures.local_texture_files("polyhaven:not_in_the_pool", "2k")

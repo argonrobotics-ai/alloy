@@ -143,7 +143,8 @@ def _pack_meshes(static: dict, objects: list[TexturedMesh]) -> list:
 
 def _studio(points: np.ndarray, lighting: Lighting | None) -> tuple[dict, list[dict]]:
     """(world, lights): a bright gradient sky and two soft area lights sized to the scene, or ``lighting``'s suns."""
-    from .model_pack import _lighting_lights, _look_lights, _world, studio_sky
+    from .look_world import studio_sky
+    from .model_pack import _lighting_lights, _look_lights, _world
     if lighting is not None:
         return _world({}, lighting), _lighting_lights(lighting)
     sky = studio_sky()

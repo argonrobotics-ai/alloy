@@ -147,11 +147,13 @@ def run_scene(built: Any, index: ObjectIndex, opts: RunOptions, probe: ContactPr
 
 
 def _run(built: Any, index: ObjectIndex, opts: RunOptions, probe: ContactProbe | None, **overrides: Any) -> RunResult:
+    from alloy.api._static import stepper_for  # noqa: PLC0415
     from alloy.integration.wiring import build_simulation  # noqa: PLC0415
 
     res = RunResult(control_dt=float(built.control_dt), seconds_asked=float(opts.seconds))
-    try:
-        sim = build_simulation(built, opts.profile, seed=opts.seed, **opts.overrides(), **overrides)
+    try:                    # nothing dynamic (posed static and kinematic parts): stepped as alloy.build steps it
+        sim = build_simulation(built, opts.profile, seed=opts.seed, stepper=stepper_for(built), **opts.overrides(),
+                               **overrides)
     except Exception as exc:  # noqa: BLE001 - a simulation that cannot be built (out of memory) is a finding
         _stopped(res, exc, 0)
         return res

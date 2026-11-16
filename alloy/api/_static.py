@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-"""A scene whose only dynamics are plug-ins: a surface film on a static plate, a plug-in solver beside static shapes.
+"""A scene with nothing dynamic: static and kinematic parts only (posed parts of a recorded take, drawn frame by
+frame), a surface film on a static plate, a plug-in solver beside static shapes.
 
 The engine steps its dynamic entries (rigid, cloth, liquid, ...); with none it refuses to build ("scene has no
-dynamic entry to step"), so a film on a static plate needed a dummy free body (WP13's combination sweep, F6). Here such
-a scene steps with ``StaticStepper``: each exchange copies the state (static shapes have none; kinematic bodies hold
-unless driven), and the plug-ins that wrap the stepper (``alloy.plugins.host.PluginHost``) do the work. The exchange
-is the rigid step a dummy body would get, so the plug-ins see the same clock as with the dummy.
+dynamic entry to step"), so such a scene needed a dummy free body (WP13's combination sweep, F6; a clip redraw's ball
+out of frame). Here it steps with ``StaticStepper``: each exchange copies the state (static shapes have none;
+kinematic bodies hold where they are), drives write their kinematic bodies' poses after each step as in any scene
+(``alloy.api._drive``), ``sim.set_pose`` writes both states, and plug-ins that wrap the stepper
+(``alloy.plugins.host.PluginHost``) do their work. The exchange is the rigid step a dummy body would get, so plug-ins
+and drives see the same clock as with the dummy.
 """
 
 from __future__ import annotations
@@ -39,7 +42,7 @@ class StaticStepper:
         from alloy.coupling.types import CouplingReport  # noqa: PLC0415
 
         rep = CouplingReport.quiet(self.dt_x, {NAME: 1}, self.worlds)
-        rep.notes.update({"stepper": "static (plug-ins only)"})
+        rep.notes.update({"stepper": "static (nothing dynamic: posed parts, plug-ins)"})
         return rep
 
     def state_arrays(self) -> Mapping[str, Any]:

@@ -106,14 +106,24 @@ starts with no `sim.apply_wrench` load (the other worlds keep theirs), and a res
 `sim.drive`, as `sim.reset()` does; a drive keeps running through a reset of some worlds.
 
 `ClothFold-v0` has two grasps, and results depend on which one you use:
-- `grasp="friction"`, the default: the fingers hold the towel by friction alone, as a real gripper does. The
-  scripted demo folds 25-27 of 64 worlds in three runs on one L4. A friction pinch on cloth creeps slowly under load
-  and lets go before its friction limit (`docs/known_gaps/cloth-robot-grasp-carry.md`).
+- `grasp="friction"`, the default: the fingers hold the towel by friction alone, as a real gripper does. Over 1,024
+  worlds (16 runs of 64 on L4s) the scripted demo folds 55 % of them (51 % are still folded 30 steps after the
+  script ends); most misses are the corner springing off as the fingers open (34 %). A friction pinch on cloth creeps
+  slowly under load and lets go before its friction limit (`docs/known_gaps/cloth-robot-grasp-carry.md`).
 - `make("ClothFold-v0", grasp="attach")`, opt-in: a shortcut, not a friction grasp. While the fingers are closed on
   the towel, the towel between them is held to a finger until they open or the world resets, as cloth benchmarks grasp
   (`alloy.envs.cloth_attach`). It is one-way: the gripper does not feel the towel's weight. The same scripted demo
-  folds 37 of 64 worlds in this mode (one run on one L4). Compare a result in this mode only with other attach
-  results.
+  folded 37 of 64 worlds in this mode on the earlier 13-cell towel (one run on one L4). Compare a result in this mode
+  only with other attach results.
+
+The towel has 19 cells a side (1.26 cm cells, under the 1.57 cm its fabric bends over). Its cost on one L4, 64
+worlds, both sizes on the same machines: 45 s per step averaged over an episode, against 29 s for the earlier 13-cell
+towel (1.5x on an L4; 23 s and 14 s while the gripper moves over the towel). A whole 142-step fold of 64 worlds takes
+about 1 h 40 min (an hour at 13 cells). On a fresh kernel cache, building the env and its first step take about 12
+min at either size (30 s once the cache is warm). `make("ClothFold-v0", resolution=13)` gives the 13-cell towel. It
+is faster, but on it the half being turned over pushes the half lying on the table off its place, and the demo folds
+38 % (placed off in 24 % of worlds, against 5 % at 19 cells). Not every miss falls with the finer mesh: at 19 cells
+the corner springs off as the fingers open in 34 % of worlds, against 26 % at 13 cells.
 
 ## Your own task
 

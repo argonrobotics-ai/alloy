@@ -22,22 +22,23 @@ _FIX = ("change the setting the message names: heat via scene.set_heat / set_hea
 
 def build_engine(built: Any, profile: str, *, seed: int, plugins: Sequence[Any] = (), **overrides: Any) -> Any:
     """The engine simulation of ``built``; ``plugins`` are plug-in objects or functions of the built scene that
-    return one (``alloy.plugins``). Without plug-ins this is ``wiring.build_simulation``. With plug-ins and nothing
-    dynamic (a film on a static plate) the scene steps the plug-ins alone (``alloy.api._static``).
+    return one (``alloy.plugins``). Without plug-ins this is ``wiring.build_simulation``. With nothing dynamic (a
+    posed scene of static and kinematic parts, a film on a static plate) the scene steps without a solver
+    (``alloy.api._static``): kinematic parts go where drives and ``set_pose`` put them, plug-ins do their work.
 
     Example: ``engine = build_engine(built, "standard", seed=0, plugins=[lambda b: Drag(body="cube", c=0.1)])``."""
     from alloy.integration import wiring  # noqa: PLC0415
 
+    from alloy.api._static import stepper_for  # noqa: PLC0415
+
     if not plugins:
-        return wiring.build_simulation(built, profile, seed=seed, **overrides)
+        return wiring.build_simulation(built, profile, seed=seed, stepper=stepper_for(built), **overrides)
     from alloy.integration.simulation import IntegratedSimulation  # noqa: PLC0415
     from alloy.plugins.errors import PluginError  # noqa: PLC0415
     from alloy.plugins.host import PluginHost  # noqa: PLC0415
 
-    from alloy.api._static import stepper_for  # noqa: PLC0415
-
     p = wiring.profile(profile, **overrides)
-    parts = wiring.wire(built, p, stepper=stepper_for(built))       # plug-ins only (a film on a static plate)
+    parts = wiring.wire(built, p, stepper=stepper_for(built))       # nothing dynamic: plug-ins alone (film on a plate)
     try:
         made = [_make(x, parts.built) for x in plugins]
         host = PluginHost(parts.built.model, made, control_dt=parts.built.control_dt, names=_names(parts.built))

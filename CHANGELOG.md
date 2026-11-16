@@ -6,6 +6,51 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.6] - 2026-11-16
+
+### Added
+- `american_walnut_veneer` (Poly Haven, CC0) joins the public wood texture pool, so the `wood_walnut_oiled` preset's
+  textures come with `python -m alloy.looks --fetch-textures --family wood`, and variants can swap it for another wood.
+
+### Changed
+- A full-quality render of a look with no `show_hdri` now draws the look's `background_color` behind the scene,
+  which is dark by default, as Blender does, not the studio gradient.
+- `ClothFold-v0`'s towel has 19 cells a side by default (was 13), finer than the length its fabric bends over: the
+  half being turned over no longer pushes the half lying on the table off its place (placed off in 5 % of worlds, was
+  24 %), and the scripted demo folds 55 % of 1,024 worlds on L4s (38 % at 13 cells). More corners spring off as the
+  fingers open: 34 % of worlds, was 26 %. A step costs about 1.5x on an L4 (a 64-world fold about 1 h 40 min, was an
+  hour); `make("ClothFold-v0", resolution=13)` gives the earlier towel.
+
+### Fixed
+- A scene of only static and kinematic parts builds and steps: posed parts drawn frame by frame with
+  `sim.set_pose`, a tray moved with `sim.drive`. A driven part takes the same path as it does beside a free body.
+  Before, `alloy.build` raised `BuildError` ("scene has no dynamic entry to step") unless something in the scene
+  could move freely, so such a scene needed a free ball out of view. A scene of static parts alone builds too.
+  `alloy.check` runs such a scene for its seconds and reports that run's findings; before, it stopped at t=0 with the
+  same error.
+- A part too small for MuJoCo's inertia limit at its default density (a 0.37 mm thread segment: smallest moment
+  about 2e-15 kg·m², where MuJoCo takes 1e-14) builds. A kinematic one builds with no warning, in a scene of posed
+  parts or beside moving bodies: its inertia is raised to Newton's floor and its mass is kept. A free one steps on
+  the larger inertia Newton gives it, which makes it turn far too slowly, and the build warns once, naming it. Before,
+  MuJoCo refused the build with a bare `ValueError` ("inertia must have positive eigenvalues"), so such a part needed
+  a raised density.
+- Full-quality renders with a look (`sim.render(quality="full", look=...)`) now honour the look's
+  `world.rotation_deg` (the HDRI turns about +z, as in Blender), `show_hdri`, `background_color` and
+  `background_from_hdri`, and a world key they cannot draw raises `CameraError` naming the keys they read. Before,
+  they read only the HDRI and its strength.
+- A look rule on an item also reaches its `<item>/visual` shape, the mesh drawn in place of its collision hulls,
+  where a decomposed or large static mesh drew default white: in full-quality renders it takes the item's material,
+  and in the Blender renderer the item's material, hide and bevel rules. A rule that matches only a hidden hull warns
+  once, naming the item.
+
+### Repository
+- The quick CPU tests that pull requests run take about 80 minutes with a warm kernel cache, and up to about 2 h 15 on
+  a cold first run, which warms the cache for about 50 minutes first (0.1.5 said under 90 minutes). The job's time
+  limit is now 180 minutes, so a cold run finishes instead of being cancelled.
+- When the quick CPU tests leave out the test that pays for a file's one-time setup, they now leave out the other
+  tests that share that setup too, so no kept test pays for it: on 0.1.5's GitHub run one timed out that way. The
+  quick tests keep about 87 % of the CPU suite (0.1.5: about 89 %).
+
 ## [0.1.5] - 2026-11-15
 
 ### Fixed

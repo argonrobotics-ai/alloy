@@ -7,7 +7,8 @@ import pytest
 import warp as wp
 
 from alloy.camera import CameraError
-from alloy.camera.model_pack import pack_from_model, studio_sky
+from alloy.camera.look_world import studio_sky
+from alloy.camera.model_pack import pack_from_model
 from alloy.camera.smooth import corner_normals
 
 LOOK = {"assign": [{"match": "box", "material": "alu"}],

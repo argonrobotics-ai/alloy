@@ -202,5 +202,6 @@ The paper on Alloy is on arXiv: https://arxiv.org/abs/2611.16312. To cite Alloy,
 
 Apache-2.0 (see `LICENSE`). Third-party code, robot models and data keep their own licences; see `NOTICE`.
 Issues and questions: https://github.com/argonrobotics-ai/alloy/issues. Contributing:
-https://github.com/argonrobotics-ai/alloy/blob/main/CONTRIBUTING.md. Security reports: privately, through
+https://github.com/argonrobotics-ai/alloy/blob/main/CONTRIBUTING.md. Pull requests run the quick CPU tests: about
+80 minutes with a warm kernel cache, up to about 2 h 15 on a cold first run. Security reports: privately, through
 https://github.com/argonrobotics-ai/alloy/security (see SECURITY.md), not in public issues.

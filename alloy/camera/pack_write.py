@@ -47,18 +47,56 @@ def _socket(sid: str, value, linked: bool = False, kind: str = "NodeSocketFloat"
 
 
 def _world(world: dict) -> dict:
-    """Environment Texture (key "world_sky") -> Background -> World Output."""
+    """Environment Texture (key "world_sky") -> Background -> World Output; the world's ``rotation`` as a Mapping
+    node on the texture's lookup, and its ``camera_color`` as Blender's camera-ray mix (Light Path Is Camera Ray ->
+    Mix Shader with a plain Background), as the Blender build makes them."""
     nodes = [{"name": "World Output", "type": "ShaderNodeOutputWorld", "props": {"is_active_output": True},
               "inputs": [_socket("Surface", None, True, "NodeSocketShader")]},
              {"name": "Environment Texture", "type": "ShaderNodeTexEnvironment", "image": "world_sky",
-              "props": {"projection": "EQUIRECTANGULAR", "interpolation": "Linear"}, "inputs": []},
+              "props": {"projection": "EQUIRECTANGULAR", "interpolation": "Linear"},
+              "inputs": [_socket("Vector", [0.0, 0.0, 0.0], True, "NodeSocketVector")]},
              {"name": "Background", "type": "ShaderNodeBackground", "props": {},
               "inputs": [_socket("Color", [1.0, 1.0, 1.0, 1.0], True, "NodeSocketColor"),
                          _socket("Strength", float(world.get("strength", 1.0)))]}]
-    links = [{"from": "Environment Texture", "from_id": "Color", "to": "Background", "to_id": "Color"},
-             {"from": "Background", "from_id": "Background", "to": "World Output", "to_id": "Surface"}]
+    links = [{"from": "Environment Texture", "from_id": "Color", "to": "Background", "to_id": "Color"}]
+    _mapping(world, nodes, links)
+    shader = "Background"
+    if world.get("camera_color") is not None:
+        shader = _camera_mix(world["camera_color"], nodes, links)
+    links.append({"from": shader, "from_id": "Shader" if shader == "Mix Shader" else "Background",
+                  "to": "World Output", "to_id": "Surface"})
     return {"tree": {"nodes": nodes, "links": links}, "light_settings": {},
             "cycles": {"sampling_method": "AUTOMATIC" if world.get("use_mis", True) else "NONE"}}
+
+
+def _mapping(world: dict, nodes: list, links: list) -> None:
+    """Generated coordinates -> Mapping (the world's turn about +z) -> the Environment Texture's Vector."""
+    rot = np.asarray(world.get("rotation", np.eye(3)), np.float64)
+    turn = float(np.arctan2(rot[1, 0], rot[0, 0]))
+    nodes += [{"name": "Texture Coordinate", "type": "ShaderNodeTexCoord", "props": {}, "inputs": []},
+              {"name": "Mapping", "type": "ShaderNodeMapping", "props": {"vector_type": "POINT"},
+               "inputs": [_socket("Vector", [0.0, 0.0, 0.0], True, "NodeSocketVector"),
+                          _socket("Location", [0.0, 0.0, 0.0], kind="NodeSocketVectorTranslation"),
+                          _socket("Rotation", [0.0, 0.0, turn], kind="NodeSocketVectorEuler"),
+                          _socket("Scale", [1.0, 1.0, 1.0], kind="NodeSocketVectorXYZ")]}]
+    links += [{"from": "Texture Coordinate", "from_id": "Generated", "to": "Mapping", "to_id": "Vector"},
+              {"from": "Mapping", "from_id": "Vector", "to": "Environment Texture", "to_id": "Vector"}]
+
+
+def _camera_mix(color, nodes: list, links: list) -> str:
+    """Camera rays see the plain ``color`` (linear RGB), every other ray the world; returns the mix node's name."""
+    shader = _socket("Shader", None, True, "NodeSocketShader")
+    nodes += [{"name": "Camera Background", "type": "ShaderNodeBackground", "props": {},
+               "inputs": [_socket("Color", [*[float(c) for c in color], 1.0], kind="NodeSocketColor"),
+                          _socket("Strength", 1.0)]},
+              {"name": "Light Path", "type": "ShaderNodeLightPath", "props": {}, "inputs": []},
+              {"name": "Mix Shader", "type": "ShaderNodeMixShader", "props": {},
+               "inputs": [_socket("Fac", 0.5, True, "NodeSocketFloatFactor"), shader,
+                          {**shader, "id": "Shader_001"}]}]
+    links += [{"from": "Light Path", "from_id": "Is Camera Ray", "to": "Mix Shader", "to_id": "Fac"},
+              {"from": "Background", "from_id": "Background", "to": "Mix Shader", "to_id": "Shader"},
+              {"from": "Camera Background", "from_id": "Background", "to": "Mix Shader", "to_id": "Shader_001"}]
+    return "Mix Shader"
 
 
 def _settings(settings: dict) -> dict:
