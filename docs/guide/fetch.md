@@ -52,7 +52,9 @@ The same request as JSON (`alloy batch`, or the `fetch` tool of `alloy mcp`): `{
 
 `downloaded` counts files fetched now, `kept` the files already in the cache (a second fetch of the same object reads
 `"downloaded": 0`), and `roots` the library folders written. `--list` replies with `objects`, `bytes`, `libraries`,
-`categories` (`{"ycb_gso/gso": 1033, "ycb_gso/ycb": 78}`) and up to 200 `names`.
+`categories` (`{"ycb_gso/gso": 1033, "ycb_gso/ycb": 78}`) and up to 200 `names`. When there are more objects than
+that, the names come from every category in turn and a `note` says how many are shown;
+`alloy fetch --list --category ycb` lists one category.
 
 ## Using a fetched object
 

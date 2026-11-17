@@ -16,6 +16,7 @@ import pytest
 
 from alloy.cards.library import default_root
 from alloy.envs.actuators import motorized
+from alloy.envs.errors import EnvError
 from alloy.envs.mjcf import without_bodies
 
 PROPS = ["box", "cylinder", "mug"]
@@ -25,8 +26,10 @@ GOLDEN = {   # sha256 of the trimmed file on main a3719c304 (before the fix), th
     ("emb_e1_fr3", tuple(PROPS)): "282a87c39956abf7557b8edcb31738c7d83502254003002db774e7717860db0a",
     ("emb_e3_ur10e_2f85", tuple(PROPS)): "31ea8acc06b2de13c1c1fcf104a7f090801e47037ea0c0f75bb14b8858a6437a",
     # the same bytes plus the file's own <exclude body1="world" body2="left_base"/> and "right_base" rows, which the
-    # trim dropped as naming a missing body (both bases are static: MuJoCo steps the two trims to the same state)
-    ("emb_e4_fr3_bimanual", tuple(PROPS)): "16dbc1336a94a446e97a482818ca3b4b30f691eb9ec55548768b88328e8834e8",
+    # trim dropped as naming a missing body (both bases are static: MuJoCo steps the two trims to the same state);
+    # since 5f4fb3ff8 the pack lists its two link5 | link7 excludes in the generator's sorted place (the same rows:
+    # MuJoCo compiles both orders to identical model arrays; was 16dbc1336a94a446e97a482818ca3b4b30f691eb9ec55548768b8)
+    ("emb_e4_fr3_bimanual", tuple(PROPS)): "7566b134512c41d5f2273f3d1d4ea21260e2e22f6171ad2bc0d599a83f2bc39d",
 }
 
 
@@ -50,6 +53,34 @@ def test_a_trimmed_bimanual_arm_loads_in_mujoco():
     out = without_bodies(src, ["right_base", "table", *PROPS])
     model = mujoco.MjModel.from_xml_path(str(out))                   # was: "references unknown joint ..."
     assert model.nbody > 0 and "right_finger_joint1" not in out.read_text(encoding="utf-8")
+
+
+def test_the_h1_2_obstacle_box_trims_as_a_bare_geom():
+    """The H1-2 file's obstacle is a geom directly under <worldbody>, not a body: naming it raised EnvError."""
+    mujoco = pytest.importorskip("mujoco")
+    src = default_root() / "robots" / "emb_e7_h1_2" / "scene.xml"
+    full, trimmed = (mujoco.MjModel.from_xml_path(str(p)) for p in (src, without_bodies(src, ["obstacle"])))
+    names = [mujoco.mj_id2name(trimmed, mujoco.mjtObj.mjOBJ_GEOM, g) for g in range(trimmed.ngeom)]
+    assert "obstacle" not in names and trimmed.ngeom == full.ngeom - 1               # only the box went
+    assert (trimmed.nbody, trimmed.nq, trimmed.nu, trimmed.nexclude) == (full.nbody, full.nq, full.nu, full.nexclude)
+
+
+POST = """<mujoco><worldbody><geom name="post" type="box" size="0.1 0.1 0.1" pos="1 0 0.1"/>
+    <body name="arm"><joint name="j" type="hinge"/><geom name="arm_g" type="capsule" size="0.02 0.1"/></body>
+    <geom name="wall" type="box" size="0.1 1 0.5" pos="-1 0 0.5"/></worldbody>
+  <contact><pair geom1="post" geom2="arm_g"/><pair geom1="wall" geom2="arm_g"/></contact>
+  <sensor><framepos objtype="geom" objname="post"/><framepos objtype="geom" objname="wall"/></sensor></mujoco>"""
+
+
+def test_a_bare_geom_goes_with_the_rows_that_name_it(tmp_path):
+    src = tmp_path / "post.xml"
+    src.write_text(POST, encoding="utf-8")
+    root = ET.parse(without_bodies(src, ["post"])).getroot()
+    assert [g.get("name") for g in root.find("worldbody").iter("geom")] == ["arm_g", "wall"]
+    assert [r.get("geom1") for r in root.find("contact")] == ["wall"]
+    assert [r.get("objname") for r in root.find("sensor")] == ["wall"]
+    with pytest.raises(EnvError, match="bodies or geoms"):
+        without_bodies(src, ["arm_g"])                                    # a geom inside a body is not top-level
 
 
 ROBOT = """<mujoco><compiler angle="radian" assetdir="assets" texturedir="textures"/>

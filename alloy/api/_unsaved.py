@@ -91,12 +91,15 @@ def precise_period(scene: Any) -> int:
 
 def settings(scene: Any) -> list[str]:
     """Warn about (and return) the scene's solver settings the cards cannot hold: ``cloth_accuracy``,
-    ``liquid_accuracy`` and ``rigid_step`` away from their defaults (Scene JSON keeps them). Example:
+    ``liquid_accuracy``, ``liquid_tension`` and ``rigid_step`` away from their defaults (Scene JSON keeps them).
+    Example:
     ``settings(alloy.Scene(cloth_accuracy="fast"))`` -> ``["cloth_accuracy='fast'"]``."""
-    from alloy.api import _rigid_step  # noqa: PLC0415
+    from alloy.api import _liquid, _rigid_step  # noqa: PLC0415
 
     lost = [f"{key}={value!r}" for key, value in (("cloth_accuracy", scene.cloth_accuracy),
                                                   ("liquid_accuracy", scene.liquid_accuracy)) if value != "default"]
+    if _liquid.tension_saved(scene.liquid_tension):                  # surface tension on (off by default)
+        lost.append(f"liquid_tension={scene.liquid_tension!r}")
     if not _rigid_step.is_default(scene.rigid_step):
         lost.append(f"rigid_step={scene.rigid_step!r}")
     if lost:

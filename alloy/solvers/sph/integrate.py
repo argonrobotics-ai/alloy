@@ -18,6 +18,8 @@ any path length, other shapes sampled at <= r up to ``SWEEP_SAMPLES`` per shape 
 0.8 m step, 2,666 m/s, skip an 8 mm wall); at the first entry it is stopped at the last outside point, pushed
 ``eps`` clear and loses its inward relative normal velocity, as a projection. Speeds are not clamped (health monitors still see them); sweeps are counted per world. Below the
 threshold a wall at least h thick cannot be crossed without ending inside a slot shape, which the slot pass handles.
+A thinner wall lowers the threshold to half its thickness (``sweep_length``): walls under h (1 mm glass at h = 3-8 mm)
+are crossed by steps much shorter than h/2.
 """
 
 from __future__ import annotations
@@ -34,6 +36,15 @@ from .kernels import kernel_w
 from .pressure import Particles, is_fluid, nbr_base, nbr_j
 
 SWEEP = 0.5  # [h] a step longer than this is swept against every shape of the world
+THIN_SWEEP = 0.5  # [thinnest wall] ... or longer than this: a shorter step cannot cross a wall's mid-plane
+
+
+def sweep_length(h: float, thinnest: float) -> float:
+    """The step length past which a particle's path is swept: SWEEP h, or THIN_SWEEP x the thinnest particle wall
+    when that is shorter. A step under half a wall's thickness ends short of its mid-plane, so the slot pass pushes the
+    particle back to the side it came from; a 1 mm wall is crossed in one step by a particle that moves 1 mm (4 mm
+    particles at the CFL limit move 1.6 mm). Example: ``sweep_length(0.004, 0.001)`` -> 0.0005."""
+    return min(SWEEP * float(h), THIN_SWEEP * float(thinnest))
 SWEEP_SAMPLES = 64  # most samples per shape path (spacing <= r up to 64 r per step)
 _BISECT = 8
 PROJECT_PASSES = 4  # most projection passes: three tiled boxes at a corner need three, plus one that finds none

@@ -2,8 +2,10 @@
 """Thumbnails of imported models: MuJoCo's offscreen renderer (OSMesa on machines without a GPU), PNG out.
 
 The camera looks at the centre of the drawn geometry from a three-quarter view, far enough to frame its bounding
-sphere. Only visual geoms are drawn (collision hulls are group 3, regions group 4). Set ``MUJOCO_GL`` before the
-first ``import mujoco`` in the process; ``render_thumbnail`` sets it to ``osmesa`` if unset.
+sphere. Only visual geoms are drawn (collision hulls are group 3, regions group 4). MuJoCo reads ``MUJOCO_GL`` at the
+first ``import mujoco`` in the process: set it before that, or ``render_thumbnail`` uses ``osmesa`` for its own render
+and then puts ``MUJOCO_GL`` and ``PYOPENGL_PLATFORM`` (which MuJoCo's OSMesa and EGL backends set to match) back as
+the caller had them, so later subprocesses inherit the caller's values (``scoped_gl``).
 
 Example::
 
@@ -14,15 +16,35 @@ Example::
 
 from __future__ import annotations
 
+import contextlib
 import os
 import struct
 import xml.etree.ElementTree as ET
 import zlib
+from collections.abc import Iterator
 from pathlib import Path
 
 import numpy as np
 
 SIZE = 256
+GL_VARS = ("MUJOCO_GL", "PYOPENGL_PLATFORM")  # MuJoCo's backend choice, and PyOpenGL's platform its import sets
+
+
+@contextlib.contextmanager
+def scoped_gl(backend: str | None) -> Iterator[None]:
+    """``MUJOCO_GL`` set to ``backend`` (when given and the caller has none) for the body only: afterwards both
+    ``GL_VARS`` are as the caller had them (unset if they were), even when the body raises."""
+    saved = {k: os.environ.get(k) for k in GL_VARS}
+    if backend and not saved["MUJOCO_GL"]:
+        os.environ["MUJOCO_GL"] = backend
+    try:
+        yield
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
 
 
 def write_png(path: Path, rgb: np.ndarray) -> Path:
@@ -86,8 +108,14 @@ def _require_offscreen(mujoco) -> None:
 
 
 def render_thumbnail(model_path: Path, out: Path, size: int = SIZE) -> Path:
-    """Render ``model_path`` to ``out`` (PNG, ``size`` x ``size``); raises if no GL backend is available."""
-    os.environ.setdefault("MUJOCO_GL", "osmesa")
+    """Render ``model_path`` to ``out`` (PNG, ``size`` x ``size``); raises if no GL backend is available. Uses
+    ``osmesa`` when ``MUJOCO_GL`` is unset, for this call only (``scoped_gl``)."""
+    with scoped_gl("osmesa"):
+        img = _render(model_path, size)
+    return write_png(out, img)
+
+
+def _render(model_path: Path, size: int) -> np.ndarray:
     import mujoco  # noqa: PLC0415 - heavy import; MUJOCO_GL must be set first
 
     _require_offscreen(mujoco)
@@ -99,8 +127,7 @@ def render_thumbnail(model_path: Path, out: Path, size: int = SIZE) -> Path:
     cam.lookat[:], cam.distance, cam.azimuth, cam.elevation = centre, 1.1 * radius / np.sin(np.radians(22.5)), 135, -25
     with mujoco.Renderer(m, size, size) as r:
         r.update_scene(d, camera=cam)
-        img = r.render()
-    return write_png(out, img)
+        return r.render()
 
 
-__all__ = ["SIZE", "render_thumbnail", "write_png"]
+__all__ = ["GL_VARS", "SIZE", "render_thumbnail", "scoped_gl", "write_png"]

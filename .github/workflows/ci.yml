@@ -22,8 +22,9 @@ jobs:
   cpu-tests:
     if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
-    # about 80 min with a warm kernel cache; a cold one (main's first run, or after GitHub drops a cache unused for 7
-    # days) warms for 46-53 min before the tests, about 2 h 15 in all: 0.1.5's first push to main ran out at 90
+    # about 35-45 min with a warm kernel cache (0.1.5's last run 43 min, 0.1.6's 34); a cold one (main's first run,
+    # or after GitHub drops a cache unused for 7 days) warms for 46-53 min before the tests, up to about 1 h 40 in
+    # all: 0.1.5's first push to main ran out at 90
     timeout-minutes: 180
     env:
       PYTHONUNBUFFERED: "1"

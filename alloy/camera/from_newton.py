@@ -128,23 +128,73 @@ def _grey_ground(newton, geo_type: int, colors, s: int) -> bool:
     return geo_type == int(newton.GeoType.PLANE) and (colors is None or _palette_only(newton, colors[s]))
 
 
+DRAWN_GROUPS = (0, 2)  # MJCF geom groups MuJoCo's viewer draws by default (first, last)
+COPY_MARGIN = 0.25  # share of a body's display box a hidden collider may stick out by and still count as its copy
+_CORNERS = np.array([[i >> 2 & 1, i >> 1 & 1, i & 1] for i in range(8)], bool)  # the 8 corners of a box
+
+
+def _body_frame_boxes(newton, model, shapes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(lo, hi), each (len(shapes), 3): a box around each shape in its body's frame (its local box's corners, posed)."""
+    ty, sc, xf = model.shape_type.numpy(), model.shape_scale.numpy(), model.shape_transform.numpy()
+    lo, hi, cache = np.zeros((len(shapes), 3)), np.zeros((len(shapes), 3)), {}
+    for k, s in enumerate(shapes):  # replicated worlds repeat a few geometries: one local box each
+        src = model.shape_source[s]
+        key = (int(ty[s]), sc[s].tobytes(), id(src))
+        if key not in cache:
+            geom = _shape_mesh(newton, int(ty[s]), sc[s], src)
+            pts = geom[0] if geom is not None and len(geom[0]) else np.zeros((1, 3))
+            cache[key] = (pts.min(0), pts.max(0))
+        lo[k], hi[k] = cache[key]
+    corners = np.where(_CORNERS[None], hi[:, None], lo[:, None])  # (n, 8, 3)
+    q = xf[shapes, 3:7].astype(np.float64)
+    u, w = q[:, None, :3], q[:, None, 3:4]
+    posed = corners + 2.0 * np.cross(u, np.cross(u, corners) + w * corners) + xf[shapes, None, :3]
+    return posed.min(1), posed.max(1)
+
+
+def _own_parts(newton, model, hidden: np.ndarray, shown: np.ndarray) -> np.ndarray:
+    """(len(hidden),) bool: the hidden colliders that stick out of the box around their body's display shapes
+    (``shown``) by more than ``COPY_MARGIN`` of its size, so they are parts of their own, not collision copies of a
+    display mesh (hulls, or the group-0 collision copies some files keep under their meshes)."""
+    body = model.shape_body.numpy()
+    slo, shi = _body_frame_boxes(newton, model, shown)
+    vlo, vhi = np.full((int(model.body_count), 3), np.inf), np.full((int(model.body_count), 3), -np.inf)
+    np.minimum.at(vlo, body[shown], slo)
+    np.maximum.at(vhi, body[shown], shi)
+    hlo, hhi = _body_frame_boxes(newton, model, hidden)
+    b = body[hidden]
+    pad = COPY_MARGIN * (vhi[b] - vlo[b]).max(1, keepdims=True)
+    return ((hlo < vlo[b] - pad) | (hhi > vhi[b] + pad)).any(1)
+
+
 def drawn_shapes(model) -> np.ndarray:
-    """(shape_count,) bool: the shapes the camera draws, the VISIBLE ones plus the colliders of every moving body that
-    has no VISIBLE shape at all.
+    """(shape_count,) bool: the shapes the camera draws: the VISIBLE ones, and the hidden colliders of moving bodies
+    that MuJoCo's viewer would show and no display shape stands in for.
 
     Newton's MJCF import gives no collider the VISIBLE flag once the file has a single visual-only geom
-    (contype = conaffinity = 0), so a hand-written robot with one such marker lost every other part: the gantry
-    gripper of the Gym tasks drew only its 5 mm carriage spheres, not its palm and fingers (TA-7 finding 3). A body
-    with a display mesh keeps its collision hulls hidden, and so do world shapes and bodies welded in place (a task
+    (contype = conaffinity = 0), as files with display meshes expect. A hand-written robot with one such marker then
+    lost its parts: the gantry gripper of the Gym tasks drew only its 5 mm carriage spheres, and a jug of boxes on a
+    hand that also carried a marker was not drawn, so the water in it floated. Drawn again, on moving bodies: every
+    collider of a body with no VISIBLE shape, and on a body with one, the colliders of MJCF groups 0 to 2 (the groups
+    MuJoCo's viewer draws) that stick out of its display shapes (``_own_parts``). Collision hulls and group-3
+    collision geoms under a display mesh stay hidden, and so do world shapes and bodies welded in place (a task
     file's floor or table without a display mesh): those keep the importer's choice."""
     from alloy._vendor import newton
     flags, body = model.shape_flags.numpy(), model.shape_body.numpy()
     vis = (flags & int(newton.ShapeFlags.VISIBLE)) != 0
     collider = (flags & int(newton.ShapeFlags.COLLIDE_SHAPES)) != 0
     joint_type, child = model.joint_type.numpy(), model.joint_child.numpy()
-    moving = np.unique(child[joint_type != int(newton.JointType.FIXED)])
-    lone = collider & ~vis & np.isin(body, moving) & ~np.isin(body, np.unique(body[vis & (body >= 0)]))
-    return vis | lone
+    hidden = collider & ~vis & np.isin(body, np.unique(child[joint_type != int(newton.JointType.FIXED)]))
+    with_display = np.isin(body, np.unique(body[vis & (body >= 0)]))
+    drawn = vis | (hidden & ~with_display)
+    groups = getattr(getattr(model, "mujoco", None), "geom_group", None)
+    if groups is None:
+        return drawn
+    g = groups.numpy()
+    ask = np.flatnonzero(hidden & with_display & (g >= DRAWN_GROUPS[0]) & (g <= DRAWN_GROUPS[1]))
+    if len(ask):
+        drawn[ask] = _own_parts(newton, model, ask, np.flatnonzero(vis & np.isin(body, np.unique(body[ask]))))
+    return drawn
 
 
 def _model_colors(model, drawn: np.ndarray) -> np.ndarray | None:

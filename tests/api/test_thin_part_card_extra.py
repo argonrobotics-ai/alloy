@@ -102,7 +102,7 @@ def test_a_sphere_and_a_fixture_are_told_they_take_no_card_extra():
     assert "add_sphere takes no card_extra" in bead.fix and "card_extra={" not in bead.fix
     with pytest.raises(TypeError, match="card_extra"):
         alloy.Scene().add_sphere("bead", 0.0005, card_extra={})
-    tray = _refused(_scene(lambda s: s.add_open_box("tray", inner=(0.1, 0.1, 0.02), wall=0.001)))
+    tray = _refused(_scene(lambda s: s.add_open_box("tray", inner=(0.1, 0.1, 0.02), wall=0.0009)))
     assert "add_open_box / add_open_cylinder / add_block_with_hole takes no card_extra" in tray.fix
 
 

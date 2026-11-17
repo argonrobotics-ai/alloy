@@ -21,8 +21,15 @@ def test_robots_manifest_matches_every_file() -> None:
 
 @pytest.mark.parametrize("scene", sorted(p.name for p in ROBOTS.glob("task_*")))
 def test_vendored_scene_compiles(scene: str) -> None:
+    """... and no friction term in use is under MuJoCo's mjMINMU in float32, where Newton and MuJoCo Warp hold it
+    (task_h1, task_t11 and task_t14 recorded 1e-5 and less: 13,149, 2,428 and 99 MuJoCo Warp warnings per load before
+    alloy.tasks.mjb_convert.floor_friction)."""
+    from alloy.tasks.mjb_convert import under_minmu
+
     m = mujoco.MjModel.from_xml_path(str(ROBOTS / scene / "scene.xml"))
     assert m.nbody > 1 and m.ngeom > 0
+    low = under_minmu(m)
+    assert not low, (len(low), low[:3])
 
 
 @pytest.mark.parametrize("name", TRACE_NAMES)

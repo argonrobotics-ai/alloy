@@ -83,7 +83,7 @@ def liquid_material(key: str) -> dict:
     entry = dict(PRESETS.get(key, PRESETS["water"]))
     sigma = entry.pop("sigma_a", None)
     name = f"liquid_{key}"
-    mat = material_tree(name, {**entry, "hard": False})
+    mat = material_tree(name, {**entry, "hard": False}, volume=True)
     sigma = sigma if sigma is not None else _sigma_of(resolve_spec(name, entry))
     if sigma is not None and max(sigma) > 0.0:
         tree = mat["tree"]

@@ -90,6 +90,12 @@ FIRM_CHANGE = (f"robot geoms (every link, the hand or gripper base, fingers and 
                "0.02 s the hand pressed a 4 cm cube 11.8 mm into it. Both, where solimp was MuJoCo's default 0.9 0.95 "
                f"0.001: solimp -> {list(FIRM_SOLIMP)[:3]} (the 2F-85 pads' and the mug's), half the steady press "
                "depth. Friction and condim unchanged (alloy.tasks.emb_firm)")
+_FLOOR = f"{emb_build.MIN_FRICTION:.0e}".replace("e-0", "e-")    # 2e-5, written as the note's 1e-5
+MUG_FRICTION_CHANGE = (f"T14's mug (62 convex pieces, condim 6): rolling friction 1e-5 -> {_FLOOR}. "
+                       "Newton and MuJoCo Warp hold friction in float32, where 1e-5 lands just under MuJoCo's floor "
+                       "mjMINMU (1e-5), and MuJoCo Warp warned once per piece at every load. A contact takes the "
+                       "larger rolling friction of its two geoms, and every geom the mug can touch has 1e-4 or more, "
+                       "so its contacts are unchanged (alloy.tasks.emb_build.floor_friction)")
 WORLD_NOTE = {
     "tabletop": "table 1.2 x 1.2 m, top z = 0 (robot base on it), floor z = -0.75; box 50 mm 0.1 kg, cylinder "
                 "r 30 x 100 mm 0.15 kg, T14's recorded mug (library/robots/task_t14, convex pieces, 0.404 kg)",
@@ -122,6 +128,7 @@ def _source_record(e: Embodiment) -> dict:
     changes += [DUO_WHEELS_CHANGE] if e.key.startswith("e5_fr3_duo") else []
     changes += [H1_2_STAND_CHANGE] if e.key.startswith("e7_h1_2") else []
     changes += [LEAP_CHANGE] if e.key == "e9_leap" else []
+    changes += [MUG_FRICTION_CHANGE] if e.world in emb_build.TABLES else []
     changes += [FIRM_CHANGE] if e.key in FIRM_CONTACTS else []
     if e.contact and e.base in FIRM_CONTACTS:
         changes.append(f"the verdict scene here is emb_{e.base} without TRAIN-FIX 1b's firm contacts: this variant "

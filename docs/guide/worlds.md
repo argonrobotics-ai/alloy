@@ -127,22 +127,35 @@ GPU launches are asynchronous and the first steps compile kernels, so:
 
 `alloy.estimate(scene, worlds, seconds)` returns JSON-ready keys: `physics_steps_per_world`, `step_time_s`,
 `wall_time_s`, `world_steps_per_s`, `real_time_factor`, `memory_bytes`, `compile_s_first_run`, `counts`, `solvers`
-and `basis`. `measure=True` times a short real run instead of using the model. With a liquid the model also gives
+and `basis`. `measure=True` times a real run instead of using the model: the first second of the run (all of a
+shorter run), charging the rest at the rate of its last quarter, when dropped objects have landed. Before 0.1.7 it
+timed 0.2 s, and read three scans dropped into a bin 2x fast and a pour 3-6x fast. A pour still flowing after that
+second reads fast: a 2.5 s pour, 24.7 s against a 52.3 s run (67.8 s without `measure`). With a liquid the model also
+gives
 `liquid`: for each setting (`"default"`, `"super"`) its spacing, particles, step and wall time, memory and measured
 accuracy (`deformables.md`, Accuracy).
 
 The wall time is of warm stepping, fitted to measured runs: a robot carrying water, bins, an arm, cloth at each
 setting and a pour, at 1, 4 and 64 worlds (also 256 and 512 on the L4), on the CPU and on one L4. On those 55 rows it
 is within 1.3x (`bench/results/estimate_calib/rows.json`, checked by `tests/api/test_estimate_calibration.py`); a
-scene unlike them can be further off: no row has `liquid_accuracy="super"`, a soft body, sand, or cloth and liquid
-beside kinematic objects (about 2x the same scene with those objects static, on the CPU), and a check of 8 other CPU
-scenes on another machine (with other jobs running) measured 0.54-1.25x the estimate: it over-predicted a pour, a bin
-of 12 objects and a Panda arm at 4 and 64 worlds by 1.3-1.9x. Past 64 worlds, and for cloth and liquid scenes unlike
+scene unlike them can be further off: no row has `liquid_accuracy="super"` (one check: a 100 ml pour at "super"
+into an 8 cm cup, 1.5 s, one world, took 1.23-1.28x the estimated time on two cloud CPUs), a soft body, sand, or
+cloth and liquid beside kinematic objects (about 2x the same scene with those objects static, on the CPU), and a
+check of 8 other CPU scenes on another machine (with other jobs running) measured 0.54-1.25x the estimate: it
+over-predicted a pour, a bin of 12 objects and a Panda arm at 4 and 64 worlds by 1.3-1.9x. Past 64 worlds, and for
+cloth and liquid scenes unlike
 the rows, an audit on an L4 measured slower warm steps than estimated: `AGENTS.md` section 7's sheet over a stand
 1.1x at 1 world, 1.4x at 64, 2.4x at 256 and 4.2x at 1,024 (its self-contact grows with the pleats); the same sheet
 flat on a wide table without self-contact 2.1-2.7x and 4 mm water at rest in a tub 1.8-2.5x, at 1 to 1,024 worlds;
-a two-hinge arm 1.1x at 1,024 worlds and 0.64x at 16,384. A refit with many-world rows is planned. Three things
-the estimate does not include:
+a two-hinge arm 1.1x at 1,024 worlds and 0.64x at 16,384. In a scene of free bodies on the CPU the estimate
+counts the parts each body comes to rest on beyond its first, from its start pose, and whether they rest on the
+ground or on a table, a bin's floor or another body, where each costs about 3x (a scanned object is split into up to
+32 convex parts): three YCB scans resting in a bin stepped 2.0-2.6x the estimate before 0.1.7 and 1.04-1.14x it now,
+and every body measured that settles reads within 1.3x; a body that keeps rocking on many parts (a decomposed bowl
+upside down on its rim) steps up to 2.4x it. A pile of separate boxes, one part each, is not charged and reads high
+as before: 16 on a table 1.4x, 36 in a bin 1.7x. The CPU rows are fitted on an AMD EPYC 7B13; a 2.8 GHz Intel Xeon cloud VM ran a bin
+of three scans 1.25x slower than it, and pours the same. A refit with many-world rows is planned. Three things the
+estimate does not include:
 - Graph capture. Right after a build or `sim.reset()`, a GPU run first captures CUDA graphs, over its first ~5
   control periods and again when a new graph is needed (a liquid's step changing mid-pour). A 1 s run right after a
   reset took up to 2.7x the estimate (the robot carrying water); longer runs share that cost out.

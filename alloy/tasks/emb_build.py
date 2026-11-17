@@ -22,6 +22,7 @@ import numpy as np
 
 from alloy.core.errors import TraceError
 from alloy.tasks.emb_firm import FIRM_CONTACTS, FIRM_SOLMIX, FIRM_SOLREF, firm_contacts, firm_world
+from alloy.tasks.mjb_convert import GEOM_FRICTION_TERMS
 from alloy.tasks.emb_robots import ROBOTS, StartPose, strip_visuals
 from alloy.tasks.emb_specs import CONTACT_SOLREF, Embodiment
 from alloy.cards.library import default_root
@@ -30,6 +31,9 @@ log = logging.getLogger("alloy.tasks")
 
 MUG_SCENE = default_root() / "robots" / "task_t14" / "scene.xml"
 TABLE_HALF = (0.6, 0.6, 0.025)      # [m] 1.2 x 1.2 m top, 50 mm thick
+# Floor on each friction term a geom's condim uses: 2 x MuJoCo's mjMINMU (1e-5). Newton and MuJoCo Warp hold friction
+# in float32, where 1e-5 (T14's mug, rolling) lands just under mjMINMU, and MuJoCo Warp warns once per geom at load.
+MIN_FRICTION = 2e-5
 
 
 @dataclass(frozen=True)
@@ -233,6 +237,21 @@ def stiffen_contacts(spec: mujoco.MjSpec, solref: tuple[float, float]) -> None:
             g.solimp = list(DEFAULT_SOLIMP)
 
 
+def floor_friction(spec: mujoco.MjSpec) -> int:
+    """Raise each friction term a geom's condim uses to at least ``MIN_FRICTION``; returns how many geoms changed.
+    A contact takes the larger of its two geoms' terms, so the change reaches a contact only where the other geom's
+    term is also under the floor (none in these scenes: the mug's rolling 1e-5 meets 1e-4 or more)."""
+    changed = 0
+    for g in spec.geoms:
+        used = list(GEOM_FRICTION_TERMS.get(int(g.condim), ()))
+        f = np.asarray(g.friction, dtype=float)
+        if np.any(f[used] < MIN_FRICTION):
+            f[used] = np.maximum(f[used], MIN_FRICTION)
+            g.friction = f.tolist()
+            changed += 1
+    return changed
+
+
 def set_options(spec: mujoco.MjSpec) -> None:
     """The sparse Jacobian (module doc); every other option as the source robot ships it."""
     spec.option.jacobian = mujoco.mjtJacobian.mjJAC_SPARSE
@@ -251,6 +270,8 @@ def build_spec(e: Embodiment) -> mujoco.MjSpec:
         log.info("%s: %d world geoms firm (solref %s)", e.name, firm_world(spec), FIRM_SOLREF)
     strip_visuals(spec)
     set_options(spec)
+    if floored := floor_friction(spec):
+        log.info("%s: %d geoms' friction raised to %g", e.name, floored, MIN_FRICTION)
     if e.contact:
         stiffen_contacts(spec, CONTACT_SOLREF[e.contact])
     spec.modelname = e.name

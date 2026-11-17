@@ -4,6 +4,13 @@ The Alloy physics engine (`pip install alloy-engine`) turns a scene into a vecto
 one environment and all of them step at once, on a GPU when there is one and on the CPU otherwise. `VectorEnv` has
 the shape of Gymnasium's vector API: `reset`, `step`, spaces and `terminated` and `truncated`.
 
+Install the `envs` extra for this page: it brings Gymnasium, which section 2 imports, and PyTorch.
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu   # only on a machine without an NVIDIA GPU
+pip install "alloy-engine[envs]"
+```
+
 ## 1. Make an environment, reset and step it
 
 ```python

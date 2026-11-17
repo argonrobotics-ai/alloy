@@ -74,7 +74,9 @@ The checkpoint and its evaluation script are on the
 - `demonstrator` ships for `GripperLift-v0`, `GripperLiftCamera-v0` and `PickPlace-v0` only; `Pour-v0` needs a script
   of your own, as above ([Imitation learning](../guides/imitation.md)).
 - A recording with liquid cannot be replayed: `replay` raises `EnvError`, as particles are not in the saved state.
-- A container narrower than 24 mm is unreliable ([details](../../known_gaps/liquid-narrow-containers.md)).
+- A container opening needs 8 liquid particles across: 32 mm at the default setting, 16 mm at super, 12 mm at
+  ultra. A thin stream into a narrow receiver mostly misses unless surface tension is on
+  ([details](../../known_gaps/liquid-narrow-containers.md)).
 - A GPU run does not repeat bit for bit, so a second run can save other episodes
   ([GPU determinism](../../known_gaps/determinism-gpu-rigid.md)).
 - Full list: [Keep in mind](../keep-in-mind.md).

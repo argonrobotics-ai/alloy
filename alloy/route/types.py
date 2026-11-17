@@ -33,8 +33,9 @@ class Route(StrEnum):
 APPROXIMATE_ROUTES: Final[frozenset[Route]] = frozenset({Route.LIQUID_MPM})   # D15: fails LIQ-2 by construction
 NO_ENTRY_ROUTES: Final[frozenset[Route]] = frozenset({Route.STATIC})          # shapes in the shared pipeline only
 #: SPH particle spacing [m] per ``liquid_accuracy`` (user decision 2026-11-08, SCR-WP9-LIQRES): 4 mm by default,
-#: 2 mm "super" (8x the particles, about 16x the cost); the particle radius is half the spacing.
-LIQUID_SPACING: Final[Mapping[str, float]] = {"default": 4.0e-3, "super": 2.0e-3}
+#: 2 mm "super" (8x the particles, about 16x the cost), 1.5 mm "ultra" (8 across a 12 mm opening, 50x); the
+#: particle radius is half the spacing.
+LIQUID_SPACING: Final[Mapping[str, float]] = {"default": 4.0e-3, "super": 2.0e-3, "ultra": 1.5e-3}
 
 
 @dataclass(frozen=True)
@@ -49,9 +50,10 @@ class RouterConfig:
     liquid_viscosity_max: float = 1.0      # Pa·s
     sph_radius_max: float = 2e-3           # m: unused by the router since SCR-WP9-LIQRES (r = LIQUID_SPACING / 2)
     sph_passage_diameters: float = 8.0     # passage_width / (2r) >= 8 (LIQ-6): refined below it, or the build warns
-    liquid_accuracy: Literal["default", "super"] = "default"   # SPH spacing LIQUID_SPACING[...] (SCR-WP9-LIQRES)
+    liquid_accuracy: Literal["default", "super", "ultra"] = "default"   # spacing LIQUID_SPACING[...] (SCR-WP9-LIQRES)
     cloth_accuracy: Literal["default", "super", "fast"] = "default"   # CLOTH_VBD tagged (scene.cloth_accuracy)
     sph_refine_passage: bool = False       # True: LIQ-6's old r = min(r, passage/16) (the DC show pins it)
+    liquid_tension: bool = False           # True: a liquid card's surface tension reaches its particles (csf)
     sph_viscous_above: float = 1e-2        # Pa·s; above -> weiler2018, else xsph
     pile_threshold: int = 50               # free bodies per world
     pile_backend: Literal["mujoco", "kamino", "steel"] = "mujoco"

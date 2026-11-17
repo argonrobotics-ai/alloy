@@ -73,20 +73,38 @@ def test_no_self_overlap_where_alloy_starts_a_robot(key: str) -> None:
     assert not deep, deep
 
 
-FRANKA = ("e1_fr3", "e2_panda", "e4_fr3_bimanual", "e5_fr3_duo")
+@pytest.mark.parametrize("key", KEYS)
+def test_friction_stays_above_mujocos_floor_in_float32(key: str) -> None:
+    """Newton and MuJoCo Warp hold friction in float32: every term a geom's condim uses stays at or above MuJoCo's
+    mjMINMU there, so no load warns MJ_MINMU (T14's mug shipped rolling 1e-5, just under it in float32: 62 MuJoCo
+    Warp warnings per load of an arm scene; alloy.tasks.emb_build.floor_friction)."""
+    from alloy.tasks.mjb_convert import under_minmu
+
+    low = under_minmu(_model(key))
+    assert not low, (len(low), low[:3])
+
+
+ARMS = ("e1_fr3", "e2_panda", "e3_ur10e_2f85", "e4_fr3_bimanual", "e5_fr3_duo")
 
 
 @pytest.mark.timeout(600)
-@pytest.mark.parametrize("key", FRANKA)
-def test_shipped_franka_scene_starts_with_check_ok(key: str) -> None:
+@pytest.mark.parametrize("key", ARMS)
+def test_shipped_arm_scene_starts_with_check_ok_and_no_minmu_warning(key: str) -> None:
     """AGENTS.md section 5's shipped arms, as a user adds them: two steps on the CPU, then check() is ok (the Panda
-    and the Duo failed START_PEN at 30 and 43 mm before link5 | hand / link7 were excluded)."""
+    and the Duo failed START_PEN at 30 and 43 mm before link5 | hand / link7 were excluded), and neither the build
+    nor the steps warned MJ_MINMU (the mug's rolling friction 1e-5 gave 62 MuJoCo Warp warnings per load before)."""
+    import warnings
+
     import alloy
 
-    scene = alloy.Scene(dt=0.01)
-    scene.add_robot("arm", scene_path(EMBODIMENTS[key]))
-    sim = alloy.build(scene, device="cpu")
-    sim.step(2)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        scene = alloy.Scene(dt=0.01)
+        scene.add_robot("arm", scene_path(EMBODIMENTS[key]))
+        sim = alloy.build(scene, device="cpu")
+        sim.step(2)
+    minmu = [str(w.message) for w in caught if "MJ_MINMU" in str(w.message)]
+    assert not minmu, (len(minmu), minmu[:2])
     report = sim.check()
     assert report["ok"], report["problems"]
 

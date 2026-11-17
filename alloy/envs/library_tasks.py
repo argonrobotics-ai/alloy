@@ -46,7 +46,10 @@ def maybe_vary(scene: Any, vary: bool, seed: int, pos: float = 0.0, yaw_deg: flo
     """``alloy.vary`` one variant of ``scene`` (placement and textures) when ``vary``; the scene itself otherwise."""
     if not vary:
         return scene
+    from alloy.api._build import quiet_warp  # noqa: PLC0415
     from alloy.api._vary import vary as alloy_vary  # noqa: PLC0415
+
+    quiet_warp()                                    # the variant's checks start Warp before any build would quiet it
 
     try:
         return alloy_vary(scene, 1, pos=pos, yaw_deg=yaw_deg, seed=seed)[0]

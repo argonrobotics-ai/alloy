@@ -234,12 +234,17 @@ def _world(look: dict, lighting: Lighting | None) -> dict:
 VIEW_DEFAULTS = {"view": "AgX", "look": "AgX - Medium High Contrast", "exposure": 0.0}
 
 
-def _settings(look: dict) -> dict:
+def _settings(look: dict, world: dict | None = None, meshes: list = (), device: str = "cpu") -> dict:
     """Cycles settings with Blender's defaults (12 bounces, 4 diffuse / glossy, clamp indirect 10) and the look's view
-    (``render.view`` / ``look`` / ``exposure``; AgX "Medium High Contrast" at exposure 0 by default, as Blender)."""
+    (``render.view`` / ``look`` / ``exposure``; AgX "Medium High Contrast" at exposure 0 by default, as Blender) with
+    its white balance (``render.white_balance``, "auto" by default as in Blender; ``white_balance.look_view_white``,
+    measured in the look's ``world`` at the subject of ``meshes``). Without a look: no white balance, as before."""
     render = {**VIEW_DEFAULTS, **(look.get("render") or {})}
     caustics = (look.get("render") or {}).get("caustics") or {}
     view = {"view_transform": render["view"], "look": render["look"], "exposure": float(render["exposure"])}
+    if look and world is not None:
+        from .white_balance import look_view_white
+        view.update(look_view_white(look, world, list(meshes), device))
     return {"view_settings": view, "cycles": {"max_bounces": 12, "diffuse_bounces": 4, "glossy_bounces": 4, "transmission_bounces": 12,
                        "sample_clamp_direct": 0.0, "sample_clamp_indirect": 10.0, "seed": 0, "blur_glossy": 1.0,
                        "caustics_reflective": bool(caustics.get("reflective", True))}}
@@ -298,8 +303,10 @@ def pack_from_model(model, look=None, lighting: Lighting | None = None, items: d
         from .liquid_scene import liquid_pack_meshes
         binding = _add_dynamic(liquid_pack_meshes(liquid), meshes, mats, tex, binding)
     lights = _look_lights(look) if look else _lighting_lights(lighting or Lighting.studio())
-    static = {"pack_version": 2, "frames": [0], "settings": _settings(look), "world": world,
+    framed = [m for m in meshes if m.meta.get("kind") != "liquid"]
+    static = {"pack_version": 2, "frames": [0], "settings": _settings(look, world, framed, str(model.device)),
+              "world": world,
               "materials": mats, "materials_used_by_meshes": sorted({m.meta["materials"][0] for m in meshes}),
               "textures": tex}
-    frame = Frame(0, _default_camera([m for m in meshes if m.meta.get("kind") != "liquid"]), lights, meshes)
+    frame = Frame(0, _default_camera(framed), lights, meshes)
     return Pack(Path("/"), static, 2), frame, binding

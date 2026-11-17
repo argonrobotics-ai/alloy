@@ -139,7 +139,8 @@ def test_fast_particle_is_stopped_at_the_wall_it_would_cross(monkeypatch, speed)
     s, mon, _v, x = _play(_shot(speed), 1)
     assert 8.9e-3 < x[0, 0] < 9.0e-3 and int(s.stats.diagnostics()["swept"][0]) == 1
     assert int(mon.counts()["leaks"][0]) == 0
-    monkeypatch.setattr(solver_module, "SWEEP", 1.0e9)  # sweep off: it crosses, the monitor's all-shape test sees it
+    monkeypatch.setattr(solver_module, "sweep_length", lambda h, thin: 1.0e9)  # sweep off: it crosses, the
+    # monitor's all-shape test sees it
     s, mon, _v, x = _play(_shot(speed), 1)
     assert x[0, 0] > 17.0e-3 and int(s.stats.diagnostics()["swept"][0]) == 0
     assert int(mon.counts()["leaks"][0]) == 1 and mon.counts()["max_depth_r"][0] > 1.9  # T/2 = 2r, exact

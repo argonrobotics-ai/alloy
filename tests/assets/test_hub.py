@@ -224,6 +224,24 @@ def test_fetch_by_category_and_listing(hub):
     assert listing["categories"] == {"toylib/cups": 2} and listing["objects"] == 2
 
 
+def test_a_cut_listing_names_objects_of_every_category_and_says_how_to_see_the_rest(hub, monkeypatch):
+    """A library whose first category alone fills the list (ycb_gso: 1,033 scanned objects before 78 ycb ones) still
+    shows names of the later category, and the output says how to list a category in full."""
+    rows = ([{"name": f"gso_{i:03d}", "library": "ycb_gso", "category": "gso", "size": 1, "files": []}
+             for i in range(30)]
+            + [{"name": f"ycb_{i:03d}", "library": "ycb_gso", "category": "ycb", "size": 1, "files": []}
+               for i in range(4)])
+    monkeypatch.setattr(fetch, "load_index", lambda repo=None: rows)
+    cut = fetch.list_objects(library="ycb_gso", limit=10)
+    assert cut["objects"] == 34 and len(cut["names"]) == 10
+    assert [n for n in cut["names"] if n.startswith("ycb_")] == ["ycb_000", "ycb_001", "ycb_002", "ycb_003"]
+    assert cut["names"][:2] == ["gso_000", "ycb_000"] and len(set(cut["names"])) == 10
+    assert "10 of 34" in cut["note"] and "--category" in cut["note"]
+    whole = fetch.list_objects(library="ycb_gso", limit=50)
+    assert sorted(whole["names"]) == sorted(r["name"] for r in rows) and "note" not in whole
+    assert fetch.list_objects(category="ycb", limit=10)["names"] == [f"ycb_{i:03d}" for i in range(4)]
+
+
 def test_unknown_names_and_filters_say_what_to_do(hub):
     with pytest.raises(source.HubError) as e:
         fetch.fetch(names=["cup_b"])
@@ -248,6 +266,30 @@ def test_a_missing_or_private_repo_error_says_check_the_id_then_log_in():
     assert "private" in err.message and "hf auth login" in err.fix and "request access" in err.fix
     assert "is public and needs no login" in err.fix and "hf auth logout" in err.fix     # the default library
     assert err.to_dict()["error"] == "HubError"
+
+
+def test_the_hub_note_about_missing_tokens_is_not_logged_and_a_rate_limit_names_the_token(caplog):
+    """The library is public: the Hub's once-per-process "unauthenticated requests" note is dropped at the logger
+    huggingface_hub writes it to, other warnings of that logger still pass, and a rate limit says to set HF_TOKEN."""
+    import logging
+
+    pytest.importorskip("huggingface_hub")
+    source._hub()
+    source._hub()                                          # a second call adds no second filter
+    http_log = logging.getLogger(source.HF_HTTP_LOGGER)
+    assert sum(isinstance(f, source._NoTokenNote) for f in http_log.filters) == 1
+    note = ("Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable "
+            "higher rate limits and faster downloads.")
+    with caplog.at_level(logging.WARNING):
+        http_log.warning(note)
+        http_log.warning("Retrying in 1s [Retry 1/5].")
+    assert [r.getMessage() for r in caplog.records] == ["Retrying in 1s [Retry 1/5]."]
+
+    class _Limited(Exception):
+        response = type("R", (), {"status_code": 429})()
+
+    err = source.explain(_Limited("429"), "owner/alloy-library", "index.jsonl")
+    assert "rate-limiting" in err.message and "HF_TOKEN" in err.fix
 
 
 def test_repo_id_from_env(monkeypatch):

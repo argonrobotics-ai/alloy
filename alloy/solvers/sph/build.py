@@ -218,7 +218,48 @@ def liquid_points(shape, spacing: float) -> np.ndarray:
     pts = lattice_points(tuple(start), tuple(int(c) for c in counts), spacing)
     if isinstance(shape, Primitive):
         pts = pts[_inside_primitive(pts, shape.kind, shape.size)]
+        if shape.kind == "cylinder":
+            pts = column_layers(disk_rings(pts, shape.size[0], spacing), shape.size[0], shape.size[1], spacing)
     return pts
+
+
+DISK_CLEAR = 0.375     # [spacings] its outer ring this far inside the side (0.19-0.22 threw the top up 11-13 mm)
+
+
+def disk_rings(pts: np.ndarray, radius: float, spacing: float) -> np.ndarray:
+    """A cylinder's lattice points out to the whole ring (equal distance from the axis) whose count per layer is
+    closest to the disk's area / spacing^2 without passing it, with the ring ``DISK_CLEAR`` spacings or more inside
+    the side. The square lattice in a small disk can hold more points than its area (6 across: 32 against 28.3), and
+    that narrow cup's liquid started compressed and went INVALID at rest; 3 % over (8 across, 52 against 50.3) threw
+    its top layer 18-40 mm up and out of a 16 mm cup, and an outer ring 0.2 spacings from the side 11-13 mm up.
+    Example: ``disk_rings(pts, 0.006, 0.002)`` keeps 24 points a layer."""
+    if len(pts) == 0:
+        return pts
+    rho = np.round(np.hypot(pts[:, 0], pts[:, 1]), 9)
+    layer = np.sort(rho[pts[:, 2] == pts[0, 2]])
+    radii = np.unique(layer)
+    counts = np.searchsorted(layer, radii, side="right")
+    target = np.pi * radius**2 / spacing**2
+    ok = (counts <= target + 1.0e-9) & (radii <= radius - DISK_CLEAR * spacing + 1.0e-9)
+    gap = np.where(ok, np.abs(counts - target), np.inf)
+    keep = int(np.argmin(gap)) if np.isfinite(gap).any() else 0
+    return pts[rho <= radii[keep]]
+
+
+def column_layers(pts: np.ndarray, radius: float, half_height: float, spacing: float) -> np.ndarray:
+    """``disk_rings``' column with layers added on top until its count is the closest to the cylinder's volume /
+    spacing^3: the rings hold less than the disk's area (a 40 mm cylinder at 4 mm: 68 a layer against 78.5), so the
+    column starts taller rather than short of the volume asked; the bottom stays where it was.
+    Example: ``column_layers(pts, 0.02, 0.01, 0.004)`` turns 5 layers of 68 into 6."""
+    if len(pts) == 0:
+        return pts
+    top = float(pts[:, 2].max())
+    layer = pts[np.isclose(pts[:, 2], top)]
+    layers = len(pts) // len(layer)
+    want = np.pi * radius**2 * 2.0 * half_height / spacing**3
+    extra = max(int(np.floor(want / len(layer) + 0.5)) - layers, 0)
+    added = [layer + np.array([0.0, 0.0, k * spacing]) for k in range(1, extra + 1)]
+    return np.concatenate([pts, *added]) if added else pts
 
 
 def emit_object(builder: newton.ModelBuilder, obj, decision) -> None:
@@ -237,6 +278,8 @@ def emit_object(builder: newton.ModelBuilder, obj, decision) -> None:
         raise CapacityError(f"{obj.card.name}: {len(pts)} SPH particles at r = {r:.3g} m > budget {budget}")
     fluid = obj.material.fluid
     mu = float(fluid.viscosity.value) if fluid is not None else 1.0e-3
-    add_fluid_points(builder, cfg, pts, rest_density=float(obj.material.density.value), viscosity=mu)
-    log.debug("SPH emit %s: %d particles, r=%g m, rho0=%g, mu=%g", obj.card.name, len(pts), r,
-              float(obj.material.density.value), mu)
+    sigma = float(decision.numbers.get("surface_tension", 0.0))      # the router's, when the scene turns tension on
+    add_fluid_points(builder, cfg, pts, rest_density=float(obj.material.density.value), viscosity=mu,
+                     surface_tension=sigma)
+    log.debug("SPH emit %s: %d particles, r=%g m, rho0=%g, mu=%g, sigma=%g", obj.card.name, len(pts), r,
+              float(obj.material.density.value), mu, sigma)

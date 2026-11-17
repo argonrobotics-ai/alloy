@@ -6,6 +6,118 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.7] - 2026-11-17
+
+### Added
+- `alloy.Scene(liquid_tension=True)` (also `scene.liquid_tension`, kept in Scene JSON): each liquid feels its
+  material's surface tension (water 0.072 N/m), with a free contact line on every wall. Off by default. A thin stream
+  then holds together: in a pour from a tilted 50 mm beaker into a 15 mm vial at 2 mm particles, the vial caught
+  52-57 % of what left the beaker, against 2-5 % without, at about the same cost. The tilted beaker pours a half to
+  a quarter as much in the same time (less at finer settings), and at 1.5 mm a few droplets fly off the pour (a 50 mm
+  receiver caught 94 %): `docs/known_gaps/liquid-tension-lip-drain.md`. A free oscillating blob of water grows its
+  oscillation (`docs/known_gaps/liquid-tension-free-drops.md`).
+- `alloy.Scene(liquid_accuracy="ultra")`: liquid particles 1.5 mm apart, 8 across a 12 mm opening (a 15 mm vial's
+  neck is 10), at about 50x the default's work. On one L4 a pour ran 3.0x super's wall time for one world and 7.0x
+  (61x default) for 16 worlds. `alloy.estimate` shows all three settings, and the coarse-opening warning names the
+  cheapest setting that resolves each item.
+
+### Changed
+- Full-quality renders with a look (`sim.render(quality="full", look=...)`) apply its `render.white_balance` as
+  Blender 4.5 does, `"auto"` unless the look says otherwise: the camera renders a small grey ball at the subject under
+  the look's lights and world and adapts that light's colour to white, so under a 2800 K light a grey ball reads grey,
+  not orange. `{"kelvin": K, "tint": t}` adapts a fixed white (tint 10 when left out) and `"off"` gives the image as
+  before. Looks whose light is far from white change most: of three shipped looks, the kitchen's image mean moved 22.5
+  levels, the workshop's 3.3 and the studio's 1.0. A render without a look is unchanged. The measurement adds 1-3 s to
+  a look's first scene build on the CPU.
+
+### Fixed
+- Water at rest in a narrow round cup (`add_open_cylinder`) no longer starts INVALID. Cups of 12-24 mm at 4 mm and
+  8 and 16 mm at 2 mm went INVALID within 0.04 s; every cup measured now stays healthy and keeps its water (12-32 mm
+  at 4 mm, 8-24 mm at 2 and 1.5 mm), and pours into 12-24 mm cups at 4 mm keep 100 % (was 88.6-97.5 %). Three causes:
+  walls built from many slabs were counted twice where neighbouring slabs meet, a crowded corner could lose the floor
+  from the walls a particle sees, and a cylinder of liquid could start with up to 27 % more particles than its area
+  holds. A cylinder of liquid now fills whole rings of particles, no more than its area holds, the outer ring at least
+  0.375 particle spacings inside its side (a fuller or closer ring threw the top layer up to 40 mm, over the rim of a
+  16 mm cup). The column then adds layers on top until it holds the volume asked to within half a layer, so it starts
+  taller than asked in a narrow cup (40 mm asked in a 12 mm cup at 2 mm: 48 mm); a 40 mm cylinder holds 26.1 ml at
+  4 mm and 24.0 ml at 2 mm, was 25.6 and 25.3 ml, asked 25.1 ml. The coarse-opening warning drops its 24 mm floor: it
+  fires under 8 particles across at every setting.
+- Liquid holds in walls thinner than its particles: a particle that moves more than half the thinnest wall in one
+  step is tested along its whole path, so it cannot step across the wall. Measured with 1 mm glass at every setting:
+  still water for 5 s in a 1 mm tub and a pour into a 15 mm vial with 1 mm walls lost no particle through a wall.
+  (Static and kinematic walls down to 1 mm, such as `add_open_cylinder(..., wall=0.001)` or a static box, now build
+  without `card_extra`; beside a free body or a robot the build warns once per wall with the speed that can pass it,
+  its thickness / (2 x 1.25 ms): 0.4 m/s at 1 mm. Free parts still need 1.25 mm, or
+  `card_extra={"features": {"min_wall": ...}}`.)
+- Liquid no longer crosses the wall of a narrow round cup at the inner corner between two wall slabs. Near the floor,
+  a particle there could keep two farther slabs among its four wall contacts and leave out the nearer one, step into
+  it and come out through the cup's outer face (once in a probe pour into a 15 mm cup at 2 mm particles). The nearer
+  slab is now kept.
+- `alloy.estimate` on the CPU counts the parts each free body comes to rest on, from its start pose, and charges
+  those beyond its first in a scene of free bodies on the default route (MuJoCo C), where rk4 tests each against its
+  support in each of its four stages: about 3x as much on a table, a bin's floor or another body as on the ground.
+  Three YCB scans dropped into a bin (32 convex parts each, resting on 15-17 of them) stepped 2.0-2.6x the estimate,
+  which said about 0.9x real time where the run gave 0.38-0.48x; they now step 1.04-1.14x it, and every body measured
+  that settles (scans, a body of up to 32 cubes and decomposed bowls, on the ground and on a box table) reads within
+  1.3x. A body that keeps rocking on many parts (a decomposed bowl upside down on its rim) steps 1.6-2.4x it (was
+  1.8-3.8x). Bodies resting on one part each (a pile of separate boxes), robot scenes and MuJoCo Warp read as before.
+- `alloy.estimate(..., measure=True)` times the first second of the run (all of a shorter run) and charges the rest
+  at the rate of its last quarter. Before, it timed the first 0.2 s, before dropped objects land and while a pour
+  is still starting, so it read three YCB scans dropped into a bin about 2x fast (it said 0.78-0.87x real time where
+  the run gave 0.38-0.48x on the CPU) and a pour 3-6x fast. A pour still flowing after the timed second reads fast:
+  a 2.5 s pour into a cup, in a 3 s run, read 24.7 s against the run's 52.3 s (the estimate without `measure` said
+  67.8 s).
+- On a machine with no NVIDIA driver, Warp's line "Warp CUDA warning: Could not find or load the NVIDIA CUDA driver.
+  GPU execution will not be available." no longer prints, once per Python process, at the first `alloy.build`,
+  `alloy.envs.make` or CPU worker process: Alloy runs on the CPU there and says so where it matters (the build's
+  CPU note for cloth, liquid, sand and soft bodies). `ALLOY_VERBOSE=1` keeps Warp's own lines, that one included.
+- A soft mesh without the `mesh` extra (a YCB apple of vinyl_soft) names `rigid=True` on `add_object` / `add_mesh` in
+  the error itself, so `alloy.check` gives it too (it gave only a generic fix; `alloy.build`'s fix already had it).
+- `alloy.envs.make` prints none of Warp's start-up banner or "Module ... load" lines, as `alloy.build` does:
+  `PickPlace-v0` and `ClothFold-v0` printed the 6-line banner and 11-13 module lines, because their scene variant
+  started Warp before the build quieted it. `ALLOY_VERBOSE=1` still shows them.
+- A camera-only marker on a robot link (a geom with `contype` and `conaffinity` 0) no longer hides that link's
+  collision geoms in camera images. Newton's MJCF import hides every collider once a file has one such geom, so a hand
+  carrying a 4 mm marker and a jug of 5 box geoms drew only the marker, and the jug's water floated in the image. The
+  camera now also draws, on moving bodies with a display shape, the hidden colliders of MJCF geom groups 0-2 that
+  stick out of the body's display box by more than 25 % of its size; parts welded to the world keep the import's
+  choice.
+- A `VectorEnv` warns at build when a `jitter_joint` moves a body that a liquid or cloth starts in or on and `carry=`
+  does not name it. A wrist holding a jug turned it at each reset and left its water in mid-air: 14 % spilled before
+  the first action, with no message. The warning names the fix: `carry=[...]` on a slide joint; for a hinge, a slide
+  jitter or none. `Pour-v0` and `ClothFold-v0` build without it.
+- Both array backends of `alloy.envs` offer the same basic math (`sqrt`, `abs`, `exp`, `log`, `sin`, `cos`, `arcsin`,
+  `arccos`, `minimum`, `maximum`, `sum`, `mean`), so a `checks.custom` function written with `s.xp.sqrt(...)` runs
+  with `backend="numpy"` too; it raised `AttributeError: 'NumpyBackend' object has no attribute 'sqrt'`.
+  `docs/guide/envs.md` lists what `s.xp` offers.
+- `alloy.envs.mjcf.without_bodies` also trims a geom directly under `<worldbody>`: `without_bodies(path,
+  ["obstacle"])` on the H1-2 file drops its obstacle box (a geom there; the G1 and Go2 files wrap theirs in a body)
+  instead of raising `EnvError`. Trims of bodies are unchanged.
+- Shipped arms and the recorded task scenes no longer print MuJoCo Warp's MJ_MINMU friction warnings. Behaviour
+  unchanged.
+- In one process, repeated `alloy.build`, `sim.render(quality="full")` and `sim.close()` no longer grow GPU
+  memory: each scene's bevel mesh (its static triangles and their BVH) was kept for good, about 47 MiB per frame on
+  an L4 (4,674 to 13,698 MiB over 182 frames). It is now freed with the scene.
+- Sand, soil or paste in a container built of parts narrower than the material itself (the 4 mm wall slabs of a
+  default `add_open_cylinder`) gets a finer MPM voxel and many more particles: a 12 mm cube of sand in a vial of 10 mm
+  inner radius became 13,824 particles instead of the 512 its own size gives, with nothing said at build. The build
+  now warns once when a container part multiplies the count 4x or more, naming the part and both counts, with the fix
+  (a thicker `wall=`, fewer `segments=`, or a container of fewer, larger parts); `sim.routes()` and
+  `alloy.estimate(...)["routes"]` list both counts.
+- `alloy fetch` and builds that fetch a Hub object no longer log the Hub's note about unauthenticated requests
+  (twice per `alloy fetch`, once per cold `alloy.envs.make` of an environment with Hub objects): the library is
+  public. A download the Hub rate-limits now says to set `HF_TOKEN`.
+- A cut `alloy fetch --list` (over 200 objects) lists names from every category in turn and says how to list one in
+  full: `--library ycb_gso` listed 200 `gso_*` names and no `ycb_*`.
+- The RoboCasa object importer (`python -m alloy.importers.robocasa`) no longer leaves `MUJOCO_GL` and
+  `PYOPENGL_PLATFORM` set in the process after its thumbnail render, which made a later `import mujoco` in a
+  subprocess fail where OSMesa does not work.
+
+### Repository
+- The quick CPU tests that pull requests run take about 35-45 minutes with a warm kernel cache, up to about 1 h 40 on
+  a cold first run (0.1.6 said about 80 minutes and 2 h 15, measured before its fix for tests that share a file's
+  one-time setup). On GitHub's runner they took 34 minutes warm on 0.1.6's push and 43 on 0.1.5's last run.
+
 ## [0.1.6] - 2026-11-16
 
 ### Added

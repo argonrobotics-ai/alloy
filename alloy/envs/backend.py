@@ -3,7 +3,9 @@
 
 ``torch``: zero-copy views of the engine's arrays (``wp.to_torch``) on the simulation device; observations, rewards
 and actions stay on the GPU. ``numpy``: views on CPU, host copies on a GPU (slower; for machines without PyTorch).
-Both expose the same small set of operations, so task checkers are written once. Example::
+Both expose the same small set of operations, so task checkers are written once (``checks.custom``'s ``s.xp``):
+arrays (``asarray``, ``zeros``, ``copy``, ``to_numpy``, ``float``, ``cat``, ``stack``, ``where``), ``norm``, ``clip``,
+``amin``, ``amax``, ``any``, ``tanh``, ``atan2`` and the math in ``MATH``. Example::
 
     xp = pick_backend("auto", "cuda:0")          # torch when it is installed
     body_q = xp.view(sim.engine.state.body_q)    # (bodies, 7) tensor, shares memory with the engine
@@ -22,6 +24,8 @@ import warp as wp
 from alloy.envs.errors import EnvError, install_fix
 
 BACKENDS = ("auto", "torch", "numpy")
+#: elementwise math and reductions both backends offer under these names, e.g. ``xp.sqrt(dx * dx + dy * dy)``
+MATH = ("sqrt", "abs", "exp", "log", "sin", "cos", "arcsin", "arccos", "minimum", "maximum", "sum", "mean")
 
 
 def has_torch() -> bool:
@@ -45,7 +49,62 @@ def pick_backend(name: str, device: str) -> NumpyBackend | TorchBackend:
     return NumpyBackend(device)
 
 
-class NumpyBackend:
+class _Math:
+    """The math both backends share (``MATH``); each backend runs it through its own ``_op``."""
+
+    def _op(self, name: str, *args: Any, **kw: Any) -> Any:
+        raise NotImplementedError
+
+    def sqrt(self, x: Any) -> Any:
+        """Square root, elementwise. Example: ``xp.sqrt(dx * dx + dy * dy)``."""
+        return self._op("sqrt", x)
+
+    def abs(self, x: Any) -> Any:
+        """Absolute value, elementwise. Example: ``xp.abs(s["arm/x.q"])``."""
+        return self._op("abs", x)
+
+    def exp(self, x: Any) -> Any:
+        """e to the power x, elementwise. Example: ``xp.exp(-d / 0.05)``."""
+        return self._op("exp", x)
+
+    def log(self, x: Any) -> Any:
+        """Natural logarithm, elementwise. Example: ``xp.log(1 + d)``."""
+        return self._op("log", x)
+
+    def sin(self, x: Any) -> Any:
+        """Sine (radians), elementwise. Example: ``xp.sin(q)``."""
+        return self._op("sin", x)
+
+    def cos(self, x: Any) -> Any:
+        """Cosine (radians), elementwise. Example: ``xp.cos(q)``."""
+        return self._op("cos", x)
+
+    def arcsin(self, x: Any) -> Any:
+        """Inverse sine (radians), elementwise. Example: ``xp.arcsin(xp.clip(s, -1, 1))``."""
+        return self._op("arcsin", x)
+
+    def arccos(self, x: Any) -> Any:
+        """Inverse cosine (radians), elementwise. Example: ``xp.arccos(xp.clip(c, -1, 1))``."""
+        return self._op("arccos", x)
+
+    def minimum(self, a: Any, b: Any) -> Any:
+        """The smaller of ``a`` and ``b``, elementwise (numbers broadcast). Example: ``xp.minimum(d, 0.1)``."""
+        return self._op("minimum", a, b)
+
+    def maximum(self, a: Any, b: Any) -> Any:
+        """The larger of ``a`` and ``b``, elementwise (numbers broadcast). Example: ``xp.maximum(z, 0.0)``."""
+        return self._op("maximum", a, b)
+
+    def sum(self, x: Any, axis: int = -1) -> Any:
+        """Sum over ``axis``. Example: ``xp.sum(d * d, -1)``."""
+        return self._op("sum", x, axis=axis)
+
+    def mean(self, x: Any, axis: int = -1) -> Any:
+        """Mean over ``axis``. Example: ``xp.mean(z, -1)``."""
+        return self._op("mean", x, axis=axis)
+
+
+class NumpyBackend(_Math):
     """NumPy arrays. On CPU the views share memory with the engine; on a GPU every view is a host copy."""
 
     name = "numpy"
@@ -53,6 +112,9 @@ class NumpyBackend:
     def __init__(self, device: str) -> None:
         self.device = device
         self.shared = device == "cpu"
+
+    def _op(self, name: str, *args: Any, **kw: Any) -> np.ndarray:
+        return getattr(np, name)(*args, **kw)
 
     # --- engine arrays ---
     def view(self, arr: wp.array) -> np.ndarray:
@@ -147,7 +209,7 @@ class NumpyBackend:
         return np.array(x, copy=True)
 
 
-class TorchBackend:
+class TorchBackend(_Math):
     """PyTorch tensors on the simulation device, sharing memory with the engine's Warp arrays."""
 
     name = "torch"
@@ -159,6 +221,13 @@ class TorchBackend:
         self.torch, self.device = torch, device
         self.tdevice = torch.device("cuda", wp.get_device(device).ordinal) if device.startswith("cuda") else "cpu"
         self._dtypes = {"float32": torch.float32, "int64": torch.int64, "int32": torch.int32, "bool": torch.bool}
+
+    def _op(self, name: str, *args: Any, **kw: Any) -> Any:
+        t = self.torch
+        args = tuple(a if isinstance(a, t.Tensor) else t.as_tensor(a, device=self.tdevice) for a in args)
+        if "axis" in kw:
+            kw = {"dim": kw.pop("axis"), **kw}
+        return getattr(t, name)(*args, **kw)
 
     # --- engine arrays ---
     def view(self, arr: wp.array) -> Any:
@@ -264,4 +333,4 @@ class TorchBackend:
         return x.clone()
 
 
-__all__ = ["BACKENDS", "NumpyBackend", "TorchBackend", "has_torch", "pick_backend"]
+__all__ = ["BACKENDS", "MATH", "NumpyBackend", "TorchBackend", "has_torch", "pick_backend"]

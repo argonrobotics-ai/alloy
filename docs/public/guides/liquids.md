@@ -52,7 +52,10 @@ To fill a container from above, pour instead of dropping a block:
 
 ## Keep in mind
 
-- Containers narrower than 24 mm are unreliable ([details](../../known_gaps/liquid-narrow-containers.md)).
+- A container opening needs 8 liquid particles across: 32 mm at the default setting, 16 mm at super, 12 mm at
+  ultra. A thin stream into a narrow receiver mostly misses unless surface tension is on. Water at rest
+  stays healthy in round cups from 8 mm at super and ultra, and static or kinematic container walls build down to
+  1 mm, a glass vial for example ([details](../../known_gaps/liquid-narrow-containers.md)).
 - A block of liquid dropped from above splashes over the rim; a poured stream much less, with `scene.add_pour`
   ([details](../../known_gaps/liquid-pour-over-the-rim.md)).
 - A stream poured onto a fabric sheet with self-contact on (the default) makes the world INVALID within about

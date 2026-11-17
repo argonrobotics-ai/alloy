@@ -20,6 +20,7 @@
   "robot self-pairs overlapping > 0.5 mm at the start pose, or at qpos0 (where alloy.build starts a robot), excluded: H1-2's wrist yaw | thumb proximal, each hand; the Franka arms' link5 | hand (Panda) or link7 (FR3), whose hulls overlap 5.6-43 mm at qpos0 and 15-33 mm at joint6's lower limit; none elsewhere",
   "options: jacobian sparse; <flag multiccd=\"disable\"/> written out (Alloy's MJCF route, as for T12: Newton reads an absent flag as off, MuJoCo as on; explicit, both read off)",
   "Franka Hand: tendon 'split' + tendon actuator -> joint position actuator 'hand_finger' on finger_joint1 (kp 100 N/m, kv 10 N s/m, force \u00b1100 N, ctrl 0-0.04 m; the j1 = j2 equality kept)",
+  "T14's mug (62 convex pieces, condim 6): rolling friction 1e-5 -> 2e-5. Newton and MuJoCo Warp hold friction in float32, where 1e-5 lands just under MuJoCo's floor mjMINMU (1e-5), and MuJoCo Warp warned once per piece at every load. A contact takes the larger rolling friction of its two geoms, and every geom the mug can touch has 1e-4 or more, so its contacts are unchanged (alloy.tasks.emb_build.floor_friction)",
   "the verdict scene here is emb_e1_fr3 without TRAIN-FIX 1b's firm contacts: this variant keeps the source's solimp and solmix (alloy.tasks.emb_firm applies to the verdict scene only)",
   "route contact variant of emb_e1_fr3: every geom's solref set to [0.00125, 1.0] (time constant = 2 x Alloy's route step 0.000625 s, MuJoCo's floor; damping ratio); a solimp softer than MuJoCo's default (dmin < 0.9; Go2's feet) set to the default, as in _stiff; friction, margins, stiffer solimp and everything else as the verdict scene"
  ],
@@ -42,7 +43,7 @@
  },
  "mug": {
   "scene": "library/robots/task_t14/scene.xml",
-  "sha256": "52996d90aa41bf24a15a87b1352f77c179e7f5292a33942d8ac1e39fd2a9628d"
+  "sha256": "2e5e9f684f32c89e9125d3c4ce4a0b9df1f8987e813ff0b81607fc184bdad437"
  },
  "hull_split": 0.00019908112182591235,
  "init": {

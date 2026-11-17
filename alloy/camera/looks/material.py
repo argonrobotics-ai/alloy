@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 SSS_RADIUS_RGB = (1.0, 0.55, 0.3)  # red scatters furthest, as in most organic and plastic media
 UNLINKED_NORMAL_SOCKETS = ("Normal", "Coat Normal")
+_ABSORPTION_WARNED: set[str] = set()  # materials already warned about by _warn_dropped_absorption (once each)
 
 
 def rgba(c) -> tuple:
@@ -152,7 +153,19 @@ def _build_tree(spec: dict, tex: dict) -> tuple[NodeTree, Node]:
     return tree, bsdf
 
 
-def material_tree(name: str, spec: dict | str | None = None, textures: dict | None = None) -> dict:
+def _warn_dropped_absorption(name: str, spec: dict) -> None:
+    """Warn once per material when its spec tints by volume absorption, which the tree leaves out."""
+    color, depth = spec.get("absorption_color"), spec.get("absorption_m")
+    if not color or not depth or min(float(c) for c in color) >= 1.0 or name in _ABSORPTION_WARNED:
+        return
+    _ABSORPTION_WARNED.add(name)
+    log.warning("camera: material %r sets volume absorption (absorption_color %s over absorption_m %s), which "
+                "quality='full' draws only inside simulated liquids: on a mesh it renders untinted", name,
+                list(color), depth)
+
+
+def material_tree(name: str, spec: dict | str | None = None, textures: dict | None = None, *,
+                  volume: bool = False) -> dict:
     """Pack-v2 material ``{name, use_nodes, diffuse_color, tree, principled, textures}`` for a look material.
 
     ``spec`` is a look file's ``materials`` entry (``{"preset": "abs_black", "roughness": 0.5, ...}``), a bare preset
@@ -161,7 +174,9 @@ def material_tree(name: str, spec: dict | str | None = None, textures: dict | No
     missing set raises CameraError. ``textures`` of the result is {key: {file, colorspace}} for the images used.
 
     Not mirrored (they raise CameraError): Voronoi / Map Range details (crust, crumb, scratches), decals, tex_tint,
-    imperfection maps, planar mapping. Volume absorption and time keys are left out (the generator never reads them).
+    imperfection maps, planar mapping. Time keys are left out, and so is volume absorption (absorption_color /
+    absorption_m): a spec that tints by it warns once per material name, unless ``volume`` says the caller adds the
+    absorption itself (an SPH liquid's volume node, ``liquid_looks``).
 
     Example::
 
@@ -170,6 +185,8 @@ def material_tree(name: str, spec: dict | str | None = None, textures: dict | No
     """
     spec = resolve_spec(name, spec)
     check_supported(name, spec)
+    if not volume:
+        _warn_dropped_absorption(name, spec)
     roles, entries = _texture_images(spec, textures)
     tree, bsdf = _build_tree(spec, roles)
     used = {n.data["image"] for n in tree.nodes.values() if "image" in n.data}

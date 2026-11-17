@@ -260,7 +260,8 @@ def _tet_mesh(obj: ResolvedObject) -> tuple[np.ndarray, np.ndarray]:
             import pytetwild  # noqa: F401  (tetrahedralize uses it)
         except ImportError as exc:
             raise AssemblyError(f"{obj.card.name}: tetrahedralising a mesh needs the optional [mesh] extra "
-                                "(pytetwild), not installed") from exc
+                                "(pytetwild), not installed; or keep it a rigid body with its material: rigid=True to "
+                                "its add_object / add_mesh call (card: route: {route: rigid, reason: ...})") from exc
         src = load_mesh(shape) if isinstance(shape, MeshSource) else load_mesh(MeshSource(shape.from_mesh, ""))
         edge = ({"edge_length_abs": float(shape.edge_length)} if isinstance(shape, TetSource) else
                 {"edge_length_fac": TETWILD_EDGE_FAC})
@@ -285,7 +286,6 @@ def tetrahedralize(vertices: np.ndarray, faces: np.ndarray, edge: dict[str, floa
     and the pytetwild version, and the first process to write a key wins: every build of a mesh on one host gets the
     same tets. A card that must build the same tets on every host ships them (a TetSource ``.npz``)."""
     import pytetwild  # noqa: PLC0415 (optional [mesh] extra; _tet_mesh checked the import)
-
     v = np.ascontiguousarray(vertices, np.float64).reshape(-1, 3)
     f = np.ascontiguousarray(faces, np.int32).reshape(-1, 3)
     key = _tet_key(v, f, edge, getattr(pytetwild, "__version__", "?"))

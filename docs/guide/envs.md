@@ -46,7 +46,10 @@ The envs run without Gymnasium. What works with it today, and what does not:
 `pip install 'alloy-engine[envs]'` adds what the envs need beyond the
 default install:
 - PyTorch, for torch observations and the PPO example (`examples/envs/04_train_ppo.py`). Without it the envs return
-  NumPy arrays, and `backend="torch"` names the command.
+  NumPy arrays, and `backend="torch"` names the command. On a machine without an NVIDIA GPU, install the CPU build
+  of PyTorch first, `pip install torch --index-url https://download.pytorch.org/whl/cpu` (a download of about
+  200 MB), and then the extra: otherwise pip brings the default Linux build with its CUDA libraries, a few GB that
+  a CPU never uses.
 - huggingface_hub, for the library objects of `PickPlace-v0` (a YCB object) and `DrawerOpen-v0` (a Lightwheel cabinet
   from the RoboCasa pack) on the Hugging Face Hub: the first build fetches them. Without it, `make` says so and names
   the command.
@@ -159,8 +162,10 @@ print(env.obs_names()[:3], env.action_names(), sorted(info["terms"]))
   and `randomize=` (per-episode random starts: `alloy.envs.randomize`). `examples/envs/02_custom_task.py` runs one.
   `jitter_joint` teleports a joint: what a slide carries moves with it only if named in `carry=` (free objects, and
   particle objects such as the water in a cup on the slide: without it a 3 cm jitter left 20-41 % of the water
-  outside the cup after 10 steps, with it none), and a pose that puts a finger inside a resting object starts
-  overlapping it (START_PEN), so start a hand open and close it with actions.
+  outside the cup after 10 steps, with it none). A hinge cannot carry a liquid or cloth: jittering the wrist that
+  holds a jug turns the jug and leaves its water in mid-air. The env warns at build when a jittered joint moves a
+  body that a liquid or cloth starts in or on and `carry=` does not name it. A pose that puts a finger inside a
+  resting object starts overlapping it (START_PEN), so start a hand open and close it with actions.
 - Checks and observations read `env.state`, every world's state with the keys of `sim.state()`
   (`env.state.start` at each world's last reset). The keys a solver keeps rather than the bodies' poses (a heated
   liquid's `"<name>.temperature"`, a metal sheet's, wire's or yielding joint's `"<name>.plastic_strain"`) are copied
@@ -219,6 +224,12 @@ point, pass a body name (its origin), `"<body>.com"` (its centre of mass), a goa
 
 Checks combine with `+ - * /`, comparisons (`<`, `<=`, `>`, `>=`), `&`, `|` and `~`; a bool check counts 1 or 0 in
 arithmetic. A `reward` term is summed every step; `success` and `failure` are read every step too.
+
+In a `custom` function, `s.xp` is the env's array backend (torch tensors, or NumPy arrays with `backend="numpy"`). Write
+the math through it, and the same function runs on both: `sqrt`, `abs`, `exp`, `log`, `sin`, `cos`, `arcsin`,
+`arccos`, `minimum`, `maximum`, `sum`, `mean`, `norm`, `clip`, `amin`, `amax`, `tanh`, `atan2`, `where`, `cat`,
+`stack`, `asarray`, `zeros`, `float`, `copy`, `any` and `to_numpy` (`alloy.envs.backend.MATH` names the math), e.g.
+`C.custom("reach", lambda s: s.xp.sqrt(s["ball.pos"][:, 0] ** 2 + s["ball.pos"][:, 1] ** 2))`.
 
 ### When an episode counts as a success
 

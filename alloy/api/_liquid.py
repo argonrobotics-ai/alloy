@@ -15,6 +15,10 @@ from typing import Any
 
 import numpy as np
 
+from alloy.api.errors import SceneError
+
+TENSION_DEFAULT = False      # Scene.liquid_tension: off until its laws pass (still water stays still, pours keep)
+
 
 def refuse_solid(material: str, scene_materials: Mapping[str, Any], roots: Sequence[str | Path]) -> None:
     """Raise SceneError for ``Scene.add_liquid`` / ``add_pour`` of a material that does not flow: a card with neither
@@ -121,3 +125,44 @@ def unseen_kinematic(engine: Any) -> int:
     if owner is not None:
         kinematic &= np.asarray(owner)[: kinematic.size] < 0
     return int(kinematic.sum())
+
+
+class LiquidSettingsMixin:
+    """``Scene``'s liquid settings (mixed into ``alloy.Scene``): ``liquid_accuracy`` and ``liquid_tension``."""
+
+    @property
+    def liquid_accuracy(self) -> str:
+        """"default" (liquid particles 4 mm apart), "super" (2 mm, about 16x the cost) or "ultra" (1.5 mm, about
+        50x); set it before building."""
+        return self._liquid_accuracy
+
+    @liquid_accuracy.setter
+    def liquid_accuracy(self, value: str) -> None:
+        from alloy.api import _liquid_accuracy  # noqa: PLC0415
+
+        self._liquid_accuracy = _liquid_accuracy.checked(value)     # a bad value fails here, not at build
+
+    @property
+    def liquid_tension(self) -> bool:
+        """True: each liquid feels its card's surface tension (water 0.072 N/m) with a free contact line; set it
+        before building. Off by default (``TENSION_DEFAULT``)."""
+        return self.__dict__.get("_liquid_tension", TENSION_DEFAULT)
+
+    @liquid_tension.setter
+    def liquid_tension(self, value: bool) -> None:
+        self._liquid_tension = tension_checked(value)
+
+
+def tension_checked(value: Any) -> bool:
+    """``value`` if it is a bool, else a SceneError. Example: ``tension_checked(True)`` -> True."""
+    if not isinstance(value, bool):
+        raise SceneError(f"liquid_tension must be True or False, got {value!r}",
+                         "pass liquid_tension=True (surface tension from the liquid's card) or False",
+                         field="liquid_tension")
+    return value
+
+
+def tension_saved(value: bool) -> dict[str, bool]:
+    """The Scene JSON entry: nothing at the default, so scene JSON written before the field is unchanged.
+    Example: ``tension_saved(True)`` -> ``{"liquid_tension": True}``."""
+    return {} if value == TENSION_DEFAULT else {"liquid_tension": tension_checked(value)}

@@ -32,12 +32,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 
-def _pick_gl() -> None:
+def _pick_gl() -> str | None:
     """Headless MuJoCo GL before ``import mujoco``: OSMesa if its library exists, else rendering off (``disable``)
-    so MuJoCo still imports; thumbnails then wait for the ``post`` step on a machine that can render."""
+    so MuJoCo still imports; thumbnails then wait for the ``post`` step on a machine that can render. None when the
+    caller set ``MUJOCO_GL`` or has a display."""
     if os.environ.get("MUJOCO_GL") or os.environ.get("DISPLAY"):
-        return
-    os.environ["MUJOCO_GL"] = "osmesa" if ctypes.util.find_library("OSMesa") else "disable"
+        return None
+    return "osmesa" if ctypes.util.find_library("OSMesa") else "disable"
 
 
 def _emit(obj: object) -> int:
@@ -158,15 +159,18 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse ``argv`` and run the command; errors print as JSON with what to change."""
+    """Parse ``argv`` and run the command; errors print as JSON with what to change. The headless GL backend
+    (``_pick_gl``) holds while the command runs, so batch workers inherit it, and is gone when this returns."""
+    from alloy.importers.robocasa.thumbs import scoped_gl  # noqa: PLC0415
+
     logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
-    _pick_gl()
     args = parser().parse_args(argv)
-    try:
-        return args.fn(args)
-    except (KeyError, PermissionError, FileNotFoundError, ValueError, OSError) as exc:
-        _emit({"error": f"{type(exc).__name__}: {exc}"})
-        return 2
+    with scoped_gl(_pick_gl()):
+        try:
+            return args.fn(args)
+        except (KeyError, PermissionError, FileNotFoundError, ValueError, OSError) as exc:
+            _emit({"error": f"{type(exc).__name__}: {exc}"})
+            return 2
 
 
 __all__ = ["main", "parser"]

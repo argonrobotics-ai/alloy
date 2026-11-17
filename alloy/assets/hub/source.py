@@ -3,7 +3,8 @@
 
 The repo id is ``$ALLOY_ASSETS_REPO`` when set, else ``DEFAULT_REPO``, which is public: no token is needed. When there
 is one, huggingface_hub uses its own (``HF_TOKEN`` or the login saved by ``hf auth login``): it raises the Hub's rate
-limit, and a private copy of the library needs it. Nothing here prints or stores a token.
+limit, and a private copy of the library needs it. Nothing here prints or stores a token. The Hub's note that
+requests carry no token is not logged (the library needs none); a rate-limited download says how to set one.
 
 Example::
 
@@ -38,6 +39,18 @@ ACCESS_FIX = (f"check the dataset id ({DEFAULT_REPO} is public and needs no logi
               "HF_TOKEN); a stale saved token is refused too: run `hf auth logout` or unset HF_TOKEN")
 
 
+class _NoTokenNote(logging.Filter):
+    """Drops the Hub's "You are sending unauthenticated requests" note, which huggingface_hub logs once per process
+    from a response header: the public library needs no token, and ``explain`` names HF_TOKEN when a limit is hit."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "unauthenticated requests" not in record.getMessage()
+
+
+_NO_TOKEN_NOTE = _NoTokenNote()
+HF_HTTP_LOGGER = "huggingface_hub.utils._http"           # the logger huggingface_hub writes server notes to
+
+
 class HubError(AlloyAPIError):
     """The object library could not be read from the Hub: ``message`` says what failed, ``fix`` what to do."""
 
@@ -60,6 +73,9 @@ def _hub() -> Any:
                        "which the base install does not include",
                        'pip install "alloy-engine[import]"   (or the downloader alone: pip install huggingface_hub)'
                        ) from exc
+    http_log = logging.getLogger(HF_HTTP_LOGGER)
+    if _NO_TOKEN_NOTE not in http_log.filters:
+        http_log.addFilter(_NO_TOKEN_NOTE)
     return huggingface_hub
 
 
@@ -74,6 +90,10 @@ def explain(exc: Exception, repo: str, what: str) -> HubError:
     if isinstance(exc, (errors.LocalEntryNotFoundError, ConnectionError, TimeoutError)):
         return HubError(f"cannot reach the Hugging Face Hub for {repo} ({what}): {name}",
                         "check the network (or HF_ENDPOINT for a mirror) and retry; files already fetched are kept")
+    if status == 429:
+        return HubError(f"the Hugging Face Hub is rate-limiting this machine ({what} from {repo})",
+                        "wait a few minutes and retry; a token raises the limit: set HF_TOKEN (free account, "
+                        "huggingface.co/settings/tokens) or run `hf auth login`; files already fetched are kept")
     if isinstance(exc, errors.GatedRepoError) or status == 403:
         return HubError(f"no access to the object library {repo} ({what})", ACCESS_FIX)
     if isinstance(exc, errors.RepositoryNotFoundError) or status == 401:

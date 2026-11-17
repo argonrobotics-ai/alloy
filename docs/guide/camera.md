@@ -18,8 +18,8 @@ batch = sim.render(cam)                                        # every world: (w
 print(img.shape, batch.shape)
 ```
 
-- `sim.render(width=, height=, world=0, spp=, look_at=(eye, target), path=)`: one image of one world, saved as PNG
-  when `path` is given. Use it to check a scene by eye before a long run.
+- `sim.render(width=, height=, world=0, spp=, fov=50, look_at=(eye, target), path=)`: one image of one world
+  (`fov` in degrees, vertical), saved as PNG when `path` is given. Use it to check a scene by eye before a long run.
 - `alloy.Camera(name, look_at=(eye, target) | pose=..., width, height, fov (degrees), spp, denoise=None)`: a camera
   you keep and render every step. `sim.render(cam)` returns numpy; `cam.render_torch(sim)` returns a torch tensor on
   the GPU for training (`cam.render(sim)` gives the Warp array, overwritten by the next render: copy what you keep).
@@ -43,12 +43,24 @@ print(img.shape, batch.shape)
     weights tuned for each test scene. On four new scenes the general weights matched Open Image Denoise at 128 px
     and fell behind it at 640x480 from 64 spp (`alloy/camera/denoiser/WEIGHTS.md`). Nothing checks the quality on your
     scene: compare a few frames with a high-`spp` render before you rely on it, or use `denoise="oidn"`.
+- `backend=` on `alloy.Camera` picks how rays are traced, and `ALLOY_CAMERA_BACKEND` sets the default for every
+  camera and `sim.render`: `"warp"` (the default; any NVIDIA GPU, or the CPU), `"optix"` (NVIDIA OptiX: RT cores
+  where the GPU has them, the same shading code) or `"auto"` (`"optix"` when it can run, else `"warp"`). `"optix"`
+  needs a helper built once on your machine: `python -m alloy.camera.optix build --accept-nvidia-optix-license`
+  accepts NVIDIA's OptiX SDK licence, fetches its headers and compiles with g++ and nvcc (Alloy ships no OptiX
+  code); `python -m alloy.camera.optix status` says whether it can run. Asked for by name on a machine without a
+  CUDA GPU, `"optix"` raises `CameraError` rather than falling back.
 - `output="linear"` gives float32 linear colour instead of uint8, `output="all"` adds albedo and normal images;
   `output="depth"`, `"segmentation"`, `"body_id"` and `"world_id"` give depth and id images instead of colour, and
   a tuple such as `("rgb", "depth")` gives several at once (next section).
 - The first render compiles the renderer's kernels; later renders are fast. Images are lit by a studio sun and sky
   by default, which `camera_scene(sim, lighting=...)` changes (The sun and sky, below); `quality="full"` and `look=`
   (a look file) give Blender-style materials and lights, without Blender.
+- A robot whose MJCF has visual-only geoms (`contype="0" conaffinity="0"`) is drawn by those, and its collision geoms
+  only where no visual geom stands in for them: on a moving link, all of them when it has no visual geom, else those
+  of groups 0 to 2 that stick out of its visual geoms. Parts welded in place (a base, a rail) are not drawn: give them
+  a visual twin, or leave visual-only geoms out of the file
+  ([camera-robot-collision-geoms.md](../known_gaps/camera-robot-collision-geoms.md)).
 - Scanned library objects (YCB, Google Scanned Objects, Objaverse and the other scans `alloy fetch` downloads) are
   drawn with their own photo texture, in the quick look and with `quality="full"` alike. The camera reads the scan's
   `visual.glb` (its mesh, UVs and base-colour image) beside the card's mesh, for a scene built from an `alloy.Scene`.
@@ -78,6 +90,30 @@ print(img.shape, batch.shape)
   no colour of its own is grey, also beside a robot whose parts carry their own colours. A variant texture that is
   not on disk is drawn by both tracers in a flat colour of its family (wood brown, plastic grey, ...; a material with
   no family keeps its preset colour), with one warning naming `python -m alloy.looks --fetch-textures`.
+- White balance, as in Blender 4.5: a look file's `render.white_balance` is `"auto"` unless it says otherwise, which
+  turns a grey at the subject grey. As Blender does, the camera renders a small grey ball at the subject (the look's
+  first camera key, else the middle of the scene) under the look's lights and world only, and adapts that light's
+  colour to white; under a 2800 K light a grey ball reads grey, not orange. `{"kelvin": K, "tint": t}` adapts a fixed
+  white (tint 10 when left out), and `"off"` shows light colours as they are. Without a look file nothing changes.
+  The measurement adds a few seconds to the first render of a look.
+- Not drawn yet by `quality="full"`:
+  - Your own image file as a look texture: `"texture": "file:..."` raises `CameraError` ("not in the local asset
+    cache"). Textures come only from the local texture cache, which `python -m alloy.looks --fetch-textures`
+    fills and `$ALLOY_RENDER_ASSETS` moves. To use your own image today, add it there as a set:
+    `ambientcg/<Name>_1K/<Name>_1K_Color.png` (a `_Roughness` and a `_Displacement` image beside it are optional),
+    with an empty file named `.done` in that folder; then name it in the look as
+    `"texture": "ambientcg:<Name>", "res": "1k"`. It is mapped like the library's sets, one tile per `scale_m`.
+  - Tinting by volume absorption (`absorption_color`, `absorption_m`) on a mesh: a tinted glass, or a dyed liquid
+    modelled as a mesh, renders untinted. The console warns once per material. Only simulated liquids (`add_liquid`,
+    `add_pour`) are drawn with their absorption.
+  - Depth of field: every render is sharp at all distances. A look file's `cameras` section (`fstop`, `focus` and the
+    lens) is not read, except to place the white-balance measurement; the view comes from `look_at` or an
+    `alloy.Camera`.
+  - Some look-material keys raise `CameraError`: `tex_tint`, `imperfection`, decals (`texture_alpha`),
+    `"mapping": "planar"` and the `crust`, `crumb` and `scratches` details. Drop the key from the look: a look file
+    always renders on the full tracer, also with `quality="fast"`. A scene variant's item looks with these keys
+    render with `quality="fast"` instead, approximately (the material's colour or colour map, without the tint or
+    imperfections).
 - More (materials, lights, mounting a camera on a robot link, scene packs): the docstrings in `alloy/camera/`.
 
 ## Camera poses

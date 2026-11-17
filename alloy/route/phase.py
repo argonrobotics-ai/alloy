@@ -37,13 +37,18 @@ def _partners(obj: ResolvedObject, ctx: SceneContext) -> list[ResolvedObject]:
 
 def feature_size(obj: ResolvedObject, ctx: SceneContext) -> tuple[float, float | None]:
     """(d_feature, passage) = min over partner passage widths and container inner sizes, and the passage alone."""
+    passages, inner = _features(obj, ctx)
+    sizes = passages + list(inner.values()) + [float(obj.extents[2])]
+    return min(sizes), (min(passages) if passages else None)
+
+
+def _features(obj: ResolvedObject, ctx: SceneContext) -> tuple[list[float], dict[str, float]]:
+    """The passage widths ``obj`` meets (its own included) and {container part: its middle extent}."""
     passages = [float(o.card.features.passage_width.value) for o in _partners(obj, ctx)
                 if o.card.features.passage_width is not None]
     if obj.card.features.passage_width is not None:
         passages.append(float(obj.card.features.passage_width.value))
-    inner = [float(o.extents[1]) for o in _partners(obj, ctx) if _may_contain(o)]
-    sizes = passages + inner + [float(obj.extents[2])]
-    return min(sizes), (min(passages) if passages else None)
+    return passages, {o.card.name: float(o.extents[1]) for o in _partners(obj, ctx) if _may_contain(o)}
 
 
 _SOLIDS = ("box", "sphere", "capsule", "cylinder", "cone", "ellipsoid")
@@ -73,7 +78,19 @@ def route_phase(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _P
         from alloy.integration.mpm_solve import describe  # noqa: PLC0415
 
         p.reasons.append(f"{route}: {describe()}")
+        _container_voxel(cfg, obj, ctx, p)
     return route
+
+
+def _container_voxel(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> None:
+    """When a container part, not the material's own size or a passage, sets an MPM voxel: both particle counts in the
+    decision, and a build warning when the part multiplies the count (``alloy.integration.mpm_wall``)."""
+    passages, inner = _features(obj, ctx)
+    free = min([*passages, float(obj.extents[2])])
+    if "voxel" in p.numbers and inner and min(inner.values()) < free:
+        from alloy.integration import mpm_wall  # noqa: PLC0415
+
+        mpm_wall.note(obj, p, {k: w for k, w in inner.items() if w < free}, free, cfg.mpm_voxel_max)
 
 
 def _route_phase(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> Route | None:
@@ -117,6 +134,10 @@ def _liquid(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path,
                      rest_jitter_speed=SPH_REST_JITTER_SPEED, liquid_spacing=spacing)
     if passage is not None:
         p.numbers["passage_width"] = float(passage)      # the build warns under 8 particles across (_liquid_accuracy)
+    sigma = _tension(cfg, obj)
+    if sigma > 0.0:
+        p.numbers["surface_tension"] = sigma
+        p.reasons.append(f"liquid_sph: surface tension {sigma:.4g} N/m (csf, the card's value; free contact line)")
     if n > obj.card.budget.particles:
         raise CapacityError(f"{obj.card.name}: {n} SPH particles at r = {r:.3g} m > budget "
                             f"{obj.card.budget.particles}")
@@ -126,6 +147,13 @@ def _liquid(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path,
                      f"max({SPH_REST_JITTER_SPEED * 1e3:g} mm/s, 0.5 U)·dt/H) per world, U the liquid's mean speed "
                      "(SCR-WP9-8; the effective value: SolverDFSPH.report().density_tol)")
     return Route.LIQUID_SPH
+
+
+def _tension(cfg: RouterConfig, obj: ResolvedObject) -> float:
+    """The card's surface tension [N/m] when the scene turns liquid tension on (``RouterConfig.liquid_tension``), else
+    0. Example: water at 0.07197 N/m."""
+    st = obj.material.fluid.surface_tension if obj.material.fluid is not None else None
+    return float(st.value) if cfg.liquid_tension and st is not None and st.value > 0.0 else 0.0
 
 
 def _mpm(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path, route: Route) -> Route:

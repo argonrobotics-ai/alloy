@@ -43,21 +43,24 @@ RANDOM_FIELDS = _random.FIELDS     # short names accepted by Scene.randomize -> 
 
 
 class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticMixin, _rigid_step.RigidStepMixin,
-            _contact_relax.ContactRelaxMixin):
+            _contact_relax.ContactRelaxMixin, _liquid.LiquidSettingsMixin):
     """A scene under construction. ``worlds``: parallel copies; ``dt``: control period in seconds; ``roots``: your
     own card folders (``materials/``, ``objects/``, ...: e.g. cards made by ``alloy.create`` or ``alloy.io``),
-    searched before the shipped and imported libraries; ``liquid_accuracy``: "default" (liquid particles 4 mm apart)
-    or "super" (2 mm, about 16x the cost; a build warns when the default is too coarse for an opening or a stream);
+    searched before the shipped and imported libraries; ``liquid_accuracy``: "default" (liquid particles 4 mm apart),
+    "super" (2 mm, about 16x the cost) or "ultra" (1.5 mm, about 50x; a build warns when the setting is too coarse);
+    ``liquid_tension``: True gives liquids their card's surface tension (off by default; ``docs/guide/deformables.md``);
     ``cloth_accuracy``: "default", "super" (nearer convergence, 1.4x the cloth cost) or "fast" (the cloth solver's own
     10 iterations, 0.4x the default's cloth cost, CPU 0.25x; a drape stretches 12 %); soft bodies use it too. Example:
     ``s = alloy.Scene(worlds=64); s.add_ground(); s.add_sphere("ball", 0.05, pos=(0, 0, 0.3))``."""
 
     def __init__(self, *, worlds: int = 1, dt: float = 0.01, roots: Sequence[str | Path] = (),
-                 liquid_accuracy: str = "default", cloth_accuracy: str = "default") -> None:
+                 liquid_accuracy: str = "default", cloth_accuracy: str = "default",
+                 liquid_tension: bool = _liquid.TENSION_DEFAULT) -> None:
         if not isinstance(worlds, int) or worlds < 1:
             raise SceneError(f"worlds must be an int >= 1, got {worlds!r}", "pass worlds=1 (or more)", field="worlds")
         self.worlds, self.dt = worlds, A.positive(dt, "dt", "s")
         self.liquid_accuracy = liquid_accuracy           # SPH spacing 4 mm, or 2 mm "super" (checked: the property)
+        self.liquid_tension = liquid_tension             # surface tension from the liquid's card (checked)
         self.cloth_accuracy = cloth_accuracy             # the VBD entry's solve (alloy.scene.cloth_accuracy)
         self.items: dict[str, dict[str, Any]] = {}   # name -> one placed object / robot (plain data)
         self.materials: dict[str, dict[str, Any]] = {}   # custom material cards (data)
@@ -68,15 +71,6 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
         self.joint_yield: dict[str, dict[str, Any]] = {}  # joint springs that yield (Scene.set_joint_yield)
         self.robot_random: list[dict[str, Any]] = []      # robot / gravity draws (Scene.randomize, _robot_random)
         self.pushes: list[dict[str, Any]] = []            # timed pushes (add_push, _robot_random_push)
-
-    @property
-    def liquid_accuracy(self) -> str:
-        """"default" (liquid particles 4 mm apart) or "super" (2 mm, about 16x the cost); set it before building."""
-        return self._liquid_accuracy
-
-    @liquid_accuracy.setter
-    def liquid_accuracy(self, value: str) -> None:
-        self._liquid_accuracy = _liquid_accuracy.checked(value)     # a bad value fails here, not at build
 
     cloth_accuracy = CA.scene_property(SceneError)   # "default" / "super" / "fast" (alloy.scene.cloth_accuracy)
 
@@ -410,6 +404,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
                 "materials": copy.deepcopy(self.materials), "pairs": copy.deepcopy(self.pairs),
                 "roots": list(self.roots), "extra": copy.deepcopy(self.extra), "thermal": copy.deepcopy(self.thermal),
                 **_liquid_accuracy.saved(self.liquid_accuracy), **_rigid_step.saved(self.rigid_step),
+                **_liquid.tension_saved(self.liquid_tension),
                 **({"joint_yield": copy.deepcopy(self.joint_yield)} if self.joint_yield else {}),
                 **({"robot_random": copy.deepcopy(self.robot_random)} if self.robot_random else {}),
                 **({"pushes": copy.deepcopy(self.pushes)} if self.pushes else {}), **_contact_relax.saved(self),
@@ -423,7 +418,8 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
                              "Scene.to_dict()", field="schema")
         scene = cls(worlds=int(data["worlds"]), dt=float(data["dt"]),
                     liquid_accuracy=data.get("liquid_accuracy", "default"),
-                    cloth_accuracy=data.get("cloth_accuracy", "default"))
+                    cloth_accuracy=data.get("cloth_accuracy", "default"),
+                    liquid_tension=data.get("liquid_tension", _liquid.TENSION_DEFAULT))
         scene.items, scene.materials = copy.deepcopy(data["items"]), copy.deepcopy(data["materials"])
         scene.pairs, scene.roots = copy.deepcopy(data["pairs"]), list(data.get("roots", []))
         scene.extra = copy.deepcopy(data.get("extra", {}))

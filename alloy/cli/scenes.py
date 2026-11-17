@@ -48,7 +48,8 @@ def to_scene(value: Any, *, worlds: int | None = None, library: Sequence[str] = 
              liquid_accuracy: str | None = None) -> Scene:
     """An ``alloy.Scene`` from a name, a path (a .json file may hold Scene JSON or a recipe), Scene JSON
     (``Scene.to_dict()``) or a recipe dict; ``worlds`` overrides the scene's world count, ``library`` adds card
-    folders searched first and ``liquid_accuracy`` ("default" / "super") sets the scene's liquid particle size.
+    folders searched first and ``liquid_accuracy`` ("default" / "super" / "ultra") sets the scene's liquid particle
+    size.
 
     Example: ``to_scene("demo_peg_d12", worlds=2).worlds == 2``."""
     if isinstance(value, Scene):

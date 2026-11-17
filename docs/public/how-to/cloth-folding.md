@@ -12,7 +12,7 @@ import alloy
 scene = alloy.Scene(dt=0.01)
 scene.add_ground()
 scene.add_box("bar", size=(0.12, 0.5, 0.1), pos=(0, 0, 0.15), static=True)           # top at z = 0.2
-scene.add_cloth("sheet", size=(0.5, 0.5), pos=(0, 0, 0.3), resolution=10, mass=0.1)
+scene.add_cloth("sheet", size=(0.5, 0.5), pos=(0, 0, 0.3), resolution=20, mass=0.1)
 sim = alloy.build(scene)
 print(sim.routes()["sheet"]["route"])
 ```
@@ -21,7 +21,7 @@ print(sim.routes()["sheet"]["route"])
 cloth_vbd
 ```
 
-The sheet is flat, 10 cm above a low block, with 11 x 11 vertices. It runs on the cloth solver.
+The sheet is flat, 10 cm above a low block, with 21 x 21 vertices. It runs on the cloth solver.
 
 ## 2. Run it and measure the two layers
 
@@ -34,7 +34,7 @@ print(sim.check()["ok"])
 ```
 
 ```text
-(121, 3) 0.2 0.2
+(441, 3) 0.2 0.2
 True
 ```
 

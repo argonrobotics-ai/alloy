@@ -33,7 +33,7 @@ from .ambient import make_ambient
 from .boundary import NB, BoundarySlots, compute_slots
 from .config import (DFSPHConfig, full_neighbor_count, register_custom_attributes, resolve_viscosity, snap_down,
                      sph_phase)
-from .integrate import SWEEP, advect_kernel, nonpressure_kernel, project_kernel, speed_kernel
+from .integrate import advect_kernel, nonpressure_kernel, project_kernel, speed_kernel, sweep_length
 from .krylov import ProjectedCG, SolveControl
 from .layout import body_arrays, particle_layout, shape_table
 from .neighbors import NeighborLists
@@ -254,10 +254,10 @@ class SolverDFSPH(PressureSolves, SPHCouplingMixin, SolverBase, CouplingInterfac
         self.soft.advance(state_out, dt)
         self.pw.advance(state_out, dt)
         sl_ = self._slots
-        r = self.config.particle_radius
+        r, sweep = self.config.particle_radius, sweep_length(self._h, self.shapes.thinnest)   # thin walls: integrate.py
         self._launch(project_kernel, [p, sl_.shape, sl_.phi, sl_.xbl, sl_.nbl, sl_.face, sl_.vb, self.shapes.arrays,
                                       bq, bqd, self.bodies.com, PROJECT_EPS * r, self.stats.projected, bq_in, dt,
-                                      SWEEP * self._h, r, self.stats.swept, self._shape_work])
+                                      sweep, r, self.stats.swept, self._shape_work])
         if self.leaks is not None:  # before the escape box retires particles, so their exits are classified
             self.leaks.observe(state_in, state_out, bq_in, bq)
         self.emitters.step(p, dt, (bq, bqd, self.bodies.com))

@@ -67,6 +67,12 @@ rigid True
   refused.
 - Such a part rests fine. Landing, or being hit, faster than its thickness / (2 x 1.25 ms), which is 0.08 m/s at
   0.2 mm, takes it past half its thickness, and `sim.check()` fails the world (measured on the CPU).
+- A static or kinematic part builds down to 1 mm with nothing declared: a glass vial
+  (`add_open_cylinder(..., wall=0.001)`), a tray, a shelf. Liquid holds in walls that thin. Beside a free body or a
+  robot the build warns once per wall with the speed that can pass it, its thickness / (2 x 1.25 ms): 0.4 m/s at 1 mm
+  (`docs/known_gaps/rigid-tunnelling.md`). Health flags a pass through a static wall (TUNNEL), not one through a
+  kinematic wall: there `sim.check()` stays ok, so read where the bodies end. Under 1 mm it is refused as a free part
+  is.
 
 ## Containers and fixtures
 

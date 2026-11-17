@@ -9,7 +9,7 @@ under the same terms (see `LICENSE`).
   (`-m gpu`) skip without an NVIDIA GPU; run them if your change touches GPU code.
 - Pull requests run the quick CPU tests on GitHub (about 87 % of the suite: the long and wall-clock tests in
   `.github/ci-quick-deselect.txt` are left out); the whole CPU and GPU suites run before each release.
-  The quick tests take about 80 minutes with a warm kernel cache, up to about 2 h 15 on a cold first run.
+  The quick tests take about 35-45 minutes with a warm kernel cache, up to about 1 h 40 on a cold first run.
 - Every new public function has a docstring with an example; every error message says what to change.
 - New physics goes behind Newton's extension points (solvers, the collision pipeline, the model builder) and comes
   with a test that checks it against a law or a reference, not only that it runs.

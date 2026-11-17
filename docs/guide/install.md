@@ -82,6 +82,10 @@ If `ubuntu-drivers` picked a driver older than 580, `ubuntu-drivers list` shows 
   `mesh` (soft bodies from meshes; `pytetwild`) and `usd` (USD files: `alloy.load("x.usd")`, `add_robot`,
   `alloy.io.import_file`). `pip install alloy-engine` installs none of them; add them with pip:
   `pip install "alloy-engine[import,mesh]"`.
+- **PyTorch on a CPU-only machine.** The `envs` extra brings PyTorch, and on Linux pip's default build carries its
+  CUDA libraries, a few GB that a CPU never uses. Install the CPU build first, then the extra:
+  `pip install torch --index-url https://download.pytorch.org/whl/cpu` (a download of about 200 MB), then
+  `pip install "alloy-engine[envs]"`.
   A missing extra makes the build raise `FeatureUnavailableError` with the command.
 - **First run compiles kernels.** The first build and step of a new kind of scene compiles Warp kernels: 3 to 4
   minutes on a GPU for a rigid or robot scene (190 to 240 s measured on fresh L4 machines; the quick start took

@@ -24,23 +24,12 @@ import numpy as np
 from alloy.api import _cpu_note, _robot_random, _robot_random_push, _robots, catalog, fixtures as _fixtures
 from alloy.api.errors import BuildError, SceneError, world_limits, wrapped
 from alloy.api.scene import Scene
+from alloy.api._warp_start import quiet_warp  # noqa: F401 - callers import it from here
 from alloy.coupling import world_clock_api as second
 from alloy.route import weld_stiff
 
 log = logging.getLogger("alloy.api")
 PROFILES = ("standard", "precision", "fast", "debug")
-
-
-def quiet_warp() -> None:
-    """Silence Warp's start-up banner and per-kernel-module load lines (they flood logs and agent contexts) unless
-    ``ALLOY_VERBOSE=1``. Example: ``quiet_warp()`` before the first Warp call."""
-    if os.environ.get("ALLOY_VERBOSE", "") not in ("", "0"):
-        return
-    import warp as wp  # noqa: PLC0415
-
-    wp.config.quiet = True
-    if hasattr(wp, "LOG_WARNING"):
-        wp.config.log_level = wp.LOG_WARNING
 
 
 def pick_device(device: str | None = None) -> str:

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-"""``liquid_accuracy`` (SCR-WP9-LIQRES, user decision 2026-11-08): "default" 4 mm liquid particles, "super" 2 mm.
-The Scene field and its round trip, the router's spacing per setting, the estimate's two rows, and the one-line warning:
-it fires below each threshold (an opening under 8 particles across or under 24 mm; a pour stream under 2 across) and
-stays silent at and above it."""
+"""``liquid_accuracy`` (SCR-WP9-LIQRES, user decision 2026-11-08): "default" 4 mm liquid particles, "super" 2 mm,
+"ultra" 1.5 mm. The Scene field and its round trip, the router's spacing per setting, the estimate's rows, and the
+one-line warning: it fires below each threshold (an opening under 8 particles across; a pour stream under 2 across)
+and stays silent at and above it."""
 
 from __future__ import annotations
 
@@ -33,18 +33,21 @@ def test_the_setting_is_a_scene_field_that_round_trips():
     assert alloy.Scene.from_dict({k: v for k, v in sc.to_dict().items() if k != "liquid_accuracy"}).liquid_accuracy \
         == "default"                                     # Scene JSON written before the field
     with pytest.raises(SceneError) as err:
-        alloy.Scene(liquid_accuracy="ultra")
-    assert err.value.field == "liquid_accuracy" and "super" in err.value.fix
+        alloy.Scene(liquid_accuracy="extreme")
+    assert err.value.field == "liquid_accuracy" and "super" in err.value.fix and "ultra" in err.value.fix
     with pytest.raises(SceneError):
         sc.liquid_accuracy = "fine"                     # checked when set (OSS-17's review), not first at build
     assert sc.liquid_accuracy == "super"
-    assert LA.SPACING == dict(LIQUID_SPACING) == {"default": 4.0e-3, "super": 2.0e-3}
+    assert LA.SPACING == dict(LIQUID_SPACING) == {"default": 4.0e-3, "super": 2.0e-3, "ultra": 1.5e-3}
+    assert alloy.Scene.from_dict(alloy.Scene(liquid_accuracy="ultra").to_dict()).liquid_accuracy == "ultra"
 
 
 @pytest.mark.law
-@pytest.mark.parametrize(("acc", "silent_at", "warns_at"), [("default", 0.032, 0.0319), ("super", 0.024, 0.0239)])
+@pytest.mark.parametrize(("acc", "silent_at", "warns_at"),
+                         [("default", 0.032, 0.0319), ("super", 0.016, 0.0159), ("ultra", 0.012, 0.0119)])
 def test_an_opening_warns_below_its_threshold_only(acc, silent_at, warns_at):
-    """8 particles across at default (32 mm); at super the 24 mm floor binds (8 across would be 16 mm)."""
+    """8 particles across at every setting: 32 mm at default, 16 mm at super, 12 mm at ultra (no mm floor since the
+    narrow-cup fixes)."""
     s = LA.spacing(acc)
     assert LA.coarse(_items(opening=silent_at), s) == []
     found = LA.coarse(_items(opening=warns_at), s)
@@ -72,10 +75,14 @@ def test_the_warning_is_one_line_naming_the_fix():
     msg = LA.message(found, "default")
     assert "\n" not in msg and msg.count("liquid_accuracy='super'") >= 2
     assert "cup: opening 28.0 mm = 7.0 particles across" in msg and "stream 5.0 mm" in msg
-    under_floor = LA.message(LA.coarse(_items(opening=0.02), 2e-3), "super")
-    assert "20.0 mm = 10.0 particles across (needs 24 mm): widen it to 24 mm" in under_floor     # not "needs 8"
+    to_ultra = LA.message(LA.coarse(_items(opening=0.014), 2e-3), "super")
+    assert "14.0 mm = 7.0 particles across (needs 8 across): build with liquid_accuracy='ultra'" in to_ultra
+    assert "about 50x the cost" in to_ultra
+    too_narrow = LA.message(LA.coarse(_items(opening=0.010), 2e-3), "super")
+    assert "even liquid_accuracy='ultra' is too coarse: widen it" in too_narrow
     assert "(needs 8 across)" in msg
-    assert LA.message(LA.coarse(_items(stream=0.003), 2e-3), "super").endswith("lower its speed")
+    assert LA.message(LA.coarse(_items(stream=0.003), 2e-3), "super").endswith("about 50x the cost)")  # 2 at ultra
+    assert LA.message(LA.coarse(_items(stream=0.0025), 2e-3), "super").endswith("lower its speed")
 
 
 def _cup_scene(acc: str, inner_radius: float) -> alloy.Scene:
@@ -110,7 +117,7 @@ def test_a_build_routes_at_the_setting_and_warns_once(caplog):
 def test_estimate_shows_both_settings():
     est = alloy.estimate(_cup_scene("default", 0.02), 2, 0.5, device="cpu")
     rows = est["liquid"]
-    assert est["liquid_accuracy"] == "default" and set(rows) == {"default", "super"}
+    assert est["liquid_accuracy"] == "default" and set(rows) == {"default", "super", "ultra"}
     assert rows["default"]["spacing_mm"] == 4.0 and rows["super"]["spacing_mm"] == 2.0
     assert rows["super"]["particles"] > 6 * rows["default"]["particles"]
     # 2x the steps and 8x the particles, but each step's fixed SPH cost (FIX-LIST 7 fit) is shared: 6.6x on this

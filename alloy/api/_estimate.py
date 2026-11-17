@@ -6,7 +6,7 @@ It assembles one world of the scene (no stepping; the explicit MuJoCo pair rows 
 applies a per-step cost model calibrated on an NVIDIA L4 and on CPU (``COST`` in this module): warm wall time within
 1.3x on its calibration rows (``tests/api/test_estimate_calibration.py``), further off for scenes unlike them, and
 ``caveats`` names what it knows it leaves out for the scene (mesh-on-mesh contact at the start); ``measure=True``
-times a short real run instead (costs a compile).
+times the first second of a real run instead (``_estimate_measure``; costs a compile).
 
 Example::
 
@@ -18,14 +18,13 @@ from __future__ import annotations
 
 import math
 import tempfile
-import time
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from alloy.api import _liquid_accuracy as LA
-from alloy.api._estimate_caveats import caveats, touching_mesh_pairs
+from alloy.api._estimate_caveats import caveats, resting_on_shapes, resting_parts, touching_mesh_pairs
 from alloy.scene import cloth_accuracy as CA
 
 #: per physics step (s): ``floor_s`` once; then per pass (``_exchange_clock``: a coupled scene steps its entries once
@@ -40,14 +39,27 @@ from alloy.scene import cloth_accuracy as CA
 #: ``pair_s`` (``wp7_s1_rows.json``): per explicit MuJoCo pair row (``mujoco_pairs``: up to one per
 #: shape pair) and world, x rk4_factor. MuJoCo C tests each every step: 4-32 decomposed bowls (4,482-362,448 rows) on
 #: a spot n2d stepped 1.06-3.41x the estimate without it, 0.93-1.07x with; on an L4 0.5-1.0x without it: 0 there.
+#: ``rest_s`` / ``rest_shape_s`` (``rest_rows.json``, spot n2d): on MuJoCo C's rk4 only, per world and part a free body
+#: rests on beyond its first (``_estimate_caveats.resting_parts``), on a ground plane / on a box, mesh or body
+#: (``resting_on_shapes``), x rk4_factor: rk4 tests each against its support in each of its four stages, on MuJoCo's
+#: convex path about 3x a plane's cost. Three YCB scans in a bin (49 parts on its floor) stepped 2.1-2.6x the estimate
+#: without them, a body of 32 cubes on a box table 1.7x; with them every row of a body that settles holds 0.77-1.29x
+#: (minimax fit over the 34 settled scene rows of the file's 41, each measured 2-4 times, 2026-11-17). A body's first
+#: part is in the body terms: charged too, 16 separate boxes on a table read 1.63x high and 36 in a bin 2.09x (1.38x
+#: and 1.70x without the term). A body that keeps rocking on the ground on many parts (a 16-segment bowl upside down:
+#: 3.3 solver iterations per body at rest) steps 1.6-2.4x it; on a shape the solver's extra work is in rest_shape_s
+#: (the YCB scans in the bin take 4.3 per body and read 1.04-1.14x). Not on
+#: implicitfast (robot scenes test them once a step: the Panda scene's mug resting on 24 of its 62 parts holds its row)
+#: nor on MuJoCo Warp (no rows). No GPU rows: 0 there.
 COST: dict[str, dict[str, Any]] = {
     "cuda": {"floor_s": 7.2e-5, "body_s": 4.0e-8, "dof_s": 5.0e-9, "particle_s": 2.0e-8, "contact_s": 4.5e-8,
              "fixed_s": {"mujoco": 4.9e-4, "sph": 2.0e-3, "coupled": 1.9e-3}, "sph_particle_s": 6.7e-8,
-             "coupled_particle": 1.27, "mjw_scale": 1.0, "rk4_factor": 2.85, "pair_s": 0.0},
+             "coupled_particle": 1.27, "mjw_scale": 1.0, "rk4_factor": 2.85, "pair_s": 0.0, "rest_s": 0.0,
+             "rest_shape_s": 0.0},
     "cpu": {"floor_s": 6.6e-4, "body_s": 9.8e-6, "dof_s": 3.9e-6, "particle_s": 2.0e-6, "contact_s": 1.1e-6,
             "fixed_s": {"mujoco": 5.1e-5, "mujoco_warp": 3.6e-3, "sph": 6.5e-3, "coupled": 9.0e-3},
             "sph_particle_s": 2.3e-5, "coupled_particle": 1.28, "mjw_scale": 1.03, "rk4_factor": 2.14,
-            "pair_s": 1.47e-8},
+            "pair_s": 1.47e-8, "rest_s": 3.8e-6, "rest_shape_s": 1.12e-5},
 }
 SOLVER_FACTOR = {"mujoco": 1.0, "mpm": 8.0}     # particle_s multiples (MPM); SPH: sph_particle_s; VBD: VBD_COST
 #: one VBD solve over all worlds: step_call_s + iterations x iter_call_s (launches) + particles x (step_s + iterations x
@@ -104,15 +116,18 @@ def estimate(scene: Any, worlds: int | None = None, seconds: float = 1.0, device
     an arm, cloth, a pour; 1-64 worlds, CPU and L4): within 1.3x on those 55 rows. Right after a build or reset a GPU
     run captures CUDA graphs first (up to 2.65x on a 1 s run); a scene far from those rows can be further off. Memory
     on a GPU is what the run needs to capture its CUDA graphs, fitted to 38 L4 rows (``memory_rows.json``: within
-    1.2x); many worlds of scanned meshes (YCB, Google Scanned Objects) are not among them. ``measure=True`` times a
-    short real run instead (wall time; no memory). Example: ``alloy.estimate(scene, 64, 2.0)``."""
+    1.2x); many worlds of scanned meshes (YCB, Google Scanned Objects) are not among them. ``measure=True`` times the
+    first second of a real run instead (all of a shorter one) and charges the rest at the rate of its last quarter
+    (wall time; no memory). Example: ``alloy.estimate(scene, 64, 2.0)``."""
     from alloy.api._build import _as_scene, pick_device  # noqa: PLC0415
 
     scene = _as_scene(scene)
     n = int(worlds or scene.worlds)
     dev = pick_device(device)
     if measure:
-        return _measured(scene, n, float(seconds), dev)
+        from alloy.api._estimate_measure import measured  # noqa: PLC0415
+
+        return measured(scene, n, float(seconds), dev)
     out = _modelled(scene, n, float(seconds), dev)
     robots = any(it.get("kind") == "robot" for it in scene.items.values())      # no fast mode for robots yet
     if out["rigid_step"]["eligible"] and not robots:    # free bodies only: the rigid fast mode beside (SPEED-NOW S1)
@@ -243,8 +258,18 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
         if clock["coupled"]:            # a physics step per force exchange, or per the finest entry's own step
             steps_per_period = max(steps_per_period, clock["exchanges"] * max(1, round(scene.dt / built.control_dt)))
         load = {**_load(scene, built, device), "pair_rows": int(sum(pair_rows)),
-                "touching_mesh_pairs": touching_mesh_pairs(m)}
+                "touching_mesh_pairs": touching_mesh_pairs(m),
+                **_resting_load(m)}
     return counts, solvers, steps_per_period, rigid, routes, vbd, load
+
+
+def _resting_load(m: Any) -> dict[str, int]:
+    """The parts free bodies rest on (``resting_parts``, ``resting_on_shapes``) and those the CPU step charges: each
+    body's parts beyond its first (a separate box resting on one face costs nothing more than the body terms give)."""
+    parts = resting_parts(m)
+    return {"resting_parts": int(np.sum(parts)), "resting_on_shapes": resting_on_shapes(m),
+            "rest_charged": int(np.sum(np.maximum(parts - 1, 0))),
+            "rest_charged_on_shapes": resting_on_shapes(m, beyond_first=True)}
 
 
 def _load(scene: Any, built: Any, device: str) -> dict[str, Any]:
@@ -392,6 +417,9 @@ def _step_time(counts: dict[str, int], solvers: set[str], worlds: int, kind: str
     shapes = load.get("collide", counts["shapes"])          # colliding shapes (a robot's visual meshes are free)
     rigid = (counts["bodies"] * c["body_s"] + counts["dofs"] * c["dof_s"] + shapes * c["contact_s"]
              + int(load.get("pair_rows", 0)) * c["pair_s"])
+    if load.get("rk4") and mj == "c":       # MuJoCo C's rk4 tests resting parts in each of its four stages
+        on_shapes = int(load.get("rest_charged_on_shapes", 0))
+        rigid += (int(load.get("rest_charged", 0)) - on_shapes) * c["rest_s"] + on_shapes * c["rest_shape_s"]
     once = 0.0
     if mj is not None:
         once += fixed["mujoco_warp"] if mj == "warp" and "mujoco_warp" in fixed else fixed["mujoco"]
@@ -468,34 +496,3 @@ def _gpu_memory(template: tuple, worlds: int) -> int:
 def _vbd_coupled(vbd: dict[str, Any] | None, load: dict[str, Any]) -> bool:
     """A VBD entry exchanging forces with a MuJoCo entry: its own proxy contact pipeline (coupling.proxy_contacts)."""
     return bool(vbd and vbd.get("coupled") and (vbd.get("particles") or vbd.get("links")) and load.get("mujoco"))
-
-
-def _measured(scene: Any, worlds: int, seconds: float, device: str) -> dict[str, Any]:
-    """Build the scene, run one warm-up period, time a few periods and scale (includes the compile)."""
-    from alloy.api._build import build  # noqa: PLC0415
-
-    t0 = time.perf_counter()
-    sim = build(scene, worlds=worlds, device=device)
-    sim.step(1)
-    compile_s = time.perf_counter() - t0
-    k = max(2, min(20, int(round(0.25 / sim.dt))))
-    steps0, t1 = sim.physics_steps, time.perf_counter()
-    sim.step(k)
-    _sync(device)
-    dt_wall = (time.perf_counter() - t1) / k
-    steps_per_period = max(1, (sim.physics_steps - steps0) // k)
-    periods = max(1, int(round(seconds / sim.dt)))
-    wall = dt_wall * periods
-    routes = sim.routes()
-    sim.close()
-    return {"worlds": worlds, "seconds": seconds, "device": device, "physics_steps_per_world": periods *
-            steps_per_period, "step_time_s": dt_wall / steps_per_period, "wall_time_s": wall,
-            "world_steps_per_s": worlds * periods * steps_per_period / wall, "real_time_factor": worlds * seconds / wall,
-            "memory_bytes": None, "compile_s_first_run": compile_s, "routes": routes,
-            "basis": f"measured: {k} periods after warm-up"}
-
-
-def _sync(device: str) -> None:
-    import warp as wp  # noqa: PLC0415
-
-    wp.synchronize_device(device)

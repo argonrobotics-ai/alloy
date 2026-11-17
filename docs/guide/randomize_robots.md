@@ -174,9 +174,11 @@ True
 - The base moves and every link moves with it; joint angles and the zero start velocity are kept. The yaw turns the
   robot about the vertical through its base.
 - Nothing checks where the robot lands: keep the range on floor that is clear, and `start_z` at or above 0 (a
-  negative one starts the feet inside the floor). The shipped legged robots (G1, H1-2, Go2) have a 0.30 x 0.30 x 0.10 m box 1 m in front of their start:
-  keep `start_x` under 0.6 m, or remove it first with `alloy.envs.mjcf.without_bodies(path, ("obstacle",))` (G1,
-  Go2; on H1-2 the box is a bare geom, which it cannot remove).
+  negative one starts the feet inside the floor). The shipped legged robots (G1, H1-2, Go2) have a 0.30 x 0.30 x 0.10 m
+  box 1 m in front of their start (its near face at x = 0.85 m): with any `start_yaw`, keep `start_x` under 0.5 m
+  (the Go2's legs reach 0.30 m from its base at some headings), or remove the box first with
+  `alloy.envs.mjcf.without_bodies(path, ("obstacle",))` (G1, Go2; on H1-2 the box is a bare geom, which it cannot
+  remove).
 - A start drawn once at build is the fields `x`, `y`, `z` (see [Many worlds and speed](worlds.md)).
 - After `sim.settle()`, a reset returns to the settled pose and then applies the offsets.
 

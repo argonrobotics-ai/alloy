@@ -22,9 +22,9 @@ self_contact=True)`
     coarser than its bending length whatever `resolution` asks for: a 1 m sheet at `resolution=60` builds 40 x 40
     cells of 2.5 cm.
   - Measured on ClothFold's towel only (bending length 1.57 cm): at 13 cells (1.85 cm) 7.3 % of worlds reset in the
-    turn, at 19 cells (1.26 cm) 2.1 % (`make("ClothFold-v0", resolution=19)`). A cell just under the length
-    (16 cells, 1.50 cm) still let that fold drag the towel, so leave a margin
-    (`docs/known_gaps/cloth-contact-exit-kick.md`).
+    turn, at 19 cells (1.26 cm) 2.1 %. `make("ClothFold-v0")` builds the 19-cell towel (the default, 19 cells);
+    `resolution=13` gives the 13-cell one back. A cell just under the length (16 cells, 1.50 cm) still let that
+    fold drag the towel, so leave a margin (`docs/known_gaps/cloth-contact-exit-kick.md`).
 - `mass`: total kg; without it the mass comes from the material and thickness;
 - `thickness` is the contact thickness (particles of radius `thickness / 2`); sheets thinner than the 2 mm default
   need a smaller `Scene(dt=...)`. A fabric bends as its material card says (`elastic.bending`: the KES bending
@@ -96,8 +96,8 @@ self_contact=True)`
   the body end 52-67 % on it after release. Score a sharp fold while it is held, or keep holding until a later step
   presses it flat (`docs/known_gaps/cloth-sleeve-fold-springback.md`).
 - Cost: on the CPU cloth runs on one core (a 20 x 20 sheet over a ball, 2 worlds: 52 s per 0.3 s simulated, 33 s
-  with `self_contact=False`). The default's 40 iterations cost about 4x VBD's own 10 there (13.6 s and 8.4 s), which
-  `cloth_accuracy="fast"` runs (Accuracy, below). Since 2026-11-09 a CPU step skips the self-contact work of its
+  with `self_contact=False`). The default's 40 iterations cost about 4x VBD's own 10 there, which `cloth_accuracy="fast"`
+  runs (the same two runs took 13.6 s and 8.4 s at 10 iterations, 3.8x and 3.9x less; Accuracy, below). Since 2026-11-09 a CPU step skips the self-contact work of its
   iterations while no sheet is in self-contact (bitwise the same result): a drape over a sphere steps 1.29x faster.
   Beside a robot the cost follows how often cloth and robot exchange forces:
   - the exchange step is the largest `dt / 2^j` no longer than 0.5·sqrt(m / k), where m is the mass of the lightest
@@ -327,31 +327,51 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
   `self_contact=False` (it stayed OK in the one scene measured) or use a film sheet (`film_ldpe`). Cloth takes up no
   water (`docs/known_gaps/liquid-on-cloth.md`).
 - Accuracy: one setting for all the scene's liquid, `alloy.Scene(liquid_accuracy=...)` (or `scene.liquid_accuracy`;
-  CLI `--liquid-accuracy`). `alloy.estimate(scene, worlds, seconds)["liquid"]` gives both settings' particles, time,
+  CLI `--liquid-accuracy`). `alloy.estimate(scene, worlds, seconds)["liquid"]` gives each setting's particles, time,
   memory and accuracy before you run. `sim.routes()` names the setting and spacing, and `traj.meta["liquid_accuracy"]`
   records it.
 
   | setting | particles | cost | measured accuracy |
   |---|---|---|---|
   | `"default"` | 4 mm apart | 1x | hydrostatic wall force 1.1 %, floating draft 4.9 % (5 particles deep), dam front within Ritter's bound, pours keep 99.7 % in cups from 32 mm |
-  | `"super"` | 2 mm apart | about 16x the work (8x the particles, 2x the steps). Measured: 11-20x on CPU pours; on one L4 3.5-3.8x for one world and 36-49x at 64-256 worlds (two measurements) | wall force 0.2 %, draft 4.2 %, dam front within Ritter's bound, pours keep 97.6-99.8 % in cups from 24 mm |
+  | `"super"` | 2 mm apart | about 16x the work (8x the particles, 2x the steps). Measured: 11-20x on CPU pours; on one L4 3.5-3.8x for one world and 36-49x at 64-256 worlds (two measurements) | wall force 0.2 %, draft 4.2 %, dam front within Ritter's bound, pours keep 98.5-99.9 % in cups from 12 mm |
+  | `"ultra"` | 1.5 mm apart | about 50x the work (19x the particles, 2.7x the steps). Measured on one L4 (a 50 mm beaker poured into a 15 mm vial, 17,745 particles): 21.2 s per simulated s for one world, 3.0x super; 161 s for 16 worlds, 7.0x super and 61x default | wall force 1.2 %, draft 2.1 %, dam front within Ritter's bound, pours keep 98.1-100 % in cups from 12 mm |
 
   - When the setting is too coarse, the build says so once, in one line naming each item, its width in particles and
     the fix. It checks:
     - the opening of an `add_open_box` (its narrower inner side), `add_open_cylinder` (inner diameter) or
       `add_block_with_hole` (the hole), and a container card's `passage_width`: under 8 particles across (32 mm at
-      default) or under 24 mm at either setting. From 24 to 32 mm the fix is `liquid_accuracy="super"`; under 24 mm,
-      a wider container;
-    - an `add_pour` stream under 2 particles wide (8 mm at default, 4 mm at super; the default pour is 20 mm wide).
-      The fix is super, or a higher `rate` or lower `speed`, which widens the stream.
+      default, 16 mm at super, 12 mm at ultra). The fix named is the cheapest setting that resolves it, else a wider
+      container;
+    - an `add_pour` stream under 2 particles wide (8 mm at default, 4 mm at super, 3 mm at ultra; the default pour is
+      20 mm wide). The fix is a finer setting, or a higher `rate` or lower `speed`, which widens the stream.
     - An `add_mesh` container is not checked: give its opening the same widths yourself.
-  - Containers narrower than 24 mm are unreliable at both settings: liquid at rest in them can start INVALID
+  - Water at rest stays healthy in round cups from 8 mm at 2 and 1.5 mm (12 mm at 4 mm); a cylinder of liquid fills
+    whole rings of particles, no more than its area holds, and adds layers on top for the volume asked, so a narrow
+    one starts taller than asked. A thin stream poured from a tilted container
+    into a narrow receiver mostly misses at every setting unless surface tension is on
     (`docs/known_gaps/liquid-narrow-containers.md`).
   - Saved cards (`scene.save()`) don't keep the setting; Scene JSON (`scene.to_json()`) does. On a scene loaded from
     cards, set `scene.liquid_accuracy = "super"` again.
+- Surface tension: off by default. `alloy.Scene(liquid_tension=True)` (or `scene.liquid_tension = True` before
+  building) gives each liquid its material's surface tension (water 0.072 N/m); `sim.routes()` names it. The liquid
+  then holds together where it would break into single particles. In a measured pour, a 50 mm beaker tilted into a
+  15 mm vial at 2 mm particles, the vial caught 52-57 % of what left the beaker (2-5 % without; five runs, the vial
+  moved up to 0.5 mm between them). A 50 mm receiver caught 96.5 %. These are simulation results; no real pour has
+  been compared yet.
+  - A tilted container pours less with tension: a half to a quarter as much in the same time, less at finer
+    settings (1.6 ml against 4.4 ml in that pour at 2 mm; `docs/known_gaps/liquid-tension-lip-drain.md`).
+  - At `liquid_accuracy="ultra"` a few droplets can fly off a tension pour: the 50 mm receiver caught 94.3 % of it
+    (99.9 % without tension).
+  - Cost: about the same as without (one L4: 6.35 against 6.44 s per simulated second, a 7,335-particle pour).
+  - The contact line is free on every wall: no wetting angle is applied.
+  - Water at rest stays at rest. A free blob of water several particles across that oscillates in flight grows its
+    oscillation instead of settling (`docs/known_gaps/liquid-tension-free-drops.md`).
+  - Saved cards (`scene.save()`) don't keep the setting; Scene JSON (`scene.to_json()`) does.
 - `sim.liquid_volume(name)`: the simulated volume in m³. Whole particles fill the box, so it can be a few percent
-  below the box volume; enlarge the box for an exact amount. A pour (`add_pour`) holds its volume within half a
-  particle.
+  below the box volume; enlarge the box for an exact amount. A cylinder fills whole rings of particles and adds
+  layers on top until it holds its volume to within half a layer, so in a narrow cup its column starts taller than
+  asked (40 mm asked in a 12 mm cup at 2 mm: 48 mm). A pour (`add_pour`) holds its volume within half a particle.
 - `sim.particle_volume(name)`: the volume one particle stands for. Liquid in a region = particles inside it times
   that volume.
 - State: `"<name>.points"`, shape `(worlds, particles, 3)` (and `"<name>.active"` for a pour).

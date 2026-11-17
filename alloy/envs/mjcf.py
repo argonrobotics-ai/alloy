@@ -40,7 +40,9 @@ _OBJTYPE = {"body": "bodies", "xbody": "bodies", "joint": "joints", "geom": "geo
 
 def without_bodies(path: str | Path, bodies: Sequence[str]) -> Path:
     """A copy of the MJCF ``path`` without the named top-level bodies, their meshes and keyframes, and every
-    equality, actuator, sensor, contact or tendon row that names something inside them.
+    equality, actuator, sensor, contact or tendon row that names something inside them. A name can also be a bare
+    geom directly under ``<worldbody>`` (the H1-2 file's static obstacle box is one, where the G1 and Go2 files wrap
+    theirs in a body).
 
     Example: ``without_bodies("scene.xml", ["mug"])`` -> a cached file path."""
     src = Path(path).resolve()
@@ -67,16 +69,16 @@ def without_bodies(path: str | Path, bodies: Sequence[str]) -> Path:
 def _drop_bodies(root: ET.Element, names: set[str]) -> None:
     world = root.find("worldbody")
     missing, gone = set(names), {k: set() for k in _REFS}       # what the dropped bodies held, by kind
-    for body in list(world) if world is not None else []:
-        if body.tag == "body" and body.get("name") in names:
-            for el in body.iter():
+    for part in list(world) if world is not None else []:
+        if part.tag in ("body", "geom") and part.get("name") in names:   # a body, or a bare geom fixed to the world
+            for el in part.iter():
                 if el.get("name") and el.tag in _NAMED:
                     gone[_NAMED[el.tag]].add(el.get("name"))
-            world.remove(body)
-            missing.discard(body.get("name"))
+            world.remove(part)
+            missing.discard(part.get("name"))
     if missing:
-        raise EnvError(f"no top-level bodies {sorted(missing)} in the robot file", "name bodies directly under "
-                       "<worldbody>", field="bodies")
+        raise EnvError(f"no top-level bodies or geoms {sorted(missing)} in the robot file", "name bodies or geoms "
+                       "directly under <worldbody>", field="bodies")
     for keyframe in root.findall("keyframe"):
         root.remove(keyframe)                       # qpos sizes no longer match
     used = {g.get("mesh") for g in root.iter("geom") if g.get("mesh")}

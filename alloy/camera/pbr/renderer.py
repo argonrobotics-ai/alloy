@@ -67,7 +67,8 @@ class PbrScene:
         self.sc = GpuScene(self.scene_data, device=self.device, points=deform.points() if deform else None,
                            liquid=liquid.buffers() if liquid else None)
         uv_names, col_names = select_attributes(frame, pack.static, self.mat_names)
-        self.shade = build_shade_data(frame, self.mat_names, self.sc, (col_names or [None])[0])
+        # the Bevel wp.Mesh lives as long as this scene: shade.bevel_mesh is only its id
+        self.shade, self.bevel = build_shade_data(frame, self.mat_names, self.sc, (col_names or [None])[0])
         self.lights = build_lights(pack, frame, num_worlds, self.device)
         self.disp, self.info = generate(pack.static, self.mat_names, uv_names, col_names)
         self.sc.set_transmissive(_transmissive_meshes(frame, self.mat_names, self.info["transmissive"]))

@@ -11,7 +11,8 @@ owner: Alloy maintainers
   18.7 m/s.
 - `ClothFold-v0`'s friction pinch is where it shows. As the closing fingers squeeze the gathered towel corner, a
   corner particle is thrown at 14-33 m/s and SPEED_FAIL marks the world INVALID (frozen), in about 40 % of the worlds
-  of the pinch-and-lift repro.
+  of the pinch-and-lift repro on the 13-cell towel (before 0.1.6). Since 0.1.6 the `ClothFold-v0` towel has 19
+  cells a side; the rows below marked 13-cell were not measured again.
 - The health report names the fastest gripper body with that speed, not the particle. In 19 of 23 such resets every
   gripper body was under 3 m/s.
 
@@ -30,8 +31,8 @@ probe, not shipped.
 
 - The speed equals the depth the step resolved / dt to 0.1 %. Some depth is left at the step's end (0.13 mm of the
   0.5 mm) and is resolved in the next step.
-- ClothFold, the pinch-and-lift repro (GPU, 128 worlds, 2026-11-10; development notes, not shipped): 55 worlds reset,
-  at 20.2-37.5 m/s (median 25.1).
+- ClothFold, the pinch-and-lift repro, 13-cell towel (before 0.1.6) (GPU, 128 worlds, 2026-11-10; development
+  notes, not shipped): 55 worlds reset, at 20.2-37.5 m/s (median 25.1).
   - In 45 of the 62 reset dumps the probe's fastest towel particle matches the reported speed to 0.1 m/s.
   - In world 12, a corner particle went from 0.6 to 13.9 m/s in one 39 us exchange while the finger's records went
     from 0 to 0.12 mm penetration at 47 N. The particle left along the finger's normal; the finger moved at 0.2 m/s.
@@ -57,8 +58,8 @@ probe, not shipped.
   cloth solver's settings (`True` for 1 m/s), or `ALLOY_EXIT_SPEED=<m/s>` in the environment
   (`alloy/solvers/vbd/exit_speed.py`).
   - What it trades: it removes energy and momentum from the capped particles only (Limits below).
-  - When it helps: coarse cloth meshes squeezed between fingers. On ClothFold's 13-cell towel it nearly halved the
-    frozen worlds. On a 19-cell towel it gained about half a point, measured across two trees. The finer towel
+  - When it helps: coarse cloth meshes squeezed between fingers. On ClothFold's 13-cell towel (before
+    0.1.6) it nearly halved the frozen worlds. On a 19-cell towel it gained about half a point, measured across two trees. The finer towel
     already removes most of the cause.
 - How it works (split impulse): after each step, a particle whose record started the step inside its contact
   distance keeps its solved position. The outward normal speed that undoing the start depth gave it, past the cap, is
@@ -77,7 +78,8 @@ probe, not shipped.
     step; the coupler's record-momentum feedback gives a robot body back only what the particles took.
   - A particle squeezed sideways out of a wedge between two records leaves along the wedge, not along either normal,
     and that speed is not capped.
-- Measured on ClothFold (one L4 per run, main b5121ce81 with `ALLOY_EXIT_SPEED=1.0`; 2026-11-11):
+- Measured on ClothFold, 13-cell towel (before 0.1.6) unless a row says 19 (one L4 per run, main b5121ce81 with
+  `ALLOY_EXIT_SPEED=1.0`; 2026-11-11):
   - The pinch-and-lift repro, 128 worlds: no world reset, against 31 with the cap off.
   - The task, 1,024 worlds a side (16 runs), against a control of 1,088 a side with the cap off (main 1db240364; the
     trees differ by the cap and by changes ClothFold does not use). The shipped demo's frozen worlds fell from 10.8 %
@@ -87,12 +89,12 @@ probe, not shipped.
     at 960 worlds a side +1.6 points, t 0.8). It rose with the slow release (44.5 % against 39.0 %).
   - The resets left come while the fingers squeeze and carry the towel in the turn. At 960 worlds a side: in the turn
     4.7 % of the worlds against 5.9 % with the cap off; at and after the release 1.7 % against 3.9 %.
-  - On a 19-cell towel (1.26 cm cells, against the shipped 13, 1.85 cm) the cap does less: 5.0 % frozen with it
-    (b5121ce81) and 5.5 % without it (main 50cd06a51, 1,024 worlds a side each; the two trees are 484 commits
+  - On a 19-cell towel (1.26 cm cells, against the 13 shipped before 0.1.6, 1.85 cm) the cap does less: 5.0 % frozen
+    with it (b5121ce81) and 5.5 % without it (main 50cd06a51, 1,024 worlds a side each; the two trees are 484 commits
     apart, so read this as about half a point). With the cap off the finer towel alone took the frozen worlds from
     11.9 % to 5.5 % (same tree and VMs).
-- The turn's resets are mostly not a contact exit. A particle probe on the demo (13 cells, cap on) caught 25 turn
-  resets at the 20 m/s limit:
+- The turn's resets are mostly not a contact exit. A particle probe on the demo (13-cell towel (before 0.1.6), cap on)
+  caught 25 turn resets at the 20 m/s limit:
   - The fastest particle speeds up over about 30 force exchanges (0.3-0.6 ms), not in one step. In about half of
     the cases no finger is near it.
   - Its triangles are squeezed in their own plane: 20-43 % edge compression in 19 of the 25, against a median of

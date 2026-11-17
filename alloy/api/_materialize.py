@@ -31,6 +31,11 @@ from alloy.api.fixtures import PRECISE_K, PRECISE_MIN_E, precise_substeps
 SCENE_NAME = "scene"
 THIN_FIELDS = {"box": "size", "sphere": "radius", "cylinder": "radius", "capsule": "radius"}   # add_* primitives
 FIXTURE_CALLS = "add_open_box / add_open_cylinder / add_block_with_hole"     # build a fixture's parts
+WALL_MIN = 1.0e-3     # m: a static or kinematic wall builds down to this (1 mm glass: the liquid holds in it, 0 leaks)
+WALL_MOTIONS = ("static", "kinematic")
+PASS_SAID = {"static": "health flags TUNNEL", "kinematic": "health does not flag a pass through a kinematic wall"}
+FREE_KINDS = ("box", "sphere", "cylinder", "capsule", "mesh", "rod", "card")   # can be free bodies (robots too)
+_WALL_WARNED: set[str] = set()                  # thin walls warned about, once per name per process
 
 
 @dataclass
@@ -46,6 +51,7 @@ class Materialized:
     substeps: int = 1                                             # engine periods per Scene.dt (precise fixtures)
     scene: Any = None                                             # the scene written: anchors turned into origins
     names_of: dict[str, list[str]] = field(default_factory=dict)  # card name -> its objects' names (partners)
+    thin_walls: dict[str, tuple[float, str]] = field(default_factory=dict)  # wall -> (thinnest m, < 1.25 mm; motion)
 
 
 def materialize(scene: Any, root: Path) -> Materialized:
@@ -70,6 +76,7 @@ def materialize(scene: Any, root: Path) -> Materialized:
             "worlds": scene.worlds, "control_dt": scene.dt / out.substeps}
     card["pairs"] = list(scene.extra.get("pairs", [])) + [_scene_pair(p, out.materials, scene) for p in scene.pairs]
     _write(out.scene_file, card, yaml_dump)
+    _warn_thin_walls(scene.items, out.thin_walls, roots)
     return out
 
 
@@ -120,7 +127,7 @@ def _placement(name: str, item: dict[str, Any], root: Path, roots: list[str], fo
             _refuse_mixed_winding(name, item, root)
         material = _object_material(name, item, root, roots, forced, dump)
         out.materials[name] = material
-        _write(root / "objects" / f"{name}.yaml", _object_card(name, item, material, root), dump)
+        _write(root / "objects" / f"{name}.yaml", _object_card(name, item, material, root, out.thin_walls), dump)
         card_name = name
     placement: dict[str, Any] = {"object": card_name, "pose": [float(x) for x in item["pose"]]}
     if item["randomize"]:
@@ -171,8 +178,7 @@ def derived_look(base: str, name: str, root: Path, roots: list[str]) -> Path | N
     wood_beech_for_lid.json``."""
     from alloy.api._save import _look_file  # noqa: PLC0415
 
-    src = next((p for r in (root, *catalog.search_roots(roots)) if (p := _look_file(Path(r), "materials", base))),
-               None)
+    src = next((p for r in (root, *catalog.search_roots(roots)) if (p := _look_file(Path(r), "materials", base))), None)
     if src is None:
         return None
     data = json.loads(src.read_text(encoding="utf-8"))
@@ -261,7 +267,9 @@ def _mesh_arrays(item: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
     return np.asarray(data.vertices, float), np.asarray(data.faces, int).reshape(-1, 3)
 
 
-def _object_card(name: str, item: dict[str, Any], material: str, root: Path) -> dict[str, Any]:
+def _object_card(name: str, item: dict[str, Any], material: str, root: Path,
+                 walls: dict[str, tuple[float, str]] | None = None) -> dict[str, Any]:
+    """A shape item's object card; a thin static / kinematic wall it admits goes into ``walls`` (by its fixture)."""
     shape = copy.deepcopy(item["shape"])
     if "mesh" in shape:
         shape["mesh"]["path"], shape["mesh"]["sha256"] = _write_mesh(name, item, root)
@@ -272,7 +280,10 @@ def _object_card(name: str, item: dict[str, Any], material: str, root: Path) -> 
     if item["static"]:
         card["motion"] = "static"
     card.update(copy.deepcopy(item["card_extra"]))
-    _refuse_thin(name, item["kind"], card, bool(item.get("fixture")))
+    thin = _refuse_thin(name, item["kind"], card, bool(item.get("fixture")))
+    if thin is not None and walls is not None:
+        key = str(item.get("fixture") or name)
+        walls[key] = (min(thin, walls.get(key, (thin,))[0]), str(card["motion"]))
     return card
 
 
@@ -286,29 +297,68 @@ def _thin_limit() -> tuple[float, float, float]:
     return 2.0 * speed * RIGID_DT, speed, RIGID_DT
 
 
-def _refuse_thin(name: str, kind: str, card: dict[str, Any], fixture: bool = False) -> None:
+def _refuse_thin(name: str, kind: str, card: dict[str, Any], fixture: bool = False) -> float | None:
     """A SceneError with the numbers for a primitive thinner than the thin-member rule allows: a smaller dt does
     not lower the limit, and its fix names the ``card_extra=`` that keeps the part that thin (``_thin.keep_thin``;
     a fixture's parts have none). Measured (CPU): a 0.5 mm plate dropped 5 mm onto a 0.5 mm shelf fell through it,
-    so the rule stays. A card declaring ``features.min_wall`` itself (``add_cloth``, that card_extra) passes."""
+    so the rule stays for free parts; a static or kinematic wall builds down to ``WALL_MIN``, declared on its card,
+    and its thinnest member is returned (else None). A card declaring ``features.min_wall`` (``add_cloth``) passes."""
     from alloy.api._thin import keep_thin  # noqa: PLC0415
     from alloy.cards import geometry as geo  # noqa: PLC0415
     from alloy.cards import types as ct  # noqa: PLC0415
 
     prim = card["shape"].get("primitive")
     if kind not in THIN_FIELDS or prim is None or "min_wall" in (card.get("features") or {}):
-        return
+        return None
     thin = geo.primitive_min_member(ct.Primitive(prim["kind"], tuple(float(v) for v in prim["size"])))
     limit, speed, step = _thin_limit()
     if thin >= limit:
-        return
-    raise SceneError(f"{name!r} is {_mm(thin)} at its thinnest; a solid shape needs at least {_mm(limit)}, what a "
-                     f"part at the {speed:g} m/s design contact speed covers in two {step * 1e3:.3g} ms rigid steps: "
-                     "a thinner one can pass through another thin part in a step",
-                     f"make it at least {_mm(limit)} thick and keep a moving part's real weight with mass=; a sheet "
+        return None
+    wall = card.get("motion") in WALL_MOTIONS
+    if wall and thin >= WALL_MIN * (1.0 - 1e-9):
+        card.setdefault("features", {})["min_wall"] = {"value": float(f"{thin:.4g}"), "source": "model",
+                                                       "note": "a static or kinematic wall: builds down to 1 mm"}
+        return thin
+    need, what = (WALL_MIN, "a static or kinematic wall") if wall else (limit, "a solid shape")
+    raise SceneError(f"{name!r} is {_mm(thin)} at its thinnest; {what} needs at least {_mm(need)} (a moving part "
+                     f"{_mm(limit)}, what a part at the {speed:g} m/s design contact speed covers in two "
+                     f"{step * 1e3:.3g} ms rigid steps): a thinner one can pass through another thin part in a step",
+                     f"make it at least {_mm(need)} thick and keep a moving part's real weight with mass=; a sheet "
                      "meant to bend is add_cloth(..., thickness=...); a smaller Scene(dt=...) does not lower the "
                      f"limit; {keep_thin(thin, FIXTURE_CALLS if fixture else f'add_{kind}')}",
                      field=_thin_field(kind, prim))
+
+
+def _warn_thin_walls(items: dict[str, dict[str, Any]], walls: dict[str, tuple[float, str]], roots: list[str]) -> None:
+    """Once per wall name: a static or kinematic wall under the free-part limit beside a free body or robot, the speed
+    above which a body can pass it in one rigid step (thin / (2 x rigid step)), and if health flags that (static)."""
+    free = [n for n, it in items.items() if walls and _free(it, roots)]
+    if not free:
+        return
+    from alloy.api import _say  # noqa: PLC0415
+
+    limit, _, step = _thin_limit()
+    for wall, (thin, motion) in sorted(walls.items()):
+        if wall in _WALL_WARNED:
+            continue
+        _WALL_WARNED.add(wall)
+        _say.warn("%s: a wall %s thick, under the %s a free part needs, beside free bodies (%s): one hitting it faster "
+                  "than %.2g m/s can pass through it in one %.3g ms rigid step (%s); thicker walls, or slower bodies, "
+                  "or a finer rigid step (docs/known_gaps/rigid-tunnelling.md)", wall, _mm(thin), _mm(limit),
+                  ", ".join(free[:3]) + (", ..." if len(free) > 3 else ""), thin / (2.0 * step), step * 1e3,
+                  PASS_SAID[motion])
+
+
+def _free(item: dict[str, Any], roots: list[str]) -> bool:
+    """A robot, or a shape or library object neither static nor kinematic (as the scene or the object's card says)."""
+    motion = (item.get("card_extra") or {}).get("motion") or ("static" if item.get("static") else None)
+    if item["kind"] == "card" and motion is None and item.get("static") is None:
+        try:
+            motion = _load_yaml(catalog.object_card(item["card_name"], roots)).get("motion")
+        except Exception:  # noqa: BLE001 - unknown: count it as free (the warning errs on the side of saying)
+            motion = None
+    return item["kind"] == "robot" or (item["kind"] in FREE_KINDS and not item.get("fixture")
+                                       and motion not in WALL_MOTIONS)
 
 
 def _mm(x: float) -> str:
@@ -386,10 +436,9 @@ def _card_object(name: str, item: dict[str, Any], root: Path, roots: list[str], 
 
 def _card_material(name: str, item: dict[str, Any], data: dict[str, Any], where: tuple[Path, list[str], Any],
                    forced: tuple[set[str], bool]) -> str | None:
-    """The material a library object's own card names when it needs one (``material=``, ``mass=`` and the other
-    values, a ``set_friction`` pair, a randomized static friction below its dynamic one), else None. Derived as for
-    primitives (``_object_material``), from ``material=`` or the card's own material; ``where`` = (root, roots,
-    dump)."""
+    """The material a library object's own card names when it needs one (``material=``, ``mass=`` and the other values,
+    a ``set_friction`` pair, a randomized static friction below its dynamic one), else None. Derived as for primitives
+    (``_object_material``), from ``material=`` or the card's own material; ``where`` = (root, roots, dump)."""
     root, roots, dump = where
     ov = dict(item.get("overrides") or {})
     _CO.refuse_parts(name, data, _CO.value_asks(name, ov, forced[0]))

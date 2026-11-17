@@ -116,8 +116,9 @@ do instead today; a plain line carries its workaround. Read the lines for your a
 
 ## Liquids and heat
 
-- [Liquid needs finer particles than the default in openings under 32 mm (16 mm at super), and containers under 24 mm
-  are unreliable at both.](../known_gaps/liquid-narrow-containers.md)
+- [Liquid needs an opening at least 8 particles across (32 mm at default, 16 mm at super, 12 mm at ultra), and a thin
+  stream into a narrow receiver mostly misses unless surface tension is
+  on.](../known_gaps/liquid-narrow-containers.md)
 - [A pour alone can splash a few percent over its container's rim (3 % of a 6 ml pour), and health stays
   OK.](../known_gaps/liquid-pour-over-the-rim.md)
 - [A stream poured on a fabric sheet with self contact on makes the world INVALID, and cloth takes up no
@@ -128,6 +129,10 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   build.](../known_gaps/liquid-floating-container-ratio.md)
 - [Liquid beside a paste or powder sees it as a solid wall: there is no wetting or
   percolation.](../known_gaps/sph-mpm-mixing.md)
+- [With surface tension on, a free blob of water oscillates more and more instead of settling; water at rest stays
+  at rest.](../known_gaps/liquid-tension-free-drops.md)
+- [With surface tension on, a tilted container pours a half to a quarter as much in the same time (less at finer
+  settings), and at ultra a few droplets fly off a pour (94 % caught).](../known_gaps/liquid-tension-lip-drain.md)
 - [Heated liquid does not convect: `buoyancy=True` (water only) gives the first push, then the flow stalls after about
   a millimetre.](../known_gaps/heat-no-buoyancy.md)
 - [Boiled-off liquid particles stay in the solver and can block a heater: water at 99 degrees C on a 177 degrees C

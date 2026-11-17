@@ -13,7 +13,9 @@ offsets a robot joint (uniform in +-by, kept inside its limits) and moves its po
 MuJoCo servo driving it) there too, so the servo holds the new start instead of snapping back. A jittered joint is
 teleported: a finger set into a resting object starts inside it (START_PEN, DEGRADED) and the overlap is pushed apart
 hard, so start such a hand open (or the object clear of the pose) and close it with actions. A slide joint's
-``carry=`` moves free objects and particle objects (a liquid in a cup, a cloth on a tray) with it.
+``carry=`` moves free objects and particle objects (a liquid in a cup, a cloth on a tray) with it; a hinge cannot carry
+them, and the env warns at build when a jittered joint moves a body that a liquid or cloth starts in or on and the
+jitter leaves it behind (the liquid in a jug the wrist holds stays in mid-air and spills).
 """
 
 from __future__ import annotations
@@ -79,6 +81,9 @@ class Randomizer:
     def __init__(self, jitters: Sequence[Jitter], layout: Layout, engine: Any, xp: Any) -> None:
         self.jitters, self.layout, self.engine, self.xp = list(jitters), layout, engine, xp
         self._plans = [self._plan(j) for j in self.jitters]
+        for j in self.jitters:
+            if j.kind == "joint" and (j.by > 0 or j.at is not None):
+                _warn_left_behind(j, layout, engine)
         self._joint_world = xp.asarray(np.maximum(layout.world_of.get("joint", np.zeros(0)), 0), "int64")
         self._joint_valid = xp.asarray(layout.world_of.get("joint", np.zeros(0)) >= 0, "bool")
 
@@ -210,6 +215,65 @@ class Randomizer:
         with wp.ScopedDevice(eng.model.device):
             newton.eval_fk(eng.model, eng.state.joint_q, eng.state.joint_qd, eng.state,
                            joint_mask=self.xp.to_warp_bool(sel))
+
+
+#: a particle this close (m) to the bounding sphere of a shape a jitter moves starts in or on that shape
+NEAR = 0.01
+
+
+def _warn_left_behind(j: Jitter, lay: Layout, engine: Any) -> None:
+    """Warn when the jittered joint moves a body that a particle object outside ``carry`` starts in or on (world 0,
+    at build): the jitter teleports the body and leaves the liquid or cloth where it was."""
+    others = [n for n in lay.particles if n not in j.carry]
+    if not others:
+        return
+    from alloy._vendor import newton  # noqa: PLC0415
+    from alloy.api._say import warn  # noqa: PLC0415
+
+    m = engine.model
+    joint = int(np.searchsorted(m.joint_qd_start.numpy(), lay.joint(j.name).qd[0, 0], side="right") - 1)
+    centres, radii = _moved_shapes(m, engine.state.body_q.numpy().astype(np.float64), joint)
+    x = engine.state.particle_q.numpy().astype(np.float64)
+    active = (m.particle_flags.numpy() & int(newton.ParticleFlags.ACTIVE)) != 0   # a pour's waiting ones are not
+    held = [n for n in others if _touches(x[lay.particles[n][0]][active[lay.particles[n][0]]], centres, radii)]
+    if not held:
+        return
+    fix = (f"pass carry={held!r} to move it with the slide" if int(m.joint_type.numpy()[joint]) == 0 else
+           "a turning joint cannot carry it: jitter a slide joint instead, or leave this joint out of randomize=")
+    warn("jitter_joint(%r) moves a body that %s starts in or on, and leaves it where it was: it can spill or fall "
+         "before the first action. Fix: %s", j.name, " and ".join(repr(n) for n in held), fix)
+
+
+def _moved_shapes(m: Any, body_q: np.ndarray, joint: int) -> tuple[np.ndarray, np.ndarray]:
+    """World centres (S, 3) and bounding radii (S,) of the colliding shapes on the bodies ``joint`` moves."""
+    parent, child = m.joint_parent.numpy(), m.joint_child.numpy()
+    moved, todo = set(), [int(child[joint])]
+    while todo:                                                     # the joint's child body and everything below it
+        b = todo.pop()
+        moved.add(b)
+        todo += [int(c) for c in child[parent == b] if int(c) not in moved]
+    from alloy._vendor import newton  # noqa: PLC0415
+
+    collides = int(newton.ShapeFlags.COLLIDE_SHAPES | newton.ShapeFlags.COLLIDE_PARTICLES)
+    body, flags = m.shape_body.numpy(), m.shape_flags.numpy().astype(np.int64)
+    s = np.flatnonzero(np.isin(body, list(moved)) & ((flags & collides) != 0))
+    q = body_q[body[s]]
+    local = m.shape_transform.numpy().astype(np.float64)[s, :3]
+    u, w = q[:, 3:6], q[:, 6:7]                                     # body_q: position, then quaternion xyzw
+    centres = q[:, :3] + local + 2.0 * w * np.cross(u, local) + 2.0 * np.cross(u, np.cross(u, local))
+    return centres, m.shape_collision_radius.numpy().astype(np.float64)[s]
+
+
+def _touches(points: np.ndarray, centres: np.ndarray, radii: np.ndarray) -> bool:
+    """True when any point lies within ``NEAR`` of a shape's bounding sphere."""
+    if not len(points):
+        return False
+    lo, hi = points.min(0), points.max(0)
+    for c, r in zip(centres, radii + NEAR):
+        if np.linalg.norm(np.maximum(lo - c, 0.0) + np.maximum(c - hi, 0.0)) <= r and \
+                np.min(np.linalg.norm(points - c, axis=1)) <= r:
+            return True
+    return False
 
 
 def _put(xp: Any, arr: Any, rows: Any, values: Any, mask: Any) -> None:

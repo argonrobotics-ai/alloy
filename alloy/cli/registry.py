@@ -39,8 +39,9 @@ _RECIPE_SCHEMA = {
     "properties": {"base": {"type": "string", "description": "start from this library scene or file"},
                    "worlds": {"type": "integer", "minimum": 1},
                    "dt": {"type": "number", "description": "control period, s"},
-                   "liquid_accuracy": {"enum": ["default", "super"],
-                                       "description": "liquid particles 4 mm apart (default) or 2 mm (super)"},
+                   "liquid_accuracy": {"enum": ["default", "super", "ultra"],
+                                       "description": "liquid particles 4 mm apart (default), 2 mm (super) or 1.5 mm "
+                                                      "(ultra)"},
                    "materials": {"type": "array", "items": {"type": "object"}},
                    "objects": {"type": "array", "items": {
                        "type": "object", "required": ["add"],
@@ -70,7 +71,8 @@ PROFILE = Param("profile", "string", "integration profile", choices=("standard",
 CONTACTS = Param("contacts", "string", "contact pipeline", choices=("auto", "mujoco", "newton"))
 LIBRARY = Param("library", "strings", "extra card library folders, searched first")
 LIQUID = Param("liquid_accuracy", "string", "liquid particles: default 4 mm apart, super 2 mm (finer openings and "
-               "streams, about 16x the cost); sets the scene's liquid_accuracy", choices=("default", "super"))
+               "streams, about 16x the cost), ultra 1.5 mm (about 50x); sets the scene's liquid_accuracy",
+               choices=("default", "super", "ultra"))
 BUILD = (SCENE, WORLDS, DEVICE, SEED, PROFILE, CONTACTS, LIBRARY, LIQUID)
 ON_SIM = (SIM, *BUILD)
 NAMES = Param("names", "strings", "bodies, joints or particle objects to report (default: all)")

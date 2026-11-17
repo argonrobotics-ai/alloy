@@ -172,6 +172,9 @@ def make(name: str, num_envs: int = 1, device: str | None = None, seed: int = 0,
     Example: ``make("PickPlace-v0", num_envs=64, obj="ycb_014_lemon", camera=True)``."""
     import inspect  # noqa: PLC0415
 
+    from alloy.api._build import quiet_warp  # noqa: PLC0415
+
+    quiet_warp()            # before a port, a scene function or an import starts Warp (ALLOY_VERBOSE=1 keeps its lines)
     from alloy.envs.vector import VectorEnv  # noqa: PLC0415
 
     from alloy.envs.ports import PORTS, make_port  # noqa: PLC0415 - the task ports (Gym-Anything)

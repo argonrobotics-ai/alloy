@@ -6,7 +6,7 @@ Example::
 
     from alloy.camera.pbr.pack_io import load_pack
     fr = load_pack("c3_pack").frame(420)
-    sd = build_shade_data(fr, names, gpu_scene)         # names = pack.static["materials_used_by_meshes"]
+    sd, bevel = build_shade_data(fr, names, gpu_scene)  # names = pack.static["materials_used_by_meshes"]
 """
 from __future__ import annotations
 
@@ -19,7 +19,6 @@ import warp as wp
 from ..errors import CameraError
 
 log = logging.getLogger(__name__)
-_KEEP: list = []  # wp.Mesh objects whose ids live in ShadeData structs
 
 
 @wp.struct
@@ -54,9 +53,10 @@ def _mesh_frames(m) -> tuple:
             (0.5 * (lo + hi)).astype(np.float32), (0.5 / half).astype(np.float32))
 
 
-def build_shade_data(frame, mat_names: list[str], sc, col_name: str | None = None) -> ShadeData:
+def build_shade_data(frame, mat_names: list[str], sc, col_name: str | None = None) -> tuple[ShadeData, wp.Mesh]:
     """Per-mesh / per-triangle shading arrays for the frame's meshes (mesh k = SceneData mesh k); ``col_name``: the
-    colour attribute the materials read (corner_attrs.select_attributes)."""
+    colour attribute the materials read (corner_attrs.select_attributes). Also returns the Bevel node's wp.Mesh,
+    whose id is ``sd.bevel_mesh``: keep it as long as the ShadeData (it is freed with its last reference)."""
     from .corner_attrs import fill_corner_attrs
     from . import nodes as nd
     dev = sc.device
@@ -84,11 +84,10 @@ def build_shade_data(frame, mat_names: list[str], sc, col_name: str | None = Non
     sd.mesh_n_world = wp.array(nwor, dtype=wp.mat33, device=dev)
     sd.inst_src = sc.inst_src
     fill_corner_attrs(sd, frame, col_name, dev)
-    _bevel_mesh(sd, frame, dev)
-    return sd
+    return sd, _bevel_mesh(sd, frame, dev)
 
 
-def _bevel_mesh(sd: ShadeData, frame, dev: str) -> None:
+def _bevel_mesh(sd: ShadeData, frame, dev: str) -> wp.Mesh:
     """One frame-space wp.Mesh of every object (global triangle order) for the Bevel node's ray march."""
     verts, faces, objs, vo = [], [], [], 0
     for k, m in enumerate(frame.meshes):
@@ -103,7 +102,7 @@ def _bevel_mesh(sd: ShadeData, frame, dev: str) -> None:
                    bvh_constructor="sah")
     sd.bevel_mesh = mesh.id
     sd.tri_obj = wp.array(np.concatenate(objs), dtype=int, device=dev)
-    _KEEP.append(mesh)
+    return mesh
 
 
 def build_lights(pack, frame, num_worlds: int, device: str):

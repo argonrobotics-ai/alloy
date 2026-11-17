@@ -76,7 +76,9 @@ One measured number: on an AMD EPYC 7B13 CPU, no GPU, this program took about 16
 ## Keep in mind
 
 - Liquid is slow on a CPU: use few particles and a short run, or a GPU.
-- Containers narrower than 24 mm are unreliable ([details](../../known_gaps/liquid-narrow-containers.md)).
+- A container opening needs 8 liquid particles across: 32 mm at the default setting, 16 mm at super, 12 mm at
+  ultra. A thin stream into a narrow receiver mostly misses unless surface tension is on
+  ([details](../../known_gaps/liquid-narrow-containers.md)).
 - Tilt slowly and place the cup past the lip, not under it. Drop a block of water from above and some of it splashes
   over the rim ([details](../../known_gaps/liquid-pour-over-the-rim.md)).
 - The first method, a kinematic jug tilted with `sim.drive`, needs no robot file but no arm moves it.

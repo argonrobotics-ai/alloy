@@ -197,15 +197,31 @@ def fetch(names: list[str] | None = None, library: str | None = None, category: 
             "required": [r["name"] for r in deps][:50], "unresolved": lost[:50]}
 
 
+def _sample(groups: dict[str, list[str]], limit: int) -> list[str]:
+    """Up to ``limit`` names taken from every group in turn, so no group is left out of a cut list."""
+    out: list[str] = []
+    depth = 0
+    while len(out) < limit and any(depth < len(g) for g in groups.values()):
+        out += [g[depth] for g in groups.values() if depth < len(g)][:limit - len(out)]
+        depth += 1
+    return out
+
+
 def list_objects(library: str | None = None, category: str | None = None, repo: str | None = None,
                  limit: int = 200) -> dict[str, Any]:
-    """Libraries, categories and object names in the dataset (filtered), without downloading objects.
+    """Libraries, categories and object names in the dataset (filtered), without downloading objects. A selection
+    of more than ``limit`` objects lists names of every category (the same number from each, in index order) and
+    says in ``note`` how to list one category in full.
     Example: ``list_objects(library="objaverse")["categories"]``."""
     rows = select(load_index(repo=repo), None, library, category)
-    cats: dict[str, int] = {}
+    groups: dict[str, list[str]] = {}
     for r in rows:
-        key = f"{r['library']}/{r.get('category')}"
-        cats[key] = cats.get(key, 0) + 1
-    return {"repo": repo or repo_id(), "objects": len(rows), "bytes": sum(r.get("size", 0) for r in rows),
-            "libraries": sorted({r["library"] for r in rows}), "categories": dict(sorted(cats.items())),
-            "names": [r["name"] for r in rows][:limit]}
+        groups.setdefault(f"{r['library']}/{r.get('category')}", []).append(r["name"])
+    groups = dict(sorted(groups.items()))
+    out = {"repo": repo or repo_id(), "objects": len(rows), "bytes": sum(r.get("size", 0) for r in rows),
+           "libraries": sorted({r["library"] for r in rows}), "categories": {k: len(g) for k, g in groups.items()},
+           "names": _sample(groups, limit)}
+    if len(rows) > limit:
+        out["note"] = (f"names shows {len(out['names'])} of {len(rows)} objects, some from each category; "
+                       "`alloy fetch --list --category <name>` lists one category (add --library <name> too)")
+    return out

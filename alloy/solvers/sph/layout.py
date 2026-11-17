@@ -125,6 +125,27 @@ class ShapeTable:
     arrays: ShapeArrays
     keep: list  # device arrays referenced by the struct
     count: int
+    thinnest: float = float("inf")  # [m] the thinnest primitive in the table (``thinnest_wall``)
+
+
+THIN_GEOS = {int(GeoType.BOX): (0, 1, 2), int(GeoType.SPHERE): (0,), int(GeoType.CAPSULE): (0,),
+             int(GeoType.CYLINDER): (0, 1), int(GeoType.CONE): (0, 1), int(GeoType.ELLIPSOID): (0, 1, 2)}
+
+
+def thinnest_wall(model: Model, ids: np.ndarray) -> float:
+    """[m] The thinnest member of the table's primitives: twice the smallest half extent of a box or ellipsoid, the
+    diameter of a sphere or capsule, the smaller of the diameter and the height of a cylinder or cone. Planes and
+    meshes count as thick (a mesh's thickness is not known here). Example: a 1 mm glass wall slab, or a 1 mm disc of
+    40 mm diameter -> 0.001."""
+    if len(ids) == 0:
+        return float("inf")
+    types, scale = model.shape_type.numpy(), model.shape_scale.numpy()
+    out = float("inf")
+    for s in np.unique(ids):
+        axes = THIN_GEOS.get(int(types[s]))
+        if axes is not None:
+            out = min(out, 2.0 * float(min(scale[s][k] for k in axes)))
+    return out
 
 
 def origin_radius(model: Model) -> np.ndarray:
@@ -225,7 +246,7 @@ def shape_table(model: Model, cfg: DFSPHConfig, device: wp.context.Device) -> Sh
     a.soft = empty_soft(S, device)  # SolverDFSPH installs its SoftWalls (soft_walls.py)
     a.pw = empty_walls(S, cfg.h, cfg.kernel_id, device)  # SolverDFSPH installs its ParticleWalls
     a.friction = int(bool(cfg.wall_friction))
-    return ShapeTable(arrays=a, keep=keep, count=len(ids))
+    return ShapeTable(arrays=a, keep=keep, count=len(ids), thinnest=thinnest_wall(model, ids) if S else float("inf"))
 
 
 @dataclass

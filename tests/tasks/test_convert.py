@@ -22,6 +22,31 @@ def test_fmt_round_trips_float64() -> None:
     assert np.array_equal(np.array(fmt(vals).split(), dtype=np.float64), vals)
 
 
+def test_floor_friction_raises_only_the_terms_in_use_under_mjminmu_in_float32() -> None:
+    """MuJoCo Warp warns about a term its condim uses whose float32 is under mjMINMU (1e-5 is: 9.99999975e-6); the
+    floor is the next float32 up, so MuJoCo's own clamp to 1e-5 moves by 6.6e-8 of itself."""
+    import xml.etree.ElementTree as ET
+
+    from alloy.tasks.mjb_convert import MINMU_F32, floor_friction
+
+    root = ET.fromstring(
+        '<mujoco><worldbody>'
+        '<geom name="a" condim="6" friction="0.5 0.005 1e-05"/>'              # rolling in use: floored
+        '<geom name="b" condim="3" friction="0.5 1e-06 1e-06"/>'              # torsional, rolling unused: kept
+        '<geom name="c" condim="4" friction="0.5 1.5e-05 0.0"/>'              # clear of it; rolling unused: kept
+        '<geom name="d" condim="1" friction="0.0 0.0 0.0"/>'                  # frictionless: kept
+        '</worldbody><contact>'
+        '<pair geom1="a" geom2="b" condim="4" friction="1.0 1.0 4e-06 9e-07 9e-07"/>'   # [1, 2] in use
+        '</contact></mujoco>')
+    assert floor_friction(root) == 2
+    f = {el.get("name", "pair"): el.get("friction") for el in (*root.iter("geom"), *root.iter("pair"))}
+    assert float(np.float32(MINMU_F32)) > mujoco.mjMINMU > float(np.float32(1e-5))
+    assert repr(MINMU_F32) == "1.0000001e-05"
+    assert f == {"a": "0.5 0.005 1.0000001e-05", "b": "0.5 1e-06 1e-06", "c": "0.5 1.5e-05 0.0", "d": "0.0 0.0 0.0",
+                 "pair": "1.0 1.0 1.0000001e-05 9e-07 9e-07"}
+    assert floor_friction(root) == 0                                          # idempotent
+
+
 def test_msh_round_trip(tmp_path: Path) -> None:
     mesh = MeshData(np.random.default_rng(0).random((7, 3), dtype=np.float32), np.array([[0, 1, 2], [2, 3, 4]]))
     write_msh(tmp_path / "a.msh", mesh)

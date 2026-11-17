@@ -34,7 +34,8 @@ print(sim.state(world=0)["arm/shoulder.q"].round(2), sim.check()["ok"])
 The MJCF string is the arm (1 kg). The 50 g sheet drapes over a static stand on one side and the water sits in a tub
 on the other, so the cloth and the liquid never touch. The arm weighs more than twice the cloth, which a scene with
 cloth and liquid together needs. All three stepped for 0.1 s while the shoulder servo ramped, and the world passed
-its health check. The first build of a new kind of scene compiles kernels for some minutes and is cached after.
+its health check. The first build of a new kind of scene compiles kernels for some minutes and is cached after. The
+build warns that the sheet's cells are coarser than the tub's thin walls; the sheet never comes near the tub.
 
 One measured number: on one NVIDIA L4, physics only, warm, in a pre-release build measured on 2026-11-09, with dt
 10 ms and one run per point, a 0.6 m cotton sheet on a table gave 0.20 / 0.73 / 4.1 simulated seconds per wall

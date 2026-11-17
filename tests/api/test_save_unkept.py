@@ -41,7 +41,7 @@ def _one(said: list[str], key: str) -> str:
 
 
 def test_save_warns_that_heat_and_solver_settings_are_not_kept(tmp_path: Path, caplog) -> None:
-    scene = alloy.Scene(dt=0.01, cloth_accuracy="fast", liquid_accuracy="super")
+    scene = alloy.Scene(dt=0.01, cloth_accuracy="fast", liquid_accuracy="super", liquid_tension=True)
     scene.rigid_step = "fixed"
     scene.add_ground()
     scene.add_open_box("pan", inner=(0.08, 0.08, 0.04), wall=0.025, pos=(0.0, 0.0, 0.02))
@@ -56,11 +56,11 @@ def test_save_warns_that_heat_and_solver_settings_are_not_kept(tmp_path: Path, c
     heat = _one(said, "do not keep heat")
     assert "(hotplate, pan_floor, water, set_heat)" in heat and "sim.heat() raises" in heat
     settings = _one(said, "cloth_accuracy=")
-    assert "cloth_accuracy='fast', liquid_accuracy='super', rigid_step='fixed'" in settings
+    assert "cloth_accuracy='fast', liquid_accuracy='super', liquid_tension=True, rigid_step='fixed'" in settings
     loaded = alloy.Scene.load(card)                                     # what the warnings say
-    assert loaded.cloth_accuracy == "default" and not loaded.thermal["heaters"]
+    assert loaded.cloth_accuracy == "default" and not loaded.liquid_tension and not loaded.thermal["heaters"]
     kept = alloy.Scene.from_dict(scene.to_dict())                       # what they point to
-    assert kept.cloth_accuracy == "fast" and kept.thermal == scene.thermal
+    assert kept.cloth_accuracy == "fast" and kept.liquid_tension and kept.thermal == scene.thermal
 
 
 def test_save_warns_for_yielding_joints_robot_randomization_and_pushes(tmp_path: Path, caplog) -> None:

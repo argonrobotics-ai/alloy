@@ -54,42 +54,49 @@ def _to_byte(f: float) -> wp.uint8:
 
 
 @wp.kernel
-def standard_u8_kernel(rgb: wp.array(dtype=wp.vec3), exposure_scale: float, out: wp.array2d(dtype=wp.uint8)):
-    """One pixel: linear * 2^exposure -> sRGB bytes (out is (pixels, 3))."""
+def standard_u8_kernel(rgb: wp.array(dtype=wp.vec3), white: wp.mat33, exposure_scale: float,
+                       out: wp.array2d(dtype=wp.uint8)):
+    """One pixel: white balance, linear * 2^exposure -> sRGB bytes (out is (pixels, 3))."""
     i = wp.tid()
-    c = rgb[i] * exposure_scale
+    c = (white * rgb[i]) * exposure_scale
     for k in range(3):
         out[i, k] = _to_byte(_oetf(c[k]))
 
 
 @wp.kernel
-def agx_u8_kernel(rgb: wp.array(dtype=wp.vec3), exposure_scale: float, contrast: float,
+def agx_u8_kernel(rgb: wp.array(dtype=wp.vec3), white: wp.mat33, exposure_scale: float, contrast: float,
                   out: wp.array2d(dtype=wp.uint8)):
-    """One pixel: linear * 2^exposure -> AgX -> sRGB bytes (out is (pixels, 3))."""
+    """One pixel: white balance, linear * 2^exposure -> AgX -> sRGB bytes (out is (pixels, 3))."""
     i = wp.tid()
-    c = agx(rgb[i] * exposure_scale, contrast)
+    c = agx((white * rgb[i]) * exposure_scale, contrast)
     for k in range(3):
         out[i, k] = _to_byte(_oetf(c[k]))
 
 
 @dataclass(frozen=True)
 class View:
-    """A display transform: ``transform`` "standard" or "agx", ``exposure`` in stops, AgX ``contrast``."""
+    """A display transform: ``transform`` "standard" or "agx", ``exposure`` in stops, AgX ``contrast`` and ``white``,
+    the white-balance matrix applied to linear RGB first (9 numbers, row-major; None: none)."""
 
     transform: str = "standard"
     exposure: float = 0.0
     contrast: float = 1.0
+    white: tuple[float, ...] | None = None
 
 
 STANDARD = View()
 
 
 def view_from_settings(view_settings: dict | None) -> View:
-    """The View of Blender view settings ({"view_transform", "look", "exposure"}): AgX for "AgX" (and "Filmic", whose
-    role AgX took in Blender 4), else Standard. Example: ``view_from_settings({"view_transform": "AgX"})``."""
+    """The View of Blender view settings ({"view_transform", "look", "exposure"} and the white balance keys,
+    ``white_balance.white_matrix``): AgX for "AgX" (and "Filmic", whose role AgX took in Blender 4), else Standard.
+    Example: ``view_from_settings({"view_transform": "AgX"})``."""
+    from .white_balance import white_matrix
     vs = view_settings or {}
     kind = "agx" if str(vs.get("view_transform", "Standard")) in ("AgX", "Filmic") else "standard"
-    return View(kind, float(vs.get("exposure", 0.0) or 0.0), contrast_of(vs.get("look")) if kind == "agx" else 1.0)
+    m = white_matrix(vs)
+    return View(kind, float(vs.get("exposure", 0.0) or 0.0), contrast_of(vs.get("look")) if kind == "agx" else 1.0,
+                None if m is None else tuple(float(x) for x in m.ravel()))
 
 
 def to_display(rgb: wp.array, exposure: float = 0.0, out: wp.array | None = None, view: View = STANDARD) -> wp.array:
@@ -99,11 +106,13 @@ def to_display(rgb: wp.array, exposure: float = 0.0, out: wp.array | None = None
     if out is None or out.shape != (n, 3):
         out = wp.empty((n, 3), dtype=wp.uint8, device=rgb.device)
     scale = float(2.0 ** (exposure + view.exposure))
+    white = wp.mat33(*(view.white or (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)))
     if view.transform == "agx":
-        wp.launch(agx_u8_kernel, dim=n, inputs=[rgb.reshape((n,)), scale, float(view.contrast)], outputs=[out],
-                  device=rgb.device)
+        wp.launch(agx_u8_kernel, dim=n, inputs=[rgb.reshape((n,)), white, scale, float(view.contrast)],
+                  outputs=[out], device=rgb.device)
     else:
-        wp.launch(standard_u8_kernel, dim=n, inputs=[rgb.reshape((n,)), scale], outputs=[out], device=rgb.device)
+        wp.launch(standard_u8_kernel, dim=n, inputs=[rgb.reshape((n,)), white, scale], outputs=[out],
+                  device=rgb.device)
     return out.reshape((*shape, 3))
 
 

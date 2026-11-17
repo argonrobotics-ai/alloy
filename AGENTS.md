@@ -125,8 +125,10 @@ editable copy. A `Scene` round-trips through `scene.to_json()` / `alloy.Scene.fr
   heavier ones make the world INVALID (`sim.check()`), so use `convex` or `decompose` for parts that move unless you
   need the exact concave shape (`docs/known_gaps/rigid-sdf-mesh-contact-limits.md`). Mesh files are OBJ or STL.
 - Containers and holes, static and exact (built from boxes): `add_open_box(name, inner=(x, y, depth), wall=)`,
-  `add_open_cylinder(name, inner_radius, depth, wall=)`, `add_block_with_hole(name, size, hole=(x, y), depth)`;
-  `pos` is the centre of the bottom face.
+  `add_open_cylinder(name, inner_radius, depth, wall=)`, `add_block_with_hole(name, size, hole=(x, y), depth)`; `pos`
+  is the centre of the bottom face. Their walls, and static or kinematic boxes and cylinders, build down to 1 mm (a
+  free part needs 1.25 mm); beside a free body or robot the build warns with the speed that can pass a thin wall
+  (0.4 m/s at 1 mm).
 - Shared keywords: `pos` (or a `(worlds, 3)` array: one start per world, for anything that moves: free or kinematic
   objects and fixtures, cloth, liquid, free-base robots), one orientation keyword, `material` (a name from
   `alloy.materials()`), `mass` (kg) or `density` (kg/m³), `friction` (Coulomb μ), `restitution`, `static=True` for
@@ -294,15 +296,25 @@ print(sim.state(["ball"])["ball.pos"][:4, 0])        # x of the first 4 worlds
 - `alloy.estimate(scene, worlds, seconds)` predicts step time, wall time, memory and first-run compile time before you
   build. Its wall time is fitted to warm runs (robot + water, bins, an arm, cloth, pours at 1-64 worlds, CPU and L4):
   within 1.3x on those rows, further off elsewhere: a check of 8 other CPU scenes on another machine measured
-  0.54-1.25x the estimate (it over-predicted a pour and a 64-world arm by up to 1.9x). On an L4, warm, section 7's
-  sheet over a stand stepped 1.1-1.4x slower than estimated up to 64 worlds, 2.4x at 256 and 4.2x at 1,024; a sheet
-  flat on a table and water at rest in a tub 1.8-2.7x at every count (a refit with many-world rows is planned).
-  Right after a build or `sim.reset()` a GPU run first captures CUDA graphs (its first ~5 control periods, again
-  when a liquid's step changes): a 1 s run then takes up to 2.7x the estimate (3.8x for 1,024 worlds of that
-  sheet). GPU memory (`memory_bytes`) is fitted to 38 L4 rows (arms, a bin, cloth, liquid; 1-16,384 worlds): within
-  1.2x there, with about 0.4 GB before the first world. Many worlds of scanned meshes are not among the rows. `measure=True` times a short real run instead; it does not measure memory
-  (`memory_bytes` is None), so before a large run build a smaller world count and watch the GPU's memory
-  (`nvidia-smi`).
+  0.54-1.25x the estimate (it over-predicted a pour and a 64-world arm by up to 1.9x). In a scene of free bodies on
+  the CPU it counts the parts each body comes to rest on beyond its first, from its start pose, and whether they rest
+  on the ground or on a table, a bin's floor or another body, where each costs about 3x (a scanned object is split
+  into up to 32 convex parts): three YCB scans resting in a bin stepped 2.0-2.6x the estimate before 0.1.7 and
+  1.04-1.14x it now, and every body measured that settles reads within 1.3x; a body that keeps rocking on many parts
+  (a decomposed bowl upside down on its rim) steps up to 2.4x it (AMD EPYC; an Intel Xeon cloud VM, GCP
+  n2-standard-8, ran the bin 1.25x slower). A pile of separate boxes, one part each, is not charged and reads high as
+  before: 16 on a table 1.4x, 36 in a bin 1.7x. On
+  an L4, warm, section 7's sheet over a stand stepped 1.1-1.4x slower than estimated up to 64 worlds, 2.4x at 256 and
+  4.2x at 1,024; a sheet flat on a table and water at rest in a tub 1.8-2.7x at every count (a refit with many-world
+  rows is planned). Right after a build or `sim.reset()` a GPU run first captures CUDA graphs (its first ~5 control
+  periods, again when a liquid's step changes): a 1 s run then takes up to 2.7x the estimate (3.8x for 1,024 worlds of
+  that sheet). GPU memory (`memory_bytes`) is fitted to 38 L4 rows (arms, a bin, cloth, liquid; 1-16,384 worlds):
+  within 1.2x there, with about 0.4 GB before the first world. Many worlds of scanned meshes are not among the rows.
+  `measure=True` times the first second of a real run (all of a shorter run) and charges the rest at the rate of its
+  last quarter, when dropped objects have landed (before 0.1.7 it timed the first 0.2 s and read three scans dropped
+  into a bin 2x fast, a pour 3-6x). A pour still flowing after that second reads fast: a 2.5 s pour, 24.7 s against a
+  52.3 s run (67.8 s without `measure`). It does not measure memory (`memory_bytes` is None), so before
+  a large run build a smaller world count and watch the GPU's memory (`nvidia-smi`).
 - Same `seed` on the CPU: the same worlds, bit for bit, at every profile but `"fast"`. On a GPU that holds only until
   bodies touch in more than one place: free flight, an arm touching nothing, and one sphere or flat box on the ground
   repeat, but piles, tumbling boxes, meshes, robots in contact and cloth that folds or piles do not, at any profile.
@@ -374,7 +386,8 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
 - Cloth accuracy: cloth runs 40 accelerated VBD iterations per step by default (Newton's `SolverVBD` with an adaptive
   start and Chebyshev acceleration): a drape at 0.43-0.52 % strain, against 13 % at that solver's default 10.
   `alloy.Scene(cloth_accuracy="super")` runs 60, about 1.4x the cloth cost (about 1.5x on the CPU), for a little less
-  strain (0.30 %). On the CPU the default's 40 iterations cost about 4x VBD's own 10, which `cloth_accuracy="fast"`
+  strain (0.30 %). On the CPU the default's 40 iterations cost about 4x VBD's own 10 (3.8-3.9x on a sheet over a
+  ball), which `cloth_accuracy="fast"`
   runs (DC 0.19 at 13 % strain, which health does not flag: only where the cloth's shape is not scored). On a GPU a
   "fast" drape does not repeat (its sheet keeps touching itself: identical worlds and repeat runs differ), and neither
   may any cloth that folds or piles (section 6). `alloy.estimate(scene, ...)["cloth"]` shows each setting.
@@ -402,20 +415,31 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
 - `add_liquid(name, size=(x, y, z), pos, material="water")`: liquid at rest filling that box (already in a container,
   or a puddle); contain it in `add_open_box` / `add_open_cylinder`. Match the container: in a round cup,
   `add_liquid(..., shape="cylinder")` with `size=(diameter, diameter, height)`; a box in a round cup splashes out. `sim.liquid_volume(name)` is the simulated
-  volume (whole particles: a few percent under the box; a pour's within half a particle); `sim.particle_volume(name)`
-  per particle.
+  volume (whole particles: a few percent under the box; a cylinder within half a layer, its column starting taller
+  than asked in a narrow cup; a pour's within half a particle); `sim.particle_volume(name)` per particle.
 - Liquid accuracy: particles sit 4 mm apart by default. `alloy.Scene(liquid_accuracy="super")` puts them 2 mm apart,
   for finer streams and narrower openings, at about 16x the work (8x the particles, 2x the steps). Measured, the cost
   depends on the device and world count: 11-20x on CPU pours; on one L4, 3.5-3.8x for one world (the GPU has room to
   spare) and 36-49x at 64-256 worlds, in two measurements (a pour ran 18-19 simulated s per wall s at default, 0.4-0.5
-  at super). `alloy.estimate(scene, ...)["liquid"]` shows both settings, and the CLI takes `--liquid-accuracy super`.
-  - A build warns once when the setting is too coarse, naming the item and the fix: the opening of an `add_open_box`,
-    `add_open_cylinder` or `add_block_with_hole` (or a card's passage) under 32 mm at default or 24 mm at super, or a
-    pour stream under 2 particles across (8 mm at default, 4 mm at super). An `add_mesh` container is not checked:
-    keep its opening at those widths yourself.
-  - Containers narrower than 24 mm are unreliable at both settings (`docs/known_gaps/liquid-narrow-containers.md`).
+  at super). `"ultra"` puts them 1.5 mm apart (8 across a 12 mm opening) at about 50x the work: on one L4, a pour ran
+  3.0x super's wall time for one world and 7.0x (61x default) for 16 worlds.
+  `alloy.estimate(scene, ...)["liquid"]` shows each setting, and the CLI takes `--liquid-accuracy super`.
+  - A build warns once when the setting is too coarse, naming the item and the cheapest setting that fixes it: the
+    opening of an `add_open_box`, `add_open_cylinder` or `add_block_with_hole` (or a card's passage) under 8 particles
+    across (32 mm at default, 16 mm at super, 12 mm at ultra), or a pour stream under 2 particles across (8 mm at
+    default, 4 mm at super). An `add_mesh` container is not checked: keep its opening at those widths yourself.
+  - Water at rest stays healthy in round cups from 8 mm at super and ultra. A thin stream from a tilted container
+    into a narrow receiver mostly misses at every setting unless surface tension is on
+    (`docs/known_gaps/liquid-narrow-containers.md`).
   - Saved cards (`scene.save()`) do not keep the setting, Scene JSON does: on a scene loaded from cards, set
     `scene.liquid_accuracy = "super"` again.
+- Surface tension is off by default; `alloy.Scene(liquid_tension=True)` gives each liquid its material's (water 0.072
+  N/m), so a thin stream holds together (a pour into a 15 mm vial at 2 mm particles caught 52-57 % of what left the
+  beaker, 2-5 % without) at about the same cost. A tilted container pours a half to a quarter as much in the same
+  time with tension (less at finer settings), and at `liquid_accuracy="ultra"` a few droplets can fly off a tension
+  pour: a 50 mm receiver caught 94 % of it (`docs/known_gaps/liquid-tension-lip-drain.md`). Walls get no wetting
+  angle. A free oscillating blob of water grows its oscillation (`docs/known_gaps/liquid-tension-free-drops.md`);
+  water at rest stays at rest. `docs/guide/deformables.md`.
 - A kinematic container holds its liquid, still or tilted with `sim.drive`, beside free rigid bodies too: a tilt pour
   beside a free ball lands about the same share in the cup as with the ball static (94 %). On the CPU that scene steps
   10-12x slower (10.5x and 12.3x on two machines) than with every other object static, so make objects that never move

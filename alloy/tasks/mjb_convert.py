@@ -3,9 +3,10 @@
 
 SPEC §7 WP13: Newton's MJCF importer cannot read ``.mjb``, and ``mj_saveLastXML`` refuses a model loaded from a
 binary ("No XML model loaded", MuJoCo 3.16.0), so the compiled model is written back as explicit MJCF at full
-precision (:mod:`alloy.tasks.mjcf_tree`, :mod:`alloy.tasks.mjcf_parts`). Meshes go to
-``meshes/*.msh`` and every file is listed in ``SHA256SUMS.json``. CPU MuJoCo is used here offline only (README
-ground rule); nothing in this module runs inside an Alloy simulation loop.
+precision (:mod:`alloy.tasks.mjcf_tree`, :mod:`alloy.tasks.mjcf_parts`), except friction terms under MuJoCo's floor
+in float32 (:func:`floor_friction`). Meshes go to ``meshes/*.msh`` and every file is listed in ``SHA256SUMS.json``.
+CPU MuJoCo is used here offline only (README ground rule); nothing in this module runs inside an Alloy simulation
+loop.
 
 CLI: ``python -m alloy.tasks.mjb_convert <recorded trace dir> <robots root> <scene name>``.
 """
@@ -41,6 +42,13 @@ log = logging.getLogger("alloy.tasks")
 SCENE_XML = "scene.xml"
 MESH_DIR = "meshes"
 INPUT_KINDS = ("ctrl", "qfrc", "xfrc", "afr", "eq")
+# The smallest decimal whose float32 clears MuJoCo's mjMINMU (1e-5): float32 1.0000000657e-5, 6.6e-8 above it.
+# Newton and MuJoCo Warp hold friction in float32, where a recorded 1e-5 lands just under mjMINMU, and MuJoCo Warp warns
+# once per geom and pair at load. MuJoCo clamps every such term up to mjMINMU, so the floor leaves the friction in use.
+MINMU_F32 = 1.0000001e-5
+# condim -> friction terms it uses (MuJoCo Warp's load check): a geom's sliding, torsional, rolling; a pair's five
+GEOM_FRICTION_TERMS = {3: (0,), 4: (0, 1), 6: (0, 1, 2)}
+PAIR_FRICTION_TERMS = {3: (0,), 4: (0, 1, 2), 6: (0, 1, 2, 3, 4)}
 
 
 @dataclass(frozen=True)
@@ -112,11 +120,44 @@ def decompile(m: mujoco.MjModel, mesh_store: Path, model_name: str = "scene",
     write_actuators(root, m, names)
     write_equalities(root, m, names)
     write_contacts(root, m, names)
+    if floored := floor_friction(root):
+        log.info("%s: friction raised to %g on %d geoms and pairs", model_name, MINMU_F32, floored)
     if keyframes:
         write_keyframes(root, m)
     tree = ET.ElementTree(root)
     ET.indent(tree, space=" ")
     return tree
+
+
+def floor_friction(root: ET.Element) -> int:
+    """Raise each friction term a ``<geom>`` or ``<pair>`` uses at its ``condim`` whose float32 is under MuJoCo's
+    mjMINMU to ``MINMU_F32``; returns how many elements changed. Terms already clear of it keep their exact text."""
+    changed = 0
+    for tag, terms in (("geom", GEOM_FRICTION_TERMS), ("pair", PAIR_FRICTION_TERMS)):
+        for el in root.iter(tag):
+            used = terms.get(int(el.get("condim", "3")), ())
+            values = el.get("friction", "").split()
+            low = [i for i in used if i < len(values) and float(np.float32(values[i])) < mujoco.mjMINMU]
+            if low:
+                for i in low:
+                    values[i] = repr(MINMU_F32)
+                el.set("friction", " ".join(values))
+                changed += 1
+    return changed
+
+
+def under_minmu(m: mujoco.MjModel) -> list[str]:
+    """The geoms and pairs of ``m`` with a friction term in use whose float32 is under mjMINMU: what MuJoCo Warp warns
+    about when Newton loads ``m`` (``"geom <name>"`` / ``"pair <id>"``)."""
+    out = []
+    for kind, friction, dims, terms in (("geom", m.geom_friction, m.geom_condim, GEOM_FRICTION_TERMS),
+                                        ("pair", m.pair_friction, m.pair_dim, PAIR_FRICTION_TERMS)):
+        f32 = np.asarray(friction, dtype=np.float32).astype(np.float64)
+        for i in range(len(dims)):
+            used = list(terms.get(int(dims[i]), ()))
+            if np.any(f32[i, used] < mujoco.mjMINMU):
+                out.append(f"geom {m.geom(i).name}" if kind == "geom" else f"pair {i}")
+    return out
 
 
 def write_scene(m: mujoco.MjModel, robots_root: Path, scene: str, split: SceneSplit | None = None,

@@ -1,17 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Liquid accuracy: ``liquid_accuracy="default"`` (4 mm particle spacing) or ``"super"`` (2 mm), one build option
-(SCR-WP9-LIQRES; user decision 2026-11-08). Super has 8x the particles and takes about 2x the steps: about 16x the
-cost (11-20x wall time measured on pours).
+"""Liquid accuracy: ``liquid_accuracy="default"`` (4 mm particle spacing), ``"super"`` (2 mm) or ``"ultra"``
+(1.5 mm), one build option (SCR-WP9-LIQRES, user decision 2026-11-08; ultra for 15 mm openings, 2026-11-16).
+Super has 8x the particles and takes about 2x the steps: about 16x the work (11-20x wall time measured on CPU pours).
+Ultra has 19x the default's particles and 2.7x its steps: about 50x the work; one world on one L4 ran P1 (a 50 mm
+beaker poured into a 15 mm vial) at 21 s per simulated s, 3.0x super (7.1 s).
 
 A build warns once when the setting is too coarse for the scene, listing each item and naming the setting that fixes
-it (``coarse`` / ``warn``). Counted as particles across, width / spacing (CPU probes,
-[internal note] ``notes/wp9-runs/liqres/``):
+it (``coarse`` / ``warn``). Counted as particles across, width / spacing:
 - an opening a liquid sits in or must pass (a card's ``passage_width``, an open cylinder's inner diameter, an open
-  box's narrower inner side, a block's hole): fewer than ``OPENING_ACROSS`` = 8 across (LIQ-6), or under
-  ``OPENING_MIN`` = 24 mm at any setting. At 4 mm, a pour into a 24 mm cup (6 across) kept 95.6 % against 99.7 % from
-  8 across, and water at rest in cups 3-6 across started INVALID; at 2 mm a 16 mm cup started INVALID too.
+  box's narrower inner side, a block's hole): fewer than ``OPENING_ACROSS`` = 8 across (LIQ-6) at any setting. The
+  24 mm floor at any setting went on 2026-11-17: water at rest in cups of 8-24 mm stays healthy at 1.5 and 2 mm and
+  pours into 12-32 mm cups keep 98-100 % (docs/notes/wp9-results.md, liquid fix 2); before, cups 3-6 across
+  started INVALID at 4 mm and 8 and 16 mm cups at 2 mm (the cup's 24 wall slabs counted twice at the seams, a crowded
+  floor slot, an overfilled round lattice).
 - a pour's stream (``add_pour``'s nozzle): fewer than ``STREAM_ACROSS`` = 2 across. One particle across lands 36 % of
-  it in a 70 mm cup at either spacing; 2-5 across land 99-100 %.
+  it in a 70 mm cup at either spacing; 2-5 across land 99-100 % (CPU probes, notes/wp9-runs/liqres/).
 """
 
 from __future__ import annotations
@@ -24,16 +27,19 @@ from typing import Any
 from alloy.api import _say
 from alloy.api.errors import SceneError
 
-SPACING = {"default": 4.0e-3, "super": 2.0e-3}       # m: SPH particle spacing per setting (radius = half)
+SPACING = {"default": 4.0e-3, "super": 2.0e-3, "ultra": 1.5e-3}   # m: SPH particle spacing (radius = half)
 #: measured accuracy per setting (CPU quick laws and pours, [internal note] notes/wp9-runs/liqres/README.md)
 ACCURACY = {
     "default": "hydrostatic wall force 1.1 %, floating draft 4.9 % (5 particles deep), dam front within "
                "Ritter's bound; pours keep 99.7 % in cups from 32 mm",
     "super": "hydrostatic wall force 0.2 %, floating draft 4.2 %, dam front within Ritter's bound; pours keep "
-             "97.6-99.8 % in cups from 24 mm",
+             "98.5-99.9 % in cups from 12 mm",
+    "ultra": "hydrostatic wall force 1.2 %, floating draft 2.1 %, dam front within Ritter's bound; pours keep "
+             "98.1-100 % in cups from 12 mm",
 }
+#: cost against the default (4 mm) setting: the work (particles x steps); measured rows in docs/notes/wp9-results.md
+COST = {"super": "about 16x the cost", "ultra": "about 50x the cost"}
 OPENING_ACROSS = 8.0
-OPENING_MIN = 0.024                                   # m
 STREAM_ACROSS = 2.0
 
 
@@ -51,7 +57,8 @@ def checked(accuracy: Any) -> str:
     """``accuracy`` if it is a setting, else a SceneError naming both. Example: ``checked("super")`` -> "super"."""
     if not isinstance(accuracy, str) or accuracy not in SPACING:
         raise SceneError(f"liquid_accuracy must be one of {sorted(SPACING)}, got {accuracy!r}",
-                         "pass liquid_accuracy='default' (4 mm particles) or 'super' (2 mm, about 16x the cost)",
+                         f"pass liquid_accuracy='default' (4 mm particles), 'super' (2 mm, {COST['super']}) or "
+                         f"'ultra' (1.5 mm, {COST['ultra']})",
                          field="liquid_accuracy")
     return accuracy
 
@@ -110,7 +117,7 @@ def coarse(items: Mapping[str, Mapping[str, Any]], spacing_m: float,
         return []
     s = float(spacing_m)
     out = [Coarse(n, "opening", w, w / s) for n, w in [*_openings(items), *cards]
-           if w / s < OPENING_ACROSS - 1e-9 or w < OPENING_MIN - 1e-12]
+           if w / s < OPENING_ACROSS - 1e-9]
     out += [Coarse(n, "stream", w, w / s) for n, w in _streams(items) if w / s < STREAM_ACROSS - 1e-9]
     return out
 
@@ -124,20 +131,19 @@ def built_spacing(built: Any, accuracy: str) -> float:
 
 
 def _fix(c: Coarse, accuracy: str) -> str:
-    """What to change for one coarse item: super if it resolves it, else the geometry or the pour."""
+    """What to change for one coarse item: the cheapest finer setting that resolves it, else the geometry or the
+    pour."""
     other = "widen it" if c.what == "opening" else "raise the pour's rate or lower its speed"
-    if c.what == "opening" and c.width < OPENING_MIN - 1e-12:
-        return f"widen it to {OPENING_MIN * 1e3:.0f} mm or more (narrower containers are unreliable at any setting)"
     limit = OPENING_ACROSS if c.what == "opening" else STREAM_ACROSS
-    if accuracy != "super" and c.width / SPACING["super"] >= limit - 1e-9:
-        return "build with liquid_accuracy='super' (2 mm particles, about 16x the cost)"
-    return ("even liquid_accuracy='super' is too coarse: " if accuracy != "super" else "") + other
+    finer = [a for a in ("super", "ultra") if SPACING[a] < SPACING[accuracy]]
+    for acc in finer:                                  # the cheapest finer setting that resolves it
+        if c.width / SPACING[acc] >= limit - 1e-9:
+            return f"build with liquid_accuracy={acc!r} ({SPACING[acc] * 1e3:g} mm particles, {COST[acc]})"
+    return (f"even liquid_accuracy={finer[-1]!r} is too coarse: " if finer else "") + other
 
 
 def _needs(c: Coarse) -> str:
-    """The threshold the item missed: the 24 mm floor, else particles across (OSS-17's review)."""
-    if c.what == "opening" and c.width < OPENING_MIN - 1e-12 and c.across >= OPENING_ACROSS - 1e-9:
-        return f"{OPENING_MIN * 1e3:.0f} mm"
+    """The threshold the item missed, in particles across (OSS-17's review)."""
     return f"{OPENING_ACROSS if c.what == 'opening' else STREAM_ACROSS:g} across"
 
 
@@ -168,8 +174,9 @@ def router_for(scene: Any) -> Any:
     from alloy.scene import cloth_accuracy  # noqa: PLC0415
 
     cloth = cloth_accuracy.checked(getattr(scene, "cloth_accuracy", "default"), SceneError)
-    return Router(RouterConfig(liquid_accuracy=checked(scene.liquid_accuracy), cloth_accuracy=cloth))
+    return Router(RouterConfig(liquid_accuracy=checked(scene.liquid_accuracy), cloth_accuracy=cloth,
+                               liquid_tension=bool(getattr(scene, "liquid_tension", False))))
 
 
-__all__ = ["ACCURACY", "Coarse", "OPENING_ACROSS", "OPENING_MIN", "SPACING", "STREAM_ACROSS", "built_spacing",
+__all__ = ["ACCURACY", "COST", "Coarse", "OPENING_ACROSS", "SPACING", "STREAM_ACROSS", "built_spacing",
            "card_openings", "checked", "coarse", "message", "router_for", "saved", "spacing", "warn"]

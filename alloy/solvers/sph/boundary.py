@@ -23,6 +23,7 @@ from alloy._vendor.newton._src.geometry.sdf_texture import TextureSDFData
 from alloy._vendor.newton._src.geometry.soft_contacts_sdf import eval_shape_sdf
 
 from .boundary_curvature import curved_volume, face_closest, mesh_mean_curvature
+from .boundary_slots import COS_SAME, _shape_insert, _slot_insert  # noqa: F401  (COS_SAME: kept importable here)
 from .kernels import clamp_principal_curvature, halfspace_volume
 from .particle_walls import ParticleWallArrays, pw_candidate, pw_plane
 from .soft_walls import SoftArrays, soft_candidates, soft_closest
@@ -186,34 +187,6 @@ def shape_sdf(shapes: ShapeArrays, s: int, xl: wp.vec3):
     return eval_shape_sdf(shapes.geo[s], shapes.scale[s], xl, shapes.sdf_index[s], shapes.tex)
 
 
-@wp.func
-def _slot_insert(slots_shape: wp.array2d[wp.int32], slots_phi: wp.array2d[wp.float32],
-                 slots_face: wp.array2d[wp.int32], i: int, n: int, s: int, phi: float, face: int) -> int:
-    """Insert (s, phi, face) into the phi-ascending slot row; returns the slot index used, or -1 if dropped."""
-    pos = n
-    k = n - 1
-    while k >= 0:
-        if slots_phi[i, k] <= phi:
-            break
-        pos = k
-        k -= 1
-    if pos >= 4:
-        return -1
-    last = n
-    if n >= 4:
-        last = 3
-    k = last
-    while k > pos:
-        slots_shape[i, k] = slots_shape[i, k - 1]
-        slots_phi[i, k] = slots_phi[i, k - 1]
-        slots_face[i, k] = slots_face[i, k - 1]
-        k -= 1
-    slots_shape[i, pos] = s
-    slots_phi[i, pos] = phi
-    slots_face[i, pos] = face
-    return pos
-
-
 @wp.kernel(enable_backward=False)
 def _find_slots_kernel(
     q: wp.array[wp.vec3],
@@ -226,7 +199,10 @@ def _find_slots_kernel(
     slot_shape: wp.array2d[wp.int32],
     slot_phi: wp.array2d[wp.float32],
     slot_face: wp.array2d[wp.int32],
+    slot_nrm: wp.array2d[wp.vec3],
 ):
+    """The nearest NB shapes (soft faces, particle walls) within h of each fluid particle; ``slot_nrm`` is scratch for
+    the shapes' world normals (the fill pass writes the slots' own normals over it)."""
     i = wp.tid()
     for k in range(4):
         slot_shape[i, k] = -1
@@ -246,7 +222,8 @@ def _find_slots_kernel(
         xl = wp.transform_point(wp.transform_inverse(X), x)
         _lo, phi, gl = shape_sdf(shapes, s, xl)
         if phi < shapes.reach and phi + shapes.offset < h:
-            if _slot_insert(slot_shape, slot_phi, slot_face, i, n, s, phi, -1) >= 0 and n < 4:
+            nw = wp.normalize(wp.transform_vector(X, gl))
+            if _shape_insert(slot_shape, slot_phi, slot_face, slot_nrm, i, n, s, phi, nw, 0.1 * h) > 0 and n < 4:
                 n += 1
     cb, fb, pb = soft_candidates(shapes.soft, x, w)
     for j in range(4):
@@ -377,11 +354,18 @@ def _fill_slots_kernel(
     slot_face: wp.array2d[wp.int32],
     slot_bary: wp.array2d[wp.vec3],
 ):
-    """Fill the slots, then combine overlapping walls by inclusion-exclusion:
-    Psi_U = sum Psi_b - sum_{b<c} w_bc Psi_b Psi_c, w_bc = clamp(1 + n_b.n_c, 0, 1). The quadrant term Psi_b Psi_c
-    is exact for a separable kernel at orthogonal walls (edges, corners) and w -> 0 for facing walls (disjoint
-    half-spaces). Each slot keeps Psi_b (1 - o_b/2) and grad Psi_b (1 - o_b), o_b = min(sum_{c!=b} w_bc Psi_c, 1),
-    so the slot sums give Psi_U and its exact gradient wherever o_b < 1 (everywhere a resting lattice reaches)."""
+    """Fill the slots, then combine overlapping walls by inclusion-exclusion, Psi_U = sum Psi_b - sum_{b<c} O_bc,
+    with the overlap O_bc of two half-spaces set by the cosine c = n_b.n_c of their normals:
+    - c <= 0: O = (1 + c) Psi_b Psi_c. The quadrant term is exact for a separable kernel at orthogonal walls (edges,
+      corners); it goes to 0 for facing walls (disjoint half-spaces).
+    - c > 0: O = (1 - c) Psi_b Psi_c + c min(Psi_b, Psi_c). Walls facing the same way overlap like one wall: at
+      c = 1 the union is the nearer one. The quadrant term alone counted the seams of a wall tiled from slabs
+      (``add_open_cylinder``: 24 slabs, 15 deg apart) nearly twice. Water at rest in a 12 mm cup at 1.5 mm
+      spacing went INVALID with 24 or 48 slabs and stayed healthy with 12.
+    Each slot keeps Psi_b (1 - o_b/2 - s_b) and grad Psi_b (1 - o_b - s_b). Here o_b = min(sum_{c!=b} w_bc Psi_c, 1),
+    w_bc is the quadrant weight above, and s_b = sum c_bc over the nearer walls c with c_bc > 0 (the min term goes to
+    the farther slot). The slot sums then give Psi_U and its exact gradient wherever o_b + s_b < 1, everywhere a
+    resting lattice reaches."""
     i = wp.tid()
     x = q[i]
     for k in range(4):
@@ -392,21 +376,24 @@ def _fill_slots_kernel(
         if slot_shape[i, b] >= 0:
             gb = slot_gpsi[i, b]
             ob = float(0.0)
+            sb = float(0.0)
             for c in range(4):
                 if c != b and slot_shape[i, c] >= 0:
                     gc = slot_gpsi[i, c]
                     lb = wp.length(gb)
                     lc = wp.length(gc)
-                    wbc = float(1.0)
+                    cbc = float(0.0)
                     if lb > 0.0 and lc > 0.0:
-                        wbc = wp.clamp(1.0 + wp.dot(gb, gc) / (lb * lc), 0.0, 1.0)
-                    ob += wbc * ps[c]
+                        cbc = wp.clamp(wp.dot(gb, gc) / (lb * lc), -1.0, 1.0)
+                    ob += (1.0 - wp.abs(cbc)) * ps[c]
+                    if cbc > 0.0 and (ps[c] > ps[b] or (ps[c] == ps[b] and c < b)):
+                        sb += cbc
             # o_b <= 1: the fitted volumes exceed 1 close to a wall, where the quadrant term would turn Psi_U
             # negative and the wall attractive (a corner particle then walks into the corner); the rest lattice has
             # o_b ~ 0.15-0.3 and is unchanged.
             ob = wp.min(ob, 1.0)
-            slot_psi[i, b] = ps[b] * (1.0 - 0.5 * ob)
-            slot_gpsi[i, b] = gb * (1.0 - ob)
+            slot_psi[i, b] = ps[b] * wp.max(1.0 - 0.5 * ob - sb, 0.0)
+            slot_gpsi[i, b] = gb * wp.max(1.0 - ob - sb, 0.0)
 
 
 def compute_slots(
@@ -418,7 +405,7 @@ def compute_slots(
     if n == 0:
         return
     wp.launch(_find_slots_kernel, dim=n, inputs=[q, flags, phase, world, shapes, body_q, h, slots.shape, slots.phi,
-                                                 slots.face], device=device)
+                                                 slots.face, slots.nbl], device=device)
     wp.launch(
         _fill_slots_kernel, dim=n,
         inputs=[q, world, shapes, body_q, body_qd, body_com, h, kind, slots.shape, slots.psi, slots.gpsi, slots.xb,

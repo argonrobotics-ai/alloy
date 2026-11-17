@@ -10,8 +10,8 @@ reaches T/2 (>= 2r for SPH walls, which are at least h = 4r thick); a cut across
 shallow. Each particle counts once per episode (``leaked``); the deepest reach per world is a continuous signal for
 an adversarial search. Escapes are the solver's own world-bounds counter (``report().escaped``); the monitor also
 records through which face of the escape box each one left (bottom / side / top), in the step it left.
-A particle that moved more than ``integrate.SWEEP`` h in the step is tested against every shape of its world, not
-only its slots (the same coverage as the projection's sweep). Box walls are tested exactly at any step length (slab
+A particle that moved more than ``integrate.sweep_length`` (SWEEP h, or half the thinnest wall) in the step is tested
+against every shape of its world, not only its slots (the same coverage as the projection's sweep). Box walls are tested exactly at any step length (slab
 interval, then the deepest point by ternary search); other shapes with samples at most r apart (up to 64).
 In solid (``in_solid``): a particle that ends a step inside any shape of its world by more than ``IN_SOLID_TOL``
 projection skins, counted once per episode, with the deepest end-of-step reach per world. The path depth above is
@@ -27,7 +27,7 @@ import numpy as np
 import warp as wp
 
 from .boundary import ShapeArrays, shape_sdf, shape_world_transform
-from .integrate import GEO_BOX, SWEEP, box_span, near_path, path_samples, path_sdf
+from .integrate import GEO_BOX, box_span, near_path, path_samples, path_sdf, sweep_length
 from .pressure import Particles, is_fluid
 
 DEPTH_TOL = 1.0  # [r] deeper than this along a step path = through the wall
@@ -169,8 +169,8 @@ class LeakMonitor:
             return
         wp.launch(leak_kernel, dim=s.layout.n,
                   inputs=[s._particles(state_out), state_in.particle_q, s._slots.shape, s.shapes.arrays, body_q_in,
-                          body_q_out, s.config.particle_radius, self.depth_tol, self.samples, SWEEP * s.config.h,
-                          *self._bounds,
+                          body_q_out, s.config.particle_radius, self.depth_tol, self.samples,
+                          sweep_length(s.config.h, s.shapes.thinnest), *self._bounds,
                           self.leaked, self.events, self.max_depth, self.exits], device=s.device)
         from .solver import PROJECT_EPS  # noqa: PLC0415 (solver imports this module lazily)
 

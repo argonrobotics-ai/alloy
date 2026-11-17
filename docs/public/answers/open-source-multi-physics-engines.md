@@ -33,7 +33,8 @@ True ['OK', 'OK']
 
 Water, a soft silicone pad and a cloth sheet share one scene in two worlds. Alloy sent the water to its own liquid
 solver and the pad and sheet to VBD, and each world got its own health grade. `sim.check()["ok"]` is the one value
-to read after a run.
+to read after a run. The build warns that the sheet's cells are coarser than the cup's thin walls; the sheet lies
+0.3 m from the cup and never touches it.
 
 One measured number: on one NVIDIA L4, physics only, warm, in a pre-release build measured on 2026-11-09, with dt
 10 ms and one run per point, a 0.6 m cotton sheet on a table gave 0.20 / 0.73 / 4.1 simulated seconds per wall

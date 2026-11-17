@@ -187,5 +187,5 @@ def _attach_on_grasp(sim: Any) -> None:
     install(sim, GRIP)
 
 
-__all__ = ["BOWL_INNER", "GRIP_SQUEEZE", "SPOUT", "TOWEL", "TRAY", "bowl_carriage", "cloth_fold_scene",
-           "cloth_fold_task", "corner", "in_bowl", "pour_scene", "pour_task"]
+__all__ = ["BOWL_INNER", "GRIP_SQUEEZE", "SPOUT", "TOWEL", "TOWEL_CELLS", "TRAY", "add_towel", "bowl_carriage",
+           "cloth_fold_scene", "cloth_fold_task", "corner", "in_bowl", "pour_scene", "pour_task"]

@@ -120,9 +120,14 @@ def test_the_fine_rigs_folded_sleeves_stay_on_the_body(fine_fold):
     assert v.metrics["crossings_max"] == 0, v.frames
 
 
+# the sleeve fold's CPU fixture ran 12,607 s (rc16) and 12.3-12.5k s (0.1.5) on n2 VMs, and slower VMs reached 14,400 s
+# twice on the 0.1.6 tiers with a bit-identical model: about 1.4x headroom over a good n2
+SLEEVE_TIMEOUT_S = 18000
+
+
 @pytest.fixture(scope="module")
 def sleeve_fold():
-    """One sleeve fold through the cloth route (CPU, about 2.8 h on one n2 core), shared by the two laws below."""
+    """One sleeve fold through the cloth route (CPU, about 3.5 h on one n2 core), shared by the two laws below."""
     from alloy.tasks.laundry_tee import run
 
     return run(TeeRig())
@@ -130,7 +135,7 @@ def sleeve_fold():
 
 @pytest.mark.slow
 @pytest.mark.law
-@pytest.mark.timeout(14400)
+@pytest.mark.timeout(SLEEVE_TIMEOUT_S)
 def test_the_sleeves_reach_the_body_without_crossing(sleeve_fold):
     """Rows (CPU from the suite's start, 2,360 particles, solved as TeeRig does with WP2's hold, 2026-11-09): 0
     crossings in every frame (the swing turns the cuff rigidly: the path that merged the two panels at 90 deg crossed
@@ -147,7 +152,7 @@ def test_the_sleeves_reach_the_body_without_crossing(sleeve_fold):
 
 @pytest.mark.slow
 @pytest.mark.law
-@pytest.mark.timeout(14400)
+@pytest.mark.timeout(SLEEVE_TIMEOUT_S)
 @pytest.mark.xfail(strict=True, reason="known gap cloth-sleeve-fold-springback: at the default rig's 20 mm cells and "
                    "the route's contact stiffness the folded sleeves do not stay or lie flat (the fine rig's do: "
                    "test_the_fine_rigs_folded_sleeves_stay_on_the_body)")
