@@ -310,6 +310,9 @@ def make_entries(objs: Sequence[TemplateObject], strides: Mapping[str, int], wor
             from alloy.scene.noslip_route import NOSLIP_KEY
 
             specs[-1].solver_kwargs[NOSLIP_KEY] = (int(noslip[0]), float(noslip[1]), *noslip[2:])
+    from alloy.coupling.liquid_cloth_selfcontact import attach_contact_free  # noqa: PLC0415
+
+    attach_contact_free(specs)      # the vbd entry's self contact leaves the SPH / MPM particles out
     return specs
 
 

@@ -5,8 +5,8 @@ It assembles one world of the scene (no stepping; the explicit MuJoCo pair rows 
 ``mujoco_pairs.count_only``) to count bodies, joints and particles and to see which solvers the scene routes to, then
 applies a per-step cost model calibrated on an NVIDIA L4 and on CPU (``COST`` in this module): warm wall time within
 1.3x on its calibration rows (``tests/api/test_estimate_calibration.py``), further off for scenes unlike them, and
-``caveats`` names what it knows it leaves out for the scene (mesh-on-mesh contact at the start); ``measure=True``
-times the first second of a real run instead (``_estimate_measure``; costs a compile).
+``caveats`` names what it knows it leaves out for the scene (mesh-on-mesh contact at the start; a container part that
+multiplies MPM particles); ``measure=True`` times the first second of a real run (``_estimate_measure``; compiles).
 
 Example::
 
@@ -189,7 +189,7 @@ def _modelled(scene: Any, n: int, seconds: float, dev: str) -> dict[str, Any]:
             "real_time_factor": n * seconds / wall if wall else math.inf,
             "memory_bytes": _memory(counts, n, template if kind == "cuda" else None),
             "compile_s_first_run": COMPILE_S[kind], "counts": counts, "solvers": sorted(solvers), "rigid_step": rigid,
-            "routes": routes, "vbd": vbd, "caveats": caveats(template[6]),
+            "routes": routes, "vbd": vbd, "caveats": caveats(template[6]) + template[6]["mpm_containers"],
             "basis": f"cost model ({kind} table, alloy.api._estimate.COST and VBD_COST; a coupled scene at its force "
                      "exchange clock, exchange_clock in vbd); warm wall time within 1.3x on its calibration rows"}
 
@@ -233,8 +233,10 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
         lib = CardLibrary(roots=catalog.card_roots([tmp, *scene.roots]), assets=assets_root())
         fetch_imported(lib, mat.cards)
         step = _rigid_step.request(scene, "standard", (), mat.per_world_pos, announce=False)       # as the build asks
+        from alloy.integration import mpm_cavity, mpm_wall  # noqa: PLC0415 (MPM voxel: fixtures, thin parts)
         with count_only() as pair_rows:              # the explicit MuJoCo pairs counted, not built
-            built = SceneAssembler(lib, LA.router_for(scene), rigid_step=step).assemble(
+            router = mpm_cavity.with_cavities(LA.router_for(scene), scene.items)
+            built = SceneAssembler(lib, router, rigid_step=step).assemble(
                 lib.scene(mat.scene_file.stem), device, world_count=1)
         m = built.model
         from alloy.integration.mpm_memory import mpm_particles  # noqa: PLC0415
@@ -259,7 +261,7 @@ def _template_counts(scene: Any, device: str) -> tuple[dict[str, int], set[str],
             steps_per_period = max(steps_per_period, clock["exchanges"] * max(1, round(scene.dt / built.control_dt)))
         load = {**_load(scene, built, device), "pair_rows": int(sum(pair_rows)),
                 "touching_mesh_pairs": touching_mesh_pairs(m),
-                **_resting_load(m)}
+                **_resting_load(m), "mpm_containers": mpm_wall.caveats(built.report)}
     return counts, solvers, steps_per_period, rigid, routes, vbd, load
 
 

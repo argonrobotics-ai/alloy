@@ -213,3 +213,17 @@ def test_the_window_is_cut_so_the_state_two_seconds_before_the_end_can_be_marked
     assert mark == "hands_off"
     short, mark = split_window([("aside", 0.6, {}), ("hands_off", 1.5, {})])
     assert len(short) == 2 and mark == "aside"
+
+
+def test_a_torn_seam_fails_the_verdict_and_an_untearable_bag_is_not_judged():
+    """bag_not_torn (gift_bag_tear.py): judged when the run gives a crack length, failing success past 5 mm; None,
+    with its reason, for the default bag (no tear lines)."""
+    L, bag, board, pos = _state()
+    kw = dict(bottom_mark=bag[L.bottom].mean(0), hands_off=True)
+    whole = evaluate(L, bag, board, pos, Q_UP, torn_mm=0.0, **kw)
+    torn = evaluate(L, bag, board, pos, Q_UP, torn_mm=11.4, **kw)          # one seam of the tear bag: 11.4 mm
+    plain = evaluate(L, bag, board, pos, Q_UP, **kw)
+    assert whole["success"] and whole["ga_criteria"]["bag_not_torn"] is True and whole["ga_judged"] == "11 of 11"
+    assert torn["ga_criteria"]["bag_not_torn"] is False and not torn["success"] and torn["bag_torn_mm"] == 11.4
+    assert plain["ga_criteria"]["bag_not_torn"] is None and plain["ga_judged"] == "10 of 11" and plain["success"]
+    assert "tearable=True" in plain["ga_not_judged"]["bag_not_torn"]

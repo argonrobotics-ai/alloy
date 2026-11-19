@@ -724,23 +724,23 @@
    "solver": "sph",
    "device": "cpu",
    "mode": "quick",
-   "verdict": "pass",
+   "verdict": "fail",
    "metrics": {
     "pressure": {
-     "verdict": "pass",
-     "error": 0.06025222724264523,
+     "verdict": "fail",
+     "error": 0.11052218017788007,
      "bound": 0.1,
      "unit": "1"
     },
     "drift": {
      "verdict": "pass",
-     "error": 0.004731894781192144,
+     "error": 0.014762238909800848,
      "bound": 0.1,
      "unit": "spacing"
     },
     "void": {
      "verdict": "pass",
-     "error": 0.0017582287876684033,
+     "error": 0.0,
      "bound": 0.01,
      "unit": "1"
     },
@@ -751,8 +751,8 @@
      "unit": "1"
     }
    },
-   "commit": "20141cb6aa",
-   "date": "2026-11-04T21:16:34-0800"
+   "commit": "7d39c6ddc",
+   "date": "2026-11-19T04:58:30+0000"
   },
   "A13.sealed_column|sph|cuda:0|quick": {
    "law": "A13.sealed_column",
@@ -3751,6 +3751,14 @@
     "A8|any|cuda:0|full",
     "A9|any|cpu|full",
     "A9|any|cuda:0|full"
+   ]
+  },
+  {
+   "date": "2026-11-18T21:45:54-0800",
+   "reason": "A13.sealed_column sph cpu quick re-recorded at 7d39c6ddc (the team csf: small liquid pieces on the pair force), physics ruling 2026-11-19: pressure error 0.0960 -> 0.1105 against the unchanged bound 0.1, so the key's verdict is fail. The runs are bit-identical to 45.78 ms of 50; the shift is a drip at the mouth corner that the pair force now holds in one piece (a transient of the 0.05 s quick row; the 0.2 s quick run and the full row are better with the change). Mechanism: [internal note]; bisect rows (Azure job 1119045506-75a1dc): docs/notes/wp6-results.md",
+   "overwrite": true,
+   "keys": [
+    "A13.sealed_column|sph|cpu|quick"
    ]
   }
  ]

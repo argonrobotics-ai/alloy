@@ -265,11 +265,12 @@ print(sim.state(world=0)["arm/shoulder.q"])
   servo kick hard enough to throw a held object.
 - Grasping: friction comes from the materials (or `friction=` / `set_friction`); give fingers enough actuator force
   (`kp`) to squeeze, and check the object really moves with the gripper (read its `.pos`, not the fingers'). There is
-  no attach or weld call (`docs/known_gaps/grasp-no-attach-or-weld.md`). Thin cloth (2 mm) slips out of a pinch, and a
-  cloth edge left over a support's side hangs down it (cloth bends like its fabric, about 35 % too soft along a mesh
-  axis: `docs/known_gaps/cloth-bending-free-strip-soft.md`), so aim at where it hangs; no robot grasp that carries a
-  cotton sheet is verified yet (`docs/known_gaps/cloth-robot-grasp-carry.md`). To carry a container rigidly (a pour),
-  make it a body of the hand in the robot's MJCF (`docs/guide/robots.md`, Grasping).
+  no attach or weld call (`docs/known_gaps/grasp-no-attach-or-weld.md`) outside `ClothFold-v0`'s opt-in
+  `grasp="attach"`, a one-way shortcut that holds the towel to the fingers, not a friction grasp. Thin cloth (2 mm)
+  slips out of a pinch, and a cloth edge left over a support's side hangs down it (cloth bends like its fabric, about
+  35 % too soft along a mesh axis: `docs/known_gaps/cloth-bending-free-strip-soft.md`), so aim at where it hangs; no
+  friction grasp that carries a cotton sheet is verified yet (`docs/known_gaps/cloth-robot-grasp-carry.md`). To carry
+  a container rigidly (a pour), make it a body of the hand in the robot's MJCF (`docs/guide/robots.md`, Grasping).
 
 ## 6. Many worlds, randomization, speed
 
@@ -434,10 +435,9 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
   - Saved cards (`scene.save()`) do not keep the setting, Scene JSON does: on a scene loaded from cards, set
     `scene.liquid_accuracy = "super"` again.
 - Surface tension is off by default; `alloy.Scene(liquid_tension=True)` gives each liquid its material's (water 0.072
-  N/m), so a thin stream holds together (a pour into a 15 mm vial at 2 mm particles caught 52-57 % of what left the
-  beaker, 2-5 % without) at about the same cost. A tilted container pours a half to a quarter as much in the same
-  time with tension (less at finer settings), and at `liquid_accuracy="ultra"` a few droplets can fly off a tension
-  pour: a 50 mm receiver caught 94 % of it (`docs/known_gaps/liquid-tension-lip-drain.md`). Walls get no wetting
+  N/m), so a thin stream holds together (a pour into a 15 mm vial at 2 mm particles caught 92-99.5 % of what left
+  the beaker, 2-5 % without) at about the same cost. A tilted container pours a half to a quarter as much in the same
+  time with tension, less at finer settings (`docs/known_gaps/liquid-tension-lip-drain.md`). Walls get no wetting
   angle. A free oscillating blob of water grows its oscillation (`docs/known_gaps/liquid-tension-free-drops.md`);
   water at rest stays at rest. `docs/guide/deformables.md`.
 - A kinematic container holds its liquid, still or tilted with `sim.drive`, beside free rigid bodies too: a tilt pour
@@ -448,14 +448,15 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
 - Cloth and liquid each interact with rigid objects and robots. Cloth and liquid together build beside static objects,
   and beside free rigid bodies or a robot that weigh at least twice the cloth and soft bodies in all; lighter ones
   raise `BuildError` with the mass to use (`docs/known_gaps/liquid-cloth-light-rigid.md`). `sim.routes()` tells you
-  which solver each object uses and why. A stream poured onto a fabric sheet with self-contact on (the default) makes
-  the world INVALID, mostly within 0.1 s of landing (0.39 s on a full block top; CPU rows); give a sheet that takes a
-  pour `self_contact=False` (it stayed OK in the one scene measured) or use a film sheet (`film_ldpe`). Cloth takes up
-  no water (`docs/known_gaps/liquid-on-cloth.md`). Cost: cheap while cloth and liquid do not touch, very slow once
-  they do: on one L4 a 10 cm cotton sheet on 0.8 l of water steps at about 50 s per 10 ms control step from first
-  touch (about 80 minutes per simulated second in 0.1.0 and 0.1.1, up to about 2.7x that after 0.1.1 while the sheet
-  stirs the water; no setting helps), a film-route sheet (paper, metal foil) far faster
-  (`docs/guide/deformables.md`, Liquid, Cost with cloth).
+  which solver each object uses and why. A stream poured onto a fabric sheet with self-contact on (the default)
+  stays valid, and none of it passes the sheet, in the rows measured: 1,024 of 1,024 worlds to 0.26 s on one L4, a
+  pour on a box rim to 0.6 s on the CPU, and a tank with a cloth floor that held its water 10 s. To hold water on a
+  sheet, pinch its border between a box rim and a static frame (a free sheet over an opening only bridges it, and the
+  water runs off its sides). Cloth takes up no water (`docs/known_gaps/liquid-on-cloth.md`). Cost: cheap while cloth
+  and liquid do not touch, very slow once they do: on one L4 a 10 cm cotton sheet dropped onto 0.8 l of water steps
+  at about 7 s per 10 ms control step over its first 0.15 s on the water (12 minutes per simulated second; 1-3 s per
+  step once it settles; a sheet that goes on stirring the water costs more, not re-measured), a film-route sheet
+  (paper, metal foil) at about 5 s (`docs/guide/deformables.md`, Liquid, Cost with cloth).
 - Heat (temperatures in kelvin): `add_liquid(..., temperature=293.15)` (also `add_pour`) makes a liquid take heat;
   `scene.set_heater("pan_floor", temperature=353.15)` (or `power=` in W) makes a static box, such as an open box's
   floor, a heater, and `scene.add_heater(name, size, pos=, temperature=)` adds one; `scene.set_heat(time_scale=60)`

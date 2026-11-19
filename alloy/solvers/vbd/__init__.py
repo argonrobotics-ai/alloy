@@ -101,7 +101,12 @@ def make_vbd(view: Any, kwargs: Mapping[str, Any]) -> newton.solvers.SolverVBD:
         cls = with_exit_speed(cls, exit_speed)
     if stick:
         cls = with_stick(cls)
-    return cls(view, **kw)
+    from alloy.coupling.liquid_cloth_selfcontact import FREE_KEY, install_foreign_filter  # noqa: PLC0415
+
+    free = kw.pop(FREE_KEY, None)        # SPH / MPM particle ids (make_entries), for the self-contact filter
+    solver = cls(view, **kw)
+    install_foreign_filter(solver, free)  # self contact leaves the liquid / MPM particles out
+    return solver
 
 
 def _reach_speed(kw: dict[str, Any]) -> float | None:

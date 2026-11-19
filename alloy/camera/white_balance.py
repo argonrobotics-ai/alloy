@@ -6,7 +6,12 @@ view transform, that adapts the light's white to the D65 white of the image, so 
   render of a 1 cm grey diffuse ball at the subject, alone under the look's lights and world, seen from the camera's
   side (32 x 32 px, 64 samples; the mean of the centre 8 x 8 pixels). If the probe fails, Blender's analytic
   estimate (each look light by its power, colour temperature and distance, the world by its mean colour).
-- ``{"kelvin": K, "tint": t}``: that white (tint 10 when left out, Blender's default); ``"off"``: none.
+- ``{"kelvin": K, "tint": t}``: that white (tint 10 when left out, Blender's default), held to Blender's ranges
+  (1800-100000 K, tint -500 to 500); ``"off"``: none.
+- A measured light too coloured for a colour temperature (bluer than the locus's 0 mired end, redder than its 600,
+  or more than 150 tint off it) keeps Blender's 6500 K, tint 10, as Blender does, with a warning.
+- The probe runs once per look, subject and device in a process (the measured settings are kept); a subject from
+  auto framing snaps to a 5 cm grid, so a scene whose parts move a little reuses its probe.
 - Temperature and tint <-> chromaticity: Robertson's method (A. R. Robertson, "Computation of correlated color
   temperature and distribution temperature", JOSA 58, 1968) on his isotemperature lines (CIE 1960 u, v and slope at
   0-600 mired, Wyszecki & Stiles, Color Science, 2nd ed.); tint moves along the line, 1 unit = 1/3000 in u, v
@@ -23,6 +28,8 @@ Example::
 """
 from __future__ import annotations
 
+import copy
+import json
 import logging
 import math
 
@@ -33,8 +40,13 @@ from .errors import CameraError
 log = logging.getLogger(__name__)
 # Blender's probe: image px, samples, ball radius m, distance m, lens mm (alloy/render/blender/colour.py)
 PROBE_PX, PROBE_SPP, PROBE_R, PROBE_DIST, PROBE_LENS = 32, 64, 0.01, 0.12, 100.0
-PROBE_MAX_SIZE = 15.0  # metres: meshes larger than this (ground planes) do not move the subject, as in auto framing
-DEFAULT_TINT = 10.0  # Blender's tint for a temperature given alone (its UI default)
+PROBE_MAX_SIZE = 15.0  # metres: parts larger than this (ground planes) do not move the subject, as in auto framing
+DEFAULT_TEMPERATURE, DEFAULT_TINT = 6500.0, 10.0  # Blender's view settings defaults (tint for a temperature alone)
+TEMPERATURE_RANGE, TINT_RANGE = (1800.0, 100000.0), (-500.0, 500.0)  # Blender's hard ranges for the two settings
+LOCUS_TINT = 150.0  # Blender's whitepoint_to_temp_tint gives up further than this off the locus
+SUBJECT_GRID = 0.05  # metres: an auto-framed subject snaps to this grid (probe reuse)
+PROBE_CACHE = 256  # measured view settings kept per process
+_PROBED: dict = {}  # (look lights / world / render, target, eye, device) -> view_white of the probe
 XYZ_TO_REC709 = np.array([[3.2404542, -1.5371385, -0.4985314],
                           [-0.9692660, 1.8760108, 0.0415560],
                           [0.0556434, -0.2040259, 1.0572252]])
@@ -73,22 +85,29 @@ def whitepoint_xyz(temperature: float, tint: float) -> np.ndarray:
     return np.array([x / y, 1.0, (1 - x - y) / y])
 
 
-def temp_tint(rgb) -> tuple[float, float]:
-    """(temperature K, tint) of a scene-linear Rec.709 white, by Robertson's method."""
+def temp_tint(rgb) -> tuple[float, float] | None:
+    """(temperature K, tint) of a scene-linear Rec.709 white, by Robertson's method; None where Blender's
+    whitepoint_to_temp_tint gives up: outside the 0-600 mired table or more than 150 tint off the locus."""
     w = np.linalg.inv(XYZ_TO_REC709) @ np.asarray(rgb, float)
     uv = np.array([4 * w[0], 6 * w[1]]) / (w @ [1, 15, 3])
+    if not np.all(np.isfinite(uv)):
+        return None
 
     def dist(row: np.ndarray) -> float:
         return (uv[1] - row[2]) - row[3] * (uv[0] - row[1])
 
-    d = np.array([dist(r) for r in ROBERTSON])
-    i = max(int(np.argmax(d < 0.0)), 1)
+    right = np.flatnonzero(np.array([dist(r) for r in ROBERTSON]) < 0.0)  # lines the white lies past
+    if not len(right) or right[0] == 0:
+        return None
+    i = int(right[0])
     lo, hi = ROBERTSON[i - 1], ROBERTSON[i]
     dl, dh = dist(lo) / np.hypot(1, lo[3]), dist(hi) / np.hypot(1, hi[3])
     f = dl / (dl - dh)
     uvt = lo[1:3] + f * (hi[1:3] - lo[1:3])
-    tint = np.linalg.norm(uv - uvt) * TINT_SCALE * (1.0 if uv[0] < uvt[0] else -1.0)
-    return float(1e6 / (lo[0] + f * (hi[0] - lo[0]))), float(tint)
+    tint = np.linalg.norm(uv - uvt) * TINT_SCALE
+    if tint > LOCUS_TINT:
+        return None
+    return float(1e6 / (lo[0] + f * (hi[0] - lo[0]))), float(tint if uv[0] < uvt[0] else -tint)
 
 
 def _bradford(from_xyz: np.ndarray, to_xyz: np.ndarray) -> np.ndarray:
@@ -137,13 +156,25 @@ def view_white(look: dict, target, world_mean=None, light=None) -> dict:
         light = None if light is None else np.asarray(light, float)
         ok = light is not None and np.all(np.isfinite(light)) and float(light.max()) > 0.0
         white = light / float(light.max()) if ok else light_white(look, target, world_mean)
-        temperature, tint = temp_tint(white)
+        measured = temp_tint(white)
+        if measured is None:
+            log.warning("camera: the light at the subject (white point %s) is too coloured for a colour "
+                        "temperature; white balance keeps %.0f K, tint %.0f, as Blender does",
+                        np.round(white, 4).tolist(), DEFAULT_TEMPERATURE, DEFAULT_TINT)
+        temperature, tint = measured or (DEFAULT_TEMPERATURE, DEFAULT_TINT)
+        white = white if measured else _white_of(temperature, tint)
     else:
-        temperature, tint = float(mode.get("kelvin", 6500.0)), float(mode.get("tint", DEFAULT_TINT))
-        rgb = XYZ_TO_REC709 @ whitepoint_xyz(temperature, tint)
-        white = rgb / float(rgb.max())
+        temperature = float(np.clip(float(mode.get("kelvin", DEFAULT_TEMPERATURE)), *TEMPERATURE_RANGE))
+        tint = float(np.clip(float(mode.get("tint", DEFAULT_TINT)), *TINT_RANGE))
+        white = _white_of(temperature, tint)
     return {"use_white_balance": True, "white_balance_temperature": round(temperature, 3),
             "white_balance_tint": round(tint, 4), "white_balance_whitepoint": [float(c) for c in white]}
+
+
+def _white_of(temperature: float, tint: float) -> np.ndarray:
+    """Linear Rec.709 white (max 1) of a temperature and tint."""
+    rgb = XYZ_TO_REC709 @ whitepoint_xyz(temperature, tint)
+    return rgb / float(rgb.max())
 
 
 def white_matrix(view_settings: dict | None) -> np.ndarray | None:
@@ -155,23 +186,28 @@ def white_matrix(view_settings: dict | None) -> np.ndarray | None:
     if vs.get("white_balance_temperature") is not None:
         t, tint = float(vs["white_balance_temperature"]), float(vs.get("white_balance_tint", DEFAULT_TINT))
     else:
-        t, tint = temp_tint(vs.get("white_balance_whitepoint", (1.0, 1.0, 1.0)))
+        t, tint = temp_tint(vs.get("white_balance_whitepoint", (1.0, 1.0, 1.0))) or (DEFAULT_TEMPERATURE, DEFAULT_TINT)
     return white_point_matrix(t, tint)
 
 
-def subject(look: dict, meshes: list) -> tuple[np.ndarray, np.ndarray]:
+def subject(look: dict, points: list) -> tuple[np.ndarray, np.ndarray]:
     """(target, eye) "auto" measures the light at and from: the look's first camera key (as Blender does), else the
-    default camera's three-quarter view of ``meshes`` (pack meshes; ground planes left out, as in auto framing)."""
+    default camera's three-quarter view of the scene's parts, ``points`` (world-space vertices, one array per part;
+    ground planes left out, as in auto framing), both on a 5 cm grid."""
     from .pose import auto_frame
     for cam in (look.get("cameras") or {}).values():
         keys = cam.get("keys") if isinstance(cam, dict) else None
         if keys and keys[0].get("target") is not None and keys[0].get("eye") is not None:
             return np.asarray(keys[0]["target"], float), np.asarray(keys[0]["eye"], float)
-    boxes = [(m.v.min(0), m.v.max(0)) for m in meshes if len(m.v)]
+    boxes = [(v.min(0), v.max(0)) for v in map(np.asarray, points) if len(v)]
     boxes = [b for b in boxes if float((b[1] - b[0]).max()) <= PROBE_MAX_SIZE] or [(np.zeros(3), np.ones(3))]
     lo, hi = np.min([b[0] for b in boxes], 0), np.max([b[1] for b in boxes], 0)
     xf = auto_frame(lo.astype(float), hi.astype(float))
-    return 0.5 * (lo + hi).astype(float), np.asarray(xf[:3], float)
+    return _snap(0.5 * (lo + hi).astype(float)), _snap(np.asarray(xf[:3], float))
+
+
+def _snap(p: np.ndarray) -> np.ndarray:
+    return np.round(p / SUBJECT_GRID) * SUBJECT_GRID
 
 
 def probe_light(look: dict, target, eye, device: str) -> np.ndarray:
@@ -196,17 +232,37 @@ def probe_light(look: dict, target, eye, device: str) -> np.ndarray:
     return lin[c - 4:c + 4, c - 4:c + 4].reshape(-1, 3).mean(axis=0).astype(float)
 
 
-def look_view_white(look: dict, world: dict, meshes: list, device: str = "cpu") -> dict:
+def look_view_white(look: dict, world: dict, points: list, device: str = "cpu") -> dict:
     """``view_white`` of a look as the full-material camera builds it: "auto" from :func:`probe_light` at the subject
     (:func:`subject`), else, if the probe fails, the analytic estimate with the world's mean radiance from its pack
-    ``world`` (``look_world``; the studio gradient's as Blender takes it when the look names no HDRI)."""
+    ``world`` (``look_world``; the studio gradient's as Blender takes it when the look names no HDRI). A probe's
+    result is kept: the next build with the same look lights, world and render, subject and device reuses it."""
     if _mode(look) != "auto":
         return view_white(look, (0.0, 0.0, 0.0))
-    target, eye = subject(look, meshes)
+    target, eye = subject(look, points)
+    key = _probe_key(look, target, eye, device)
+    if key in _PROBED:
+        return copy.deepcopy(_PROBED[key])
     try:
-        return view_white(look, target, light=probe_light(look, target, eye, device))
+        vs = view_white(look, target, light=probe_light(look, target, eye, device))
     except Exception as exc:  # noqa: BLE001 - Blender falls back to the analytic estimate too
         log.warning("camera: white balance probe failed (%s); using the analytic estimate", exc)
+    else:
+        if key is not None:
+            while len(_PROBED) >= PROBE_CACHE:
+                _PROBED.pop(next(iter(_PROBED)))
+            _PROBED[key] = copy.deepcopy(vs)
+        return vs
     from .look_world import STUDIO_MEAN, equirect_mean, world_section
     mean = equirect_mean(world["image"]) if world_section(look)["hdri"] else np.asarray(STUDIO_MEAN, float)
     return view_white(look, target, mean)
+
+
+def _probe_key(look: dict, target, eye, device: str) -> tuple | None:
+    """What the probe sees: the look's render, world and lights, the subject and the device (None: not hashable)."""
+    try:
+        text = json.dumps([look.get("render"), look.get("world"), look.get("lights")], sort_keys=True,
+                          default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
+    except (TypeError, ValueError):
+        return None
+    return text, tuple(np.round(np.asarray(target, float), 9)), tuple(np.round(np.asarray(eye, float), 9)), str(device)

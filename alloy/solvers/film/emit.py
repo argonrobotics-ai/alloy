@@ -28,7 +28,8 @@ import warp as wp
 from alloy._vendor import newton
 
 from .config import (AIR, COMPRESS_CAP, HINGE_LENGTH, J2_HARDENING, J2_MODULUS, J2_THICKNESS, J2_YIELD, LIMIT_KE,
-                     SEAM_OVERLOAD_STRAIN, STRAIN_CAP, TEAR_FORCE, YIELD_ANGLE, register_custom_attributes)
+                     SEAM_OVERLOAD_STRAIN, STRAIN_CAP, TEAR_FORCE, VBD_ITERATIONS, YIELD_ANGLE,
+                     register_custom_attributes)
 from .materials import FILM_DEFAULTS, FilmExtras, FilmSpec
 from .topology import bending_ke
 
@@ -52,6 +53,18 @@ def _set_edge_values(b: newton.ModelBuilder, name: str, ids: np.ndarray, value: 
     attr.values = attr.values or {}
     for e in ids:
         attr.values[int(e)] = float(value)
+
+
+def _ask_iterations(b: newton.ModelBuilder, p0: int, obj) -> None:
+    """An object card's ``film.vbd_iterations`` on its particles (from ``p0``), for the film entry (plugin.py)."""
+    film = getattr(obj.card, "film", None)
+    n = None if film is None or film.vbd_iterations is None else int(film.vbd_iterations.value)
+    if not n:
+        return
+    attr = b.custom_attributes[VBD_ITERATIONS]
+    attr.values = attr.values or {}
+    for p in range(p0, b.particle_count):
+        attr.values[p] = n
 
 
 def _cloth_kwargs(spec: FilmSpec, *, pos, rot, vel, label, tear_force: float = math.inf) -> dict:
@@ -256,6 +269,7 @@ def emit_film_object(b: newton.ModelBuilder, obj, d) -> None:
 
     mesh, rot = cloth_mesh(obj)
     tris, spec = mesh.indices.reshape(-1, 3), spec_from_card(obj)
+    p0 = b.particle_count
     if wants_presplit(obj):
         from alloy.scene.emitters.topology import _plan, sheet_plane_axes
 
@@ -272,6 +286,7 @@ def emit_film_object(b: newton.ModelBuilder, obj, d) -> None:
                           label=obj.card.name, creases=obj_creases(obj))
     else:
         add_film_mesh(b, mesh.vertices, tris, spec, rot=rot, label=obj.card.name, creases=obj_creases(obj))
+    _ask_iterations(b, p0, obj)
 
 
 class FilmEmitter:

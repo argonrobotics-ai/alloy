@@ -220,7 +220,9 @@ def sessile_drop(radius_cells: float = 10.0, liquid: Liquid = WATER, contact_ang
     static plate (z = 0) with ``sph:shape_contact_angle`` = ``contact_angle`` [deg] (csf), lightly damped to rest.
     Two measures every ``chunk`` steps: ``theta`` (height_angle) and ``theta_fit`` (cap_fit_angle over the surface
     particles above 2h; csf only). Target: csf ``contact_angle``; akinci2013 Young's acos(adhesion - 1).
-    ``ambient_pressure`` set: the plate is sealed (SCR-SC10-1), as a tip that holds a pendant drop."""
+    ``ambient_pressure`` set: the plate is sealed (SCR-SC10-1), as a tip that holds a pendant drop.
+    ``on_plate``: the lowest particle centre ``z_min`` is within h of the plate, where the plate's boundary still acts
+    on it. With no adhesion in zero gravity nothing holds the drop down, and that boundary pushes it up slowly."""
     sp = 2.0 * liquid.r
     target = contact_angle if liquid.mode == "csf" else math.degrees(math.acos(float(np.clip(adhesion - 1.0, -1, 1))))
     rs, _ = _cap(radius_cells * sp, target)
@@ -239,8 +241,10 @@ def sessile_drop(radius_cells: float = 10.0, liquid: Liquid = WATER, contact_ang
         fit = cap_fit_angle(q, surf, liquid.r, 2.0 * s.config.h) if surf is not None else float("nan")
         series.append((height_angle(q, V, liquid.r), fit))
     v = np.linalg.norm(a.particle_qd.numpy(), axis=1)
+    z_min = float(q[:, 2].min())
     return {"theta": series[-1][0], "theta_fit": series[-1][1], "target": target, "series": series, "N": n,
-            "on_plate": bool(q[:, 2].min() < sp), "lost": int(np.sum(q[:, 2] < -liquid.r)), "v_max": float(v.max())}
+            "on_plate": z_min < s.config.h, "z_min": z_min, "lost": int(np.sum(q[:, 2] < -liquid.r)),
+            "v_max": float(v.max())}
 
 
 # ---------------------------------------------------------------------------------------- pendant drop (SCR-SC10-2)

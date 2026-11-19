@@ -73,7 +73,7 @@ def _numeric_fields(cls: type) -> list[str]:
     return out
 
 
-CARD_CLASSES = [ct.Surface, ct.ClothAniso, ct.Elastic, ct.Plastic, ct.Fluid, ct.Failure, ct.Film, ct.MaterialCard, ct.PairCard,
+CARD_CLASSES = [ct.Surface, ct.ClothAniso, ct.Elastic, ct.Plastic, ct.Fluid, ct.Failure, ct.Film, ct.ObjectFilm, ct.MaterialCard, ct.PairCard,
                 ct.Primitive, ct.MeshSource, ct.SDFSource, ct.TetSource, ct.CurveSource, ct.ParticleSource, ct.LoadEnvelope,
                 ct.Crease, ct.Features, ct.BladeSpec, ct.PrecisionFeature, ct.Placement, ct.RobotRef, ct.Attachment,
                 ct.EmitterSpec, ct.SceneCard]

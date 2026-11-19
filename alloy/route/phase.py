@@ -7,7 +7,11 @@ A rod or cable (a curve card) is no container: its middle extent is its diameter
 combination sweep F11: a 4 mm lace beside 150 ml of paste asked for 1,041,859 MPM particles). Nor is a moving solid
 primitive (a free or kinematic box, sphere, capsule, cylinder, cone or ellipsoid: a tool, a stirrer, a dropped part):
 its middle extent is its own width (SOFT-2, SC10: a kinematic 5 mm rod dragged through mayonnaise in a tub asked for
-830,208 MPM particles, a 1.5 mm whisk wire 31 M). Static boxes still count: add_open_box's walls are the cavity.
+830,208 MPM particles, a 1.5 mm whisk wire 31 M). Static boxes still count. A fixture's parts (add_open_box,
+add_open_cylinder, add_block_with_hole), static or kinematic, are containers by their fixture
+(`SceneContext.cavities`, ``alloy.integration.mpm_cavity``): for the MPM voxel, each gives its own middle extent or,
+where that is smaller, the fixture's inner width up to 4/3 of its wall, so the voxel stays within a third of the
+wall; for what grains must pass (``opening_size``: the granular regime and the jamming check), the fixture's width.
 """
 
 from __future__ import annotations
@@ -42,13 +46,40 @@ def feature_size(obj: ResolvedObject, ctx: SceneContext) -> tuple[float, float |
     return min(sizes), (min(passages) if passages else None)
 
 
+def opening_size(obj: ResolvedObject, ctx: SceneContext) -> float:
+    """The narrowest opening grains of ``obj`` must pass: ``feature_size`` with each fixture part counting by its
+    fixture's inner width, not by the voxel its wall holds."""
+    passages, _ = _features(obj, ctx)
+    inner = [ctx.cavities[o.card.name][0] if o.card.name in ctx.cavities else float(o.extents[1])
+             for o in _containers(obj, ctx)]
+    return min([*passages, *inner, float(obj.extents[2])])
+
+
 def _features(obj: ResolvedObject, ctx: SceneContext) -> tuple[list[float], dict[str, float]]:
-    """The passage widths ``obj`` meets (its own included) and {container part: its middle extent}."""
+    """The passage widths ``obj`` meets (its own included) and {container part: its container's inner size}: a
+    fixture part's fixture inner width (``SceneContext.cavities``), else the part's middle extent."""
     passages = [float(o.card.features.passage_width.value) for o in _partners(obj, ctx)
                 if o.card.features.passage_width is not None]
     if obj.card.features.passage_width is not None:
         passages.append(float(obj.card.features.passage_width.value))
-    return passages, {o.card.name: float(o.extents[1]) for o in _partners(obj, ctx) if _may_contain(o)}
+    return passages, {o.card.name: _inner(o, ctx) for o in _containers(obj, ctx)}
+
+
+def _inner(o: ResolvedObject, ctx: SceneContext) -> float:
+    """A container part's inner size: for a fixture part, from its fixture's inner width and its wall
+    (``alloy.integration.mpm_cavity.part_size``), else its middle extent."""
+    cavity = ctx.cavities.get(o.card.name)
+    if cavity is None:
+        return float(o.extents[1])
+    from alloy.integration.mpm_cavity import part_size  # noqa: PLC0415
+
+    return part_size(*cavity, float(o.extents[1]))
+
+
+def _containers(obj: ResolvedObject, ctx: SceneContext) -> list[ResolvedObject]:
+    """The partners that may hold ``obj``: ``_may_contain``, and every fixture part, kinematic ones too (a tilted
+    fixture holds its material as a static one does)."""
+    return [o for o in _partners(obj, ctx) if _may_contain(o) or o.card.name in ctx.cavities]
 
 
 _SOLIDS = ("box", "sphere", "capsule", "cylinder", "cone", "ellipsoid")
@@ -84,13 +115,19 @@ def route_phase(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _P
 
 def _container_voxel(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> None:
     """When a container part, not the material's own size or a passage, sets an MPM voxel: both particle counts in the
-    decision, and a build warning when the part multiplies the count (``alloy.integration.mpm_wall``)."""
+    decision, and a build warning when the part multiplies the count; a fixture wall that caps the voxel below its
+    fixture's width, in the reasons (``alloy.integration.mpm_wall``)."""
+    if "voxel" not in p.numbers:
+        return
+    from alloy.integration import mpm_wall  # noqa: PLC0415
+
     passages, inner = _features(obj, ctx)
     free = min([*passages, float(obj.extents[2])])
-    if "voxel" in p.numbers and inner and min(inner.values()) < free:
-        from alloy.integration import mpm_wall  # noqa: PLC0415
-
-        mpm_wall.note(obj, p, {k: w for k, w in inner.items() if w < free}, free, cfg.mpm_voxel_max)
+    if inner and min(inner.values()) < free:
+        mpm_wall.note(obj, p, {k: w for k, w in inner.items() if w < free}, free, cfg.mpm_voxel_max, ctx.cavities)
+    walls = {o.card.name: (*ctx.cavities[o.card.name], float(o.extents[1])) for o in _containers(obj, ctx)
+             if o.card.name in ctx.cavities}
+    mpm_wall.wall_capped(p, walls, free)
 
 
 def _route_phase(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> Route | None:
@@ -166,19 +203,24 @@ def _mpm(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path, ro
 
 
 def _granular(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Path) -> Route:
+    """GRAIN_MPM, GRAIN_RIGID or a RouteError (jamming). The regime and the jamming check read the narrowest opening
+    (``opening_size``); the MPM voxel the route keeps reads ``feature_size``, which a fixture's wall can hold finer."""
     d_feature, _ = feature_size(obj, ctx)
     voxel = ck.mpm_voxel(d_feature, cfg.mpm_voxel_max)
+    d_open = opening_size(obj, ctx)
+    open_voxel = ck.mpm_voxel(d_open, cfg.mpm_voxel_max)
     src = obj.card.shape
     d_grain = getattr(src, "grain_diameter", None) if isinstance(src, ParticleSource) else None
     p.numbers.update(voxel=voxel, d_feature=d_feature)
     if d_grain is None:
         p.reasons.append("grain_mpm: no grain_diameter on the card, continuum assumed")
         return Route.GRAIN_MPM
-    t = ck.Threshold("voxel/grain", voxel / d_grain, cfg.mpm_voxel_grain_min)
+    t = ck.Threshold("voxel/grain", open_voxel / d_grain, cfg.mpm_voxel_grain_min)
     p.thresholds.append(t)
     p.numbers["grain_diameter"] = d_grain
     if not t.passed or math.isclose(t.value, t.limit):
-        p.reasons.append(f"grain_mpm: voxel {voxel:.3g} m ≥ {cfg.mpm_voxel_grain_min}·d_grain")
+        p.reasons.append(f"grain_mpm: voxel at the narrowest opening {open_voxel:.3g} m ≥ "
+                         f"{cfg.mpm_voxel_grain_min}·d_grain")
         return Route.GRAIN_MPM
     n = ck.grain_count(_volume(obj), d_grain)
     p.numbers["n_grains"] = float(n)
@@ -186,9 +228,9 @@ def _granular(cfg: RouterConfig, obj: ResolvedObject, ctx: SceneContext, p: _Pat
     if n <= cfg.grain_rigid_max:
         p.reasons.append(f"grain_rigid: {n} grains ≤ {cfg.grain_rigid_max}, voxel < 3·d_grain")
         return Route.GRAIN_RIGID
-    if ck.mpm_voxel(d_feature, math.inf) < cfg.mpm_voxel_grain_min * d_grain:     # the feature, not the voxel cap
+    if ck.mpm_voxel(d_open, math.inf) < cfg.mpm_voxel_grain_min * d_grain:     # the opening, not the voxel cap
         raise RouteError(f"{obj.card.name}: jamming regime exceeds rigid budget ({n} grains > {cfg.grain_rigid_max}, "
-                         f"narrowest feature {d_feature:.3g} m = {d_feature / d_grain:.1f} grains of {d_grain:.3g} m)")
+                         f"narrowest feature {d_open:.3g} m = {d_open / d_grain:.1f} grains of {d_grain:.3g} m)")
     return _grain_continuum(obj, p, n, cfg.grain_rigid_max, voxel / d_grain)
 
 

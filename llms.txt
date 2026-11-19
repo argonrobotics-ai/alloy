@@ -62,6 +62,8 @@ One question per page, answered in the first paragraph, with code that runs as w
 - [How do I randomise friction and mass across parallel worlds?](docs/public/how-to/randomise-parallel-worlds.md)
 - [How do I simulate squeezing a soft object between two fingers?](docs/public/how-to/squeeze-soft-object.md)
 - [What do Alloy's error messages mean and what should I change?](docs/public/answers/error-messages.md)
+- [How do I move a MuJoCo scene to Alloy?](docs/public/how-to/move-from-mujoco.md)
+- [How do I move a Genesis scene to Alloy?](docs/public/how-to/move-from-genesis.md)
 
 ## Start here
 

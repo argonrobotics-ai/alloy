@@ -68,7 +68,7 @@ run per point, simulated seconds per wall second summed over all worlds: a Frank
 
 ## Keep in mind
 
-- No robot grasp that carries a cotton sheet is verified yet
+- No friction grasp that carries a cotton sheet is verified yet
   ([details](../../known_gaps/cloth-robot-grasp-carry.md)).
 - Cloth and liquid beside a robot or free body lighter than twice their mass raise `BuildError`
   ([details](../../known_gaps/liquid-cloth-light-rigid.md)).

@@ -173,22 +173,22 @@ def _bump(c: PrincipledClosures, n: wp.vec3, wo: wp.vec3) -> float:
 def lobe_eval(c: PrincipledClosures, j: int, wi: wp.vec3, wo: wp.vec3) -> LobeEval:
     """bsdf_eval of closure j (weight not applied)."""
     if j == 0:
-        e = sheen_eval(c.sheen, wo)
-        e.f = e.f * _bump(c, c.sheen.n, wo)
-        return e
+        ev = sheen_eval(c.sheen, wo)
+        ev.f = ev.f * _bump(c, c.sheen.n, wo)
+        return ev
     if j == LOBE_DIFFUSE:
-        e = diffuse_eval(c.diffuse, wo)
-        e.f = e.f * _bump(c, c.diffuse.n, wo)
-        return e
+        ev = diffuse_eval(c.diffuse, wo)
+        ev.f = ev.f * _bump(c, c.diffuse.n, wo)
+        return ev
     if j == LOBE_GLASS:
         return glass_eval(c.glass, c.ns, wi, wo)
     if j == LOBE_SSS:  # a BSSRDF has no BSDF value; it only takes part in the closure pick
-        e = LobeEval()
-        return e
+        ev = LobeEval()
+        return ev
     if j == LOBE_SSS_DIFFUSE:
-        e = diffuse_eval(c.sss_diffuse, wo)
-        e.f = e.f * _bump(c, c.sss_diffuse.n, wo)
-        return e
+        ev = diffuse_eval(c.sss_diffuse, wo)
+        ev.f = ev.f * _bump(c, c.sss_diffuse.n, wo)
+        return ev
     return mf_eval(_mf_of(c, j), c.ns, wi, wo)
 
 
@@ -222,10 +222,10 @@ def closures_eval(c: PrincipledClosures, wi: wp.vec3, wo: wp.vec3) -> BsdfEval:
     for j in range(N_LOBES):
         if lobe_active(c, j) == 1:
             sw = lobe_sample_weight(c, j)
-            e = lobe_eval(c, j, wi, wo)
-            if e.pdf != 0.0:
-                r.f = r.f + wp.cw_mul(lobe_weight(c, j), e.f)
-                sum_pdf = sum_pdf + e.pdf * sw
+            ev = lobe_eval(c, j, wi, wo)
+            if ev.pdf != 0.0:
+                r.f = r.f + wp.cw_mul(lobe_weight(c, j), ev.f)
+                sum_pdf = sum_pdf + ev.pdf * sw
             sum_sw = sum_sw + sw
     r.pdf = 0.0
     if sum_sw > 0.0:
@@ -272,10 +272,10 @@ def closures_sample(c: PrincipledClosures, wi: wp.vec3, u: wp.vec3) -> BsdfSampl
     pdf = s.pdf * lobe_sample_weight(c, pick)
     for j in range(N_LOBES):
         if j != pick and lobe_active(c, j) == 1:
-            e = lobe_eval(c, j, wi, s.wo)
-            if e.pdf != 0.0:
-                f = f + wp.cw_mul(lobe_weight(c, j), e.f)
-                pdf = pdf + e.pdf * lobe_sample_weight(c, j)
+            ev = lobe_eval(c, j, wi, s.wo)
+            if ev.pdf != 0.0:
+                f = f + wp.cw_mul(lobe_weight(c, j), ev.f)
+                pdf = pdf + ev.pdf * lobe_sample_weight(c, j)
     pdf = pdf / total_sw
     if f[0] == 0.0 and f[1] == 0.0 and f[2] == 0.0:
         return r

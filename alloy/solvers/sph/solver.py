@@ -42,7 +42,8 @@ from .kernels import laplacian_lattice_factor, lattice_diagonal
 from .viscosity import LAPLACE_D, ImplicitViscosity, guess_shift_kernel, pressure_guess_kernel, wall_shift_kernel
 from .wall_viscosity import wall_coefficient_scale, wall_slots
 from .csf import XSPH_MIN, make_tension
-from .runtime import EmitterManager, WorldStats, energy_per_world, prime_hydrostatic, stable_dt_per_world
+from .prime import prime_hydrostatic
+from .runtime import EmitterManager, WorldStats, energy_per_world, stable_dt_per_world
 from .solve_driver import PressureSolves
 from .coupling_hooks import SPHCouplingMixin
 from .particle_walls import ParticleWalls
@@ -465,27 +466,6 @@ class SolverDFSPH(PressureSolves, SPHCouplingMixin, SolverBase, CouplingInterfac
 
     def alloy_energy(self, state: State, z_ref: wp.array, out: wp.array) -> None:
         energy_per_world(self, self._particles(state), z_ref, out)
-
-    def alloy_state_arrays(self, state: State) -> Mapping[str, wp.array]:
-        del state
-        arrays = {"sph.kappa_v": self._kv, "sph.kappa_d": self._kd, "sph.phase": self.layout.phase,
-                  "particle_flags": self.model.particle_flags}
-        if self.model.shape_count:                       # a re-run period must not count its walls' impulse twice
-            arrays["sph.meter_j"] = self._meter_j        # (with no shape the meter is a (1, 3) placeholder)
-        arrays.update(self.stats.state_arrays())
-        arrays.update(self.emitters.state_arrays())
-        arrays.update(self.port.state_arrays())
-        return arrays
-
-    def alloy_state_worlds(self) -> Mapping[str, wp.array]:
-        """Item -> world maps of the per-item arrays in ``alloy_state_arrays`` (WorldSnapshot extra_world,
-        SCR-WP9-4); per-world counters are world-major and need no map."""
-        pw = self.model.particle_world
-        maps = {"sph.kappa_v": pw, "sph.kappa_d": pw, "sph.phase": pw, "particle_flags": pw}
-        if self.model.shape_count:
-            maps["sph.meter_j"] = self.model.shape_world
-        maps.update(self.emitters.state_worlds())
-        return maps
 
     def alloy_capacity_report(self) -> Mapping[str, int]:
         return self.stats.capacity()

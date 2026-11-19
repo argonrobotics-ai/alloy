@@ -130,7 +130,7 @@ print(sim.state(["wire"], world=0)["wire.points"][-1])       # y about 5 mm off 
 
 ## Robots: gripping and twisting
 
-A robot's fingers grip a rod through friction (there is no attach call), and a wrist that turns twists it. Measured
+A robot's fingers grip a rod through friction (no call attaches a rod), and a wrist that turns twists it. Measured
 on the CPU, on `rod_vbd`: a clamped 0.4 m USB cable (r 3 mm, 20 segments), its free end between two 0.2 kg pads on a
 wrist that rolls 0.3 rad about the cable's axis over 0.5 s and then holds (`tests/api/test_rods_grip.py`):
 - the free span twists uniformly: every joint within 0.1 % of the mean;

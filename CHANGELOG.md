@@ -6,6 +6,63 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.8] - 2026-11-19
+
+### Added
+- A tearable gift bag (opt-in): object `gift_bag_kraft_tear` and the gift-bag task's `tearable=True` judge
+  `bag_not_torn` from the torn seam length, and an object card's `film.vbd_iterations` raises its film sheet's VBD
+  iterations (that bag asks 40). It costs about 8x the plain bag's run time (one world, one L4), and the full demo
+  does not finish with it yet (`docs/known_gaps/film-tear-bag-demo.md`).
+
+### Changed
+- Sand, soil and pastes (MPM) in a fixture (`add_open_box`, `add_open_cylinder`, `add_block_with_hole`), static or
+  kinematic, take their voxel from the fixture's inner width, held to a third of its wall (a part wider than that
+  keeps its own size, as through 0.1.7): a coarser voxel let sand through a tilted vial's walls. Through 0.1.7 each
+  part counted by its own size, and a kinematic fixture's parts not at all. A static default `add_open_cylinder` vial
+  seeds 2.4x fewer particles (a 12 mm cube of sand: 5,832, was 13,824), and no static fixture asks for a finer voxel
+  than before. A kinematic fixture now holds its material better when tilted, with more particles: a 20 mm cube in a
+  15 mm-radius vial turned 90 degrees outward about its lip had 75 of its 512 grains (15 %) cross the walls with
+  `sim.check()` ok (1-2 when tipped to pour), and none at the 27,000 particles it takes now (24-30x the CPU run
+  time); a 12 mm cube in a default vial takes 5,832, was 512, and 0-1 grain crossed in the tilts measured. The build
+  warns when the walls raise the count 4x or more and names the wall that gives the material its own voxel
+  (`wall=0.009` for that 12 mm cube: 512 particles), and `sim.routes()` says when a fixture's wall held the voxel.
+  The rule does not look at distance: a kinematic thin-walled fixture anywhere in the scene raises the count of every
+  MPM fill, and a kinematic 2 mm-walled cup of 30 mm radius above a 200 x 200 x 30 mm sand bed, which built with
+  76,800 particles in 0.1.7, now fails with `CapacityError` (the build warns first; a thicker wall, fewer `segments=`
+  or the off switch fixes it). Granular fills read the fixture's inner width for the grain regime and the jamming
+  check, not the voxel its wall holds: rice in a 60 mm cup with 2 mm walls routes `grain_mpm`, static or kinematic
+  (in 0.1.7 a static one failed to build with a jamming error), and any fixture opening under about 12 grain
+  diameters (36 mm for `rice_cup_fill`) now fails to build with a jamming error when the fill has more than 2,000
+  grains: an open box or cup too, static or kinematic, not only `add_block_with_hole`'s hole (`rice_cup_fill` in a
+  30 mm-wide open box built in 0.1.7). `ALLOY_MPM_CAVITY=off` restores the 0.1.7 rule, for comparisons. Saved cards
+  route fixtures by the 0.1.7 rule: `docs/known_gaps/mpm-thin-walls.md`.
+### Fixed
+- With `alloy.Scene(liquid_tension=True)`, small pieces of liquid (droplets, a stream one or two particles wide) no
+  longer gain energy from the surface force, which read an ill-defined curvature on them: they now feel a force
+  between pairs of particles. Free clusters of 7-33 particles at rest peak under 1 % of their surface energy (a
+  7-particle one reached 11x it). At `liquid_accuracy="ultra"` a tilted pour no longer flings droplets off: a 50 mm
+  receiver caught 94 % of it and now catches 100 % in five runs. A 15 mm vial catches more of what leaves the
+  beaker: 92-99.5 % at `"super"` and 72-86 % at `"ultra"` in five runs each (52-57 % and 48-56 % before). Without
+  tension nothing changes, bit for bit, and with it the cost is about the same. A tilted container still pours a
+  half to a quarter as much with tension: `docs/known_gaps/liquid-tension-lip-drain.md`.
+- A stream poured onto a fabric sheet with self-contact on (the default) no longer makes the world INVALID. The
+  cloth solver's self-contact detection paired the liquid's particles with cloth triangles; it now leaves them out
+  (one L4, 1,024 worlds of a 20 ml pour on a cotton sheet: 660 INVALID by 0.105 s before, none to 0.26 s after), and
+  cloth on water steps about 4x faster after touch (one L4, first 0.15 s after touch).
+  `ALLOY_VBD_FOREIGN_SELF_CONTACT=off` restores the old detection, for comparisons.
+- `sim.render(quality="full")`: a process that renders a second set of materials (a film's second look, for one) no
+  longer compiles that set's kernel again on the first run with a warm cache, about 120 s on an L4 and 8.5 s on a
+  CPU: the kernel's name depended on whether the first set had been compiled or loaded from the cache. Both now load
+  from the cache (about 0.2 s each on an L4). A cold process still compiles one kernel per set of materials, about
+  115 s on an L4.
+- White balance of full-quality renders with a look (new in 0.1.7): the grey-ball measurement runs once per look in
+  a process, and later builds with that look reuse it, a redraw's new sims too (the subject is rounded to 5 cm; on
+  the CPU, warm, 0.27 s for the first build with a look, 0.04 s for a later one). A light too coloured to have a
+  colour temperature (a deep red or blue HDRI) keeps 6500 K, tint 10, as Blender does, and the camera warns (pure
+  red read -101 K, tint -7707). A set `{"kelvin": K, "tint": t}` is held to Blender's ranges (1800-100000 K, tint
+  -500 to 500). Without a camera key, the subject counts each free body where it starts in the scene (it read their
+  meshes in their own body frames).
+
 ## [0.1.7] - 2026-11-17
 
 ### Added

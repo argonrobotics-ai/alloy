@@ -2,11 +2,13 @@
 """A thin container part that sets an MPM voxel warns at build with both particle counts
 (``alloy.integration.mpm_wall``).
 
-The router takes each container part's middle extent as the container's inner size, so the 4 mm slabs of a default
-``add_open_cylinder`` (24 slabs, 4 mm wall) set a 1 mm voxel for sand inside it. CPU laws, a 12 mm cube of sand in a
-vial of 10 mm inner radius:
+A container part that is not a fixture's (or any part with ``ALLOY_MPM_CAVITY=off``, as every part through 0.1.7)
+gives its middle extent as the container's inner size, so the 4 mm slabs of a default ``add_open_cylinder`` (24
+slabs, 4 mm wall) set a 1 mm voxel for sand inside it. CPU laws, with ``ALLOY_MPM_CAVITY=off``, a 12 mm cube of sand
+in a vial of 10 mm inner radius:
 - default walls: one warning naming ``vial_wall0`` with both counts (13,824 particles, 512 at the cube's own size),
-  the same counts in the route decision and its reasons (``sim.routes()``, ``alloy.estimate(...)["routes"]``), and
+  the same counts in the route decision and its reasons (``sim.routes()``, ``alloy.estimate(...)["routes"]``) and in
+  ``alloy.estimate(...)["caveats"]``, and
   the build seeds the count the warning gives;
 - the two fixes the warning names, 20 mm walls or 8 wider slabs: the cube's own size sets the voxel; no warning,
   no counts;
@@ -20,7 +22,7 @@ from __future__ import annotations
 import pytest
 
 import alloy
-from alloy.integration import mpm_wall
+from alloy.integration import mpm_cavity, mpm_wall
 
 pytestmark = pytest.mark.integration
 
@@ -45,6 +47,7 @@ def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
 @pytest.fixture(autouse=True)
 def _fresh(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mpm_wall, "_WARNED", set())
+    monkeypatch.setenv(mpm_cavity.ENV, "off")                    # each part by its own size, as through 0.1.7
 
 
 def test_thin_vial_warns_with_both_counts(caplog: pytest.LogCaptureFixture) -> None:
@@ -61,9 +64,12 @@ def test_thin_vial_warns_with_both_counts(caplog: pytest.LogCaptureFixture) -> N
     assert line and f"{THIN:,}" in line[0] and f"{FREE:,}" in line[0], sim.routes()["sand"]["reasons"]
 
 
-def test_estimate_routes_carry_the_counts() -> None:
-    reasons = alloy.estimate(_vial(0.004), worlds=1, seconds=0.01, device="cpu")["routes"]["sand"]["reasons"]
+def test_estimate_carries_the_counts() -> None:
+    est = alloy.estimate(_vial(0.004), worlds=1, seconds=0.01, device="cpu")
+    reasons, caveats = est["routes"]["sand"]["reasons"], est["caveats"]
     assert any(f"{THIN:,}" in r and f"{FREE:,}" in r for r in reasons), reasons
+    assert [c for c in caveats if "'vial_wall0'" in c and f"{THIN:,}" in c and f"{FREE:,}" in c], caveats
+    assert est["counts"]["mpm_particles"] == THIN
 
 
 @pytest.mark.parametrize(("wall", "segments"), [(0.02, 24), (0.004, 8)], ids=["thick-wall", "wide-slabs"])

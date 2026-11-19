@@ -12,8 +12,8 @@ planes on whole voxels, so the ground case is right. But a floor thinner than a 
 container floor) then has no node plane inside it, and through 0.1.2 particles leaked through it. Every MPM step now
 ends by pushing particles that went into a collider back out to its surface (as Newton's own MPM examples do), so the
 dense grid holds the 4 mm floor measured too. The sparse grid holds such floors either way. Fills in containers are the
-common case, so sparse is the default (2026-11-07). Sparse entries warn once when their material starts within a voxel
-of a ground plane.
+common case, so sparse is the default (2026-11-07). Sparse entries say so in `sim.routes()` (a "grid" note) when their
+material starts within a voxel of a ground plane.
 
 **The number.** CPU, 5 mm voxel, solver tolerance 1e-5; each row reads the same with and without the push-out but
 the dense honey row.

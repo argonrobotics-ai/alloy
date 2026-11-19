@@ -3,9 +3,9 @@
 shapes, deformables at their current shape, look materials, lights and world), placed in world space for one world,
 so that Blender's pack importer renders the same scene in Cycles and ``load_pack`` reads it back.
 
-The pack's settings are the model scene's (Blender defaults otherwise: Blackman-Harris 1.5 px filter, AgX view, no
-white balance); lights are invisible to camera rays, as the camera draws them; the world image is written as a
-Radiance HDR behind an Environment Texture.
+The pack's settings are the model scene's (Blender defaults otherwise: Blackman-Harris 1.5 px filter, AgX view, and
+with a look its white balance, none without one); lights are invisible to camera rays, as the camera draws them;
+the world image is written as a Radiance HDR behind an Environment Texture.
 
 Example::
 

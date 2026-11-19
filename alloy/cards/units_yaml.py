@@ -205,7 +205,7 @@ LEAF_KINDS: dict[str, LeafKind] = {
     "Failure.tear_energy": "surface_tension", "Failure.cut_min_force": "force",
     "Failure.cut_min_strain": "dimensionless",
     "Film.dead_fold_yield": "angle", "Film.contact_radius": "length", "Film.air_scale": "dimensionless",
-    "Film.crease_ratio": "dimensionless", "Film.crease_yield": "angle",
+    "Film.crease_ratio": "dimensionless", "Film.crease_yield": "angle", "ObjectFilm.vbd_iterations": "dimensionless",
     "MaterialCard.density": "density",
     "PairCard.mu_static": "dimensionless", "PairCard.mu_dynamic": "dimensionless",
     "PairCard.restitution": "dimensionless", "PairCard.torsional_lever": "length",

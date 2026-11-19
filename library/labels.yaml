@@ -320,6 +320,9 @@ labels:
 - object: gift_bag_kraft
   route: cloth_film
   reason: 'an open kraft gift bag (Uline Cub, 203 x 114 x 260 mm), 100 g/m² kraft, 135 um, square bottom: fold lines as crease hinges, fold memory 36 deg: the film plug-in'
+- object: gift_bag_kraft_tear
+  route: cloth_film
+  reason: 'the gift bag with tear lines on a 5 cm grid (615 seams), for judging a torn bag: its card asks 40 VBD iterations, at which it stands; the film plug-in'
 - object: gift_bag_board
   route: cloth_film
   reason: '350 g/m² chipboard bottom board for the gift bag, 0.51 mm, 20 x 10 cm at ~20 mm cells: bending length ~20 cm, strain cap 0.7 %: the film plug-in'

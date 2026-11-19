@@ -80,8 +80,9 @@ the Franka FR3, a UR10e, two humanoids, a quadruped and a hand.
 - MJCF reads angles (joint `range`, `euler`) in degrees unless the file says `<compiler angle="radian"/>`; targets
   are always radians. A hinge with range `-2 2` and no such line moves only 2 degrees each way.
 - A joint with no actuator cannot be driven: `set_targets` raises an error that names the line to add.
-- There is no call that attaches or welds an object to a gripper, so a grasp holds only through friction and finger
-  force ([no attach or weld](../../known_gaps/grasp-no-attach-or-weld.md)).
+- Outside ClothFold-v0's opt-in `grasp="attach"` (a one-way shortcut that holds the towel to the fingers, not a
+  friction grasp), there is no call that attaches or welds an object to a gripper, so a grasp holds only through
+  friction and finger force ([no attach or weld](../../known_gaps/grasp-no-attach-or-weld.md)).
 - Start an object clear of the palm and fingers: an overlap of a few mm with the hand throws the object before the
   fingers close, and `sim.check()` stays `ok` for overlaps under 1 cm (it lists a PEN_WARN note).
 - A heavy body that hits a robot at speed can sink in far enough to make the world INVALID (PEN_FAIL): robot scenes

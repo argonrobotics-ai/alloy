@@ -59,7 +59,8 @@ The checkpoint and its evaluation script are on the
 
 - A clamped cable beside a robot on the CPU steps slowly unless it uses the chain route
   ([details](../../known_gaps/rod-vbd-beside-robot-cost.md)).
-- No robot grasp that carries a cotton sheet is verified yet ([details](../../known_gaps/cloth-robot-grasp-carry.md)).
+- No friction grasp that carries a cotton sheet is verified yet
+  ([details](../../known_gaps/cloth-robot-grasp-carry.md)).
 - A cloth falling onto another cloth can pass through it
   ([details](../../known_gaps/cloth-falling-sheets-pass-through.md)).
 - Full list: [Keep in mind](../keep-in-mind.md).

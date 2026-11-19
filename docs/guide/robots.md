@@ -156,11 +156,13 @@ under reversed loads) as `"clip/arm.plastic_strain"`. `reset` puts the spring ba
 - Judge a grasp by the object, not the fingers: record the object's `.pos` and check it follows the gripper and
   stays between the fingers while held.
 - Friction is the only grasp: there is no call that attaches or welds an object to a gripper
-  (`docs/known_gaps/grasp-no-attach-or-weld.md`). Thin things are hard to pinch. In trials, the default 2 mm cloth
+  (`docs/known_gaps/grasp-no-attach-or-weld.md`). The one exception is `ClothFold-v0`'s opt-in `grasp="attach"`, a
+  one-way shortcut that holds the towel to the fingers, not a friction grasp (`docs/guide/envs.md`).
+  Thin things are hard to pinch. In trials, the default 2 mm cloth
   slipped out of a fingertip pinch (0 of 64 worlds carried an edge). A cloth bends like its fabric at any thickness
   (cotton's bending length is about 1.3 cm), so an edge left over a support's side hangs down it: a 3 cm cotton
   overhang, 2 or 4 mm thick, settles 2 mm out from the side and 3 cm down. Plates aimed where a stiff edge would stick
-  out close on the table; aim at where the cloth hangs. No robot grasp that carries a cotton sheet is verified yet
+  out close on the table; aim at where the cloth hangs. No friction grasp that carries a cotton sheet is verified yet
   (`docs/known_gaps/cloth-robot-grasp-carry.md`).
 - To carry something rigidly, make it part of the robot: put its geoms in a `<body>` under the hand body of the
   robot's MJCF, with no joint between them. It then moves exactly with the hand. It also pours from a held

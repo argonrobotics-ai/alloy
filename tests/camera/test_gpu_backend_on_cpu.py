@@ -35,10 +35,11 @@ def test_gpu_backend_on_cpu_is_a_camera_error(backend):
 @pytest.mark.parametrize("backend", ["wavefront-warp", "optix"])
 def test_full_render_with_gpu_backend_variable_on_cpu(cpu_sim, monkeypatch, backend):
     """sim.render(quality="full") under ALLOY_CAMERA_BACKEND=<GPU backend>: before, a bare RuntimeError from a
-    pinned host allocation ("Failed to allocate 16 bytes on device 'cpu'") on a machine without a CUDA driver."""
+    pinned host allocation ("Failed to allocate 16 bytes on device 'cpu'") on a machine without a CUDA driver. The
+    render names the CPU: a snapshot renders on the GPU when there is one (a CPU sim's too), where they can run."""
     monkeypatch.setenv("ALLOY_CAMERA_BACKEND", backend)
     with pytest.raises(CameraError) as err:
-        cpu_sim.render(width=32, height=24, spp=1, quality="full")
+        cpu_sim.render(width=32, height=24, spp=1, quality="full", device="cpu")
     _says_what_to_do(err.value, backend)
 
 

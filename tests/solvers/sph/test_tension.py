@@ -96,6 +96,9 @@ def test_rayleigh_l2_frequency(radius_cells, rho0):
 @pytest.mark.timeout(1800)
 def test_sessile_drop_without_adhesion_retracts():
     """Qualitative only: with a = 0 the drop pulls back from the plate (theta well above the 90 degree start). The
-    Young check (theta = acos(a - 1)) fails, because the contact line stays pinned (wp9-results.md, SCR-WP9-7)."""
+    Young check (theta = acos(a - 1)) fails, because the contact line stays pinned (wp9-results.md, SCR-WP9-7).
+    On the plate means within h of it: in zero gravity at a = 0 the plate's boundary pushes the retracted drop up
+    slowly, its lowest particle centre at 0.198 mm after 4000 steps on the CPU and 0.203 mm on an L4 (h = 0.4 mm),
+    both still rising. One spacing (0.2 mm) failed on the GPU and passed on the CPU by 0.002 mm."""
     o = sessile_drop(10.0, AKINCI_WATER, contact_angle=None, adhesion=0.0)
-    assert o["on_plate"] and o["theta"] > 115.0, o
+    assert o["on_plate"] and o["lost"] == 0 and o["theta"] > 115.0, o

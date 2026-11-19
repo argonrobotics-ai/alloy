@@ -36,6 +36,7 @@ import numpy as np
 from scipy.spatial import ConvexHull, Delaunay
 
 from .gift_bag_mesh import BagMeshSpec
+from .gift_bag_tear import bag_not_torn
 from .gift_gantry import ga_verdict
 from .gift_hands_off import NOTE as HANDS_OFF_NOTE
 
@@ -186,7 +187,8 @@ def base_at_rest(L: Layout, bag: np.ndarray, bottom_mark: np.ndarray | None, lim
 GA_CRITERIA = ("hands_off_window", "mouth_open", "standing", "bottom_squared", "on_mat", "base_at_rest",
                "board_in_bag", "candle_in_bag", "candle_upright", "candle_on_board", "bag_not_torn")
 NOT_JUDGED = {
-    "bag_not_torn": "GA measures the new crack length of the bag (task.py:622-637); the film route records none",
+    "bag_not_torn": "this run's bag has no tear lines (gift_bag_kraft, the default): a film tears only along its "
+                    "card's tear lines; CandleSpec(tearable=True) runs gift_bag_kraft_tear and judges it",
 }
 UNSET = {"hands_off_window": "no record of the hands-off window was given",
          "bottom_squared": "this layout has no bag triangles or support plane to measure the bottom with",
@@ -195,10 +197,11 @@ UNSET = {"hands_off_window": "no record of the hands-off window was given",
 
 def evaluate(L: Layout, bag: np.ndarray, board_pts: np.ndarray, candle_pos, candle_quat_wxyz,
              bottom_mark: np.ndarray | None = None, lim: Limits = Limits(), port_checks: dict | None = None,
-             hands_off: bool | None = None) -> dict:
+             hands_off: bool | None = None, torn_mm: float | None = None) -> dict:
     """Every check on one world's state. ``bottom_mark``: the bottom centroid 2 s before the end. ``success`` is
     every judged GA criterion (and every ``port_checks`` entry) true; ``ga_*`` keys say which criteria were judged.
-    ``hands_off``: the window's verdict (gift_hands_off.py), None when no window was recorded."""
+    ``hands_off``: the window's verdict (gift_hands_off.py), None when no window was recorded. ``torn_mm``: the bag's
+    crack length (gift_bag_tear.py), None when the bag has no tear lines."""
     out = {} if hands_off is None else {"hands_off_window": bool(hands_off)}
     out.update(candle(L, bag, board_pts, candle_pos, candle_quat_wxyz, lim))
     out.update(mouth(L, bag, lim))
@@ -206,6 +209,7 @@ def evaluate(L: Layout, bag: np.ndarray, board_pts: np.ndarray, candle_pos, cand
     out.update(board(L, bag, board_pts, lim))
     out.update(bottom_squared(L, bag, lim))
     out.update(base_at_rest(L, bag, bottom_mark, lim))
+    out.update(bag_not_torn(torn_mm))
     criteria = {k: out.get(k) for k in GA_CRITERIA}
     out.update(ga_verdict(criteria, NOT_JUDGED | UNSET, port_checks or {},
                          (HANDS_OFF_NOTE,) if hands_off is not None else ()))

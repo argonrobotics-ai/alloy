@@ -11,8 +11,8 @@ leaked particles until every MPM step ended by pushing them back out of collider
 liquid_box_56's 4 mm floor has its lowest particle at -0.29 mm after 0.3 s without the push-out, 3.95 mm with it
 (sparse: 5.24 mm either way). Fills in containers are the common case, so sparse stays the default;
 ``ALLOY_MPM_GRID=dense``, an entry's ``grid_type`` or ``grid_override("dense")`` (law rigs: the film laws on the
-ground) ask for dense. ``warn_sparse_ground`` warns once when a sparse entry starts with material within a voxel of a
-ground plane. Known gap: mpm-sparse-floor-offset.md.
+ground) ask for dense. ``warn_sparse_ground`` notes it in ``sim.routes()`` when a sparse entry starts with material
+within a voxel of a ground plane. Known gap: mpm-sparse-floor-offset.md.
 
 A dense grid covers the particles' bounding box, every step, so grains that fly off (an ejected grain falling for
 seconds) would grow it without bound: ``guard_dense_grid`` checks each allocation against
@@ -201,9 +201,10 @@ def grid_override(grid_type: str):
 
 
 def warn_sparse_ground(solver: Any, view: Any) -> bool:
-    """One warning per process when ``solver`` runs the sparse grid and its material starts within a voxel of a ground
-    plane: flows along the ground then run slow (module docstring). One host read of the particles at build."""
-    if _WARNED_GROUND or getattr(solver, "grid_type", None) != "sparse":
+    """When ``solver`` runs the sparse grid and its material starts within a voxel of a ground plane (flows along the
+    ground then run slow: module docstring), a ``"grid"`` note in ``sim.routes()`` for that entry's objects and one
+    logged warning per process; True when noted. One host read of the particles at build."""
+    if getattr(solver, "grid_type", None) != "sparse":
         return False
     try:
         from alloy._vendor import newton  # noqa: PLC0415
@@ -215,10 +216,15 @@ def warn_sparse_ground(solver: Any, view: Any) -> bool:
         return False
     if not planes.any() or not len(z) or float(z.min()) > voxel:
         return False
-    _WARNED_GROUND.append(True)
-    log.warning("MPM material within a voxel (%.3g m) of the ground on the sparse grid: flows along the ground run "
-                "slow (a 20 Pa s film at 0.82 of its speed). For flows on the ground without floors thinner than a "
-                "voxel, set ALLOY_MPM_GRID=dense (docs/known_gaps/mpm-sparse-floor-offset.md)", voxel)
+    from alloy.integration.mpm_solve import attach_notes  # noqa: PLC0415
+
+    text = (f"sparse grid with material within a voxel ({voxel * 1e3:.3g} mm) of the ground: flows along the ground "
+            "run slow (a 20 Pa s film at 0.82 of its speed); ALLOY_MPM_GRID=dense for them "
+            "(docs/known_gaps/mpm-sparse-floor-offset.md)")
+    attach_notes(solver, "sparse_ground", lambda: {"grid": text})
+    if not _WARNED_GROUND:
+        _WARNED_GROUND.append(True)
+        log.warning("MPM %s", text)
     return True
 
 

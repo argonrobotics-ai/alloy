@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import math
 import time
 from dataclasses import asdict, dataclass
@@ -56,10 +57,13 @@ from dataclasses import asdict, dataclass
 import numpy as np
 
 from .gift_bag_checks import evaluate, layout
+from .gift_bag_tear import bag_seams, torn_now
 from .gift_bag_mesh import BagMeshSpec, bag_mesh
 from .gift_gantry import APPROACH, HOLD, Plan, drive, gantry_mjcf, schedule, tool_boxes
 from .gift_hands_off import (MARGIN, WorldBox, contact_track, join_frames, tool_world_boxes,
                              window_verdict)
+
+log = logging.getLogger("alloy.tasks.gift_bag_candle")
 
 KRAFT_H = 135e-6                        # the bag's paper (gift_bag_kraft card)
 BOARD_H = 0.00051                       # gift_bag_board's caliper
@@ -83,6 +87,10 @@ class CandleSpec:
     drop: float = 0.008                 # carton bottom above the counter at the release [m] (board top ~4 mm)
     window: float = 3.0                 # hands-off window [s]
     dt: float = 0.01                    # control period [s]
+    tearable: bool = False              # the bag with tear lines (gift_bag_kraft_tear): judges bag_not_torn; its film
+                                        # runs 40 VBD iterations (the card asks), about 8x the demo's cost (one world,
+                                        # one L4: 5,757 s against 719 s). The demo does not finish yet: the bag goes
+                                        # INVALID as the fingers lift out (docs/known_gaps/film-tear-bag-demo.md)
 
 
 def starts(s: CandleSpec, worlds: int, seed: int) -> np.ndarray:
@@ -103,16 +111,30 @@ def palm_start(s: CandleSpec) -> tuple[float, float, float]:
     return (s.candle_x, 0.0, 0.5 * s.candle[2] + HOLD + APPROACH)
 
 
+def bag_card(s: CandleSpec) -> str:
+    return "gift_bag_kraft_tear" if s.tearable else "gift_bag_kraft"
+
+
+def kraft_strength() -> float:
+    """The bag paper's fracture stress [Pa] from its material card (a seam's break force over h is its length)."""
+    from alloy.cards.library import CardLibrary, default_root
+
+    return float(CardLibrary(roots=[default_root()]).material("paper_kraft").failure.fracture_stress.value)
+
+
 def build_scene(s: CandleSpec, st: np.ndarray, with_bag: bool = True):
     """The task's scene for the starts ``st``; ``with_bag=False`` leaves out the bag and board (the script alone)."""
     import alloy
 
+    if with_bag and s.tearable:
+        log.warning("tearable=True: the gift-bag demo does not finish yet with the tearable bag (it goes INVALID as the "
+                    "fingers lift out, at about 8x the cost); keep tearable off for the full demo (docs/known_gaps/film-tear-bag-demo.md)")
     h = _heights(s)
     scene = alloy.Scene(worlds=len(st), dt=s.dt)
     scene.add_ground()
     scene.add_box("mat", size=MAT, pos=(0.0, 0.0, 0.5 * MAT[2]), static=True, friction=0.9)
     if with_bag:
-        scene.add_object("bag", "gift_bag_kraft", pos=(0.0, 0.0, h["bag"]))
+        scene.add_object("bag", bag_card(s), pos=(0.0, 0.0, h["bag"]))
         scene.add_object("board", "gift_bag_board", pos=(0.0, 0.0, h["board"]))
     pos = np.column_stack([s.candle_x + st[:, 0], st[:, 1], np.full(len(st), h["candle"])])
     scene.add_box("candle", size=s.candle, pos=pos, mass=s.candle_mass, friction=s.candle_friction)
@@ -168,11 +190,12 @@ def hands_off_window(s: CandleSpec, frames: dict) -> list[dict]:
     return window_verdict(hit, int(round(s.window / s.dt)), s.dt)
 
 
-def _world_verdict(L, s: CandleSpec, st: np.ndarray, w: int, state: dict, marks: dict, hands: dict) -> dict:
+def _world_verdict(L, s: CandleSpec, st: np.ndarray, w: int, state: dict, marks: dict, hands: dict,
+                   torn: float | None) -> dict:
     """One world's verdict: GA's criteria from state, plus the port's own start data."""
     v = evaluate(L, state["bag.points"][w], state["board.points"][w], state["candle.pos"][w],
                  state["candle.quat_wxyz"][w], bottom_mark=marks["bottom0"][w],
-                 hands_off=hands["hands_off_window"])
+                 hands_off=hands["hands_off_window"], torn_mm=torn)
     v.update({k: x for k, x in hands.items() if k != "hands_off_window"})
     v.update(start_dx_mm=round(st[w, 0] * 1e3, 1), start_dy_mm=round(st[w, 1] * 1e3, 1),
              start_yaw_deg=round(math.degrees(st[w, 2]), 1), held_over_rim=bool(marks["held"][w]))
@@ -184,6 +207,7 @@ def run(s: CandleSpec = CandleSpec(), device: str | None = None, worlds: int = 1
     t0 = time.perf_counter()
     sim, st = build(s, worlds, seed, device)
     build_s = time.perf_counter() - t0
+    seams = bag_seams(sim, kraft_strength(), KRAFT_H) if s.tearable else None
     L = _layout(s)
     marks: dict = {}
 
@@ -201,7 +225,9 @@ def run(s: CandleSpec = CandleSpec(), device: str | None = None, worlds: int = 1
     wall = time.perf_counter() - t1
     state = sim.state(["bag", "board", "candle"])
     hands = hands_off_window(s, join_frames([r.pop("watch") for r in rows if "watch" in r]))
-    per = [_world_verdict(L, s, st, w, state, marks, hands[w]) for w in range(worlds)]
+    torn = torn_now(sim, seams)
+    per = [_world_verdict(L, s, st, w, state, marks, hands[w], None if torn is None else float(torn[w]))
+           for w in range(worlds)]
     check = sim.check()
     out = {"spec": asdict(s), "device": str(getattr(sim.engine.model, "device", device)), "seed": seed,
            "worlds": per, "ga_judged": per[0]["ga_judged"], "success_rate": float(np.mean([v["success"] for v in per])),
@@ -220,8 +246,11 @@ def main() -> None:
     ap.add_argument("--worlds", type=int, default=1)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--tearable", action="store_true",
+                    help="the bag with tear lines: judges bag_not_torn (about 8x the cost). The demo does not finish "
+                         "yet: the bag goes INVALID as the fingers lift out (docs/known_gaps/film-tear-bag-demo.md)")
     a = ap.parse_args()
-    out = run(CandleSpec(), device=a.device, worlds=a.worlds, seed=a.seed)
+    out = run(CandleSpec(tearable=a.tearable), device=a.device, worlds=a.worlds, seed=a.seed)
     if a.out:
         with open(a.out, "w") as f:
             json.dump(out, f, indent=1, default=float)

@@ -18,6 +18,8 @@ Method (single-phase free surface):
   interface (depth d = (rho/rho0 - c_s) / |g|: kappa / (1 + kappa d / 2)).
 - force a_i = -sigma kappa |g| n / (rho_i I), I = the flat-lattice integral of |g| over the surface layers (the
   delta-function normalisation; flat_lattice_constants). No fitted constant.
+- small pieces (no full neighbourhood nearby, CSF_BAND): CSF is blended into Akinci's pair force (csf_sparse.py); a
+  curvature read there did net work on small clusters and flung droplets.
 
 Brackbill, Kothe & Zemach 1992 (CSF, capillary step bound); Morris 2000 and Adami et al. 2010 (SPH form);
 Breinlinger, Polfer, Hashibon & Kraft 2013 (contact angle). Written from the papers; no third-party code.
@@ -42,9 +44,10 @@ import numpy as np
 import warp as wp
 
 from .config import resolve_viscosity
+from .csf_sparse import CSF_BAND, csf_weight, max_count_kernel, pair_gamma, sparse_pair_kernel
 from .kernels import kernel_grad, kernel_w, kernel_w_np
 from .pressure import Particles, is_fluid, nbr_base, nbr_j
-from .tension import AkinciTension, TensionBase, capillary_dt
+from .tension import AkinciTension, TensionBase, capillary_dt, normals_kernel
 
 log = logging.getLogger("alloy.sph")
 
@@ -192,11 +195,14 @@ def shepard_surface_kernel(p: Particles, surf: wp.array[wp.int32], h: float, kin
 def csf_kernel(p: Particles, ratio: wp.array[wp.float32], grad: wp.array[wp.vec3], nhat: wp.array[wp.vec3],
                nwall: wp.array[wp.vec3], wslot: wp.array[wp.int32], surf: wp.array[wp.int32],
                kappa_in: wp.array[wp.float32], sigma: wp.array[wp.float32], c_surface: float, inv_i: float, dt: float,
-               kappa_out: wp.array[wp.float32], slot_impulse: wp.array2d[wp.vec3]):
-    """v_i += dt a_i (module doc); the away-from-wall part at a contact line goes to the wall's slot impulse."""
+               mcount: wp.array[wp.float32], lo: float, hi: float, kappa_out: wp.array[wp.float32],
+               slot_impulse: wp.array2d[wp.vec3]):
+    """v_i += dt w_i a_i (module doc), w_i the CSF weight of i's neighbour count (csf_sparse); the away-from-wall part
+    at a contact line goes to the wall's slot impulse."""
     i = wp.tid()
     kappa_out[i] = 0.0
-    if surf[i] == 0 or sigma[i] == 0.0:
+    wi = csf_weight(mcount[i], lo, hi)
+    if surf[i] == 0 or sigma[i] == 0.0 or wi <= 0.0:
         return
     kap = kappa_in[i]
     lg = wp.length(grad[i])
@@ -205,7 +211,7 @@ def csf_kernel(p: Particles, ratio: wp.array[wp.float32], grad: wp.array[wp.vec3
         kap = kap / corr
     kappa_out[i] = kap
     rho_i = wp.max(ratio[i] * p.rho0[i], 1.0e-6)
-    dv = -(dt * sigma[i] * kap * lg * inv_i / rho_i) * nhat[i]
+    dv = -(wi * dt * sigma[i] * kap * lg * inv_i / rho_i) * nhat[i]
     b = wslot[i]
     if b >= 0:
         nw = nwall[i]
@@ -278,10 +284,14 @@ class CSFTension(TensionBase):
         sigma = model.sph.surface_tension.numpy()[:n].astype(np.float32) if n else np.zeros(1, np.float32)
         self.sigma = wp.array(sigma if n else np.zeros(1, np.float32), dtype=wp.float32, device=device)
         self.I, self.c_surface = flat_lattice_constants(cfg.spacing, cfg.h, cfg.kernel)
+        mass = model.particle_mass.numpy()[:n].astype(np.float64) if n else np.zeros(0)
+        r0 = layout.rest_density.numpy()[:n].astype(np.float64) if n else np.zeros(0)
+        gamma = pair_gamma(sigma[:n].astype(np.float64), r0, mass, cfg.spacing, cfg.h, cfg.kernel)
+        self.gamma = wp.array(gamma, dtype=wp.float32, device=device)  # the sparse pair force's (csf_sparse)
         self.shape_cos, self.shape_sin = shape_angles(model, device)
         z = lambda dt: wp.zeros(max(n, 1), dtype=dt, device=device)  # noqa: E731
-        self.grad, self.g1, self.g2, self.nhat, self.nwall = (z(wp.vec3) for _ in range(5))
-        self.kraw, self.ktmp, self.kappa = (z(wp.float32) for _ in range(3))
+        self.grad, self.g1, self.g2, self.nhat, self.nwall, self.anormal = (z(wp.vec3) for _ in range(6))
+        self.kraw, self.ktmp, self.kappa, self.mcount = (z(wp.float32) for _ in range(4))
         self.surf, self.wslot = z(wp.int32), z(wp.int32)
         rho0 = layout.rest_density.numpy()[:n] if n else np.zeros(0)
         liquid = layout.phase.numpy()[:n] >= 0 if n else np.zeros(0, bool)
@@ -294,6 +304,7 @@ class CSFTension(TensionBase):
         if self.n == 0:
             return
         d, n = self.device, self.n
+        wp.launch(max_count_kernel, dim=n, inputs=[p, self.mcount], device=d)
         wp.launch(grad_kernel, dim=n, inputs=[p, slots.shape, slots.gpsi, h, kind, self.grad], device=d)
         src, dst = self.grad, self.g1
         for _ in range(NORMAL_PASSES + 1):
@@ -309,7 +320,11 @@ class CSFTension(TensionBase):
             src, dst = dst, src
         wp.launch(csf_kernel, dim=n, device=d,
                   inputs=[p, ratio, self.grad, self.nhat, self.nwall, self.wslot, self.surf, src, self.sigma,
-                          self.c_surface, 1.0 / self.I, dt, self.kappa, slot_impulse])
+                          self.c_surface, 1.0 / self.I, dt, self.mcount, CSF_BAND[0], CSF_BAND[1], self.kappa,
+                          slot_impulse])
+        wp.launch(normals_kernel, dim=n, inputs=[p, ratio, h, kind, self.anormal], device=d)   # Akinci's normals
+        wp.launch(sparse_pair_kernel, dim=n, device=d,
+                  inputs=[p, ratio, self.anormal, self.gamma, self.mcount, h, CSF_BAND[0], CSF_BAND[1], dt])
 
 
 def make_tension(model, layout, cfg, device) -> TensionBase | None:

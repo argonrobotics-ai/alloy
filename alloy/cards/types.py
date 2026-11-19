@@ -111,6 +111,13 @@ class Film:
 
 
 @dataclass(frozen=True)
+class ObjectFilm:
+    """Film-route settings an object card asks for (alloy/solvers/film): each optional, opt-in per object."""
+    vbd_iterations: Q | None = None         # -, the least VBD iterations the object's film entry runs (an integer;
+    # the entry takes the larger of this and its own count: a tearable bag stands only from 40)
+
+
+@dataclass(frozen=True)
 class MaterialCard:
     name: str
     density: Q                              # kg/m^3, volumetric
@@ -286,6 +293,7 @@ class ObjectCard:
     topology: TopologyBudget | None = None              # spares reserved by the assembler (alloy.topology.types)
     blade: BladeSpec | None = None
     route: RouteOverride | None = None
+    film: ObjectFilm | None = field(default=None, metadata=OMIT_IF_NONE)   # film-route settings (cloth_film only)
     schema: Literal["alloy.object/1"] = "alloy.object/1"
 
 

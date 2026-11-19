@@ -47,7 +47,8 @@ do instead today; a plain line carries its workaround. Read the lines for your a
 
 ## Robots and grasping
 
-- [No call attaches or welds an object to a gripper: friction is the only
+- [Outside ClothFold-v0's opt-in `grasp="attach"` (a one-way shortcut that holds the towel to the fingers, not a
+  friction grasp), no call attaches or welds an object to a gripper: friction is the only
   grasp.](../known_gaps/grasp-no-attach-or-weld.md)
 - [Robot scenes step physics at 1.25 ms (8 steps per 10 ms period) unless you ask for a coarser step, even when a
   larger one would be stable.](../known_gaps/robot-fixed-step.md)
@@ -107,6 +108,9 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   the mesh diagonals.](../known_gaps/film-metal-sheets.md)
 - [A film's strain projection carries no force to bodies: a 90 degree peel of a PET strip reads 42.9 N against 8.7
   N.](../known_gaps/film-projection-force.md)
+- [A gift bag with tear lines (`tearable=True`) does not finish the gift-bag demo yet: the run stops
+  converging under the carton and goes INVALID as the fingers lift out, at about 8x the plain
+  bag's cost.](../known_gaps/film-tear-bag-demo.md)
 - [The open-carton tape peel throws a light body past 20 m/s in some worlds, 1 in 40 with the task's caps and 3 of 24
   without them.](../known_gaps/paper-open-carton-peel.md)
 - [The wrapped present cannot be unwrapped yet: the task is not run and 0 % of the paper comes
@@ -121,8 +125,7 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   on.](../known_gaps/liquid-narrow-containers.md)
 - [A pour alone can splash a few percent over its container's rim (3 % of a 6 ml pour), and health stays
   OK.](../known_gaps/liquid-pour-over-the-rim.md)
-- [A stream poured on a fabric sheet with self contact on makes the world INVALID, and cloth takes up no
-  water.](../known_gaps/liquid-on-cloth.md)
+- [Cloth takes up no water, and liquid on cloth steps slowly.](../known_gaps/liquid-on-cloth.md)
 - [Cloth, liquid and free rigid bodies lighter than twice the cloth and soft mass do not build in one
   scene.](../known_gaps/liquid-cloth-light-rigid.md)
 - [A floating container with a liquid-to-container mass ratio above 50 (such as a light cup) is refused at
@@ -132,7 +135,7 @@ do instead today; a plain line carries its workaround. Read the lines for your a
 - [With surface tension on, a free blob of water oscillates more and more instead of settling; water at rest stays
   at rest.](../known_gaps/liquid-tension-free-drops.md)
 - [With surface tension on, a tilted container pours a half to a quarter as much in the same time (less at finer
-  settings), and at ultra a few droplets fly off a pour (94 % caught).](../known_gaps/liquid-tension-lip-drain.md)
+  settings).](../known_gaps/liquid-tension-lip-drain.md)
 - [Heated liquid does not convect: `buoyancy=True` (water only) gives the first push, then the flow stalls after about
   a millimetre.](../known_gaps/heat-no-buoyancy.md)
 - [Boiled-off liquid particles stay in the solver and can block a heater: water at 99 degrees C on a 177 degrees C
@@ -190,8 +193,10 @@ do instead today; a plain line carries its workaround. Read the lines for your a
 
 ## Sand and pastes
 
-- [Pastes and viscous flows along the ground run slow, or leak through thin floors on the dense grid, because floors
-  sit between grid planes.](../known_gaps/mpm-sparse-floor-offset.md)
+- [Sand and paste do not build in one scene with fabric cloth, a soft body or a clamped cable, and a few other pairs
+  are refused too; the error names the nearest setup that builds.](../known_gaps/scene-pairs-not-built.md)
+- [Pastes and viscous flows along the ground run slow, because the ground sits between grid planes; thin floors
+  leaked on the dense grid only through 0.1.2.](../known_gaps/mpm-sparse-floor-offset.md)
 - [Pastes and viscous liquids flow slower than their card says along the ground: the bottom one or two particle layers
   move at about half speed.](../known_gaps/mpm-viscous-film.md)
 - [The flank of a collapsed heap reads lower than the 26-27 degree repose angle, and a squat collapse's runout still
@@ -204,6 +209,9 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   period on an L4.](../known_gaps/mpm-solve-speed.md)
 - [On the dense grid, a world that outgrows the grid's box couples the worlds by one rounding step (1.5e-8 to
   3.1e-8 m).](../known_gaps/mpm-dense-grid-world-coupling.md)
+- [Sand and paste can pass through a container wall under about three voxels thick when tilted or pushed sideways,
+  and health stays OK. Only fixtures with narrow wall parts (a default `add_open_cylinder`) keep the voxel within a
+  third of the wall.](../known_gaps/mpm-thin-walls.md)
 - [Shear-thinning pastes thin a little too little: fast flow runs up to about 15 %
   slow.](../known_gaps/paste-shear-thinning.md)
 - [A material cannot both melt and shear-thin: the melt law is lost without a warning (no library material has

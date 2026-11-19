@@ -363,12 +363,29 @@ def _check_topology_route(iss: Issues, card: ct.ObjectCard, mats: list[tuple[str
         if card.blade.edge_a == card.blade.edge_b:
             iss.error("blade", "blade edge endpoints coincide")
         check_positive(iss, "blade.edge_radius", card.blade.edge_radius, " m")
+    _check_film(iss, card)
     if card.route is not None:
         allowed = _route_values()
         if allowed is not None and card.route.route not in allowed:
             iss.error("route.route", f"unknown route {card.route.route!r} (one of {sorted(allowed)})")
         if not card.route.reason.strip():
             iss.error("route.reason", "a route override needs a reason")
+
+
+FILM_ITERATIONS = (10, 200)            # film.vbd_iterations: the film route's own count up to a bound on cost
+
+
+def _check_film(iss: Issues, card: ct.ObjectCard) -> None:
+    """``film``: only on a cloth_film object; ``vbd_iterations`` an integer in FILM_ITERATIONS."""
+    if card.film is None or card.film.vbd_iterations is None:
+        return
+    if card.route is None or card.route.route != "cloth_film":
+        iss.error("film", "film settings act on route cloth_film only: add route: {route: cloth_film, reason: ...} "
+                          "or remove the film block")
+    v, (lo, hi) = card.film.vbd_iterations.value, FILM_ITERATIONS
+    if not float(v).is_integer() or not lo <= v <= hi:
+        iss.error("film.vbd_iterations", f"must be an integer from {lo} (the film route's own count) to {hi}, got "
+                                         f"{v}: give the least count at which the object holds, e.g. 40")
 
 
 def _warn_defaults(iss: Issues, card: ct.ObjectCard, mats: list[tuple[str, ct.MaterialCard]]) -> None:

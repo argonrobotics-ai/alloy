@@ -37,7 +37,7 @@ gradPsi_b the colour gradient with walls counting as liquid (zero for a complete
   its sealed liquid off the free surface is taken off those particles (deterministic per-world sums), so the local
   repulsion stays and the gauge carries the weight. Sealed bodies of liquid that share a world share the correction
   (the tests and the A13 law scenes have one per world).
-- prime (runtime.prime_hydrostatic): its divergence solve is two-sided on sealed liquid off the free surface, down to
+- prime (prime.prime_hydrostatic): its divergence solve is two-sided on sealed liquid off the free surface, down to
   -p_a, so a column hanging under its piston starts at its hydrostatic tension; from the one-sided prime a 110-layer
   column needed > 0.1 s to build it under the 50-iteration cap and sagged 2-5 spacings.
 p_a is the most tension sealed liquid carries (the cavitation floor); set a few times the scene's need (C18: 500 Pa;
@@ -200,7 +200,7 @@ def warm_offset_kernel(p: Particles, delta: float, kd: wp.array[wp.float32]):
 @wp.kernel(enable_backward=False)
 def prime_bound_kernel(p: Particles, sl: Slots, h: float, kind: int, surface: float, hop: wp.array[wp.int32],
                        kd0: float, kd: wp.array[wp.float32]):
-    """Prime (runtime.prime_hydrostatic): kd = k_a dt^2 on sealed liquid off its free surface, else 0, so the
+    """Prime (prime.prime_hydrostatic): kd = k_a dt^2 on sealed liquid off its free surface, else 0, so the
     two-sided divergence solve may give it tension down to -p_a (a hanging column starts at its hydrostatic field)."""
     i = wp.tid()
     if not is_fluid(p, i):

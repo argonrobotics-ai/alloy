@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-"""§7 WP2 acceptance: an arm + box + cloth scene card (the arms come from WP13's vendored bench MJCF) assembles and
-steps 20 control periods on CPU with 4 worlds; everything stays finite and on the bench."""
+"""§7 WP2 acceptance: an arm + box + cloth scene card (the arms come from WP13's vendored bench MJCF) assembles on the
+proxy coupler and steps 20 control periods (0.4 s) on CPU; everything stays finite and on the bench (its plywood top at
+z = 0: with the bench's contacts off the cube and towel fall through it within 4 periods, and fail the test).
+
+One world: the cost is linear in worlds (8.6-9.7 s per world and period on an Azure F32as_v7), and 4 worlds ran
+1,239-1,363 s on the gate hosts against a 1,500 s timeout (physics 2026-11-19); one world runs about a quarter."""
 
 from __future__ import annotations
 
@@ -16,7 +20,7 @@ from alloy.testing import scene as S
 
 UP = (0.0, 0.0, 0.0, 1.0)
 PERIODS = 20
-WORLDS = 4
+WORLDS = 1
 
 
 def _library():
@@ -38,7 +42,7 @@ def arm_box_cloth_card() -> SceneCard:
 
 
 @pytest.mark.compile_heavy
-@pytest.mark.timeout(1500)
+@pytest.mark.timeout(900)
 def test_arm_box_cloth_steps_20_periods_on_cpu():
     lib = _library()
     with isolated_registry(empty=True):
@@ -46,6 +50,7 @@ def test_arm_box_cloth_steps_20_periods_on_cpu():
         routes = {n: h.decision.route for n, h in built.handles.items()}
         assert routes["cube_beech_30"] == Route.RIGID and routes["towel_cotton"] == Route.CLOTH_VBD
         assert built.world_count == WORLDS and {e.capability for e in built.entries} == {"mujoco", "vbd"}
+        assert built.coupler.kind == "proxy", built.coupler.kind
         sim = Simulation(built)
         for _ in range(PERIODS):
             sim.step_period()

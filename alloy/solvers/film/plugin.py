@@ -66,7 +66,9 @@ def _factory(view: Any, kwargs: Mapping[str, Any]) -> SolverFilm:
       sheet released from a press then walked off its round supports and climbed 3 cm (adaptive at 40 iterations:
       the same). At 20 from the inertial start it stays on round and box supports, slow or fast release.
     A higher count asked for is kept; a lower one (the capability's default is 10) is raised, logged at info (SC8).
-    Per entry: a paper film in the same entry as a metal sheet runs 20 too (cost only; more accurate)."""
+    Per entry: a paper film in the same entry as a metal sheet runs 20 too (cost only; more accurate).
+    An object card may ask for more (``film.vbd_iterations``, opt-in per card): the entry runs the largest asked
+    (a tearable bag stands only from 40: its stiff zero-length seam springs leave VBD unconverged at fewer)."""
     kw = dict(kwargs)
     kw.setdefault("rigid_body_particle_contact_buffer_size", body_particle_buffer(view))
     if has_j2_sheets(view):
@@ -75,10 +77,23 @@ def _factory(view: Any, kwargs: Mapping[str, Any]) -> SolverFilm:
         if asked < J2_ITERATIONS:
             log.info("film entry with J2 sheet hinges: %d VBD iterations, not the %d asked (J2_ITERATIONS)",
                      J2_ITERATIONS, asked)
+    card = asked_iterations(view)
+    if card > int(kw.get("iterations", 10)):
+        log.info("film entry: %d VBD iterations, as an object card asks (film.vbd_iterations), not %d", card,
+                 int(kw.get("iterations", 10)))
+        kw["iterations"] = card
     film = kw.pop("film", None)
     fields = {k: kw.pop(k) for k in list(kw) if k in _FIELDS}
     film = FilmConfig(**fields) if film is None else dataclasses.replace(film, **fields)
     return SolverFilm(view, film=film, **kw)
+
+
+def asked_iterations(model: Any) -> int:
+    """The most VBD iterations any film object of ``model`` asks for (object card ``film.vbd_iterations``), 0 if none.
+    Example: a scene with ``add_object("bag", "gift_bag_kraft_tear")`` -> 40."""
+    ns = getattr(model, "film", None)
+    arr = getattr(ns, "vbd_iterations", None) if ns is not None else None
+    return int(arr.numpy().max()) if arr is not None and arr.shape[0] > 0 else 0
 
 
 def has_j2_sheets(model: Any) -> bool:

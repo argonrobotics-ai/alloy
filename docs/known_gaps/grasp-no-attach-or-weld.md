@@ -2,20 +2,25 @@
 owner: Alloy maintainers
 ---
 
-# No call attaches or welds an object to a gripper: friction is the only grasp
+# No call attaches or welds an object to a gripper, outside ClothFold-v0's opt-in `grasp="attach"`
 
 **What is wrong.** A robot holds an object by contact and friction only. There is no call that attaches or welds an
 object to a gripper while a simulation runs, and so none that releases one. A script or policy that closes the
 fingers and then fixes the object to the hand has no equivalent here: if the grip does not hold by friction, the
 object slips or stays behind.
 
+One exception: the `ClothFold-v0` environment's opt-in `grasp="attach"` (`alloy.envs.cloth_attach`). While its
+fingers are closed on the towel, the towel vertices between them are held to a finger by stiff springs, and let go
+when the fingers open. It is a one-way shortcut, not a friction grasp (the gripper does not feel the towel's weight),
+and it exists only in that environment, for its towel (`docs/guide/envs.md`).
+
 **The number.** There is no error to measure: the call does not exist. What the two ways to hold an object did in
 trials (`docs/guide/robots.md`, Grasping): by friction, the default 2 mm cloth slipped out of a fingertip pinch (0 of
 64 worlds carried an edge); a cup built into the hand's body in the robot's MJCF poured 96-99 % into a second
 container in all 64 worlds.
 
-**Why.** Not built. The public API has no call that fixes an object to a robot's hand, or frees it, while a
-simulation runs.
+**Why.** Not built. Outside that one environment, the public API has no call that fixes an object to a robot's
+hand, or frees it, while a simulation runs.
 
 **Workaround.** Two ways, both in `docs/guide/robots.md`, Grasping:
 - A friction grasp. Set the friction with the object's `material` or `friction=`, or with

@@ -234,17 +234,18 @@ def _world(look: dict, lighting: Lighting | None) -> dict:
 VIEW_DEFAULTS = {"view": "AgX", "look": "AgX - Medium High Contrast", "exposure": 0.0}
 
 
-def _settings(look: dict, world: dict | None = None, meshes: list = (), device: str = "cpu") -> dict:
+def _settings(look: dict, world: dict | None = None, points: list = (), device: str = "cpu") -> dict:
     """Cycles settings with Blender's defaults (12 bounces, 4 diffuse / glossy, clamp indirect 10) and the look's view
     (``render.view`` / ``look`` / ``exposure``; AgX "Medium High Contrast" at exposure 0 by default, as Blender) with
     its white balance (``render.white_balance``, "auto" by default as in Blender; ``white_balance.look_view_white``,
-    measured in the look's ``world`` at the subject of ``meshes``). Without a look: no white balance, as before."""
+    measured in the look's ``world`` at the subject of ``points``, the parts' world-space vertices). Without a look: no
+    white balance, as before."""
     render = {**VIEW_DEFAULTS, **(look.get("render") or {})}
     caustics = (look.get("render") or {}).get("caustics") or {}
     view = {"view_transform": render["view"], "look": render["look"], "exposure": float(render["exposure"])}
     if look and world is not None:
         from .white_balance import look_view_white
-        view.update(look_view_white(look, world, list(meshes), device))
+        view.update(look_view_white(look, world, list(points), device))
     return {"view_settings": view, "cycles": {"max_bounces": 12, "diffuse_bounces": 4, "glossy_bounces": 4, "transmission_bounces": 12,
                        "sample_clamp_direct": 0.0, "sample_clamp_indirect": 10.0, "seed": 0, "blur_glossy": 1.0,
                        "caustics_reflective": bool(caustics.get("reflective", True))}}
@@ -262,6 +263,16 @@ def _add_dynamic(parts: tuple, meshes: list, mats: dict, tex: dict, binding: tup
     return (np.concatenate([binding[0], np.full((n, w), -1, np.int32)]),
             np.concatenate([binding[1], np.tile(IDENTITY_XF, (n, w, 1)).astype(np.float32)]),
             np.concatenate([binding[2], present]))
+
+
+def _placed(model, meshes: list[Mesh], body: np.ndarray) -> list[np.ndarray]:
+    """World-space vertices of the template meshes where the model starts (a body's mesh is in its body frame)."""
+    body_q = model.body_q.numpy() if int(getattr(model, "body_count", 0) or 0) else np.zeros((0, 7))
+    out = []
+    for m, b in zip(meshes, body):
+        xf = _xf_matrix(body_q[b]) if 0 <= b < len(body_q) else np.eye(4)
+        out.append(np.asarray(m.v, np.float64) @ xf[:3, :3].T + xf[:3, 3])
+    return out
 
 
 def _default_camera(frame_meshes: list[Mesh]) -> dict:
@@ -295,6 +306,7 @@ def pack_from_model(model, look=None, lighting: Lighting | None = None, items: d
             keep.append(k)
     num_worlds = max(1, int(getattr(model, "world_count", 0) or 1))
     body, local = _binding(model, shapes, num_worlds)
+    placed = _placed(model, meshes, body[keep, 0])
     binding = (body[keep], local[keep], np.ones((len(keep), num_worlds), bool))
     if deform is not None:
         from .deform_pack import deform_meshes
@@ -304,7 +316,8 @@ def pack_from_model(model, look=None, lighting: Lighting | None = None, items: d
         binding = _add_dynamic(liquid_pack_meshes(liquid), meshes, mats, tex, binding)
     lights = _look_lights(look) if look else _lighting_lights(lighting or Lighting.studio())
     framed = [m for m in meshes if m.meta.get("kind") != "liquid"]
-    static = {"pack_version": 2, "frames": [0], "settings": _settings(look, world, framed, str(model.device)),
+    placed += [m.v for m in framed[len(placed):]]  # deformables: placed already
+    static = {"pack_version": 2, "frames": [0], "settings": _settings(look, world, placed, str(model.device)),
               "world": world,
               "materials": mats, "materials_used_by_meshes": sorted({m.meta["materials"][0] for m in meshes}),
               "textures": tex}

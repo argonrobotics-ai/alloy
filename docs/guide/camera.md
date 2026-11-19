@@ -1,7 +1,7 @@
 # Camera
 
-`alloy.camera` is a path-traced camera that runs on the same device as the simulation and renders every world at
-once. The quick look is one call on a built `Sim`:
+`alloy.camera` is a path-traced camera that renders every world at once, on the simulation's device (a one-off
+image: on the GPU when there is one, below). The quick look is one call on a built `Sim`:
 
 ```python
 import alloy
@@ -20,6 +20,7 @@ print(img.shape, batch.shape)
 
 - `sim.render(width=, height=, world=0, spp=, fov=50, look_at=(eye, target), path=)`: one image of one world
   (`fov` in degrees, vertical), saved as PNG when `path` is given. Use it to check a scene by eye before a long run.
+  It renders on the GPU when there is one, a CPU sim's too, fast or `quality="full"` (`device="cpu"`: on the CPU).
 - `alloy.Camera(name, look_at=(eye, target) | pose=..., width, height, fov (degrees), spp, denoise=None)`: a camera
   you keep and render every step. `sim.render(cam)` returns numpy; `cam.render_torch(sim)` returns a torch tensor on
   the GPU for training (`cam.render(sim)` gives the Warp array, overwritten by the next render: copy what you keep).
@@ -94,8 +95,12 @@ print(img.shape, batch.shape)
   turns a grey at the subject grey. As Blender does, the camera renders a small grey ball at the subject (the look's
   first camera key, else the middle of the scene) under the look's lights and world only, and adapts that light's
   colour to white; under a 2800 K light a grey ball reads grey, not orange. `{"kelvin": K, "tint": t}` adapts a fixed
-  white (tint 10 when left out), and `"off"` shows light colours as they are. Without a look file nothing changes.
-  The measurement adds a few seconds to the first render of a look.
+  white (tint 10 when left out; 1800-100000 K and tint -500 to 500, as Blender holds them), and `"off"` shows light
+  colours as they are. Without a look file nothing changes. The measurement runs once per look in a process: about
+  0.3 s on the CPU (a few seconds more the first time, to compile it); later builds with the same look reuse it, a
+  redraw's new sims too (the subject is rounded to 5 cm, so parts that move a little are not measured again). A light
+  too strongly coloured to have a colour temperature (a deep red or blue HDRI) keeps 6500 K, tint 10, as Blender
+  does, and the camera warns.
 - Not drawn yet by `quality="full"`:
   - Your own image file as a look texture: `"texture": "file:..."` raises `CameraError` ("not in the local asset
     cache"). Textures come only from the local texture cache, which `python -m alloy.looks --fetch-textures`

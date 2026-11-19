@@ -68,6 +68,8 @@ class SceneContext:
     partners: Mapping[str, ResolvedObject] = field(default_factory=dict)   # cards of rigid_partners (SCR-WP2-4)
     needs_l1: bool = False                          # a precision pair in the scene needs gap-ladder L1 (D7)
     other_dynamic_entries: int = 0                  # D16: Style3D only with no other dynamic entry
+    # fixture part -> (its fixture's inner width, its wall thickness) [m] (alloy.integration.mpm_cavity)
+    cavities: Mapping[str, tuple[float, float]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

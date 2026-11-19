@@ -247,7 +247,8 @@ def test_paste_darkens_by_depth():
 
 def test_full_material_path_draws_the_coat():
     """The full-material tracer draws the same coat: the pixels that change when the film is drawn (same seed) are
-    the painted ones the plug-in's map projects to."""
+    the painted ones the plug-in's map projects to. On the test's device, as the sim: a camera scene's default is the
+    GPU when there is one, where this render took 306 s with a cold kernel cache (136 s warm) on an L4."""
     sim, flow, rates, sp = paint_sim(120)
     lay(sim, flow, rates, sp)
     z = float(flow.tables.clocal.numpy()[0, 0][2])
@@ -256,7 +257,7 @@ def test_full_material_path_draws_the_coat():
     imgs = []
     for look in (FilmLook(color=(0.6, 0.04, 0.03)), FilmLook(painted_dft=1.0)):  # drawn, then nothing drawn
         set_film_look(flow, look)
-        sc = ac.camera_scene(sim, quality="full")
+        sc = ac.camera_scene(sim, quality="full", device=DEVICE)
         imgs.append(cam.render(sc, state=sim.state, seed=0).numpy()[0].astype(np.int16))
         ac.camera._forget(sc)
     changed = np.abs(imgs[0] - imgs[1]).max(-1) > 24

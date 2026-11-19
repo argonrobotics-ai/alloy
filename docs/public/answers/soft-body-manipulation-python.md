@@ -40,7 +40,8 @@ and the pad's 729 points followed: its left edge went from x = -0.025 to -0.009 
   ([details](../../known_gaps/soft-small-body-rests-on-one-particle.md)).
 - A body dropped on a soft solid bounces back far more than the material's restitution says
   ([details](../../known_gaps/soft-solid-bounce.md)).
-- No call attaches an object to a gripper: friction is the only grasp
+- Outside ClothFold-v0's opt-in `grasp="attach"` (a one-way shortcut that holds the towel to the fingers, not a
+  friction grasp), no call attaches an object to a gripper: friction is the only grasp
   ([details](../../known_gaps/grasp-no-attach-or-weld.md)).
 - Full list: [Keep in mind](../keep-in-mind.md).
 

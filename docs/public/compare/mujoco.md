@@ -1,7 +1,7 @@
 # Alloy vs MuJoCo and MuJoCo Warp: which should I use?
 
 Use the Alloy physics engine when your robot must handle more than rigid parts: it steps your MJCF robot in MuJoCo
-Warp (MuJoCo C on the CPU) and adds liquids, sand and pastes to the same scene, beside cloth and cables, with a
+Warp (MuJoCo C on the CPU) and adds liquids, sand and pastes to the same scene, and cloth and cables, with a
 health check for every world. Install it with `pip install alloy-engine`; a robot file loads directly.
 
 ## What Alloy adds

@@ -28,6 +28,9 @@ key).
 - Library materials (`library/materials/`) give every value a source, a note and an `unc: [lo, hi]` range. About
   half of the values are `model` (the card author's estimate, explained in the note) and about 6 % `measured`; the
   rest are `catalog` or `fit`. Refer to materials by name, and read the card before relying on a value.
+- `film.vbd_iterations` (object cards, film route): the fewest VBD iterations that object's film sheet runs; the film
+  entry runs the largest count its objects ask, or its own if larger. `gift_bag_kraft_tear` asks 40: at VBD's default
+  10 its tear lines open under the bag's own weight.
 
 ## Precision features
 

@@ -23,6 +23,7 @@ from alloy.core.errors import CouplingError
 from alloy.core.protocols import DetCapability
 from alloy.core.newton_compat import SolverCoupledADMM, SolverCoupledProxy
 from alloy.coupling import register_builtins
+from alloy.coupling.absorb_hook import AbsorbExchangeMixin, AbsorbRestoreMixin, cloth_absorb, refuse_with_admm
 from alloy.coupling.admm_loop import AdmmIterationConfig, AdmmIterationLoop
 from alloy.coupling.axis_mass import ProxyMassMixin
 from alloy.coupling.clock_census import ClockCensusMixin
@@ -111,9 +112,9 @@ def _one_pass_config(policy: SchedulerPolicy) -> IterationConfig:
     return dataclasses.replace(cfg, k_min=1, k_max=1)
 
 
-class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMassMixin, ParkedWorldsMixin,
-                ClockCensusMixin, VbdStepIterationsMixin, MatchResetMixin, GraphBudgetRungsMixin, SchedulerMixin,
-                SolverCoupledProxy):
+class Scheduler(AbsorbRestoreMixin, ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMassMixin,
+                ParkedWorldsMixin, ClockCensusMixin, VbdStepIterationsMixin, MatchResetMixin, GraphBudgetRungsMixin,
+                SchedulerMixin, AbsorbExchangeMixin, SolverCoupledProxy):
     """Proxy coupling with residual-gated iterations, adaptive clocks and an energy watchdog: two entries, or more over
     an acyclic proxy graph where Newton supports it (``alloy.coupling.compose``)."""
 
@@ -157,6 +158,7 @@ class Scheduler(ClockMemoryMixin, KinematicProxyMixin, ProxyTensorMixin, ProxyMa
         self._init_scheduler(entries, pairs, policy)
         self._pair_mass = self._pair_masses()
         self._gate = gate_for(self)     # lever #2: None unless ClockPolicy.contact_gate
+        self._cloth_absorb = cloth_absorb(self)   # absorb_hook: None unless an SPH entry absorbs
 
     def _build_sets(self, pairs: Sequence[PairPolicy], policy: SchedulerPolicy) -> list[EndpointSet]:
         by_route = {(p.source, p.destination): p for p in pairs}
@@ -439,6 +441,7 @@ class SchedulerADMM(ClockMemoryMixin, ProxyMassMixin, MatchResetMixin, GraphBudg
         self._admm = AdmmIterationLoop(self, AdmmIterationConfig(int(k_min), int(k_max), policy.admm_eps_abs,
                                                                  policy.admm_eps_rel), capture_while=capture_while)
         self._init_scheduler(entries, pairs, policy)
+        refuse_with_admm(self)
         self._rho_dt = float(policy.admm_rho_dt) if admm_config is None else None    # a caller's rho stays as given
         for pair in pairs:
             if pair.saturating_actuator or pair.static_hold:

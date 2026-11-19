@@ -313,19 +313,18 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
 - Cost with cloth: cloth and liquid in one scene are cheap while they do not touch and very slow once they do. On one
   L4, one world, a cloth lying beside a cup of water (the cup static or kinematic) steps at about 11 wall seconds per
   simulated second. A 10 cm cotton sheet dropped onto 0.8 l of water steps at 3-4 s per 10 ms control step while it
-  falls and at about 50 s per control step from first touch (about 80 minutes per simulated second), almost all of it
-  in the cloth solver, and no setting helps: plan such a scene in tenths of a second, or use a film-route sheet
-  (paper, metal foil), which ran 1.6 simulated seconds on water in 5-11 minutes on an L4. Those are the numbers of
-  0.1.0 and 0.1.1. After 0.1.1 liquid that moves fast takes smaller steps, so a sheet that stirs the water costs
-  more. Measured on one
-  L4 in a rebuilt scene (a 10 cm sheet at resolution 10 dropped 2 cm onto 0.8 l of water in a static 13 x 13 cm box),
-  a cotton sheet's steps after first touch went from 33 s to 88 s each, and a paper sheet (`paper_80gsm`) cost 2.3x
-  over its first 0.3 s. A cup of water at rest beside cloth costs the same. The first run of a
-  cloth + liquid scene also builds kernels for several minutes.
-- Pouring onto cloth: a stream poured onto a fabric sheet with self-contact on (the default) makes the world INVALID,
-  mostly within 0.1 s of landing (0.39 s on a full block top; CPU rows); give a sheet that takes a pour
-  `self_contact=False` (it stayed OK in the one scene measured) or use a film sheet (`film_ldpe`). Cloth takes up no
-  water (`docs/known_gaps/liquid-on-cloth.md`).
+  falls. Measured on one L4 (a 10 cm sheet at resolution 10 dropped 2 cm onto 0.8 l of water in a static 13 x 13 cm
+  box), over the first 0.15 s after it touches the water: 7.3 s per control step (median 4.2, the most 16.7; about 12
+  minutes per simulated second), falling to 1-3 s once the sheet settles; a paper sheet (`paper_80gsm`) 5.0 s. Up to
+  0.1.7 the same cotton steps cost 29 s and were still rising. Plan such a scene in tenths of a second. Longer runs
+  were not measured again: liquid that moves fast takes smaller steps, so a sheet that stirs the water costs more.
+  The first run of a cloth + liquid scene also builds kernels for several minutes.
+- Pouring onto cloth: a stream poured onto a fabric sheet with self-contact on (the default) stays valid, and none
+  of it passes the sheet, in the rows measured: 1,024 of 1,024 worlds to 0.26 s on one L4, a pour on a box rim to
+  0.6 s on the CPU, and a tank with a cloth floor that held its water 10 s (up to 0.1.7 such a pour made the world
+  INVALID). To hold water on a sheet, pinch its border between a box rim and a static frame (a free
+  sheet over an opening only bridges it, and the water runs off its sides). Cloth takes up no water
+  (`docs/known_gaps/liquid-on-cloth.md`).
 - Accuracy: one setting for all the scene's liquid, `alloy.Scene(liquid_accuracy=...)` (or `scene.liquid_accuracy`;
   CLI `--liquid-accuracy`). `alloy.estimate(scene, worlds, seconds)["liquid"]` gives each setting's particles, time,
   memory and accuracy before you run. `sim.routes()` names the setting and spacing, and `traj.meta["liquid_accuracy"]`
@@ -356,14 +355,16 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
 - Surface tension: off by default. `alloy.Scene(liquid_tension=True)` (or `scene.liquid_tension = True` before
   building) gives each liquid its material's surface tension (water 0.072 N/m); `sim.routes()` names it. The liquid
   then holds together where it would break into single particles. In a measured pour, a 50 mm beaker tilted into a
-  15 mm vial at 2 mm particles, the vial caught 52-57 % of what left the beaker (2-5 % without; five runs, the vial
-  moved up to 0.5 mm between them). A 50 mm receiver caught 96.5 %. These are simulation results; no real pour has
-  been compared yet.
+  15 mm vial at 2 mm particles, the vial caught 92-99.5 % of what left the beaker (2-5 % without; five runs, the vial
+  moved up to 0.5 mm between them). A 50 mm receiver caught 100 % in each. These are simulation results; no real
+  pour has been compared yet.
   - A tilted container pours less with tension: a half to a quarter as much in the same time, less at finer
-    settings (1.6 ml against 4.4 ml in that pour at 2 mm; `docs/known_gaps/liquid-tension-lip-drain.md`).
-  - At `liquid_accuracy="ultra"` a few droplets can fly off a tension pour: the 50 mm receiver caught 94.3 % of it
-    (99.9 % without tension).
-  - Cost: about the same as without (one L4: 6.35 against 6.44 s per simulated second, a 7,335-particle pour).
+    settings (1.6 ml against 4.5 ml in that pour at 2 mm; `docs/known_gaps/liquid-tension-lip-drain.md`).
+  - Small pieces of liquid (droplets, a stream one or two particles wide) feel a force between pairs of particles
+    instead of the curvature force, so a small free droplet (up to about 33 particles) at rest stays at rest; larger
+    free blobs still gain energy (`docs/known_gaps/liquid-tension-free-drops.md`).
+  - Cost: about the same as without (one L4: 7.12-7.18 against 7.13 s per simulated second, a 7,440-particle
+    pour).
   - The contact line is free on every wall: no wetting angle is applied.
   - Water at rest stays at rest. A free blob of water several particles across that oscillates in flight grows its
     oscillation instead of settling (`docs/known_gaps/liquid-tension-free-drops.md`).

@@ -77,8 +77,9 @@ https://alloy.argonrobotics.ai/llms.txt. `alloy mcp` serves the same operations 
 ## What does not work yet?
 
 A fast small body can pass through a thin static part: a 2 cm steel ball passes through a 1 cm plate from 9.9 m/s.
-No call attaches an object to a gripper: friction is the only grasp. A free strip of cloth bends about 35 % too soft
-along a mesh axis. The full list is in [Keep in mind](keep-in-mind.md).
+Outside ClothFold-v0's opt-in `grasp="attach"` (a one-way shortcut that holds the towel to the fingers, not a
+friction grasp), no call attaches an object to a gripper: friction is the only grasp. A free strip of cloth bends
+about 35 % too soft along a mesh axis. The full list is in [Keep in mind](keep-in-mind.md).
 
 ## Next
 

@@ -92,6 +92,7 @@ HOW_TO = {f"how-to/{name}.md" for name in (
 HOW_TO |= {f"how-to/{name}.md" for name in (      # round 2
     "gymnasium-vector-api", "imitation-data-with-liquids", "lerobot-dataset", "mjcf-robot-with-cloth-or-liquid",
     "randomise-parallel-worlds", "squeeze-soft-object")}
+HOW_TO |= {"how-to/move-from-mujoco.md", "how-to/move-from-genesis.md"}      # moving a scene from another engine
 QUESTIONS = {f"answers/{name}.md" for name in (
     "built-on-mujoco-warp-or-newton", "deformable-object-manipulation", "did-my-simulation-blow-up",
     "error-messages", "gpu-parallel-engines-for-rl", "mcp-server-physics-engine",

@@ -76,7 +76,7 @@ def _view(min_z: float, plane: bool):
     return SimpleNamespace(shape_type=arr(types), particle_q=arr([[0.0, 0.0, min_z], [0.0, 0.0, 0.05]]))
 
 
-def test_sparse_material_on_the_ground_warns_once(monkeypatch, caplog) -> None:
+def test_sparse_material_on_the_ground_is_noted_in_routes(monkeypatch, caplog) -> None:
     monkeypatch.setattr(G, "_WARNED_GROUND", [])
     solver = SimpleNamespace(grid_type="sparse", _mpm_model=SimpleNamespace(voxel_size=0.005))
     assert not warn_sparse_ground(solver, _view(0.012, plane=True))          # 12 mm up: a fill on a floor
@@ -84,8 +84,9 @@ def test_sparse_material_on_the_ground_warns_once(monkeypatch, caplog) -> None:
     assert not warn_sparse_ground(SimpleNamespace(grid_type="dense"), _view(0.001, plane=True))
     with caplog.at_level(logging.WARNING, logger="alloy.integration"):
         assert warn_sparse_ground(solver, _view(0.00125, plane=True))
-        assert not warn_sparse_ground(solver, _view(0.00125, plane=True))   # once per process
+        assert warn_sparse_ground(solver, _view(0.00125, plane=True))       # noted again, logged once per process
     assert sum("ALLOY_MPM_GRID=dense" in r.getMessage() for r in caplog.records) == 1
+    assert "ALLOY_MPM_GRID=dense" in solver.alloy_route_notes()["grid"]     # what sim.routes() shows for its objects
 
 
 def test_graph_capture_keeps_the_persistent_sparse_grid_unless_the_entry_chose() -> None:

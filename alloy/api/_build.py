@@ -367,6 +367,7 @@ def _assemble_and_wire(scene: Scene, worlds: int, device: str, seed: int, profil
     from alloy.api._capacity import rows_from_contacts  # noqa: PLC0415
     from alloy.api._materialize import materialize  # noqa: PLC0415
     from alloy.api._plugins import build_engine  # noqa: PLC0415
+    from alloy.integration import mpm_cavity  # noqa: PLC0415
 
     heat = _heat.plugin_for(scene)
     yielding, qs = _joint_yield.plugin_for(scene), _quasi_static.plugin_for(scene)
@@ -388,6 +389,7 @@ def _assemble_and_wire(scene: Scene, worlds: int, device: str, seed: int, profil
                                        newton_contacts=profile[1] == "newton")
             router = _rods.with_clamps(_liquid_accuracy.router_for(scene), scene.items)   # add_rod(route='chain')
             router = _quasi_static.with_scales(_fixtures.with_bodies(router, scene.items), scene)  # fixture: 1 body
+            router = mpm_cavity.with_cavities(router, scene.items)    # MPM voxel: a fixture's inner width
             built = SceneAssembler(lib, router, rigid_step=step).assemble(
                 lib.scene(mat.scene_file.stem), device, world_count=count, world_id_offset=offset)
             if offset == 0:                                 # once: one process, or the first worker of a split

@@ -38,6 +38,7 @@ J2_MODULUS = f"{NAMESPACE}:j2_modulus"       # Pa, E' (E' t³/12 = the hinge's D
 J2_THICKNESS = f"{NAMESPACE}:j2_thickness"   # m
 HINGE_LENGTH = f"{NAMESPACE}:hinge_length"   # m, l_h = (A1 + A2)/|e| (κ = θ / l_h; emit.hinge_length)
 TEAR_FORCE = f"{NAMESPACE}:tear_force"     # N per particle: Γ·h/2, a seam's break force at a tip (seams.py)
+VBD_ITERATIONS = f"{NAMESPACE}:vbd_iterations"   # per particle: the least VBD iterations its object asks for (0: none)
 # A seam also tears where the sheet next to it is stretched this far (the topology controller's strain test on its
 # triangles). The film is inextensible at its strain cap (~yield strain, 1.4 % for kraft), so stretch past the cap
 # only appears where the projection cannot meet a demand: a sheet pulled apart past its extent (kinematic grips), or a
@@ -154,5 +155,6 @@ def register_custom_attributes(builder: newton.ModelBuilder) -> None:
         _attr("j2_thickness", wp.float32, E, 0.0),
         _attr("hinge_length", wp.float32, E, 0.0),
         _attr("tear_force", wp.float32, P, math.inf),
+        _attr("vbd_iterations", wp.int32, P, 0),
     ):
         builder.add_custom_attribute(a)

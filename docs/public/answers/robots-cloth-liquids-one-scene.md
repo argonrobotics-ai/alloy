@@ -45,7 +45,7 @@ second, summed over all worlds, at 1 / 4 / 64 worlds, and a 200 ml pour gave 0.5
 
 - Cloth and liquid together need rigid bodies or a robot that weigh at least twice the cloth and soft bodies
   ([details](../../known_gaps/liquid-cloth-light-rigid.md)).
-- Cloth takes up no water, and a stream poured onto fabric can make the world INVALID
+- Cloth takes up no water, and liquid on cloth steps slowly
   ([details](../../known_gaps/liquid-on-cloth.md)).
 - Full list: [Keep in mind](../keep-in-mind.md).
 

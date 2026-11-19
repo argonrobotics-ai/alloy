@@ -20,7 +20,8 @@ Refused, by name (``refusal``; the caller re-runs as today), never moved silentl
   copies and VBD's own rows are not re-projected by any notification;
 - a contact gate: its per-proxy bounds are baked from the proxy masses at build with no refresh
   (contact_gate.py ``_rows``; the hook it needs: ``ContactGate.refresh_bounds()``, WP4 / WP10);
-- a per-world Model array that is not a float array, or the pair table's per-world tables on one side only.
+- a per-world Model array that is not a float array, or the pair table's per-world tables on one side only;
+- cloth that takes up water (``absorb_hook``): its masses follow each world's water, written by the absorb coupling.
 Not here: the watchdog's per-world scales (e_scale, z_ref, m_tot, l_char), moved with the world's state by the
 transfer itself (fine_pack / fine_rerun). Laws: tests/coupling/test_world_clock_params.py.
 """
@@ -128,6 +129,8 @@ class WorldParams:
         """Why world ``e``'s parameters cannot move into slot ``s`` (module docstring), or None; no side effects."""
         if isinstance(self.tables, str):
             return self.tables
+        if _absorbs(self.src) or _absorbs(self.dst):
+            return "cloth that takes up water (absorb=): its masses follow each world's water, which no move carries"
         names = set(self.differing(e, s))
         soft = sorted(r.name for r in self.rows if r.name in names and r.kind in PARTICLE)
         if soft:
@@ -261,6 +264,11 @@ def move_watch_reference(src: Any, dst: Any, world: int, slot: int) -> None:
     ring = wd.ring.numpy().copy()
     ring[:, slot] = ws.ring.numpy()[:, world]
     wd.ring.assign(ring)
+
+
+def _absorbs(sim: Any) -> bool:
+    """Cloth in ``sim`` takes up water (``absorb_hook``)."""
+    return getattr(getattr(sim, "stepper", None), "_cloth_absorb", None) is not None
 
 
 def _proxy_rows(es: Any, src: Any, world: int, slot: int) -> None:
