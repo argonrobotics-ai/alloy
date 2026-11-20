@@ -76,9 +76,10 @@ def _numeric_fields(cls: type) -> list[str]:
 CARD_CLASSES = [ct.Surface, ct.ClothAniso, ct.Elastic, ct.Plastic, ct.Fluid, ct.Failure, ct.Film, ct.ObjectFilm, ct.MaterialCard, ct.PairCard,
                 ct.Primitive, ct.MeshSource, ct.SDFSource, ct.TetSource, ct.CurveSource, ct.ParticleSource, ct.LoadEnvelope,
                 ct.Crease, ct.Features, ct.BladeSpec, ct.PrecisionFeature, ct.Placement, ct.RobotRef, ct.Attachment,
-                ct.EmitterSpec, ct.SceneCard]
+                ct.EmitterSpec, ct.SceneCard, ct.Absorb]
 UNITLESS = {"Randomization.lo", "Randomization.hi",          # kind of the target leaf (codec)
-            "Features.bend_stiffness", "Features.twist_stiffness"}   # N·m² has no UnitKind: SI numbers only
+            "Features.bend_stiffness", "Features.twist_stiffness",   # N·m² has no UnitKind: SI numbers only
+            "Absorb.capacity", "Absorb.rate", "Absorb.wicking"}      # kg/m², kg/m²/s, m²/s: SI numbers only
 
 
 @pytest.mark.parametrize("cls", CARD_CLASSES, ids=lambda c: c.__name__)

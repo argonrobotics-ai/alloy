@@ -58,8 +58,8 @@ To fill a container from above, pour instead of dropping a block:
   1 mm, a glass vial for example ([details](../../known_gaps/liquid-narrow-containers.md)).
 - A block of liquid dropped from above splashes over the rim; a poured stream much less, with `scene.add_pour`
   ([details](../../known_gaps/liquid-pour-over-the-rim.md)).
-- Where liquid and cloth do touch, stepping is very slow, and cloth takes up no water
-  ([details](../../known_gaps/liquid-on-cloth.md)).
+- Where liquid and cloth do touch, stepping is very slow, and cloth takes up water only when asked (`absorb=`,
+  opt-in) ([details](../../known_gaps/liquid-on-cloth.md)).
 - Heated liquid does not convect ([details](../../known_gaps/heat-no-buoyancy.md)).
 - Liquid is slow on the CPU, so keep the particle count small while you try things out.
 

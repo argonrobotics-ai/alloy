@@ -158,7 +158,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
     def add_cloth(self, name: str, size: Sequence[float] = (1.0, 1.0), *, pos: Any = (0.0, 0.0, 0.5),
                   resolution: int | Sequence[int] = 21, thickness: float = 2e-3, material: str = CLOTH_MATERIAL,
                   mass: float | None = None, friction: float | None = None, quat_xyzw: Any = None,
-                  quat_wxyz: Any = None, rpy: Any = None, self_contact: bool = True) -> str:
+                  quat_wxyz: Any = None, rpy: Any = None, self_contact: bool = True, absorb: Any = None) -> str:
         """A cloth sheet, flat in its local x-y plane, centred at ``pos``. ``size``: (x, y) in m; ``resolution``:
         cells along the longer side, the shorter in proportion (20 on a square sheet: 441 vertices), or (nx, ny); cells
         near square, at most 1,600 (warns if not kept); ``mass``: total kg (else from the material and thickness).
@@ -168,6 +168,7 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
         ``thickness`` apart instead of passing through itself. With two or more cloth or soft objects in a scene they
         always collide with each other and with themselves. Turning it off makes a lone sheet cheaper to step (cost:
         ``docs/guide/deformables.md``) when it never touches itself (a flag, a sheet that hangs or lies flat).
+        ``absorb={"capacity": kg/m^2, "rate": kg/m^2/s, "wicking": m^2/s}`` (opt-in) takes up resting liquid.
 
         Example: ``scene.add_cloth("towel", size=(0.5, 0.5), pos=(0, 0, 0.6), resolution=25, mass=0.1)``."""
         lx, ly = A.sizes(size, 2, "size")
@@ -180,6 +181,9 @@ class Scene(FixtureMixin, HeatMixin, JointYieldMixin, _quasi_static.QuasiStaticM
                              "pass self_contact=True (a sheet that folds) or False", field="self_contact")
         feats = {"thickness": thick, "min_wall": thick, **({"self_contact": True} if self_contact else {})}
         extra = {"features": feats, "budget": {"particles": n}, **add_cloth_route(material, self.materials, self.roots)}
+        if absorb is not None:
+            from alloy.coupling.liquid_cloth_absorb import absorb_feature  # noqa: PLC0415
+            feats["absorb"] = absorb_feature(absorb, extra)
         return self._add(name, "cloth", shape, pos, lx * ly * t, quat_xyzw=quat_xyzw, quat_wxyz=quat_wxyz, rpy=rpy,
                          material=material, mass=mass, friction=friction, card_extra=extra)
 

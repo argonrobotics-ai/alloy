@@ -22,8 +22,10 @@ from .seams import SeamArrays, Seams, _intact
 def recolor_twins(model, s: Seams) -> int:
     """Give twin pairs different VBD colours (before the solver is built): a twin end sharing its partner's colour
     moves to the first colour none of its VBD neighbours (triangles, hinges, twins) uses, a new colour only if none is
-    free. Returns how many particles moved (0 on the library sheets: the guard is for meshes where it is not).
-    Deterministic (seam order)."""
+    free. Both colour records move: the groups (the solve order) and ``model.particle_colors``, by which the spring,
+    contact and self-contact kernels add each element's force to the particles of the colour being solved. With only
+    the groups moved, a moved twin got its seam spring a colour late or not at all, while its partner was still pulled
+    toward it. Returns how many particles moved. Deterministic (seam order)."""
     groups = [np.asarray(g.numpy(), np.int64) for g in model.particle_color_groups]
     if not groups:
         return 0
@@ -59,6 +61,8 @@ def recolor_twins(model, s: Seams) -> int:
         dt = model.particle_color_groups[0].dtype
         model.particle_color_groups = [wp.array(np.flatnonzero(color == g).astype(np.int32), dtype=dt,
                                                 device=model.device) for g in range(n_colors)]
+        if model.particle_colors is not None:   # the per-element kernels pick their particles by this colour
+            model.particle_colors.assign(color.astype(np.int32))
     return moved
 
 

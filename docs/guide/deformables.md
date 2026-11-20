@@ -323,8 +323,25 @@ round cup is not at rest (its corners stick out), collapses and jets over the ri
   of it passes the sheet, in the rows measured: 1,024 of 1,024 worlds to 0.26 s on one L4, a pour on a box rim to
   0.6 s on the CPU, and a tank with a cloth floor that held its water 10 s (up to 0.1.7 such a pour made the world
   INVALID). To hold water on a sheet, pinch its border between a box rim and a static frame (a free
-  sheet over an opening only bridges it, and the water runs off its sides). Cloth takes up no water
-  (`docs/known_gaps/liquid-on-cloth.md`).
+  sheet over an opening only bridges it, and the water runs off its sides). By default cloth takes up no water.
+- Cloth that takes up liquid (opt-in): `add_cloth(..., absorb={"capacity": kg/m², "rate": kg/m²/s})` takes liquid
+  resting on a sheet into the sheet, in whole particles, up to capacity x area, and the sheet weighs it;
+  `"wicking": m²/s` spreads it in the sheet's plane. Read `"<sheet>.water"` (kg per vertex) and
+  `"<liquid>.absorbed"` (particles taken up). The values are yours, not fabric data: no fabric card carries them
+  yet, and nothing here is checked against a real fabric.
+  - Limits: particles are taken whole, so a vertex fills in steps and can stop up to one particle short of full; a
+    vertex that holds under a third of a particle takes up little or nothing (the build warns with the count: at
+    0.6 kg/m² and default liquid accuracy some vertices from cells under about 10 mm, all of them at 5 mm). A
+    particle is taken one step after it touches the sheet. A full sheet lets nothing through, and wet friction, wet
+    drape and drying are not modelled. Film and paper sheets refuse it.
+  - Measured with test values (capacity 0.6 kg/m², rate 2 kg/m²/s): a 20 ml pour onto a 0.2 m cotton sheet on a
+    box rim took up 224 of 312 particles (14.3 g) in 0.6 s on the CPU; on one L4 the same pour took up 220, about
+    2 % apart (the same model, not the same bits), and two runs and 16 identical worlds took up the same 220. In
+    1,024 worlds on one L4 none went INVALID. On a GPU uptake repeats only as far as the rest of the scene does: a
+    sheet that folds or piles may not repeat (`worlds.md`), and then neither does its uptake.
+  - Cost: on the CPU that pour's steps after the water lands had a median of 0.75 s per 5 ms control step with
+    `absorb` against 1.57 s without (taken-up water leaves the liquid). On one L4 no cost was measurable at one
+    world, and 1,024 worlds stepped about the same (one run each). `docs/known_gaps/liquid-on-cloth.md` has the rows.
 - Accuracy: one setting for all the scene's liquid, `alloy.Scene(liquid_accuracy=...)` (or `scene.liquid_accuracy`;
   CLI `--liquid-accuracy`). `alloy.estimate(scene, worlds, seconds)["liquid"]` gives each setting's particles, time,
   memory and accuracy before you run. `sim.routes()` names the setting and spacing, and `traj.meta["liquid_accuracy"]`

@@ -313,6 +313,9 @@ def make_entries(objs: Sequence[TemplateObject], strides: Mapping[str, int], wor
     from alloy.coupling.liquid_cloth_selfcontact import attach_contact_free  # noqa: PLC0415
 
     attach_contact_free(specs)      # the vbd entry's self contact leaves the SPH / MPM particles out
+    from alloy.coupling.liquid_cloth_absorb import attach_absorb  # noqa: PLC0415
+
+    attach_absorb(specs, objs, strides, worlds)   # absorbing sheets (opt-in) to the SPH entry
     return specs
 
 

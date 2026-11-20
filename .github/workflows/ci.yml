@@ -22,9 +22,9 @@ jobs:
   cpu-tests:
     if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
-    # about 35-45 min with a warm kernel cache (0.1.5's last run 43 min, 0.1.6's 34); a cold one (main's first run,
-    # or after GitHub drops a cache unused for 7 days) warms for 46-53 min before the tests, up to about 1 h 40 in
-    # all: 0.1.5's first push to main ran out at 90
+    # about 45-60 min with a warm kernel cache: 0.1.7's run 50 min; 0.1.8's 83 and 101, of which the three cloth-tank
+    # laws now off the quick list held one worker 55-66 min (0.1.8's own test times without them: 48-61). A cold one
+    # (main's first run, or after GitHub drops a cache unused for 7 days) first warms for 46-53 min (0.1.5's runs)
     timeout-minutes: 180
     env:
       PYTHONUNBUFFERED: "1"
@@ -188,3 +188,28 @@ jobs:
           cd "$RUNNER_TEMP"
           env -u ALLOY_NO_EXT CC="$RUNNER_TEMP/cc" ALLOY_CACHE_DIR="$RUNNER_TEMP/alloy-cache" \
             "$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/.github/scripts/cpu_route_check.py" --expect numpy
+
+  # The oldest Python that requires-python allows (3.11; every other job runs 3.12, which accepts f-strings 3.11
+  # rejects): every tracked .py compiles on it, and a clean install from this checkout imports all of Alloy's modules
+  # and runs the README quick start. A few minutes, no kernel cache.
+  python-3-11:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Every tracked .py file compiles on Python 3.11
+        run: python -I .github/scripts/oldest_python_check.py --compile
+      - name: Install
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install .
+      - name: The installed Alloy imports and runs the README quick start on Python 3.11
+        run: |
+          cd "$RUNNER_TEMP"
+          "$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/.github/scripts/oldest_python_check.py" \
+            --installed --readme "$GITHUB_WORKSPACE/README.md"

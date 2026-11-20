@@ -59,8 +59,9 @@ fix for every flag, elastic-rod cables, and documented cutting. Pick Genesis alo
 or want double precision on a GPU. [Alloy vs Genesis](genesis.md).
 
 **MuJoCo Playground.** Alloy adds tasks with more than rigid bodies (pour a liquid, fold a cloth) on the same robot
-solver, in many worlds with cameras. Pick Playground alone when you want its ready-made locomotion and
-dexterous-hand environments with tuned training recipes. [Alloy vs MuJoCo Playground](mujoco-playground.md).
+solver, in many worlds with cameras. Pick Playground alone when you want its ready-made tasks with tuned
+training recipes (locomotion and dexterous hands in its RSS 2025 JAX/MJX suite).
+[Alloy vs MuJoCo Playground](mujoco-playground.md).
 
 **ManiSkill.** Alloy adds the physics ManiSkill3 does not model (cloth, liquids, soft bodies) behind a Gym-style
 API. Pick ManiSkill alone when you want its ready-made suite of manipulation tasks with

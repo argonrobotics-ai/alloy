@@ -97,6 +97,8 @@ class StateIO:
                     out[f"{n}.temperature"] = _heat.temperature(self.engine, n)
                 if ps is not None and ps[1][rows].any():               # a J2 metal sheet: its hinges' yield
                     out[f"{n}.plastic_strain"] = ps[0][rows]
+                from alloy.coupling.liquid_cloth_absorb import state_keys  # noqa: PLC0415 - absorbing cloth (opt-in)
+                out.update(state_keys(self.engine, n, rows))             # "<sheet>.water", "<liquid>.absorbed"
         out.update(_joint_yield.readout(self.engine, idx, [n for n in names if n in idx.joints]))
         return out
 

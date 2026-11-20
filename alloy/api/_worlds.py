@@ -81,7 +81,7 @@ def place(built: Any, scene: Any, per_world_pos: dict[str, Any], seed: int,
     bodies = {}
     for name, r in per_world_pos.items():
         if name in idx.free_joint:
-            bodies[name] = np.asarray(r, np.float64)[cut]
+            bodies[name] = _with_draws(built, name, np.asarray(r, np.float64)[cut])
         elif name in idx.particles:
             particles.setdefault(name, (scene.items[name]["pose"][:3], np.asarray(r, np.float64)[cut]))
         else:
@@ -93,6 +93,19 @@ def place(built: Any, scene: Any, per_world_pos: dict[str, Any], seed: int,
     robot_rows = {n: r[cut] for n, r in _robots.starts(scene, seed).items()}
     if robot_rows:
         _robots.place(built, robot_rows)
+
+
+def _with_draws(built: Any, name: str, rows_: np.ndarray) -> np.ndarray:
+    """A free body's per-world rows with each randomized start coordinate (``scene.randomize(name, "x", ...)``)
+    replaced by its draw, which the assembly wrote and ``built.randomized`` holds per local world: the draw replaces
+    that coordinate of the row, as it does for cloth, liquids and robots, rather than being overwritten by it."""
+    from alloy.scene.randomize import POSE_AXES  # noqa: PLC0415
+
+    out = np.array(rows_, np.float64)
+    for (obj, field), vals in getattr(built, "randomized", {}).items():
+        if obj == name and field in POSE_AXES:
+            out[:, POSE_AXES[field]] = np.asarray(vals, np.float64)
+    return out
 
 
 def _particle_rows(scene: Any, seed: int) -> dict[str, np.ndarray]:

@@ -21,10 +21,9 @@ pages. The limit's own file has the numbers and the status of the fix.
 Larger pieces of work that are planned and not built yet, and one that was tried and did not work (the welding
 score). None of them is in this release, and we promise no dates.
 
-- Cloth that takes up liquid. Today a liquid and a cloth collide and nothing more: no wetting, no soaking in, so a
-  towel does not absorb a spill ([liquid-on-cloth.md](../known_gaps/liquid-on-cloth.md)). Planned: an absorption and
-  wetting model, first as a reviewed design (the model, the law that checks it, its cost), then as an opt-in
-  prototype.
+- Cloth that takes up liquid, by fabric. An opt-in prototype ships (`add_cloth(..., absorb=...)`,
+  [liquid-on-cloth.md](../known_gaps/liquid-on-cloth.md)) with values you give. Planned: water values on the fabric
+  cards (tagged catalogue or fit, with ranges), seepage through a full sheet, and uptake finer than whole particles.
 - The welding task score. Gym-Anything's four welding tasks, judged by a port of its evaluator, score 0.76 to 0.81 of
   1 and none succeeds (Gym-Anything's own weld model scores 0.894 on fillet-2f): the bead's steady part and a crater
   at a joint's end are sound, but the arc start, the tack starts and a crater where a pass stops mid-joint are short

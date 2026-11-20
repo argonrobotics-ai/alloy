@@ -79,10 +79,22 @@ def assemble_streams(sidecar: AlloyContactSidecar, contacts: newton.Contacts) ->
 class StreamTables:
     """Per-shape lookups the fill kernel needs (built once by the layer)."""
 
-    shape_pair: wp.array        # [S] int32, precision pair index or -1
-    pair_class: wp.array        # [P] int8, PRECISION_SDF or PRECISION_HYDRO
-    pair_count: wp.array        # [P*W*PATCH_BUCKETS] int32 scratch: load-bearing rows per (pair, world, bucket)
+    shape_pair_start: wp.array      # [S+1] int32: shape s's partners are rows start[s]..start[s+1] of the two below
+    shape_pair_partner: wp.array    # [E] int32 partner shape (pipeline.shape_pair_lists)
+    shape_pair_id: wp.array         # [E] int32 precision pair index of that partner
+    pair_class: wp.array            # [P] int8, PRECISION_SDF or PRECISION_HYDRO
+    pair_count: wp.array            # [P*W*PATCH_BUCKETS] int32 scratch: load-bearing rows per (pair, world, bucket)
     world_count: int
+
+
+@wp.func
+def _row_pair(sa: int, sb: int, start: wp.array[wp.int32], partner: wp.array[wp.int32],
+              pair_id: wp.array[wp.int32]) -> int:
+    """Precision pair of shapes (sa, sb), or -1: a precision shape meeting an ordinary partner is an ordinary row."""
+    for e in range(start[sa], start[sa + 1]):
+        if partner[e] == sb:
+            return pair_id[e]
+    return -1
 
 
 @wp.func
@@ -123,7 +135,8 @@ def _fill_rows(start: wp.array[wp.int32], count: wp.array[wp.int32], default_cls
                shape_body: wp.array[wp.int32], body_q: wp.array[wp.transform], shape0: wp.array[wp.int32],
                shape1: wp.array[wp.int32], point0: wp.array[wp.vec3], point1: wp.array[wp.vec3],
                normal: wp.array[wp.vec3], margin0: wp.array[wp.float32], margin1: wp.array[wp.float32],
-               shape_pair: wp.array[wp.int32], pair_class: wp.array[wp.int8], world_count: int,
+               pair_start: wp.array[wp.int32], pair_partner: wp.array[wp.int32], pair_id: wp.array[wp.int32],
+               pair_class: wp.array[wp.int8], world_count: int,
                pair_count: wp.array[wp.int32], out_cls: wp.array[wp.int8], out_pair: wp.array[wp.int32],
                out_flags: wp.array[wp.uint8], out_world: wp.array[wp.int32], out_area: wp.array[wp.float32],
                out_toi: wp.array[wp.float32]):
@@ -134,9 +147,7 @@ def _fill_rows(start: wp.array[wp.int32], count: wp.array[wp.int32], default_cls
     sa = shape0[k]
     sb = shape1[k]
     w = _row_world(sa, sb, shape_world)
-    p = shape_pair[sa]
-    if p >= 0 and shape_pair[sb] != p:
-        p = -1                      # a precision shape meeting an ordinary partner is an ordinary row
+    p = _row_pair(sa, sb, pair_start, pair_partner, pair_id)
     c = default_cls
     flags = wp.uint8(0)
     if _row_separation(k, shape_body, body_q, shape0, shape1, point0, point1, normal, margin0, margin1) > 0.0:
@@ -202,9 +213,8 @@ def fill_stream(side: AlloyContactSidecar, tables: StreamTables, model: newton.M
         start, src.rigid_contact_count, wp.int8(int(ContactClass.RIGID)), model.shape_world, model.shape_body,
         state.body_q, dst.rigid_contact_shape0, dst.rigid_contact_shape1, dst.rigid_contact_point0,
         dst.rigid_contact_point1, dst.rigid_contact_normal, dst.rigid_contact_margin0, dst.rigid_contact_margin1,
-        tables.shape_pair,
-        tables.pair_class, tables.world_count, tables.pair_count, side.cls, side.pair, side.flags, side.world,
-        side.area, side.toi])
+        tables.shape_pair_start, tables.shape_pair_partner, tables.shape_pair_id, tables.pair_class,
+        tables.world_count, tables.pair_count, side.cls, side.pair, side.flags, side.world, side.area, side.toi])
     match = getattr(src, "rigid_contact_match_index", None)
     has_match = int(match is not None)
     match_arr = match if match is not None else side.pair

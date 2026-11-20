@@ -223,9 +223,9 @@ def apply_randomization(built: BuiltScene, seed: int, world_ids: wp.array | None
     worlds = list(range(built.world_count)) if world_ids is None else [int(w) for w in world_ids.numpy()]
     if not hasattr(built, "randomized"):
         built.randomized = {}
-    names = [t.name for t in plan.objects if t.obj is not None]
-    for name, placement in zip(names, plan.scene.objects):
-        for r in placement.randomize:
+    for t in (t for t in plan.objects if t.obj is not None):      # each object's own rows (not robots)
+        name = t.name
+        for r in t.placement.randomize:
             vals = np.asarray([draw(seed, built.global_world_id(w), f"{name}.{r.field}", r.lo, r.hi)
                                for w in worlds])
             _write(built, plan, name, r, worlds, vals)

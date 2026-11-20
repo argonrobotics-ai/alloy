@@ -95,6 +95,13 @@ def _quat_wxyz_matrix(q) -> np.ndarray:
                      [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)]])
 
 
+def _distinct(points: np.ndarray) -> np.ndarray:
+    """The points with those within a micrometre of each other merged, for qhull. A tearable bag's seam twins are two
+    copies of one vertex, kept within about 1e-10 m of each other by their seam; qhull fails on such near-duplicates
+    (QH6271, a wide merge), so the hulls and triangulations below take each place once."""
+    return np.unique(np.round(np.asarray(points, np.float64), 6), axis=0)
+
+
 def candle_corners(pos, quat_wxyz, size) -> np.ndarray:
     R, h = _quat_wxyz_matrix(quat_wxyz), 0.5 * np.asarray(size, float)
     signs = np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)], float)
@@ -114,7 +121,7 @@ def bag_frame(L: Layout, bag: np.ndarray) -> np.ndarray:
 def mouth(L: Layout, bag: np.ndarray, lim: Limits) -> dict:
     """Rim area ratio over W·D (projected normal to the axis) and the least front-to-back gap in the middle band."""
     F = bag_frame(L, bag)
-    rim2 = bag[L.rim] @ F[:2].T
+    rim2 = _distinct(bag[L.rim] @ F[:2].T)
     area = float(ConvexHull(rim2).volume) if len(rim2) >= 3 else 0.0
     ratio = area / (L.spec.width * L.spec.depth)
     origin = bag[L.bottom].mean(0)
@@ -134,7 +141,7 @@ def board(L: Layout, bag: np.ndarray, board_pts: np.ndarray, lim: Limits) -> dic
     panel = (bag[L.bottom] - origin) @ F.T
     floor = panel[:, 2].mean() + 0.5 * 135e-6
     under = b[:, 2] - 0.5 * L.board_thickness - floor
-    over = Delaunay(panel[:, :2]).find_simplex(b[:, :2]) >= 0
+    over = Delaunay(_distinct(panel[:, :2])).find_simplex(b[:, :2]) >= 0
     inside = (under >= -0.5e-3) & (under <= lim.board_gap) & over
     frac = float(inside.mean())
     return {"board_in_bag": frac >= lim.board_fraction, "board_fraction": round(frac, 3)}
@@ -142,9 +149,9 @@ def board(L: Layout, bag: np.ndarray, board_pts: np.ndarray, lim: Limits) -> dic
 
 def candle(L: Layout, bag: np.ndarray, board_pts: np.ndarray, pos, quat_wxyz, lim: Limits) -> dict:
     corners = candle_corners(pos, quat_wxyz, L.candle_size)
-    inside = Delaunay(bag).find_simplex(corners) >= 0
+    inside = Delaunay(_distinct(bag)).find_simplex(corners) >= 0
     tilt = _tilt_deg(_quat_wxyz_matrix(quat_wxyz)[:, 2])
-    over = Delaunay(board_pts[:, :2]).find_simplex(np.asarray(pos, float)[None, :2])[0] >= 0
+    over = Delaunay(_distinct(board_pts[:, :2])).find_simplex(np.asarray(pos, float)[None, :2])[0] >= 0
     board_top = float(np.median(board_pts[:, 2])) + 0.5 * L.board_thickness
     lift = (corners[:, 2].min() - board_top) * 1e3
     on = over and lim.on_board_mm[0] <= lift <= lim.on_board_mm[1]

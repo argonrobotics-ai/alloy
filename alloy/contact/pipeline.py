@@ -88,6 +88,24 @@ def world_shape_pairs(model: newton.Model, pairs: Sequence[PrecisionPairSpec]) -
     return out
 
 
+def shape_pair_lists(shape_count: int, wpairs: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Every shape's precision partners, in compressed rows: shape ``s``'s partners are
+    ``partner[start[s]:start[s + 1]]`` and ``pair_id`` names the pair of each. A shape can sit in several pairs (one
+    hole plate, two pegs); a single slot per shape kept only the last pair, and the earlier pairs' rows lost their
+    precision stiffness. ``wpairs`` is ``world_shape_pairs``' [P, W, 2]; the arrays never come out empty (Warp)."""
+    edges: list[list[tuple[int, int]]] = [[] for _ in range(shape_count)]
+    for p in range(wpairs.shape[0]):
+        for a, b in wpairs[p]:
+            edges[a].append((int(b), p))
+            if a != b:
+                edges[b].append((int(a), p))
+    start = np.zeros(shape_count + 1, np.int32)
+    start[1:] = np.cumsum([len(e) for e in edges])
+    flat = [e for row in edges for e in row] or [(-1, -1)]
+    partner, pair_id = (np.asarray(col, np.int32) for col in zip(*flat))
+    return start, partner, pair_id
+
+
 def _tri_count(model: newton.Model, shape: int) -> int:
     src = model.shape_source[shape]
     idx = getattr(src, "indices", None)
@@ -294,15 +312,14 @@ class AlloyContactLayer:
 
     def _build_tables(self) -> None:
         S, P, W = self.model.shape_count, len(self.pairs), self.model.world_count
-        shape_pair = np.full(S, -1, np.int32)
-        for p in range(P):
-            for a, b in self.world_pairs[p]:
-                shape_pair[a] = shape_pair[b] = p
+        start, partner, pair_id = shape_pair_lists(S, self.world_pairs)
         pair_class = [int(ContactClass.PRECISION_HYDRO if s.mode == "hydroelastic" else ContactClass.PRECISION_SDF)
                       for s in self.pairs]
         dev = self.device
         self._tables = StreamTables(
-            shape_pair=wp.array(shape_pair, dtype=wp.int32, device=dev),
+            shape_pair_start=wp.array(start, dtype=wp.int32, device=dev),
+            shape_pair_partner=wp.array(partner, dtype=wp.int32, device=dev),
+            shape_pair_id=wp.array(pair_id, dtype=wp.int32, device=dev),
             pair_class=wp.array(np.asarray(pair_class or [0], np.int8), dtype=wp.int8, device=dev),
             pair_count=wp.zeros(max(P, 1) * W * PATCH_BUCKETS, dtype=wp.int32, device=dev), world_count=W)
         self._weight_prev = [wp.zeros(c.rigid_contact_max, dtype=wp.float32, device=dev)

@@ -234,6 +234,15 @@ class Crease:
 
 
 @dataclass(frozen=True)
+class Absorb:
+    """A cloth that takes up liquid (opt-in; alloy/solvers/sph/cloth_absorb.py): water held up to ``capacity``,
+    taken at most at ``rate``, spread in the sheet's plane at ``wicking``."""
+    capacity: Q                             # kg/m^2 of sheet
+    rate: Q                                 # kg/m^2/s, uptake limit
+    wicking: Q | None = None                # m^2/s, in-plane diffusivity (None: no wicking)
+
+
+@dataclass(frozen=True)
 class Features:
     thickness: Q | None = None
     creases: tuple[Crease, ...] = ()
@@ -244,6 +253,7 @@ class Features:
     bend_stiffness: Q | None = None         # N·m², measured composite EI (cables); overrides E·πr⁴/4 (SCR-WP1-7)
     twist_stiffness: Q | None = None        # N·m², measured composite GJ; overrides G·πr⁴/2 (SCR-WP1-7)
     chain_links: int | None = None          # CHAIN route link-count override, >= 3 (SCR-DC3-7; None = sag rule)
+    absorb: Absorb | None = field(default=None, metadata=OMIT_IF_NONE)   # cloth takes up liquid (opt-in)
 
 
 @dataclass(frozen=True)

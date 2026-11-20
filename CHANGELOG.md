@@ -6,13 +6,39 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.9] - 2026-11-19
+
+### Added
+- `add_cloth(..., absorb={"capacity", "rate", "wicking"})` (opt-in): a cloth sheet takes up liquid resting on it, in
+  whole particles, into a water mass per vertex up to capacity x area. The sheet weighs the water and wicking spreads
+  it. New state keys `"<sheet>.water"` and `"<liquid>.absorbed"`. The values are yours, not fabric data. Off by
+  default, and unchanged when off (`docs/known_gaps/liquid-on-cloth.md`).
+
+### Fixed
+- Paper and film with tear lines could gain energy at their seams under contact and go UNCONVERGED. The tearable
+  gift bag (`tearable=True`) now finishes the gift-bag demo, all 11 criteria in 3 of 3 runs on one L4, at about 3.6x
+  the plain bag's cost, and the demo's verdict no longer fails on it.
+- On Python 3.11, `import alloy.compose` (the scene builder) no longer raises SyntaxError: three of its files used
+  f-string syntax that only Python 3.12 accepts. Every module of the package now imports on 3.11 (the vendored
+  libraries' examples and tests aside), which the public CI now checks.
+- The needle and suture-thread solver for soft tissue (`alloy.solvers.puncture.SolverPuncture`, an engine layer
+  outside the public API): in runs with more than one world only the first world's thread was solved correctly (in
+  a two-world lift the second world's thread ran up to 0.10 mm off a one-world run). Each world's thread now
+  matches a one-world run bit for bit (checked with two worlds).
+- Per-world randomization (`scene.randomize`) now lands on the right objects in scenes where a cable or chain is
+  welded at its root to another object: rows went to the neighbouring object in the scene's list, at build and at
+  reset. A free body's randomized x, y or z now replaces that coordinate of its per-world `pos` array instead of
+  being overwritten by it, as it already did for cloth, liquids and robots.
+- A part in two precision fits at once (one hole plate with two pegs, for example) now gets precision contact in
+  both. Before, only the last fit did, and the others fell back silently to ordinary, softer contact.
+
 ## [0.1.8] - 2026-11-19
 
 ### Added
 - A tearable gift bag (opt-in): object `gift_bag_kraft_tear` and the gift-bag task's `tearable=True` judge
   `bag_not_torn` from the torn seam length, and an object card's `film.vbd_iterations` raises its film sheet's VBD
   iterations (that bag asks 40). It costs about 8x the plain bag's run time (one world, one L4), and the full demo
-  does not finish with it yet (`docs/known_gaps/film-tear-bag-demo.md`).
+  does not finish with it yet (0.1.8's known-gap page on the tearable bag's demo).
 
 ### Changed
 - Sand, soil and pastes (MPM) in a fixture (`add_open_box`, `add_open_cylinder`, `add_block_with_hole`), static or

@@ -261,6 +261,8 @@ class SolverDFSPH(PressureSolves, SPHCouplingMixin, SolverBase, CouplingInterfac
                                       sweep, r, self.stats.swept, self._shape_work])
         if self.leaks is not None:  # before the escape box retires particles, so their exits are classified
             self.leaks.observe(state_in, state_out, bq_in, bq)
+        if self.cloth_absorb is not None:  # after the move, before the flags mirror (cloth_absorb.py)
+            self.cloth_absorb.step(p, self._slots, self.layout.n, dt)
         self.emitters.step(p, dt, (bq, bqd, self.bodies.com))
         self.stats.speed(p, speed_kernel)
         self._mirror_flags()  # poured / retired flags to the full model when SPH runs on a view

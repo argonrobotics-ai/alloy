@@ -15,8 +15,8 @@ A sheet is a closed surface for liquid whatever its mesh, so the number of parti
 Before / after (ALLOY_VBD_FOREIGN_SELF_CONTACT=off is the old self-contact): red before and green after are L1
 cotton at 1, 2 and 4 m/s (INVALID) and the tank (INVALID during the pour, 250 of 938 particles poured). L1 cotton at
 0.5 m/s and the film rows are green either way: they guard the fix, they do not prove it.
-Bounds: through == 0 and below == 0 come from physics (a sheet is a closed surface). The rig checks are set at or
-near what was measured, and say so: L1 tracked >= 12 of 16, tank escaped <= 5 % (measured 2.35 %), books to 2
+Bounds: through == 0 and below == 0 come from physics (a sheet is a closed surface). The rig checks are set from
+what was measured, and say so: L1 tracked >= 12 of 16, tank escaped <= 10 % (TANK_ESCAPED_MAX), books to 2
 particles.
 Not written: L3 (a fast sheet against resting water: the API has no way to drive a cloth) and L4 (jet load on a sheet);
 Measured numbers are appended as JSON lines to $LAW_LEAK_OUT when it is set.
@@ -44,6 +44,12 @@ TABLE_TOP = 0.10
 RIM_TOP = 0.10
 MATERIALS = ["cotton_woven", "film_ldpe"]
 TANK_GAP = 1.5e-3                      # m, sheet top to frame bottom (at 2.5 mm the stream leaves under the frame)
+# The tank's rig check: at most 10 % of the pour outside the opening. What lies there is the pool's edge pushed under
+# the frame's inner lip (all of it within 4 mm of the opening, none past the frame), and its count moves with the
+# slosh: 43-81 of 938 particles over the hold after the pour and 45 at the end on three CPU kinds (AMD EPYC 9V45 and
+# 9V74, Intel Xeon 8573C: the same bits), 50 on a hosted CI runner. The frame 0.5 mm higher leaves 102 outside
+# (52 past the frame), 1 mm higher 673.
+TANK_ESCAPED_MAX = 0.10
 
 
 # ---------------------------------------------------------------------------------------------- the meter itself
@@ -275,7 +281,7 @@ def _tank_counts(run: Run) -> dict:
 
 def _check_tank(material: str, run: Run, ml: float, tag: str) -> None:
     """Law bounds from physics: through == 0 and below == 0 (a sheet is a closed surface). Rig checks, set at or near
-    the measured rows and said so: escaped <= 5 % (measured 2.35 %), books close to 2 particles (meter noise)."""
+    the measured rows and said so: escaped <= 10 % (TANK_ESCAPED_MAX), books close to 2 particles (meter noise)."""
     k = _tank_counts(run)
     _log(tag, material=material, ml=ml, wall_s=round(run.wall_s), routes=run.routes, **k)
     poured, escaped = k["poured"], k["escaped"]
@@ -283,7 +289,8 @@ def _check_tank(material: str, run: Run, ml: float, tag: str) -> None:
     assert run.ok, "the world went INVALID and froze (sim.check): the counts below would not be a result"
     assert k["through"] == 0, f"{k['through']} of {poured} particles went through the {material} sheet"
     assert k["below"] == 0, f"{k['below']} particles ended under the sheet inside the opening"
-    assert escaped <= 0.05 * poured, f"{escaped} of {poured} left under the frame: the rig is off"
+    assert escaped <= TANK_ESCAPED_MAX * poured, \
+        f"{escaped} of {poured} outside the opening (bound {TANK_ESCAPED_MAX:.0%}): the frame does not hold the sheet"
     assert k["held"] + escaped >= poured - 2, f"held {k['held']} + escaped {escaped} < poured {poured}: unaccounted"
 
 
@@ -327,7 +334,7 @@ def test_control_tank_counts_water_under_the_sheet():
 def test_l2_tank_fast():
     """L2 (fast): 60 ml poured into the cloth-floor tank (cotton_woven), held 1 s after the pour. Law: no particle
     goes through the sheet (through == 0, bound 0) or ends under it inside the opening (below == 0). Rig checks: the
-    world stays OK, at most 5 % leaves under the frame, and the books close to 2 particles (meter noise)."""
+    world stays OK, at most 10 % lies outside the opening, and the books close to 2 particles (meter noise)."""
     _check_tank("cotton_woven", run_tank("cotton_woven", 60.0, hold=1.0), 60.0, "L2fast")
 
 

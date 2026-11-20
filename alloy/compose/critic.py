@@ -337,8 +337,9 @@ class Critic:
             return
         removed = layout.remove(key)
         if again and not (swap is not None and swap(removed[0], why)):
-            self.log.extend(f"{p.key}: dropped ({'failed the full check twice: ' + why if p.key == key else 'its '
-                            'support was dropped'})" for p in removed)
+            twice = "failed the full check twice: " + why
+            self.log.extend(f"{p.key}: dropped ({twice if p.key == key else 'its support was dropped'})"
+                            for p in removed)
             return
         if not again:
             self.log.append(f"{key}: moved (full check: {why})")

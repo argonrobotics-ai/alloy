@@ -132,8 +132,13 @@ SB12_DETAIL: dict[str, str] = {
            "contact_stiffness (the tip-mass condition is met since a0eb9cf6). The path to green is the engine, "
            "not the bound: the route's soft contact (τ = 2.083 ms) gives a depth of about v·τ/e"),
     "A13": ("A13 seal laws (WP9, SCR-SC10-1): A13.sealed_column fails full on GPU on csf's meniscus shedding "
-            "(piston 0.855 of rho g H, drift 1.14 spacing, void 1.9 %; SCR-WP9-7); A13.piston_displacement's quick "
-            "fail was its 2-layer push, full passes at +0.18 %"),
+            "(SCR-WP9-7). Whether the column holds for the 1 s is a knife edge: on main 2f9f1ee38, one L4 run each "
+            "at nominal, ambient 450 / 550 Pa and surface tension x 0.9 / 1.1, it holds in 3 of 5 settings (nominal: "
+            "piston 0.9445 of rho g H, drift 0.59 spacing, void 0.99 %) and drains in 2 (450 Pa, x 0.9); drift "
+            "(bound 0.1 spacing) fails in every run, best 0.58. Its CPU quick key fails on pressure, 0.1105 against "
+            "0.1, since 7d39c6ddc: the pair force on small pieces holds a drip at the mouth in the last 4 ms of the "
+            "0.05 s run (the cuda quick key passes, 0.0909). A13.piston_displacement's quick fail was its 2-layer "
+            "push, full passes at +0.18 %"),
 }
 
 

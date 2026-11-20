@@ -1,8 +1,9 @@
 # Alloy vs MuJoCo Playground: which should I use?
 
 Use the Alloy physics engine when the task has more than rigid bodies: pouring a liquid or moving sand, or starting
-from a ready-made cloth-folding task (`ClothFold-v0`), in many parallel worlds with a camera in each. It steps
-robots in MuJoCo Warp, one of Playground's backends, and installs with `pip install alloy-engine`.
+from a ready-made cloth-folding task (`ClothFold-v0`), in many parallel worlds with a camera in each. It steps robots
+in MuJoCo Warp, Playground's main PyTorch backend (earlier MJX envs sit under `rss2025`), and installs with
+`pip install alloy-engine`.
 
 ## What Alloy adds
 
@@ -79,10 +80,11 @@ each feature is; this table shows the 22 rows Alloy's public package documents.
 
 ## When MuJoCo Playground is the better fit
 
-- You want a large set of ready-made locomotion, manipulation and dexterous-hand environments with tuned training
-  recipes.
+- You want ready-made control, manipulation and humanoid whole-body tracking tasks, plus the RSS 2025 JAX/MJX
+  locomotion and dexterous-hand environments, with tuned training recipes.
 - You want to start from published sim-to-real results for those tasks.
-- Your task is rigid-only and you want the fastest training on MJX or JAX.
+- Your task is rigid-only and you want the fastest training: its PyTorch tasks on MuJoCo Warp, or the JAX/MJX ones
+  under `rss2025`.
 
 ## Keep in mind
 

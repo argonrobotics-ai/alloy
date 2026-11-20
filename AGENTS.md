@@ -325,7 +325,8 @@ print(sim.state(["ball"])["ball.pos"][:4, 0])        # x of the first 4 worlds
   GPU: a sheet that touches itself (a fold, a pile, an unconverged `cloth_accuracy="fast"` drape) or touches two
   objects at one point can make identical worlds and repeat runs differ, at every `cloth_accuracy` (the build logs
   determinism NONE). On the CPU every cloth setting repeats bit for bit, and identical worlds match, also once a sheet
-  touches itself (not checked for a cloth that touches itself in a robot's grip).
+  touches itself (not checked for a cloth that touches itself in a robot's grip); a sheet's uptake (`absorb`)
+  repeats as far as the sheet does.
 - Profiles: `alloy.build(scene, profile=...)`: `"standard"` (default), `"precision"`, `"fast"`, `"debug"`.
 - Robot scenes step at 1.25 ms (4 physics steps per 5 ms control period); that is their cost. On one L4, as shipped
   and physics only (re-checked on 35e29b44f): 2,048 Pandas with a table and a cube ran at 0.57x real time per world
@@ -452,7 +453,13 @@ traj.save("sheet.npz", faces=sim.faces("sheet"))                   # faces: (F, 
   stays valid, and none of it passes the sheet, in the rows measured: 1,024 of 1,024 worlds to 0.26 s on one L4, a
   pour on a box rim to 0.6 s on the CPU, and a tank with a cloth floor that held its water 10 s. To hold water on a
   sheet, pinch its border between a box rim and a static frame (a free sheet over an opening only bridges it, and the
-  water runs off its sides). Cloth takes up no water (`docs/known_gaps/liquid-on-cloth.md`). Cost: cheap while cloth
+  water runs off its sides). By default cloth takes up no water;
+  `add_cloth(..., absorb={"capacity": kg/m², "rate": kg/m²/s})` (opt-in) takes liquid resting on a sheet into the
+  sheet, in whole particles, up to capacity x area, and the sheet weighs it (`"<sheet>.water"`,
+  `"<liquid>.absorbed"`; `"wicking": m²/s` spreads it). The values are yours, not fabric data, and a vertex that
+  holds under a third of a particle takes up little or nothing (the build warns with the count): at 0.6 kg/m² and
+  default liquid accuracy some vertices from cells under about 10 mm, all of them at 5 mm
+  (`docs/known_gaps/liquid-on-cloth.md`). Cost: cheap while cloth
   and liquid do not touch, very slow once they do: on one L4 a 10 cm cotton sheet dropped onto 0.8 l of water steps
   at about 7 s per 10 ms control step over its first 0.15 s on the water (12 minutes per simulated second; 1-3 s per
   step once it settles; a sheet that goes on stirring the water costs more, not re-measured), a film-route sheet

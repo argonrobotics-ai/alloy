@@ -2,13 +2,28 @@
 owner: Alloy maintainers
 ---
 
-# Cloth takes up no water, and liquid on cloth steps slowly
+# Cloth takes up water only when asked, and liquid on cloth steps slowly
 
 ## What is wrong
-1. **Cloth takes no water.** There is no absorption, no wetting and no seepage. A sheet gains no weight from the
-   water on it, and its friction and drape do not change when wet. Real untreated cotton wets at once, soaks up
-   about 1-3 times its own weight and lets water through once saturated. In the simulation every fabric acts as a
-   watertight sheet.
+1. **Cloth takes up water only when asked, and coarsely.** By default a sheet takes no water: no absorption, no
+   wetting and no seepage, so every fabric acts as a watertight sheet. Real untreated cotton wets at once, soaks up
+   about 1-3 times its own weight and lets water through once saturated.
+   `add_cloth(absorb={"capacity": kg/m², "rate": kg/m²/s, "wicking": m²/s})` (opt-in) takes liquid resting on the
+   sheet into a water mass per vertex, up to capacity x area. The sheet weighs that water, and wicking spreads it in
+   the sheet's plane. Its limits:
+   - The values are yours: no fabric card carries them yet. Derived from published figures, not measured here:
+     cotton holds about 0.35-0.96 kg/m², a terry towel 0.65-2.2.
+   - Particles are taken whole (64 mg at the default 4 mm spacing). A vertex fills in steps of a particle's share
+     and can stop up to one particle short of full. A particle is taken only when every vertex of its face has room
+     for its share, so a vertex whose capacity x area is under a third of a particle (21 mg at the default spacing)
+     takes up little or nothing. At 0.6 kg/m² some vertices fall under it at cells under about 10 mm, half the
+     sheet under about 7 mm and all of it at 5 mm. The build warns with the count, naming the sheet and the fix: a
+     coarser sheet, a higher capacity or `liquid_accuracy="super"`.
+   - A particle is taken one step after it touches the sheet. Uptake runs at the rate on average. In each step only
+     one group of faces that share no vertex takes water.
+   - A full sheet lets nothing through (no seepage). Wet friction, wet drape and drying are not modelled.
+   - Film and paper sheets refuse it. The ADMM coupler refuses it (the proxy coupler takes it), and so does the
+     per-world fine pack.
 2. **Liquid on cloth is slow.** Once water lies on a fabric sheet, the coupled step costs several hundred times
    real time on one CPU core and thousands of times on a GPU (Number).
 3. **No free pouch.** A sheet laid over an opening bridges it and sags only 6-10 mm, so poured water runs off its
@@ -53,8 +68,31 @@ CPU rows, `Scene(dt=0.005)`, one world unless stated:
   - a paper sheet: 5.0 s.
   The slow steps are bound by the host launching the cloth solver's kernels: the GPU sits at 11-15 %.
 
+- With `absorb` (test values, not fabric data), CPU, one world, the rim scene of the first row unless stated:
+
+  | scene | result |
+  |---|---|
+  | 20 ml pour, capacity 0.6 kg/m², rate 2 kg/m²/s, 0.6 s | 224 of 312 particles taken up (14.3 g); nearly all the rest ran off the sheet (3 still on it); health OK |
+  | the same at rate 20, wicking 2e-4 m²/s / none, 1.5 s | 261 / 272 taken up; with wicking the water reaches all 144 vertices, without it 111 |
+  | the cloth-floor tank, 60 ml, capacity 0.6, rate 20 | every vertex of the opening within one particle of capacity, none over; one particle is 39-78 % of a vertex's capacity here, so the lowest fill is 0.42 (mean 0.95) |
+  | the tank, capacity 5, rate 1 | uptake 14.3 g/s against rate x wetted area 16.6 g/s (0.86: vertices at the water's edge are wet only part of the time); no vertex faster than its rate |
+  | the wet sheet against a dry twin weighing its dry mass plus the water, per vertex | deepest sag 11.76 mm against 11.44 mm (2.8 %) |
+
+  Cost, the rim pour, steps after the water lands, one quiet CPU machine, one run each: median 0.75 s per 5 ms
+  control step with absorb against 1.57 s without (means 1.8 s and 2.3 s; the first 45 steps cost the same). Taken-up
+  water leaves the liquid, which fits later steps being cheaper.
+- With `absorb` on one L4 (capacity 0.6, rate 2), one run each unless stated:
+  - the rim pour: two runs took up the same 220 particles into the same water; 16 identical worlds took up 220
+    each; the CPU took up 224 by the same time, about 2 % more (the liquid's CPU and GPU steps are the same model,
+    not the same bits). Uptake repeats only as far as the rest of the scene does: on a GPU a sheet that folds or
+    piles may not repeat (AGENTS.md section 6), and then neither does its uptake;
+  - 1,024 worlds of a 0.24 m sheet on a box rim, each sheet starting within 2 mm of centre, 20 ml: none INVALID
+    with absorb or without, and 123-161 particles taken up per world by 0.26 s, uptake still rising;
+  - cost: none measurable at one world (2.9 s mean per step with absorb and without, 3 runs each); 1,024 worlds about
+    the same (one run each: medians 54.4 s per step with absorb, 55.4 s without).
+
 ## Why
-Absorption is not modelled.
+Absorption is opt-in and coarse (What is wrong, 1). By default it is not modelled.
 
 The cost is not broken down yet. Two parts are seen so far:
 - Once the cloth and the liquid touch, their exchange runs up to 8 passes per period, against 1 before.
@@ -74,15 +112,16 @@ not measured.
 - To hold water on a sheet, pinch its border between a box rim and a static frame whose bottom is less than one
   particle (4 mm) above the sheet. At 1.5 mm the 60 ml stayed. At 2.5 mm a stream leaves under the frame.
 - To show a wet towel's weight, add the water's mass to the cloth (`add_cloth(mass=...)`) and leave the liquid out:
-  the added mass stands in for the water.
+  the added mass stands in for the water. To have the sheet take up liquid as it lands, pass `absorb=` (opt-in;
+  What is wrong, 1).
 - For speed, use a film sheet where a watertight sheet is what you want. Pass `self_contact=False` for a sheet
   that never folds (about 1.4x cheaper per step on a GPU).
 - `ALLOY_VBD_FOREIGN_SELF_CONTACT=off` restores the old self-contact, which makes a pour onto cloth INVALID; for
   comparisons only.
 
 ## Planned fix
-1. An opt-in absorption model: particles taken into a per-vertex water mass up to the fabric's capacity, with that
-   mass added to the cloth. Design and laws are drafted; no date yet.
+1. Absorption: water values on the fabric cards (cotton, towel; tagged catalogue or fit, with ranges), seepage
+   through a full sheet, and uptake finer than whole particles.
 2. Cost: a captured graph for the coupled cloth step on GPUs, and fewer exchange passes once the sheet is at rest.
 3. A swept liquid test against cloth for fast impacts, with its own law.
 

@@ -108,9 +108,6 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   the mesh diagonals.](../known_gaps/film-metal-sheets.md)
 - [A film's strain projection carries no force to bodies: a 90 degree peel of a PET strip reads 42.9 N against 8.7
   N.](../known_gaps/film-projection-force.md)
-- [A gift bag with tear lines (`tearable=True`) does not finish the gift-bag demo yet: the run stops
-  converging under the carton and goes INVALID as the fingers lift out, at about 8x the plain
-  bag's cost.](../known_gaps/film-tear-bag-demo.md)
 - [The open-carton tape peel throws a light body past 20 m/s in some worlds, 1 in 40 with the task's caps and 3 of 24
   without them.](../known_gaps/paper-open-carton-peel.md)
 - [The wrapped present cannot be unwrapped yet: the task is not run and 0 % of the paper comes
@@ -125,7 +122,7 @@ do instead today; a plain line carries its workaround. Read the lines for your a
   on.](../known_gaps/liquid-narrow-containers.md)
 - [A pour alone can splash a few percent over its container's rim (3 % of a 6 ml pour), and health stays
   OK.](../known_gaps/liquid-pour-over-the-rim.md)
-- [Cloth takes up no water, and liquid on cloth steps slowly.](../known_gaps/liquid-on-cloth.md)
+- [Cloth takes up water only when asked, and liquid on cloth steps slowly.](../known_gaps/liquid-on-cloth.md)
 - [Cloth, liquid and free rigid bodies lighter than twice the cloth and soft mass do not build in one
   scene.](../known_gaps/liquid-cloth-light-rigid.md)
 - [A floating container with a liquid-to-container mass ratio above 50 (such as a light cup) is refused at

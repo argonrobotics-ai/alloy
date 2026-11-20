@@ -107,8 +107,12 @@ class SoftScene:
 
     def dropped(self, placed: dict[str, Any]) -> list[str]:
         """Extras lost because an object they hang off was dropped by the final repairs."""
-        return [f"{e.row.get('item', e.card.name)} ({e.card.name}: its {', '.join(k for k in e.depends if k not in
-                placed)} was dropped)" for e in self.extras if not all(k in placed for k in e.depends)]
+        out = []
+        for e in self.extras:
+            missing = [k for k in e.depends if k not in placed]
+            if missing:
+                out.append(f"{e.row.get('item', e.card.name)} ({e.card.name}: its {', '.join(missing)} was dropped)")
+        return out
 
     def attachments_for(self, placed: dict[str, Any], names: dict[str, str]) -> tuple[ct.Attachment, ...]:
         """Welds whose cable and object are both in the scene (``names``: engine name -> layout key)."""

@@ -30,8 +30,8 @@ film:
   vbd_iterations:
     value: 40.0
     source: measured
-    note: 'a tearable bag stands only from 40 VBD iterations (CPU, standing on its mat): at the film route''s own 10 it folds
-      over within 0.5 s, before any seam breaks (its stiff zero-length seam springs leave VBD unconverged); at 20 it sinks
-      22 mm in 0.6 s; at 30 it tilts 1.3 deg; at 40 it stands 3 s with 0 seams torn, tilt under 0.6 deg, rim 3 mm under the
-      untearable bag''s. In the gift-bag demo it costs about 8x the plain bag (one world, one L4: 5,757 s against 719 s),
-      and there it does not finish yet (docs/known_gaps/film-tear-bag-demo.md)'
+    note: 'the tearable bag standing 3 s on its mat (CPU): at the film route''s own 10 iterations it collapses (rim 227 mm
+      down, tilt 19.5 deg at 1 s; its stiff zero-length seam springs leave VBD unconverged); at 20 it sinks 6.2 mm, and it
+      tears under the gift-bag demo''s carton (62.5 mm, tilt 29 deg); at 30 it stands, rim 3.3 mm down; at 40 it stands with
+      0 seams torn, tilt 0, rim 2.4 mm under the untearable bag''s, so 40 keeps a margin. In the gift-bag demo it succeeds
+      (3 of 3 seeds) at about 3.6x the plain bag''s cost (one world, one L4: 2,616 s against 719 s for 11 s)'

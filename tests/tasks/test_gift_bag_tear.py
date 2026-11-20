@@ -94,7 +94,8 @@ def _stands(r: dict) -> bool:
 @pytest.mark.compile_heavy
 def test_law_i_the_tear_bag_stands_on_the_cpu_short():
     """Law i, short (CPU, 0.3 s: the 3 s run is the GPU test below). At the film route's own 10 iterations the bag
-    is falling by now (rim 88 mm down, tilt 10 deg at 0.3 s); at its card's 40 it stands."""
+    is sinking by now (rim 20 mm down at 0.3 s, unconverged; it collapses by 1 s: rim 227 mm, tilt 19.5 deg), and at
+    20 its rim is 5.7 mm down; at its card's 40 it stands (rim 1.8 mm)."""
     r = stand("gift_bag_kraft_tear", 0.3, "cpu")
     assert _stands(r), r
 

@@ -56,12 +56,15 @@ def _blk(L: wp.array3d[wp.mat33], c: int, i: int, o: int) -> wp.mat33:
 
 
 @wp.kernel(enable_backward=False)
-def chain_step(dt: float, ch: Chain, an: Anchors, ts: Tissue, nd: Needles, pr: Params, x: wp.array[wp.vec3],
-               x0: wp.array[wp.vec3], y: wp.array[wp.vec3], mass: wp.array[float], body_q: wp.array[wp.transform],
-               body_q0: wp.array[wp.transform], forces: wp.array[wp.vec3], hessians: wp.array[wp.mat33],
-               ob: Obstacles, radius: wp.array[float], A: wp.array3d[wp.mat33], g: wp.array2d[wp.vec3]):
-    """One thread per suture thread. A[c, i, k] holds H[i, i+k-2] (k = 0..4, band), g[c, i] the right-hand side."""
-    c = wp.tid()
+def chain_step(active: wp.array[wp.int32], dt: float, ch: Chain, an: Anchors, ts: Tissue, nd: Needles, pr: Params,
+               x: wp.array[wp.vec3], x0: wp.array[wp.vec3], y: wp.array[wp.vec3], mass: wp.array[float],
+               body_q: wp.array[wp.transform], body_q0: wp.array[wp.transform], forces: wp.array[wp.vec3],
+               hessians: wp.array[wp.mat33], ob: Obstacles, radius: wp.array[float], A: wp.array3d[wp.mat33],
+               g: wp.array2d[wp.vec3]):
+    """One GPU thread per suture thread of the colour being solved (``active``: their indices). Only that colour's
+    force and Hessian are accumulated at this point; stepping another thread here would overwrite its buffers before
+    Newton accumulates them. A[c, i, k] holds H[i, i+k-2] (k = 0..4, band), g[c, i] the right-hand side."""
+    c = active[wp.tid()]
     a0 = ch.start[c]
     n = ch.count[c]
     if n > MAXN:

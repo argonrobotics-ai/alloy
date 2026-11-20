@@ -1,0 +1,20 @@
+{
+  "cases": {
+    "box_drop5cm_xpbd": {
+      "periods": 4,
+      "sha256": "123edb7f80d75dee18591f60f8eaea1c73d94d40d6084b60fab6b9fbb81b38f3",
+      "worlds": 4,
+      "worlds_equal_at_end": true
+    },
+    "pendulum_featherstone": {
+      "periods": 4,
+      "sha256": "8fbc8bcab34da7a36b941f34abc36d6519272d900ea7b4c4851d92169b93293b",
+      "worlds": 4,
+      "worlds_equal_at_end": true
+    }
+  },
+  "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+  "key": "cpu-x86_64-a5bece87-warp1.18.0-newton89bf98d1",
+  "reason": "AMD EPYC 9V45 (Azure gate VMs, Standard_F32as_v7), recorded at main fac88f11e (GATE-AZ, physics 2026-11-19)",
+  "schema": "alloy.precision.golden/1"
+}

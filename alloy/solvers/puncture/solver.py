@@ -227,13 +227,16 @@ class SolverPuncture(SolverVBDMomentum):
         self.chain_world = arr([sp.world for _, sp in threads], np.int32)
         self.obstacles = build_obstacles(self.obstacle_config, [sp.world for _, sp in threads], dev)
         self._n_threads = len(threads)
-        members = {sp.thread_start + k for _, sp in threads for k in range(sp.thread_count)}
+        thread_of = {sp.thread_start + k: t for t, (_, sp) in enumerate(threads) for k in range(sp.thread_count)}
         groups = [np.asarray(g.numpy()) for g in model.particle_color_groups]
-        self._thread_colours = {c for c, g in enumerate(groups) if g.size and int(g[0]) in members}
-        for c in self._thread_colours:
-            if not set(groups[c].tolist()) <= members:
+        self._thread_colours: dict[int, wp.array] = {}      # colour -> the threads it holds (their chain steps)
+        for c, grp in enumerate(groups):
+            if not grp.size or int(grp[0]) not in thread_of:
+                continue
+            if not set(grp.tolist()) <= thread_of.keys():
                 raise AssemblyError("SolverPuncture: a thread shares a colour with other particles; build the model "
                                     "with thread.isolate_thread_colours")
+            self._thread_colours[c] = arr(sorted({thread_of[int(p)] for p in grp}), np.int32)
         self._chain_A = wp.zeros((max(self._n_threads, 1), int(chain.MAXN), 5), dtype=wp.mat33, device=dev)
         self._chain_g = wp.zeros((max(self._n_threads, 1), int(chain.MAXN)), dtype=wp.vec3, device=dev)
 
@@ -241,9 +244,10 @@ class SolverPuncture(SolverVBDMomentum):
         """Colour callback (after Newton's accumulation, before the colour's solve): a thread's colour gets the whole
         chain step (chain.py); any other colour adds its anchors' force and Hessian blocks."""
         dev, dt = self.model.device, self._dt
-        if color in self._thread_colours:
-            wp.launch(chain.chain_step, dim=self._n_threads,
-                      inputs=[dt, self.chain, self.anchors, self.tissue, self.needles.dev, self.params,
+        active = self._thread_colours.get(color)
+        if active is not None:
+            wp.launch(chain.chain_step, dim=active.shape[0],
+                      inputs=[active, dt, self.chain, self.anchors, self.tissue, self.needles.dev, self.params,
                               state_in.particle_q, self.particle_q_prev, self.inertia, self.model.particle_mass,
                               self._q1, self._q0, self.particle_forces, self.particle_hessians, self.obstacles,
                               self.model.particle_radius, self._chain_A, self._chain_g], device=dev)

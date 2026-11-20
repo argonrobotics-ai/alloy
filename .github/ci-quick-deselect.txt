@@ -371,6 +371,9 @@
 --deselect=tests/coupling/test_kinematic_proxies.py::test_mujoco_rollout_unchanged_by_kinematic_proxies
 --deselect=tests/coupling/test_kinematic_proxies.py::test_soft_body_rests_on_a_welded_plywood[film]
 --deselect=tests/coupling/test_kinematic_proxies.py::test_soft_body_rests_on_a_welded_plywood[vbd]
+--deselect=tests/coupling/test_liquid_cloth_leak_law.py::test_control_meter_and_books_count_a_leak
+--deselect=tests/coupling/test_liquid_cloth_leak_law.py::test_control_tank_counts_water_under_the_sheet
+--deselect=tests/coupling/test_liquid_cloth_leak_law.py::test_l2_tank_fast
 --deselect=tests/coupling/test_match_reset.py::test_a_reset_rod_grip_episode_replays_the_fresh_one_bit_for_bit[False]
 --deselect=tests/coupling/test_match_reset.py::test_a_reset_rod_grip_episode_replays_the_fresh_one_bit_for_bit[True]
 --deselect=tests/coupling/test_match_reset.py::test_the_rod_grips_sticky_matcher_is_cleared_by_reset_and_rollback

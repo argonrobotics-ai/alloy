@@ -262,14 +262,14 @@ def _escalated(report) -> np.ndarray | None:
 
 
 def _all_draws(built: BuiltScene, plan: Any, seed: int) -> dict[tuple[str, str], np.ndarray]:
-    """{(object, field): (worlds,) draw at ``seed`` in every world}. Rows are paired with objects as
-    ``apply_randomization`` pairs them, and a later row on the same field wins there too."""
+    """{(object, field): (worlds,) draw at ``seed`` in every world}. Each object's rows are its own placement's, as
+    ``apply_randomization`` draws them (a tree weld puts the plan's objects out of the card's order), and a later row
+    on the same field wins there too."""
     from alloy.scene.randomize import draw
 
     gids = [built.global_world_id(w) for w in range(built.world_count)]
-    names = [t.name for t in plan.objects if t.obj is not None]
-    return {(name, r.field): np.asarray([draw(seed, g, f"{name}.{r.field}", r.lo, r.hi) for g in gids])
-            for name, placement in zip(names, plan.scene.objects) for r in placement.randomize}
+    return {(t.name, r.field): np.asarray([draw(seed, g, f"{t.name}.{r.field}", r.lo, r.hi) for g in gids])
+            for t in plan.objects if t.obj is not None for r in t.placement.randomize}
 
 
 def _differing(built: BuiltScene, draws: Mapping[tuple[str, str], np.ndarray]) -> dict[tuple[str, str], np.ndarray]:

@@ -72,7 +72,8 @@ run per point, simulated seconds per wall second summed over all worlds: a Frank
   ([details](../../known_gaps/cloth-robot-grasp-carry.md)).
 - Cloth and liquid beside a robot or free body lighter than twice their mass raise `BuildError`
   ([details](../../known_gaps/liquid-cloth-light-rigid.md)).
-- Cloth takes up no water ([details](../../known_gaps/liquid-on-cloth.md)).
+- Cloth takes up water only when asked (`add_cloth(..., absorb=...)`, opt-in)
+  ([details](../../known_gaps/liquid-on-cloth.md)).
 - Full list: [Keep in mind](../keep-in-mind.md).
 
 ## Next

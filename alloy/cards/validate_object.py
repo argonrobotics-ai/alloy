@@ -231,6 +231,10 @@ def _check_loads_features(iss: Issues, card: ct.ObjectCard, ext: tuple[float, fl
         if getattr(ft, name) is not None and not isinstance(card.shape, ct.CurveSource):
             iss.warn(f"features.{name}", "a measured rod stiffness only applies to curve (rod/cable) sources")
     _check_chain_links(iss, card)
+    if ft.absorb is not None:                      # a cloth that takes up liquid (opt-in; cloth routes only)
+        for name, unit in (("capacity", " kg/m^2"), ("rate", " kg/m^2/s")):
+            check_positive(iss, f"features.absorb.{name}", getattr(ft.absorb, name), unit)
+        check_nonneg(iss, "features.absorb.wicking", ft.absorb.wicking, " m^2/s")
     for i, c in enumerate(ft.creases):
         check_positive(iss, f"features.creases.{i}.stiffness", c.stiffness, " N·m/rad")
         if c.a == c.b:

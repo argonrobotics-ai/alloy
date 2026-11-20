@@ -309,9 +309,10 @@ def _pour(tokens: list[str], amounts: dict[str, float], d: Any) -> bool:
     if at is None:
         noun = _pour_noun(tokens)
         if noun is not None:
-            raise ComposeError(f"{noun!r} is not a liquid the scene builder has", f"pour one of {', '.join(sorted(
-                V.LIQUIDS))}, e.g. 'pour water from a bottle into a cup' (milk, juice, coffee, tea, wine and beer are "
-                "made as water)", field="sentence")
+            liquids = ", ".join(sorted(V.LIQUIDS))
+            raise ComposeError(f"{noun!r} is not a liquid the scene builder has", f"pour one of {liquids}, e.g. "
+                               "'pour water from a bottle into a cup' (milk, juice, coffee, tea, wine and beer are "
+                               "made as water)", field="sentence")
         raise ComposeError("a pour names no liquid", "say what pours, e.g. 'pour water from a bottle into a cup'",
                            field="sentence")
     noun = W.singular(tokens[at])

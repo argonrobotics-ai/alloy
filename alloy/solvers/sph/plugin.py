@@ -42,6 +42,7 @@ def _factory(view: Any, kwargs: Mapping[str, Any]) -> SolverDFSPH:
     kw = dict(kwargs)
     cfg = kw.pop("config", None)
     cap = kw.pop("capacity_per_world", None)
+    absorb = kw.pop("alloy_cloth_absorb", None)    # cloth takes up liquid (opt-in): alloy.coupling.liquid_cloth_absorb
     fields = {k: kw.pop(k) for k in list(kw) if k in _CONFIG_FIELDS}
     if kw:
         raise TypeError(f"sph factory: unknown kwargs {sorted(kw)}")
@@ -56,6 +57,9 @@ def _factory(view: Any, kwargs: Mapping[str, Any]) -> SolverDFSPH:
     elif fields:
         cfg = dataclasses.replace(cfg, **fields)
     solver = SolverDFSPH(view, cfg, capacity_per_world=cap)
+    if absorb:
+        from alloy.coupling.liquid_cloth_absorb import install_absorb  # noqa: PLC0415
+        install_absorb(solver, absorb)
     if auto is not None:
         solver.escape_box_pad = auto[1]          # an automatic box: a drive widens it (escape_box.widen)
     return solver

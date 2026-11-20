@@ -88,9 +88,8 @@ class CandleSpec:
     window: float = 3.0                 # hands-off window [s]
     dt: float = 0.01                    # control period [s]
     tearable: bool = False              # the bag with tear lines (gift_bag_kraft_tear): judges bag_not_torn; its film
-                                        # runs 40 VBD iterations (the card asks), about 8x the demo's cost (one world,
-                                        # one L4: 5,757 s against 719 s). The demo does not finish yet: the bag goes
-                                        # INVALID as the fingers lift out (docs/known_gaps/film-tear-bag-demo.md)
+                                        # runs 40 VBD iterations (the card asks), about 3.6x the demo's cost (one
+                                        # world, one L4: 2,616 s against 719 s)
 
 
 def starts(s: CandleSpec, worlds: int, seed: int) -> np.ndarray:
@@ -126,9 +125,6 @@ def build_scene(s: CandleSpec, st: np.ndarray, with_bag: bool = True):
     """The task's scene for the starts ``st``; ``with_bag=False`` leaves out the bag and board (the script alone)."""
     import alloy
 
-    if with_bag and s.tearable:
-        log.warning("tearable=True: the gift-bag demo does not finish yet with the tearable bag (it goes INVALID as the "
-                    "fingers lift out, at about 8x the cost); keep tearable off for the full demo (docs/known_gaps/film-tear-bag-demo.md)")
     h = _heights(s)
     scene = alloy.Scene(worlds=len(st), dt=s.dt)
     scene.add_ground()
@@ -247,8 +243,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None)
     ap.add_argument("--tearable", action="store_true",
-                    help="the bag with tear lines: judges bag_not_torn (about 8x the cost). The demo does not finish "
-                         "yet: the bag goes INVALID as the fingers lift out (docs/known_gaps/film-tear-bag-demo.md)")
+                    help="the bag with tear lines: judges bag_not_torn (about 3.6x the cost)")
     a = ap.parse_args()
     out = run(CandleSpec(tearable=a.tearable), device=a.device, worlds=a.worlds, seed=a.seed)
     if a.out:

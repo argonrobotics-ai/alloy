@@ -92,13 +92,13 @@ HOW_TO = {f"how-to/{name}.md" for name in (
 HOW_TO |= {f"how-to/{name}.md" for name in (      # round 2
     "gymnasium-vector-api", "imitation-data-with-liquids", "lerobot-dataset", "mjcf-robot-with-cloth-or-liquid",
     "randomise-parallel-worlds", "squeeze-soft-object")}
-HOW_TO |= {"how-to/move-from-mujoco.md", "how-to/move-from-genesis.md"}      # moving a scene from another engine
+HOW_TO |= {"how-to/move-from-mujoco.md", "how-to/move-from-genesis.md", "how-to/move-from-pybullet.md"}
 QUESTIONS = {f"answers/{name}.md" for name in (
-    "built-on-mujoco-warp-or-newton", "deformable-object-manipulation", "did-my-simulation-blow-up",
-    "error-messages", "gpu-parallel-engines-for-rl", "mcp-server-physics-engine",
-    "mujoco-models-with-liquids-and-sand", "new-robotics-simulators-2026", "open-source-multi-physics-engines",
-    "pip-installable-simulators", "robots-cloth-liquids-one-scene", "sand-and-granular-materials",
-    "soft-body-manipulation-python")}
+    "benchmarks-and-accuracy", "built-on-mujoco-warp-or-newton", "deformable-object-manipulation",
+    "did-my-simulation-blow-up", "error-messages", "gpu-parallel-engines-for-rl", "mcp-server-physics-engine",
+    "mujoco-models-with-liquids-and-sand", "mujoco-warp-robot-learning-frameworks", "new-robotics-simulators-2026",
+    "open-source-multi-physics-engines", "pip-installable-simulators", "robots-cloth-liquids-one-scene",
+    "sand-and-granular-materials", "sim-to-real-and-system-identification", "soft-body-manipulation-python")}
 NOT_RUN = {"how-to/evaluate-checkpoint.md": "needs rsl_rl and a trained checkpoint; run by hand on the published wheel",
            "how-to/lerobot-dataset.md": "needs the lerobot extra, which changes the numpy pin; run by hand on the published wheel"}
 ANSWERS = {"faq.md"} | HOW_TO | COMPARE | QUESTIONS     # one question per page; on the site but not in its menu

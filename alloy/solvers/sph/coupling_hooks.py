@@ -36,6 +36,7 @@ PARTICLE_QD = int(StateFlags.PARTICLE_QD)
 
 class SPHCouplingMixin:
     """Coupling hooks of SolverDFSPH; expects the solver's layout, bodies, warm starts, emitters and ``soft``."""
+    cloth_absorb = None  # cloth takes up liquid (opt-in): cloth_absorb.ClothAbsorb, set by the factory
 
     def coupling_notify_input_state_update(self, state: State, flags: int, *, iteration_restart: bool = False,
                                            dt: float = 0.0) -> None:
@@ -59,6 +60,8 @@ class SPHCouplingMixin:
             wp.copy(self._kd_saved, self._kd)
             wp.copy(self._meter_saved, self._meter_j)
             self.emitters.save()
+        if self.cloth_absorb is not None:  # its own snapshot (cloth_absorb.py)
+            self.cloth_absorb.pass_start(bool(iteration_restart))
         if self.bodies.count:
             self._exch_j.zero_()
         self.soft.new_window()
@@ -118,6 +121,8 @@ class SPHCouplingMixin:
         arrays.update(self.stats.state_arrays())
         arrays.update(self.emitters.state_arrays())
         arrays.update(self.port.state_arrays())
+        if self.cloth_absorb is not None:
+            arrays.update(self.cloth_absorb.state_arrays())
         return arrays
 
     def alloy_state_worlds(self) -> Mapping[str, wp.array]:
@@ -128,6 +133,8 @@ class SPHCouplingMixin:
         if self.model.shape_count:
             maps["sph.meter_j"] = self.model.shape_world
         maps.update(self.emitters.state_worlds())
+        if self.cloth_absorb is not None:
+            maps.update(self.cloth_absorb.state_worlds())
         return maps
 
     def coupling_supports_inertial_property_refresh(self) -> bool:

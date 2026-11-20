@@ -9,7 +9,8 @@ builds a four-world Alloy scene on a CPU.
   ([Alloy vs MuJoCo](../compare/mujoco.md)).
 - Newton: the solvers Alloy builds on, with many worlds on one GPU ([Alloy vs Newton](../compare/newton.md)).
 - Genesis: many worlds on one GPU, with mixed materials in one scene ([Alloy vs Genesis](../compare/genesis.md)).
-- MuJoCo Playground: ready-made locomotion and dexterous-hand environments
+- MuJoCo Playground: a PyTorch suite on MuJoCo Warp for control, manipulation, humanoid tracking, teleop, sysid and
+  sim-to-real, with earlier MJX environments under `rss2025`
   ([Alloy vs MuJoCo Playground](../compare/mujoco-playground.md)).
 - ManiSkill3: a ready-made suite of manipulation tasks ([Alloy vs ManiSkill](../compare/maniskill.md)).
 
@@ -51,6 +52,8 @@ Hub](https://huggingface.co/argonrobotics-ai/alloy-go2-walk).
 
 ## Next
 
+- Measured throughput and accuracy: [Throughput, rendering and accuracy](benchmarks-and-accuracy.md).
+- Sim-to-real & sysid: [Sim-to-real and system identification](sim-to-real-and-system-identification.md).
 - Install with pip: [Pip-installable simulators](pip-installable-simulators.md).
 - Mixed materials: [Open-source multi-physics engines](open-source-multi-physics-engines.md).
 - Train a policy: [Reinforcement learning](../guides/rl.md)
