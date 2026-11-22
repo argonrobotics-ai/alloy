@@ -102,13 +102,13 @@ class ChainIK:
     def check(self, q: np.ndarray, err: np.ndarray) -> None:
         """Raise ``IKError`` on a missed target or a joint within ``tol.limit_margin`` of its limit (the guard)."""
         names = self.rig.arms
-        bad = (err[..., 0] > self.tol.pos_m) | (err[..., 1] > self.tol.ang_rad)
+        bad = ~np.isfinite(err).all(axis=-1) | (err[..., 0] > self.tol.pos_m) | (err[..., 1] > self.tol.ang_rad)
         if bad.any():
             w, a = map(int, np.argwhere(bad)[0])
             raise IKError(f"IK: {int(bad.sum())} arm targets missed; world {w} {names[a]} off by "
                           f"{err[w, a, 0] * 1e3:.2f} mm / {np.degrees(err[w, a, 1]):.2f} deg (unreachable?)")
         m = self.tol.limit_margin
-        low, high = q < self.bind.lower + m, q > self.bind.upper - m
+        low, high = ~np.isfinite(q) | (q < self.bind.lower + m), q > self.bind.upper - m
         if (low | high).any():
             w, a, j = map(int, np.argwhere(low | high)[0])
             raise IKError(f"IK: world {w} {names[a]} {self.rig.specs[a].joints[j]} = {q[w, a, j]:.3f} rad within "

@@ -310,6 +310,10 @@ class ActuatorWriter:
         """One name per action column. Example: ``writer.column_names()``."""
         return list(self.joints)
 
+    def current(self) -> Any:
+        """Current target commands (W, n) as a copy. Example: ``writer.current()``."""
+        return self.xp.copy(self.command)
+
     def _limits(self) -> tuple[np.ndarray, np.ndarray]:
         s, n = self.spec, self.size
         if s.low is not None and s.high is not None:

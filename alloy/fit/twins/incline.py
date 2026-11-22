@@ -64,6 +64,10 @@ class FitInclineTwin(InclineTwin):
         """With fixed or default values the twin judges those values; otherwise WP6's closed-form calib fit."""
         if self.values.fixed is None and not self.values.defaults:
             super().bind_calib(card, calib)
+            fitted = dict(self.mu_fit)
+            self.mu_fit = _MuStatic(self.values)  # type: ignore[assignment]
+            for cid, mu in fitted.items():
+                self.values.bind(cid, {"mu_static": mu, "mu_dynamic": mu})
             return
         self.monitors["mu_fixed"] = dict(self.values.fixed or self.values.defaults)
 

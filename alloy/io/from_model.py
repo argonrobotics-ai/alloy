@@ -25,7 +25,7 @@ import numpy as np
 from alloy._vendor import newton
 from alloy._vendor.newton import GeoType, JointType
 
-from alloy.io.geometry import outward, scaled_mesh
+from alloy.io.geometry import compose, inverse, outward, scaled_mesh
 from alloy.io.model import IDENTITY, IOBody, IOEquality, IOJoint, IOMaterial, IOModel, IOPair, IOShape, Pose
 
 log = logging.getLogger("alloy.io")
@@ -141,7 +141,7 @@ def _shape(arr: _Arrays, s: int, name: str) -> IOShape | None:
     scale = np.asarray(arr["shape_scale"][s], np.float64)
     flags = int(arr["shape_flags"][s])
     size: tuple[float, ...] = {"box": tuple(scale), "sphere": (scale[0],), "ellipsoid": tuple(scale),
-                               "plane": (scale[0], scale[1])}.get(kind, (scale[0], scale[1]))
+                               "plane": (0.5 * scale[0], 0.5 * scale[1])}.get(kind, (scale[0], scale[1]))
     mesh = None
     if kind == "mesh":
         src = arr.m.shape_source[s]
@@ -256,8 +256,13 @@ def _equalities(m: newton.Model, body_names: list[str], io: IOModel) -> None:
             continue
         first, second = (int(y), int(x)) if x < 0 else (int(x), int(y))
         anchor = IDENTITY
-        if int(t) == _CONNECT and x >= 0 and hasattr(ns, "equality_constraint_anchor"):    # in body1's frame
-            anchor = (*(float(v) for v in ns.equality_constraint_anchor.numpy()[k]), 0.0, 0.0, 0.0, 1.0)
+        if int(t) == _CONNECT and hasattr(ns, "equality_constraint_anchor"):
+            raw = tuple(float(v) for v in ns.equality_constraint_anchor.numpy()[k])
+            if x >= 0:                                                               # in body1's frame
+                anchor = (*raw, 0.0, 0.0, 0.0, 1.0)
+            else:                                                                    # world frame -> body2's frame
+                local = compose(inverse(io.bodies[first].pose), (*raw, 0.0, 0.0, 0.0, 1.0))
+                anchor = (*local[:3], 0.0, 0.0, 0.0, 1.0)
         io.equalities.append(IOEquality(name=f"eq_{k}", kind="weld" if int(t) == _WELD else "connect",
                                         body1=body_names[first], body2=body_names[second] if second >= 0 else None,
                                         anchor=anchor))

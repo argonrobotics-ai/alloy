@@ -273,7 +273,7 @@ def _emit_row(s: SweepIn, ref: PairRef, out: RowsOut, pw: int, j: int, t: float,
     q1, seg = _frames(s, ref, pw, j)
     qh = q1 + seg * t
     n = _normal(ref, g, qh, -wp.normalize(seg), s.dims)
-    ph = qh - n * (_dist(ref, g, qh) - ref.margin[g])        # on the partner surface (margin included)
+    ph = qh - n * _dist(ref, g, qh)                           # on the partner core surface (margins written below)
     ss, ps = ref.samp_shape[pw], ref.part_shape[pw]
     xp = _pose(s.shape_body[ps], s.body_q, s.shape_xform[ps])
     out.shape0[k] = ps

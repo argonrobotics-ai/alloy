@@ -144,12 +144,12 @@ class SceneAssembler:
         return SceneContext(rigid_partners=touching, free_bodies_per_world=tp.free_body_count(objs),
                             registered_routes=registered_routes(), partners=dict(plan.resolved),
                             needs_l1=any(o.card.precision_features for o in objs),
-                            other_dynamic_entries=self._other_dynamic(objs))
+                            other_dynamic_entries=self._other_dynamic(objs, len(plan.scene.robots)))
 
-    def _other_dynamic(self, objs: Sequence[ResolvedObject]) -> int:
-        """Dynamic entries besides a sheet's own (D16 Style3D rule): MuJoCo if any other dynamic object exists."""
+    def _other_dynamic(self, objs: Sequence[ResolvedObject], robot_count: int = 0) -> int:
+        """Dynamic entries besides a sheet's own: MuJoCo if another dynamic object or robot exists."""
         dyn = [o for o in objs if o.card.motion == "dynamic"]
-        return 1 if len(dyn) > 1 else 0
+        return 1 if (len(dyn) + robot_count) > 1 else 0
 
     @staticmethod
     def _material_key(obj: ResolvedObject, name: str, d: RouteDecision, placement) -> str:

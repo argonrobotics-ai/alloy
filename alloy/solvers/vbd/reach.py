@@ -79,10 +79,10 @@ class ReachMixin:
         self.reach_cap = REACH_CELLS * median_edge(model)
         self._reach_dt: float | None = None
 
-    def step(self, state_in, state_out, control, contacts, dt):
+    def step(self, state_in, state_out, control, contacts, dt, **kwargs):
         if self.particle_enable_self_contact and dt != self._reach_dt:
             self._set_reach(float(dt))
-        return super().step(state_in, state_out, control, contacts, dt)
+        return super().step(state_in, state_out, control, contacts, dt, **kwargs)
 
     def _set_reach(self, dt: float) -> None:
         margin, gamma = float(self.particle_self_contact_margin), float(self.dat_conservative_bound_relaxation)

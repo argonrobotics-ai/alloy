@@ -310,10 +310,10 @@ class RowsMixin:
             return
         self.alloy_rows = RowState(self, alloy_self_contact_row_bytes)
 
-    def step(self, state_in, state_out, control, contacts, dt):
+    def step(self, state_in, state_out, control, contacts, dt, **kwargs):
         if self.alloy_rows is not None and not self._rows_census_done:
             self._rows_census(state_in)
-        return super().step(state_in, state_out, control, contacts, dt)
+        return super().step(state_in, state_out, control, contacts, dt, **kwargs)
 
     def _collision_detection_penetration_free(self, current_state, *, reset_reference: bool = True):
         super()._collision_detection_penetration_free(current_state, reset_reference=reset_reference)

@@ -6,7 +6,8 @@ Two ways to ask "is this physically sound?":
   world, what happened and the fix. Last line of every script: `assert sim.check()["ok"], sim.check()["problems"]`.
 - `alloy.check(scene_file, worlds=..., seconds=...)` on a scene before you use it: validates the cards, looks for
   overlaps at the start in every world, runs a short simulation and reports rest drift, penetration, health events
-  and energy. It never raises for a broken scene; every finding is a sentence that ends in the change to make.
+  and energy gain (scoring the worst finite world even if another world went non-finite). It never raises for a
+  broken scene; every finding is a sentence that ends in the change to make.
 
 ```python
 import alloy

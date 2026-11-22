@@ -43,13 +43,15 @@ def _deposit(k0: int, ch: wp.vec3, x: wp.vec2, taxel_xy: wp.array(dtype=wp.vec2)
             wp.atomic_add(acc, (k0 + near) * 3 + c, _fix(ch[c]))
         return
     inv = 0.5 / (spread * spread)
+    d0 = x - taxel_xy[near]
+    min_d2 = wp.dot(d0, d0)
     total = float(0.0)
     for j in range(n):
         d = x - taxel_xy[j]
-        total += wp.exp(-wp.dot(d, d) * inv)
+        total += wp.exp(-wp.max(wp.dot(d, d) - min_d2, 0.0) * inv)
     for j in range(n):
         d = x - taxel_xy[j]
-        w = wp.exp(-wp.dot(d, d) * inv) / total
+        w = wp.exp(-wp.max(wp.dot(d, d) - min_d2, 0.0) * inv) / total
         for c in range(3):
             wp.atomic_add(acc, (k0 + j) * 3 + c, _fix(ch[c] * w))
 

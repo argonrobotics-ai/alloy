@@ -254,19 +254,23 @@ def energy_findings(res: RunResult, index: ObjectIndex) -> tuple[list[Finding], 
     m = res.monitors
     if not m or "e_gain_cum" not in m:
         return [], {}
-    cum, step = np.asarray(m["e_gain_cum"]), np.asarray(m["e_gain"])
-    w = int(np.argmax(cum))
-    metrics = {"gain_cum_rel": float(cum.max()), "gain_step_rel": float(step.max()),
+    cum, step = np.asarray(m["e_gain_cum"], dtype=np.float64), np.asarray(m["e_gain"], dtype=np.float64)
+    if cum.size == 0 or step.size == 0:
+        return [], {}
+    fc, fs = np.isfinite(cum), np.isfinite(step)
+    w = int(np.argmax(np.where(fc, cum, -np.inf))) if fc.any() else 0
+    ws = int(np.argmax(np.where(fs, step, -np.inf))) if fs.any() else 0
+    metrics = {"gain_cum_rel": float(cum[w]) if fc.any() else float(cum[0]),
+               "gain_step_rel": float(step[ws]) if fs.any() else float(step[0]),
                "e_scale_j": float(res.e_scale[w]) if res.e_scale is not None else None}
     fix = ("something adds energy: fix overlaps at load first (they release stored energy), then look for contacts "
            "too stiff for the time step or a joint fighting a collision; rerun with profile='precision' to compare")
-    if cum[w] > ENERGY_WARN_REL:
+    if fc.any() and cum[w] > ENERGY_WARN_REL:
         level, limit = ("error", ENERGY_S1_REL) if cum[w] > ENERGY_S1_REL else ("warn", ENERGY_WARN_REL)
         return [Finding("energy", level, f"the passive objects gained {cum[w] * 100:.0f} % of the scene's energy "
                         f"scale without a cause over the run (worst world {w})", fix, value=float(cum[w]),
                         limit=limit, unit="E_scale")], metrics
-    ws = int(np.argmax(step))
-    if step[ws] > ENERGY_JUMP_REL:
+    if fs.any() and step[ws] > ENERGY_JUMP_REL:
         return [Finding("energy", "info", f"energy jumped by {step[ws] * 100:.1f} % of the scene's energy scale in "
                         f"one step (worst world {ws}), with no lasting gain", "nothing, unless it repeats in longer "
                         "runs; " + fix, value=float(step[ws]), limit=ENERGY_JUMP_REL, unit="E_scale")], metrics

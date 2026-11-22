@@ -41,9 +41,10 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
     """Wraps a torch-backend ``VectorEnv`` as a skrl environment (observations, state, rewards as torch tensors).
 
     ``step`` returns rewards, terminated and truncated as ``(num_envs, 1)`` tensors, as skrl expects. Worlds restart
-    inside ``step`` (the env's same-step autoreset). ``reset`` restarts every world, except right after a step that
-    ended an episode (skrl resets a single env then, and the env has already restarted it). ``seed(s)`` restarts every
-    world from seed ``s``. ``tally`` counts finished episodes and successes; ``take_stats()`` reads and clears it.
+    inside ``step`` (the env's same-step autoreset). ``reset`` restarts every world, except right after a step where
+    every world ended an episode (skrl resets a single env then, and every world already restarted). ``seed(s)``
+    restarts every world from seed ``s``. ``tally`` counts finished episodes and successes; ``take_stats()`` reads and
+    clears it.
 
     Example: ``env = SkrlEnv(make("GripperLift-v0", num_envs=64, backend="torch"))``."""
 
@@ -99,8 +100,8 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
     # --- skrl's methods --------------------------------------------------------------------------------------------
 
     def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
-        """Restart every world (step and return counters too), unless the last step ended an episode: the env has
-        restarted that world already, so its first observation is returned as it is.
+        """Restart every world (step and return counters too), unless every world ended on the last step: the env has
+        restarted every world already, so its first observation is returned as it is.
 
         Example: ``obs, _ = env.reset()``."""
         if not self._just_restarted or self._obs is None:
@@ -130,7 +131,7 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         frozen = info["invalid"] & (terminated | truncated)
         terminated, truncated = terminated | frozen, truncated & ~frozen
         self._count(info)
-        self._just_restarted = bool((terminated | truncated).any())
+        self._just_restarted = bool((terminated | truncated).all())
         n = self.num_envs
         # skrl adds its bootstrap to the reward in place, so it gets a copy, never the env's own buffer
         info = self._with_bootstrap(info)
@@ -149,7 +150,8 @@ class SkrlEnv(_Base):  # type: ignore[misc, valid-type]
         out = dict(info)
         out[BOOTSTRAP_OBS] = torch.where(done, final["policy"], now_obs)
         if now_state is not None:
-            out[BOOTSTRAP_STATES] = torch.where(done, final[CRITIC], now_state)
+            done_s = info["_final_obs"].view((self.num_envs,) + (1,) * (now_state.dim() - 1))
+            out[BOOTSTRAP_STATES] = torch.where(done_s, final[CRITIC], now_state)
         return out
 
     def state(self) -> torch.Tensor | None:

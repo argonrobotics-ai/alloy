@@ -96,7 +96,7 @@ def box_closest(cl: wp.vec3, h: wp.vec3) -> wp.vec4:
         if gap < best:
             best = gap
             nl = wp.vec3(0.0)
-            nl[i] = wp.sign(cl[i]) + float(cl[i] == 0.0)
+            nl[i] = wp.where(cl[i] < 0.0, -1.0, 1.0)
     return wp.vec4(nl[0], nl[1], nl[2], -best)
 
 
@@ -108,7 +108,7 @@ def cylinder_closest(cl: wp.vec3, radius: float, half: float) -> wp.vec4:
         side, cap = radius - rho, half - wp.abs(cl[2])
         if side < cap and rho > 1.0e-9:
             return wp.vec4(cl[0] / rho, cl[1] / rho, 0.0, -side)
-        return wp.vec4(0.0, 0.0, wp.sign(cl[2]) + float(cl[2] == 0.0), -cap)
+        return wp.vec4(0.0, 0.0, wp.where(cl[2] < 0.0, -1.0, 1.0), -cap)
     k = wp.min(1.0, radius / wp.max(rho, 1.0e-9))
     q = wp.vec3(cl[0] * k, cl[1] * k, wp.clamp(cl[2], -half, half))
     dist = wp.length(cl - q)

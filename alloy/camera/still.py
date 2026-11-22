@@ -57,7 +57,8 @@ def render(sim, camera=None, world: int | None = None, width: int | None = None,
     drawn from the sim's state (``alloy.camera.deform``), and so are the sim's SPH liquids (``alloy.camera.liquid_scene``:
     a dielectric with absorption on the full-material tracer, which snapshots of a liquid use unless ``quality="fast"``,
     a tinted colour on the fast one). ``liquids=False`` leaves them out of a snapshot (of a sim without deformables);
-    a dict draws them as one-off snapshot surfaces with those fields of ``liquid.WATER``.
+    a dict draws them as one-off snapshot surfaces with those fields of ``liquid.WATER`` (raises CameraError when
+    the sim also has cloth, soft bodies or MPM: pass ``liquids=True`` there).
 
     Example: ``img = alloy.camera.render(sim, width=320, height=240)``.
     """
@@ -79,11 +80,16 @@ def render(sim, camera=None, world: int | None = None, width: int | None = None,
                               "pass a Camera: sim.render(alloy.Camera('front', look_at=(eye, target)), output=...)")
         kw.pop("output", None)
         if isinstance(liquids, dict) and kw.get("quality", "auto") != "fast" and _has_liquid(sim):
+            if _has_deform(sim):
+                from .errors import CameraError
+                raise CameraError("liquids={...} cannot be combined with cloth, soft bodies or MPM in a snapshot",
+                                  "pass liquids=True to render the scene's live liquid alongside its deformables "
+                                  "(it draws the sim's own liquid material: the dict's fields do not apply)")
             from .liquid import liquid_meshes
             from .meshes import model_scene
             water = liquid_meshes(sim, world, material=liquids)
             model = model_scene(model, water, look=kw.pop("look", None), device=kw.pop("device", None), items=items)
-            live = _has_deform(sim)
+            live = False
         elif liquids is False and not _has_deform(sim):
             live = False
         elif _has_liquid(sim) and kw.get("quality", "auto") == "auto":

@@ -63,6 +63,8 @@ def _with_inertials(root: ET.Element, model) -> None:
                                       mass=num(float(model.body_mass[i])), diaginertia=txt(model.body_inertia[i])))
     for comp in root.iter("compiler"):
         comp.attrib.pop("settotalmass", None)
+        if comp.attrib.get("inertiafromgeom", "").strip().lower() == "true":
+            comp.attrib["inertiafromgeom"] = "auto"
 
 
 def _scaled_copy(path: Path, root: ET.Element, total: str) -> Path:

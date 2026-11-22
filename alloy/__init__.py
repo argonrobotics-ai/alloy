@@ -6,7 +6,7 @@
 Newton runs when Newton is imported.
 """
 
-__version__ = "0.1.9"
+__version__ = "0.1.10"
 
 
 def _installed_version(fallback: str, package_dir: str | None = None) -> str:

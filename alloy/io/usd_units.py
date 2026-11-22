@@ -15,7 +15,9 @@ angular drive ``stiffness``, ``damping``          mass * length^2 / ...  u^2
 angular drive ``maxForce`` (a torque)             mass * length^2 / s^2  u^2
 linear drive ``maxForce`` (a force)               mass * length / s^2    u
 ``physics:gravityMagnitude``                      length / s^2           u
-prismatic ``lowerLimit``, ``upperLimit``          length                 u
+linear drive ``targetPosition`` / ``Velocity``    length / (length/s)    u
+linear state ``position`` / ``velocity``          length / (length/s)    u
+prismatic limits, velocity limits, spring ref     length / (length/s)    u
 ================================================  =====================  ==============
 
 Linear drive stiffness and damping (mass / s^2, mass / s) and masses do not change.
@@ -39,8 +41,11 @@ SCALE_OP = "alloyMetres"
 #: attribute name -> power of metersPerUnit its value is multiplied by
 FACTORS = {"physics:density": -3, "physics:diagonalInertia": 2, "physics:gravityMagnitude": 1,
            "drive:angular:physics:stiffness": 2, "drive:angular:physics:damping": 2,
-           "drive:angular:physics:maxForce": 2, "drive:linear:physics:maxForce": 1}
-PRISMATIC = ("physics:lowerLimit", "physics:upperLimit")
+           "drive:angular:physics:maxForce": 2, "drive:linear:physics:maxForce": 1,
+           "drive:linear:physics:targetPosition": 1, "drive:linear:physics:targetVelocity": 1,
+           "state:linear:physics:position": 1, "state:linear:physics:velocity": 1}
+PRISMATIC = ("physics:lowerLimit", "physics:upperLimit", "newton:velocityLimit",
+             "physxJoint:maxJointVelocity", "mjc:springref", "mjc:ref")
 
 
 def stage_units(path: str | Path) -> float | None:

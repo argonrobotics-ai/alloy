@@ -19,7 +19,9 @@ print(img.shape, batch.shape)
 ```
 
 - `sim.render(width=, height=, world=0, spp=, fov=50, look_at=(eye, target), path=)`: one image of one world
-  (`fov` in degrees, vertical), saved as PNG when `path` is given. Use it to check a scene by eye before a long run.
+  (`fov` in degrees, vertical), saved as PNG when `path` is given. Pass `liquids={...}` with
+  `alloy.camera.liquid.WATER` fields for a custom one-off liquid surface (raises `CameraError` on scenes that also
+  have cloth, soft bodies, or MPM; pass `liquids=True` there). Use it to check a scene by eye before a long run.
   It renders on the GPU when there is one, a CPU sim's too, fast or `quality="full"` (`device="cpu"`: on the CPU).
 - `alloy.Camera(name, look_at=(eye, target) | pose=..., width, height, fov (degrees), spp, denoise=None)`: a camera
   you keep and render every step. `sim.render(cam)` returns numpy; `cam.render_torch(sim)` returns a torch tensor on

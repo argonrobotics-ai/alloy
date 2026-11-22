@@ -72,7 +72,7 @@ class SolverRheologyMPM(SolverImplicitMPM):
         """The array the rheology solve reads, fetched each step (a notify may re-point it)."""
         return self._mpm_model.material_parameters.viscosity
 
-    def step(self, state_in, state_out, control, contacts, dt: float) -> None:
+    def step(self, state_in, state_out, control, contacts, dt: float, **kwargs) -> None:
         n, cfg, dev = self._hb.shape[0], self.rheology, self.model.device
         if n and self._grid is None:
             wp.launch(herschel_bulkley_viscosity, dim=n,
@@ -88,4 +88,4 @@ class SolverRheologyMPM(SolverImplicitMPM):
                       inputs=[self._grid.id, self._hb, self._points, self._dev, self._groups, radius, self._k,
                               self._n, cfg.gdot_min, cfg.eta_min],
                       outputs=[self._visc], device=dev)
-        super().step(state_in, state_out, control, contacts, dt)
+        super().step(state_in, state_out, control, contacts, dt, **kwargs)

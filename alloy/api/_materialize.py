@@ -144,7 +144,7 @@ def _object_material(name: str, item: dict[str, Any], root: Path, roots: list[st
     stiff = forced[1] and _stiffens(data, item)
     if not ov and name not in forced[0] and cap is None and not stiff:
         return base
-    mat_name = f"{base}_for_{A.slug(name)}"
+    mat_name = A.unique_slug(f"{base}_for", name, root / "materials")  # hash only on a clash; root is fresh per call
     data["name"] = mat_name
     note = f"set for object {name!r} through alloy.Scene"
     density = _density(name, item, ov, root)

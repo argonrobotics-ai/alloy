@@ -20,7 +20,9 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from alloy.core.errors import LaunchError
@@ -75,15 +77,24 @@ def launch_mode_a(script: str, devices: Sequence[str], world_count: int, *, args
         log.info("mode A rank %d on %s: worlds %s..+%s", rank, dev, env[ENV_OFFSET], env[ENV_COUNT])
         procs.append(subprocess.Popen([sys.executable, script, *args], env=env, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE, text=True))
-    failures = [_wait(rank, p, timeout_s) for rank, p in enumerate(procs)]
+    deadline = None if timeout_s is None else time.monotonic() + timeout_s
+    with ThreadPoolExecutor(max_workers=len(procs)) as pool:
+        futs = [pool.submit(_wait, rank, p, deadline, timeout_s) for rank, p in enumerate(procs)]
+        try:
+            failures = [f.result() for f in futs]
+        finally:
+            for p in procs:
+                if p.poll() is None:
+                    p.kill()
     failures = [f for f in failures if f]
     if failures:
         raise LaunchError("mode A failed:\n" + "\n".join(failures))
 
 
-def _wait(rank: int, proc: subprocess.Popen, timeout_s: float | None) -> str:
+def _wait(rank: int, proc: subprocess.Popen, deadline: float | None, timeout_s: float | None) -> str:
     try:
-        _, err = proc.communicate(timeout=timeout_s)
+        rem = None if deadline is None else max(0.0, deadline - time.monotonic())
+        _, err = proc.communicate(timeout=rem)
     except subprocess.TimeoutExpired:
         proc.kill()
         _, err = proc.communicate()

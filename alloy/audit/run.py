@@ -138,10 +138,14 @@ def _check_rounds(report: AuditReport, src, plan: tuple[int, int, tuple[str, ...
         s = seed + r
         rep = check(src.card, worlds, seconds, device=device, seed=s, library=src.lib)
         report.runs.setdefault("check_settings", rep.settings)
+        round_seen: set[tuple] = set()
         for f in rep.findings:
             if f.level == "info":
                 continue
             key = (f.check, f.level, tuple(sorted(f.objects)), _NUM.sub("#", f.message))
+            if key in round_seen:
+                continue
+            round_seen.add(key)
             if key in seen:
                 seen[key].seen += 1
                 continue

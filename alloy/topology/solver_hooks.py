@@ -173,6 +173,8 @@ class SolverHooks:
         if m.particle_count:
             out["topology.model.particle_flags"] = m.particle_flags
         for k, s in enumerate(self.mpm):
+            if s.model.particle_flags.ptr != m.particle_flags.ptr:
+                out[f"topology.mpm{k}.view_particle_flags"] = s.model.particle_flags
             out[f"topology.mpm{k}.particle_flags"] = s._mpm_model.particle_flags
             out[f"topology.mpm{k}.material_particle_flags"] = s._mpm_model.material_particle_flags
             out[f"topology.mpm{k}.material_particle_volume"] = s._mpm_model.material_particle_volume
@@ -186,7 +188,11 @@ class SolverHooks:
         if m.particle_count:
             pw = fix(m.particle_world.numpy())
             out["topology.model.particle_flags"] = wp.array(pw, dtype=wp.int32, device=dev)
-            for k in range(len(self.mpm)):
+            for k, s in enumerate(self.mpm):
+                if s.model.particle_flags.ptr != m.particle_flags.ptr:
+                    vw = (out["topology.model.particle_flags"] if s.model.particle_flags.shape[0] == m.particle_count
+                          else wp.array(fix(s.model.particle_world.numpy()), dtype=wp.int32, device=dev))
+                    out[f"topology.mpm{k}.view_particle_flags"] = vw
                 for n in ("particle_flags", "material_particle_flags", "material_particle_volume"):
                     out[f"topology.mpm{k}.{n}"] = out["topology.model.particle_flags"]
             if m.spring_count:

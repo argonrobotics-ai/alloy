@@ -231,10 +231,15 @@ def _settled_pose(name: str, built: Any, index: ObjectIndex, s0: Any, send: Any)
         return None
     b = int(bodies[0])
     q0, qe = s0.body_q[b], send.body_q[b]
+    if not (np.isfinite(q0).all() and np.isfinite(qe).all()):
+        return None
     rel = _qmul(qe[3:7], _qconj(q0[3:7]))
     x = np.asarray(pose[:3]) + (qe[:3] - q0[:3])
     q = _qmul(rel, np.asarray(pose[3:7], np.float64))
-    q = q / np.linalg.norm(q)
+    nrm = float(np.linalg.norm(q))
+    if not (math.isfinite(nrm) and nrm > 1e-12):
+        return None
+    q = q / nrm
     new = [round(float(v), 6) for v in (*x, *q)]
     return {"object": name, "field": f"objects.{index.placement[name]}.pose", "pose": new}
 

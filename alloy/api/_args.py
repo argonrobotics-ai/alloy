@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -122,3 +124,13 @@ def user_q(value: float, note: str) -> dict[str, Any]:
 def slug(text: str) -> str:
     """A card-file-safe lower-case name. Example: ``slug("Cube-1") == "cube_1"``."""
     return re.sub(r"[^a-z0-9_]", "_", text.lower())
+
+
+def unique_slug(prefix: str, name: str, folder: Path, suffix: str = ".yaml") -> str:
+    """Card-file-safe ``<prefix>_<slug>``, adding a short hash if ``folder/<slug><suffix>`` already exists.
+
+    Example: ``unique_slug("steel_for", "peg-1", Path("/tmp"))``."""
+    base = f"{prefix}_{slug(name)}"
+    if (folder / f"{base}{suffix}").exists():
+        return f"{base}_{hashlib.sha256(name.encode()).hexdigest()[:6]}"
+    return base

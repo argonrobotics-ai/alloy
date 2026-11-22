@@ -6,6 +6,60 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.10] - 2026-11-21
+
+### Fixed
+- An anisotropic cloth from a mesh beside a robot now stops at build with the fix to make (opt into the orthotropic
+  membrane with the card's `route: cloth_vbd`, as beside another moving object), instead of going to the Style3D
+  solver, which cannot couple with a robot, and failing with an internal TypeError.
+- Two objects whose names give one card file name (`peg-1` and `peg_1`) and that set their own values (`friction=`,
+  `mass=`, ...) now each keep them. Before, both got the values of the one added last.
+- `VectorEnv`: an invalid world's observation is now zeros, as documented, also when it held NaN or Inf (NaN times
+  zero stayed NaN) and when the world is still invalid after an `autoreset="next_step"` reset.
+- `SkrlEnv.reset()` after a step where only some worlds ended now restarts every world, as documented (before, it
+  restarted none), and its critic bootstrap works when the policy and critic observations differ in dimensions.
+- `ActionDelay` now works with an actuator model (`alloy.envs.actuators.ActuatorSpec`); before, it failed on that
+  model's action writer.
+- A robot file whose `<compiler>` has both `settotalmass` and `inertiafromgeom="true"` now gets the total mass it
+  asks for. Before, MuJoCo computed the masses from the geoms again and the total was lost.
+- `alloy.io`:
+  - a finite plane keeps its size through `export_scene` and `import_file` (it came out twice as large);
+  - a `<connect>` to the world keeps its anchor point (it moved to the body's origin);
+  - a USD stage in units other than metres also scales a sliding joint's drive target, position, velocity,
+    velocity limit and spring reference;
+  - when MuJoCo refuses an MJCF that `import_file` writes, the error is `ImportFileError` with MuJoCo's message,
+    not `NameError`.
+- `sim.render(..., liquids={...})` now raises `CameraError` in a scene that also has cloth, soft bodies or sand and
+  paste (MPM), unless `quality="fast"`: before, it drew the image without the call's `look=` and `device=`. Pass
+  `liquids=True` there.
+- `sim.render(look="look.json")`, a look file given by its path, now works in scenes with scanned library objects.
+- The tactile sensor plug-in no longer returns NaN when a contact lies far from every taxel for its spread (every
+  weight underflowed to zero).
+- `alloy.check`: one world going NaN no longer hides the energy gain of the others (the finding names the worst
+  finite world), a NaN pose gives no suggested pose instead of a NaN one, and a body shared by every world that
+  touches a robot no longer writes outside the per-world touch marks of the energy check.
+- `alloy.audit.audit`: a finding repeated within one round counts once, so no finding's rate exceeds 1 any more.
+- `alloy.sysid`: a LeRobot recording whose `observation.state` columns use actuator names now matches its joints
+  through the same aliases as its actions.
+- Health checks (PEN_FAIL's "half a thin part" rule) count a static part built from several pieces as one solid in
+  each world, not as one solid across all worlds.
+- In a scene where sand or paste (MPM) has a `topology:` block, a world's saved state now holds the MPM solver's own
+  copy of the particle flags too, when it keeps one.
+- Engine layers outside the public API:
+  - multi-GPU `launch_mode_a` (`alloy.parallel.multigpu`) reads every rank's output at once, so a rank that writes
+    a lot while another waits on it no longer stalls the launch, and `timeout_s` bounds the whole launch instead
+    of each rank in turn;
+  - Alloy's cloth (with self-contact) and Herschel-Bulkley paste solver classes pass extra `step()` keyword
+    arguments (`observables=`) on instead of raising TypeError;
+  - `ChainIK.check` (`alloy.arms`) raises `IKError` on a NaN pose error or joint angle, which passed before;
+  - `FitInclineTwin` (`alloy.fit`) keeps its fitted friction after a closed-form calibration (`mu_for()` raised
+    `FitError`);
+  - swept contact (`ccd="sweep"` on a contact pair) counted the pair's contact margin twice;
+  - the sports plug-in's box and cylinder normals stay unit length at a zero coordinate (they were 2 long).
+
+### Documentation
+- The camera, check, import and export, and system identification guides describe these fixes.
+
 ## [0.1.9] - 2026-11-19
 
 ### Added

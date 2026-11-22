@@ -187,12 +187,14 @@ def contact_touch_kernel(
         wp.atomic_max(touch_any, b0, 1)
         if b1 >= 0 and body_robot[b1] != 0 and body_robot[b0] == 0:
             wp.atomic_max(touch_robot, b0, 1)
-            wp.atomic_max(world_robot_touch, body_world[b0], 1)
+            if body_world[b0] >= 0:
+                wp.atomic_max(world_robot_touch, body_world[b0], 1)
     if b1 >= 0:
         wp.atomic_max(touch_any, b1, 1)
         if b0 >= 0 and body_robot[b0] != 0 and body_robot[b1] == 0:
             wp.atomic_max(touch_robot, b1, 1)
-            wp.atomic_max(world_robot_touch, body_world[b1], 1)
+            if body_world[b1] >= 0:
+                wp.atomic_max(world_robot_touch, body_world[b1], 1)
 
 
 @wp.kernel

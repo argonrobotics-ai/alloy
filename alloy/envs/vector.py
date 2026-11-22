@@ -291,7 +291,10 @@ class VectorEnv(_Base):  # type: ignore[misc, valid-type]
         w = getattr(self.writer, "inner", self.writer)
         if hasattr(w, "current"):
             info["targets"] = xp.where(p[:, None], w.current(), info["targets"])
-        return self._observe(self.state, only=p), xp.where(p, 0.0, reward), terminated & ~p, truncated & ~p
+        obs = self._observe(self.state, only=p)
+        if xp.any(info["invalid"]):
+            obs = _void(obs, info["invalid"])
+        return obs, xp.where(p, 0.0, reward), terminated & ~p, truncated & ~p
 
     def _hold_ended(self, reward: Any, terminated: Any, truncated: Any) -> tuple[Any, Any, Any, Any]:
         """autoreset="disabled": a world that ended stays ended (its flags, reward 0, no new episode report) until
@@ -417,7 +420,10 @@ def _void(x: Any, mask: Any) -> Any:
     """``x`` with the rows of the masked worlds set to zero (a dict entry by entry); ``x``'s dtype is kept."""
     if isinstance(x, dict):
         return {k: _void(v, mask) for k, v in x.items()}
-    return x * ~mask.reshape((-1,) + (1,) * (x.ndim - 1))
+    m = mask.reshape((-1,) + (1,) * (x.ndim - 1))
+    if isinstance(x, np.ndarray):
+        return np.where(m, np.zeros((), dtype=x.dtype), x)
+    return x.masked_fill(m, 0)
 
 
 def _as_bool(xp: Any, x: Any) -> Any:

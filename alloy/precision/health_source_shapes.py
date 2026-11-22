@@ -11,7 +11,8 @@ piece boundary inside a body is not a surface anything can pass through. T12 rea
 
 The rule:
 - **Solid.** The colliding shapes of one rigid body form one solid. Static shapes (no body) are separate parts,
-  so they are grouped only by their decomposition parent (``SOURCE_PART_RULES`` on the shape label).
+  so they are grouped only by their decomposition parent (``SOURCE_PART_RULES`` on the shape label), within one
+  world.
 - **Thickness.** The solid's width along the contact normal: ``max n.x - min n.x`` over the union of its shapes,
   from exact support functions (a pooled convex hull of the polytope members, closed forms for the round
   primitives). A shape without geometry to read (plane, height field) adds nothing; a solid with nothing to read
@@ -69,16 +70,17 @@ class SolidSummary:
 
 def solid_ids(model: newton.Model, rules: Sequence[tuple[str, str]] = SOURCE_PART_RULES) -> np.ndarray:
     """int64 [shape_count]: per colliding shape, its solid's first shape id; -1 for shapes that never collide.
-    One solid per rigid body; static shapes are grouped by ``rules`` on their labels, else alone."""
+    One solid per rigid body; static shapes are grouped by ``rules`` on their labels within one world, else alone."""
     n = int(model.shape_count)
     if n == 0:
         return np.zeros(0, np.int64)
     body = model.shape_body.numpy()
+    world = model.shape_world.numpy()
     out = np.where((model.shape_flags.numpy() & COLLIDE) != 0, np.arange(n), -1).astype(np.int64)
     labels = list(getattr(model, "shape_label", []) or [])
     compiled, first = [(re.compile(p), r) for p, r in rules], {}
     for s in np.flatnonzero(out >= 0):
-        key = ("body", int(body[s])) if body[s] >= 0 else ("static", _stem(labels, int(s), compiled))
+        key = ("body", int(body[s])) if body[s] >= 0 else ("static", int(world[s]), _stem(labels, int(s), compiled))
         out[s] = first.setdefault(key, int(s))
     return out
 

@@ -307,6 +307,12 @@ def test_settotalmass_is_applied_and_global_coordinates_refused(tmp_path):
     scene.add_ground()
     scene.add_robot("r", path)
     assert float(alloy.build(scene, device="cpu").built.model.body_mass.numpy().sum()) == pytest.approx(12.0, 1e-4)
+    ifg_xml = TOTALMASS.replace('settotalmass="12.0"', 'inertiafromgeom="true" settotalmass="12.0"')
+    ifg = _write(tmp_path, "tm_ifg.xml", ifg_xml)
+    s_ifg = alloy.Scene(dt=0.01)
+    s_ifg.add_ground()
+    s_ifg.add_robot("r", ifg)
+    assert float(alloy.build(s_ifg, device="cpu").built.model.body_mass.numpy().sum()) == pytest.approx(12.0, 1e-4)
     glob = _write(tmp_path, "glob.xml", TOTALMASS.replace('settotalmass="12.0"', 'coordinate="global"'))
     with pytest.raises(ImportFileError, match="coordinate") as err:
         alloy.io.import_file(glob, tmp_path / "cards")

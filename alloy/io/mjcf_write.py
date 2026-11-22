@@ -22,6 +22,7 @@ from pathlib import Path
 
 import numpy as np
 
+from alloy.io.errors import ImportFileError
 from alloy.io.geometry import compose, inverse, mesh_digest, quat_rotate, shape_volume, tessellate
 from alloy.io.groups import Group
 from alloy.io.model import IDENTITY, IOBody, IOJoint, IOModel, IOShape, Pose

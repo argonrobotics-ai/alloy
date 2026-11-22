@@ -389,4 +389,6 @@ class ActionDelay(Layer):
     def _held(self) -> Any:
         """(W, A) the targets the writer holds now (an absolute writer's columns)."""
         w = self.writer
+        if hasattr(w, "current"):
+            return self.xp.asarray(w.current(), "float32")
         return self.xp.asarray(self.xp.view(w.target)[w.rows], "float32")

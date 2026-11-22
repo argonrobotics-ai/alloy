@@ -133,7 +133,7 @@ def load_lerobot(folder: str | Path, joints: list[str] | None = None, columns: l
     names = joints or _feature_names(info, "action") or _feature_names(info, "observation.state")
     names = None if names is None else [(aliases or {}).get(_strip(n), _strip(n)) for n in names]
     if columns is None:
-        columns = _named_columns(names, _feature_names(info, "observation.state"), state.shape[1])
+        columns = _named_columns(names, _feature_names(info, "observation.state"), state.shape[1], aliases)
     if columns is not None:
         state = state[:, list(columns)]
     if action.shape[1] != state.shape[1] or names is None or len(names) != action.shape[1]:
@@ -157,12 +157,14 @@ def _feature_names(info: dict[str, Any], key: str) -> list[str] | None:
     return [str(n) for n in names] if isinstance(names, (list, tuple)) and names else None
 
 
-def _named_columns(joints: list[str] | None, state_names: list[str] | None, width: int) -> list[int] | None:
+def _named_columns(joints: list[str] | None, state_names: list[str] | None, width: int,
+                   aliases: dict[str, str] | None = None) -> list[int] | None:
     """The state column named after each joint (``"arm/elbow.q"`` or ``"elbow.pos"`` for ``"elbow"``), or None
     when the state is not labelled per column or a joint has no column of its name."""
     if joints is None or state_names is None or len(state_names) != width:
         return None
-    position = [None if n.endswith((".qd", ".vel")) else _strip(n) for n in state_names]
+    amap = aliases or {}
+    position = [None if n.endswith((".qd", ".vel")) else amap.get(_strip(n), _strip(n)) for n in state_names]
     if any(position.count(j) != 1 for j in joints):
         return None
     return [position.index(j) for j in joints]

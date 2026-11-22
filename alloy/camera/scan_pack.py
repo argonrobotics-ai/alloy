@@ -46,6 +46,8 @@ def scan_objects(model, sim, look=None, items=None) -> tuple[list, set[str]]:
     """(TexturedMesh per scan part of world 0, the display labels they replace) for ``sim``'s scanned items."""
     from .from_newton import scene_from_model
     from .meshes import TexturedMesh
+    from .model_pack import _load_look
+    look = _load_look(look)
     sources = _kept(sim, scan_sources(sim), look, items)
     if not sources:
         return [], set()
@@ -77,7 +79,8 @@ def pack_with_scans(model, look, lighting, items, layout=None, liquid=None, sim=
     """``pack_from_model(model, look, lighting, items, deform=layout, liquid=liquid)`` with ``sim``'s scanned items
     drawn by their photo textures (module docstring). Returns (pack, frame, (body, local, present))."""
     from .meshes import _body_rows, _pack_meshes
-    from .model_pack import pack_from_model
+    from .model_pack import _load_look, pack_from_model
+    look = _load_look(look)
     pk, frame, binding = pack_from_model(model, look, lighting, items, deform=layout, liquid=liquid)
     st = pk.static
     st.setdefault("texture_arrays", {})
