@@ -44,8 +44,8 @@ seeds (times exclude first-run GPU kernel compilation):
 - **Batched depth rendering (1,024 worlds, Franka scene, rendering only, two L4 runs):** 62,785-70,786 depth images/s
   at 64x64, 14,372-16,111 at 128x128 and 4,106-4,133 at 256x256. Adding segmentation changed cost by under 1 %.
 - **Thousand-world stability:** 1,024 worlds (copies of one ten-block 5 cm tower scene, 0.5 mm starting jitter, 5 s
-  simulated) had 0 of 1,024 errors (any block moved or sank more than 1 cm, or a non-finite value) at each of three
-  settings (accurate, default, fast) in two runs.
+  simulated) had 0 of 1,024 errors (any block moved or sank more than 1 cm, or a non-finite value) at each of
+  three profiles (`precision`, `standard`, `fast`) in two runs (pre-release builds).
 
 ## Ten selected closed-form laws (CPU, pre-release build, one run each)
 
@@ -75,4 +75,7 @@ Four laws marked `*` ran at the law's own step size rather than the default step
 
 - Estimate wall time and memory before you build: `alloy.estimate(scene, worlds, seconds)`.
 - Parallel training: [GPU-parallel engines for RL](gpu-parallel-engines-for-rl.md).
-- World health checks: [World health](../guides/health.md).
+- World health and blow-ups: [Did my simulation blow up?](did-my-simulation-blow-up.md),
+  [World health](../guides/health.md).
+- Domain randomisation and sysid:
+  [Sim-to-real and system identification](sim-to-real-and-system-identification.md).

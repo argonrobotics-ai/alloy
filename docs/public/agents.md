@@ -28,7 +28,9 @@ Any other MCP client starts the same command, `alloy mcp`. The tools are `list`,
 `state`, `targets`, `reset`, `drive`, `pose`, `wrench`, `settle`, `heater`, `controls`, `close`, `check`,
 `render`, `estimate`, `import`, `export`, `vary`, `compose`, `create`, `audit` and `fetch`; each takes and returns
 JSON. The server's code is in
-[alloy/mcp](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp).
+[alloy/mcp](https://github.com/argonrobotics-ai/alloy/tree/main/alloy/mcp), and it is listed in the
+[Glama](https://glama.ai/mcp/servers/argonrobotics-ai/alloy) and
+[mcpservers.org](https://mcpservers.org/servers/argonrobotics-ai/alloy) MCP directories.
 
 ## What to ask your agent to do
 

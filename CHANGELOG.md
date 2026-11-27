@@ -6,6 +6,14 @@ a patch version only fixes it; anything that would break code written against it
 (or, before 1.0, the next minor version) and is announced here first as a deprecation. Modules outside `alloy.api`
 are engine internals with no stability promise.
 
+## [0.1.11] - 2026-11-26
+
+### Documentation
+- The agents page links the MCP server's entries in the Glama and mcpservers.org directories. The benchmarks and
+  accuracy page calls the three profiles of its thousand-world runs by their names (`precision`, `standard`,
+  `fast`), says those runs were on pre-release builds, and links the pages on simulation blow-ups and on sim-to-real
+  and system identification.
+
 ## [0.1.10] - 2026-11-21
 
 ### Fixed
